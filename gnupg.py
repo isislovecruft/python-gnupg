@@ -1070,21 +1070,23 @@ class GPG(object):
         @returns:
         """
 
-        if not gpgbinary:
-            try:
-                standard_binary = _which('gpg')[0]
-            except IndexError:
-                raise RuntimeError("gpg is not installed")
-
         ## find the absolute path, check that it is not a link, and check that
         ## we have exec permissions
-        that = _which(gpgbinary or 'gpg')
-        full = that[0] if (len(that) > 0) else None
-        if not full:
-            gpgbinary = 'gpg'
-            that = _which(gpgbinary)
-            full = that[0] if (len(that) > 0) else None
-        self.gpgbinary = full
+        if not os.path.isabs(gpgbinary):
+            try: bin = _which(gpgbinary)[0]
+            except IndexError as ie:
+                logger.debug(ie.message)
+                try: bin = _which('gpg')[0]
+                except IndexError: raise RuntimeError("gpg is not installed")
+        else: bin = gpgbinary
+        try:
+            assert os.path.isabs(bin), "Path to gpg binary not absolute"
+            assert not os.path.islink(bin), "Path to gpg binary is symbolic link"
+            assert os.access(bin, os.X_OK), "Lacking +x perms for gpg binary"
+        except AssertionError as ae:
+            logger.debug("GPG.__init__(): %s" % ae.message)
+        else:
+            self.gpgbinary = bin
 
         self.options = _sanitise(options) if options else None
 
@@ -1113,9 +1115,6 @@ class GPG(object):
             self.encoding = sys.stdin.encoding
 
         try:
-            assert os.path.isabs(full), "Couldn't get full path to gpg"
-            assert not os.path.islink(full), "Path to gpg binary is link"
-            assert os.access(full, os.X_OK), "gpg binary must be executable"
             assert self.gpghome is not None, "Got None for self.gpghome"
             assert _has_readwrite(self.gpghome), ("Home dir %s needs r+w"
                                                   % self.gpghome)
@@ -1129,12 +1128,11 @@ class GPG(object):
             logger.debug("GPG.__init__(): %s" % ae.message)
             raise RuntimeError(ae.message)
         else:
-            self.gpgbinary = full
             self.verbose = verbose
             self.use_agent = use_agent
 
             proc = self._open_subprocess(["--version"])
-            result = self.result_map['verify'](self)
+            result = self.result_map['list'](self)
             self._collect_output(proc, result, stdin=proc.stdin)
             if proc.returncode != 0:
                 raise RuntimeError("Error invoking gpg: %s: %s"
@@ -1163,13 +1161,9 @@ class GPG(object):
         if self.use_agent:
             cmd.append('--use-agent')
         if self.options:
-            cmd.extend(self.options)
+            [cmd.append(opt) for opt in iter(_sanitise_list(self.options))]
         if args:
-            if isinstance(args, list):
-                for arg in args:
-                    safe_arg = _sanitise(arg)
-                    if safe_arg != "":
-                        cmd.append(safe_arg)
+            [cmd.append(arg) for arg in iter(_sanitise_list(args))]
         logger.debug("make_args(): Using command: %s" % cmd)
         return cmd
 
