@@ -7,6 +7,7 @@ Copyright © 2008-2013 Vinay Sajip. All rights reserved.
 """
 import doctest
 import logging
+import io
 import os.path
 import os
 import shutil
@@ -88,6 +89,13 @@ def compare_keys(k1, k2):
     del k1[1] # remove version lines
     del k2[1]
     return k1 != k2
+
+class ResultStringIO(io.StringIO):
+    def __init__(self):
+        super(self, io.StringIO).__init__()
+
+    def write(self, data):
+        super(self, io.StringIO).write(unicode(data))
 
 class GPGTestCase(unittest.TestCase):
     def setUp(self):
