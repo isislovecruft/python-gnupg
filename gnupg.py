@@ -906,11 +906,11 @@ def _sanitise(*args):
 
         try:
             allowed_flag = _is_allowed(arg)
-        except AssertionError as ae:
-            logger.warn(ae)
-            logger.warn("Dropping option '%s'..." % _fix_unsafe(arg))
-        except ProtectedOption:
-            logger.warn("Dropping option '%s'..." % _fix_unsafe(arg))
+            assert allowed_flag is not None, \
+                "_check_arg_and_value(): got None for allowed_flag"
+        except (AssertionError, ProtectedOption) as error:
+            logger.warn(error.message)
+            logger.debug("Dropping option '%s'..." % _fix_unsafe(arg))
         else:
             if allowed_flag is not None:
                 safe_values += (allowed_flag + " ")
