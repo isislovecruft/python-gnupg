@@ -819,7 +819,7 @@ def _is_allowed(input):
          '--encrypt-files', '--gen-key', '--decrypt', '--decrypt-files',
          '--list-keys', '--import', '--verify', '--version',
          '--status-fd', '--no-tty', '--homedir', '--no-default-keyring',
-         '--keyring', '--passphrase-fd'])
+         '--keyring', '--passphrase-fd', '--fingerprint', '--with-colons'])
 
     ## check that _allowed is a subset of _possible
     try:
