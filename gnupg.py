@@ -928,9 +928,12 @@ def _sanitise(*args):
                         ## Place checks here:
                         if _is_file(safe_value):
                             safe_values += (safe_value + " ")
-                            logger.debug("Got non-checked value: %s" % safe_value)
-            else:
-                logger.debug("Got null allowed_flag.")
+                        else:
+                            logger.debug("Got non-filename for %s option: %s"
+                                         % (allowed_flag, safe_value))
+                    else:
+                        safe_values += (safe_value + " ")
+                        logger.debug("Got non-checked value: %s" % safe_value)
         return safe_values
 
     checked = []
