@@ -948,17 +948,17 @@ def _sanitise(*args):
                     filo = arg.split()
                     filo.reverse()
                     is_flag = lambda x: x.startswith('-')
+                    new_arg, new_value = str(), str()
                     while len(filo) > 0:
-                        new_values = str()
-                        if is_flag(filo[0]) and is_flag(filo[1]):
+                        if is_flag(filo[0]):
                             new_arg = filo.pop()
-                        else:
-                            new_arg = filo.pop()
-                            while not is_flag(filo[0]):
-                                new_values += (filo.pop() + ' ')
-                        safe = _check_arg_and_value(new_arg, new_values)
-                        logger.debug("_sanitise(): appending args: %s" % safe)
-                        checked.append(safe)
+                            if len(filo) > 0:
+                                while not is_flag(filo[0]):
+                                    new_value += (filo.pop() + ' ')
+                        safe = _check_arg_and_value(new_arg, new_value)
+                        if safe is not None and safe.strip() != '':
+                            logger.debug("_sanitise(): appending args: %s" % safe)
+                            checked.append(safe)
                 else:
                     safe = _check_arg_and_value(arg, None)
                     logger.debug("_sanitise(): appending args: %s" % safe)
