@@ -976,6 +976,23 @@ def _sanitise(*args):
     sanitised = ' '.join(x for x in checked)
     return sanitised
 
+def _sanitise_list(arg_list):
+    """
+    A generator for running through a list of gpg options and sanitising them.
+
+    @type arg_list: C{list}
+    @param arg_list: A list of options and flags for gpg.
+    @rtype: C{generator}
+    @return: A generator whose next() method returns each of the items in
+             :param:arg_list after calling :func:_sanitise with that item as a
+             parameter.
+    """
+    if isinstance(arg_list, list):
+        for arg in arg_list:
+            safe_arg = _sanitise(arg)
+            if safe_arg != "":
+                yield safe_arg
+
 def _which(executable, flags=os.X_OK):
     """Borrowed from Twisted's :mod:twisted.python.proutils .
 
