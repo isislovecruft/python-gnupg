@@ -1247,7 +1247,11 @@ class GPG(object):
         """
         Handle a call to GPG - pass input data, collect output data.
         """
-        p = self._open_subprocess(args, passphrase is not None)
+        if passphrase is not None:
+            ask_passphrase = True
+        else:
+            ask_passphrase = False
+        p = self._open_subprocess(args, ask_passphrase)
         if not binary:
             stdin = codecs.getwriter(self.encoding)(p.stdin)
         else:
