@@ -106,6 +106,8 @@ class GPGTestCase(unittest.TestCase):
             shutil.rmtree(hd)
         self.homedir = hd
         self.gpg = gnupg.GPG(gpghome=hd, gpgbinary='gpg')
+        self.pubring = os.path.join(self.homedir, 'pubring.gpg')
+        self.secring = os.path.join(self.homedir, 'secring.gpg')
 
     def test_environment(self):
         "Test the environment by ensuring that setup worked"
