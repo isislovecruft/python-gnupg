@@ -1,0 +1,12 @@
+python-gnupg
+============
+
+Fork of python-gnupg-0.3.2, patched to remove Popen([...], shell=True).
+
+Installation
+------------
+To install this package from a source distribution, do the following.
+
+1. Extract all the files in the distribution archive to some directory on your system.
+2. In that directory, run "python setup.py install".
+3. Optionally, run "python test_gnupg.py" to ensure that the package is working as expected.
