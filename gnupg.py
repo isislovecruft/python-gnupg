@@ -130,7 +130,7 @@ def _write_passphrase(stream, passphrase, encoding):
     passphrase = '%s\n' % passphrase
     passphrase = passphrase.encode(encoding)
     stream.write(passphrase)
-    logger.debug("Wrote passphrase: %r", passphrase)
+    logger.debug("Wrote passphrase.")
 
 def _is_sequence(instance):
     return isinstance(instance,list) or isinstance(instance,tuple)
