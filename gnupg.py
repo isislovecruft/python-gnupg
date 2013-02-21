@@ -1,41 +1,63 @@
-""" A wrapper for the 'gpg' command::
-
-Portions of this module are derived from A.M. Kuchling's well-designed
-GPG.py, using Richard Jones' updated version 1.3, which can be found
-in the pycrypto CVS repository on Sourceforge:
-
-http://pycrypto.cvs.sourceforge.net/viewvc/pycrypto/gpg/GPG.py
-
-This module is *not* forward-compatible with amk's; some of the
-old interface has changed.  For instance, since I've added decrypt
-functionality, I elected to initialize with a 'gnupghome' argument
-instead of 'keyring', so that gpg can find both the public and secret
-keyrings.  I've also altered some of the returned objects in order for
-the caller to not have to know as much about the internals of the
-result classes.
-
-While the rest of ISconf is released under the GPL, I am releasing
-this single file under the same terms that A.M. Kuchling used for
-pycrypto.
-
-Steve Traugott, stevegt@terraluna.org
-Thu Jun 23 21:27:20 PDT 2005
-
-This version of the module has been modified from Steve Traugott's version
-(see http://trac.t7a.org/isconf/browser/trunk/lib/python/isconf/GPG.py) by
-Vinay Sajip to make use of the subprocess module (Steve's version uses os.fork()
-and so does not work on Windows). Renamed to gnupg.py to avoid confusion with
-the previous versions.
-
-Modifications Copyright (C) 2008-2013 Vinay Sajip. All rights reserved.
-
-A unittest harness (test_gnupg.py) has also been added.
+#!/usr/bin/env python
+#-*- encoding: utf-8 -*-
 """
-import locale
+gnupg.py
+========
+A Python interface to GnuPG.
 
-__version__ = "0.3.2"
-__author__ = "Vinay Sajip"
-__date__  = "$16-Jan-2013 15:21:59$"
+This is a modified version of python-gnupg-0.3.0, which was created by Vinay
+Sajip, which itself is a modification of GPG.py written by Steve Traugott,
+which in turn is a modification of the pycrypto GnuPG interface written by
+A.M. Kuchling.
+
+This version is patched to exclude calls to :class:`subprocess.Popen([...],
+shell=True)`, and it also attempts to provide sanitization of arguments
+presented to gnupg, in order to avoid potential vulnerabilities.
+
+@authors: A.M. Kuchling
+          Steve Traugott
+          Vinay Sajip
+          Isis Lovecruft, <isis@leap.se> 0x2cdb8b35
+
+Steve Traugott's documentation:
+-------------------------------
+    Portions of this module are derived from A.M. Kuchling's well-designed
+    GPG.py, using Richard Jones' updated version 1.3, which can be found in
+    the pycrypto CVS repository on Sourceforge:
+
+    http://pycrypto.cvs.sourceforge.net/viewvc/pycrypto/gpg/GPG.py
+
+    This module is *not* forward-compatible with amk's; some of the old
+    interface has changed.  For instance, since I've added decrypt
+    functionality, I elected to initialize with a 'gnupghome' argument instead
+    of 'keyring', so that gpg can find both the public and secret keyrings.
+    I've also altered some of the returned objects in order for the caller to
+    not have to know as much about the internals of the result classes.
+
+    While the rest of ISconf is released under the GPL, I am releasing this
+    single file under the same terms that A.M. Kuchling used for pycrypto.
+
+    Steve Traugott, stevegt@terraluna.org
+    Thu Jun 23 21:27:20 PDT 2005
+
+Vinay Sajip's documentation:
+----------------------------
+    This version of the module has been modified from Steve Traugott's version
+    (see http://trac.t7a.org/isconf/browser/trunk/lib/python/isconf/GPG.py) by
+    Vinay Sajip to make use of the subprocess module (Steve's version uses
+    os.fork() and so does not work on Windows). Renamed to gnupg.py to avoid
+    confusion with the previous versions.
+
+    A unittest harness (test_gnupg.py) has also been added.
+
+    Modifications Copyright (C) 2008-2012 Vinay Sajip. All rights reserved.
+"""
+
+__version__ = "0.3.1"
+__author__ = "Isis Agora Lovecruft"
+__date__  = "12 Febuary 2013"
+
+import locale
 
 try:
     from io import StringIO
