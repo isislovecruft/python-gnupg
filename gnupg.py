@@ -167,7 +167,7 @@ class Verify(object):
     }
 
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
         self.valid = False
         self.fingerprint = self.creation_date = self.timestamp = None
         self.signature_id = self.key_id = None
@@ -247,7 +247,7 @@ class ImportResult(object):
             n_uids n_subk n_sigs n_revoc sec_read sec_imported
             sec_dups not_imported'''.split()
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
         self.imported = []
         self.results = []
         self.fingerprints = []
@@ -343,7 +343,7 @@ class ListKeys(list):
         rvk = revocation key
     '''
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
         self.curkey = None
         self.fingerprints = []
         self.uids = []
@@ -396,7 +396,7 @@ class Crypt(Verify):
     __bool__ = __nonzero__
 
     def __str__(self):
-        return self.data.decode(self.gpg.encoding, self.gpg.decode_errors)
+        return self.data.decode(self._gpg.encoding, self._gpg.decode_errors)
 
     def handle_status(self, key, value):
         if key in ("ENC_TO", "USERID_HINT", "GOODMDC", "END_DECRYPTION",
@@ -435,7 +435,7 @@ class Crypt(Verify):
 class GenKey(object):
     "Handle status messages for --gen-key"
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
         self.type = None
         self.fingerprint = None
 
@@ -452,14 +452,14 @@ class GenKey(object):
         if key in ("PROGRESS", "GOOD_PASSPHRASE", "NODATA", "KEY_NOT_CREATED"):
             pass
         elif key == "KEY_CREATED":
-            (self.type,self.fingerprint) = value.split()
+            (self.type, self.fingerprint) = value.split()
         else:
             raise ValueError("Unknown status message: %r" % key)
 
 class DeleteResult(object):
     "Handle status messages for --delete-key and --delete-secret-key"
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
         self.status = 'ok'
 
     def __str__(self):
@@ -469,19 +469,19 @@ class DeleteResult(object):
         '1': 'No such key',
         '2': 'Must delete secret key first',
         '3': 'Ambigious specification',
-    }
+        }
 
     def handle_status(self, key, value):
         if key == "DELETE_PROBLEM":
-            self.status = self.problem_reason.get(value,
-                                                  "Unknown error: %r" % value)
+            self.status = self.problem_reason.get(value, "Unknown error: %r"
+                                                  % value)
         else:
             raise ValueError("Unknown status message: %r" % key)
 
 class Sign(object):
     "Handle status messages for --sign"
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
         self.type = None
         self.fingerprint = None
 
@@ -491,7 +491,7 @@ class Sign(object):
     __bool__ = __nonzero__
 
     def __str__(self):
-        return self.data.decode(self.gpg.encoding, self.gpg.decode_errors)
+        return self.data.decode(self._gpg.encoding, self._gpg.decode_errors)
 
     def handle_status(self, key, value):
         if key in ("USERID_HINT", "NEED_PASSPHRASE", "BAD_PASSPHRASE",
