@@ -503,6 +503,267 @@ class Sign(object):
         else:
             raise ValueError("Unknown status message: %r" % key)
 
+class ProtectedOption(Exception):
+    """Raised when the option passed to GPG is disallowed."""
+
+def _sanitise(*args, **kwargs):
+    """
+    GnuPG has three-hundred and eighteen commandline flags. Also, not all
+    implementations of OpenPGP parse PGP packets and headers in the same way,
+    so there is added potential there for messing with calls to GPG.
+
+    For information on the PGP message format specification, see:
+        https://www.ietf.org/rfc/rfc1991.txt
+
+    If you're asking, "Is this *really* necessary?": No. Not really. See:
+        https://xkcd.com/1181/
+
+    @param args: (optional) The boolean arguments which will be passed to the
+                 GnuPG process.
+    @param kwargs: (optional) The arguments and their inputs, which will be passed
+                   to the GnuPG process.
+    """
+    _possible = ("""
+--allow-freeform-uid              --multifile
+--allow-multiple-messages         --no
+--allow-multisig-verification     --no-allow-freeform-uid
+--allow-non-selfsigned-uid        --no-allow-multiple-messages
+--allow-secret-key-import         --no-allow-non-selfsigned-uid
+--always-trust                    --no-armor
+--armor                           --no-armour
+--armour                          --no-ask-cert-expire
+--ask-cert-expire                 --no-ask-cert-level
+--ask-cert-level                  --no-ask-sig-expire
+--ask-sig-expire                  --no-auto-check-trustdb
+--attribute-fd                    --no-auto-key-locate
+--attribute-file                  --no-auto-key-retrieve
+--auto-check-trustdb              --no-batch
+--auto-key-locate                 --no-comments
+--auto-key-retrieve               --no-default-keyring
+--batch                           --no-default-recipient
+--bzip2-compress-level            --no-disable-mdc
+--bzip2-decompress-lowmem         --no-emit-version
+--card-edit                       --no-encrypt-to
+--card-status                     --no-escape-from-lines
+--cert-digest-algo                --no-expensive-trust-checks
+--cert-notation                   --no-expert
+--cert-policy-url                 --no-force-mdc
+--change-pin                      --no-force-v3-sigs
+--charset                         --no-force-v4-certs
+--check-sig                       --no-for-your-eyes-only
+--check-sigs                      --no-greeting
+--check-trustdb                   --no-groups
+--cipher-algo                     --no-literal
+--clearsign                       --no-mangle-dos-filenames
+--command-fd                      --no-mdc-warning
+--command-file                    --no-options
+--comment                         --no-permission-warning
+--completes-needed                --no-pgp2
+--compress-algo                   --no-pgp6
+--compression-algo                --no-pgp7
+--compress-keys                   --no-pgp8
+--compress-level                  --no-random-seed-file
+--compress-sigs                   --no-require-backsigs
+--ctapi-driver                    --no-require-cross-certification
+--dearmor                         --no-require-secmem
+--dearmour                        --no-rfc2440-text
+--debug                           --no-secmem-warning
+--debug-all                       --no-show-notation
+--debug-ccid-driver               --no-show-photos
+--debug-level                     --no-show-policy-url
+--decrypt                         --no-sig-cache
+--decrypt-files                   --no-sig-create-check
+--default-cert-check-level        --no-sk-comments
+--default-cert-expire             --no-strict
+--default-cert-level              --notation-data
+--default-comment                 --not-dash-escaped
+--default-key                     --no-textmode
+--default-keyserver-url           --no-throw-keyid
+--default-preference-list         --no-throw-keyids
+--default-recipient               --no-tty
+--default-recipient-self          --no-use-agent
+--default-sig-expire              --no-use-embedded-filename
+--delete-keys                     --no-utf8-strings
+--delete-secret-and-public-keys   --no-verbose
+--delete-secret-keys              --no-version
+--desig-revoke                    --openpgp
+--detach-sign                     --options
+--digest-algo                     --output
+--disable-ccid                    --override-session-key
+--disable-cipher-algo             --passphrase
+--disable-dsa2                    --passphrase-fd
+--disable-mdc                     --passphrase-file
+--disable-pubkey-algo             --passphrase-repeat
+--display                         --pcsc-driver
+--display-charset                 --personal-cipher-preferences
+--dry-run                         --personal-cipher-prefs
+--dump-options                    --personal-compress-preferences
+--edit-key                        --personal-compress-prefs
+--emit-version                    --personal-digest-preferences
+--enable-dsa2                     --personal-digest-prefs
+--enable-progress-filter          --pgp2
+--enable-special-filenames        --pgp6
+--enarmor                         --pgp7
+--enarmour                        --pgp8
+--encrypt                         --photo-viewer
+--encrypt-files                   --pipemode
+--encrypt-to                      --preserve-permissions
+--escape-from-lines               --primary-keyring
+--exec-path                       --print-md
+--exit-on-status-write-error      --print-mds
+--expert                          --quick-random
+--export                          --quiet
+--export-options                  --reader-port
+--export-ownertrust               --rebuild-keydb-caches
+--export-secret-keys              --recipient
+--export-secret-subkeys           --recv-keys
+--fast-import                     --refresh-keys
+--fast-list-mode                  --remote-user
+--fetch-keys                      --require-backsigs
+--fingerprint                     --require-cross-certification
+--fixed-list-mode                 --require-secmem
+--fix-trustdb                     --rfc1991
+--force-mdc                       --rfc2440
+--force-ownertrust                --rfc2440-text
+--force-v3-sigs                   --rfc4880
+--force-v4-certs                  --run-as-shm-coprocess
+--for-your-eyes-only              --s2k-cipher-algo
+--gen-key                         --s2k-count
+--gen-prime                       --s2k-digest-algo
+--gen-random                      --s2k-mode
+--gen-revoke                      --search-keys
+--gnupg                           --secret-keyring
+--gpg-agent-info                  --send-keys
+--gpgconf-list                    --set-filename
+--gpgconf-test                    --set-filesize
+--group                           --set-notation
+--help                            --set-policy-url
+--hidden-encrypt-to               --show-keyring
+--hidden-recipient                --show-notation
+--homedir                         --show-photos
+--honor-http-proxy                --show-policy-url
+--ignore-crc-error                --show-session-key
+--ignore-mdc-error                --sig-keyserver-url
+--ignore-time-conflict            --sign
+--ignore-valid-from               --sign-key
+--import                          --sig-notation
+--import-options                  --sign-with
+--import-ownertrust               --sig-policy-url
+--interactive                     --simple-sk-checksum
+--keyid-format                    --sk-comments
+--keyring                         --skip-verify
+--keyserver                       --status-fd
+--keyserver-options               --status-file
+--lc-ctype                        --store
+--lc-messages                     --strict
+--limit-card-insert-tries         --symmetric
+--list-config                     --temp-directory
+--list-key                        --textmode
+--list-keys                       --throw-keyid
+--list-only                       --throw-keyids
+--list-options                    --trustdb-name
+--list-ownertrust                 --trusted-key
+--list-packets                    --trust-model
+--list-public-keys                --try-all-secrets
+--list-secret-keys                --ttyname
+--list-sig                        --ttytype
+--list-sigs                       --ungroup
+--list-trustdb                    --update-trustdb
+--load-extension                  --use-agent
+--local-user                      --use-embedded-filename
+--lock-multiple                   --user
+--lock-never                      --utf8-strings
+--lock-once                       --verbose
+--logger-fd                       --verify
+--logger-file                     --verify-files
+--lsign-key                       --verify-options
+--mangle-dos-filenames            --version
+--marginals-needed                --warranty
+--max-cert-depth                  --with-colons
+--max-output                      --with-fingerprint
+--merge-only                      --with-key-data
+--min-cert-level                  --yes
+""").split()
+
+    ## these are all the options that GPG knows:
+    vars = frozenset([x.lstrip('-').replace('-', '_') for x in _possible])
+
+    ## these are the allowed options we will handle so far, all others should
+    ## be dropped. this dance is so that when new options are added later, we
+    ## merely add the to the _allowed list, and the ``assert
+    ## _allowed.issubset`` will check that GPG will recognise them
+    _allowed = frozenset('list_packets', 'print_mds', 'print_md',
+                         'sign', 'encrypt', 'encrypt_file',
+                         'gen_key', 'decrypt', 'decrypt_file',
+                         'list_keys', 'import', 'verify')
+    ## key fetching/retrieving options: [fetch_keys, merge_only, recv_keys]
+    ## packet viewing functions [list_packets, print_mds, print_md]
+    ##
+    ## which ones do we want as defaults?
+    ## eg, --no-show-photos would mitigate things like
+    ## https://www-01.ibm.com/support/docview.wss?uid=swg21620982
+    try:
+        assert _allowed.issubset(vars), \
+            '_allowed is not a subset of known GPG options'
+    except AssertionError as ae:   ## 'as' syntax requires python>=2.6
+        raise UsageError(ae.message)
+
+    def _type_check_and_remove_escapes(*args, **kwargs):
+        """
+        Take an arg or the key portion of a kwarg and check that it has the
+        correct type. Each new option that we support that is not a boolean,
+        but instead has some extra inputs, i.e.  "--encrypt-file foo.txt",
+        will need some basic safety checks added here.
+        """
+        _sanitised   = {}
+        _unsanitised = []
+        if args:
+            for arg in args:
+                underscored = arg.replace('-', '_')
+                try:
+                    assert underscored in _allowed
+                except AssertionError as ae:
+                    logger.warn("Dropping option '%s'..." % underscored)
+                    raise ProtectedOption("Option '%s' not supported." % underscored)
+                else:
+                    logger.msg("Got allowed option '%s'." % underscored)
+                    _sanitised[underscored] = True
+        if kwargs:
+            for key, value in kwargs:
+                underscored = key.replace('-', '_')
+                try:
+                    assert underscored in _allowed, \
+                        "Option '%s' not supported" % underscored
+                    assert isinstance(value, str), \
+                        "Odd, value is not a string...it should always be."
+                except AssertionError as ae:
+                    raise ProtectedOption(ae.message)
+                else:
+                    ## regex pilfered from py3k shlex module
+                    _find_unsafe = re.compile(r'[^\w@%+=:,./-]', 256)
+
+                    if key == 'encrypt' or 'encrypt_file' \
+                            or 'decrypt' or 'decrypt_file' \
+                            or 'import' or 'verify':
+                        try:
+                            ## check that the size of the thing which is
+                            ## supposed to be a filename has size greater than
+                            ## zero, without following symbolic links or using
+                            ## os.path.isfile:
+                            assert os.lstat(value).st_size > 0, "not a file"
+                            ## xxx what other things should we check for?
+                        except AssertionError as ae:
+                            raise ProtectedOption(ae.message)
+
+                    if len(_find_unsafe.findall(value)) == 0:
+                        logger.debug("Sane arguments passed to '%s': %"
+                                     % (underscored, value))
+                    else:
+                        clean = "'" + gpg_args.replace("'", "'\"'\"'") + "'"
+                        _sanitised[underscored] = clean
+        return _sanitised
+    sanitised = _type_check_and_remove_escapes(*args, **kwargs)
+    return sanitised
 
 class GPG(object):
     """Encapsulate access to the gpg executable"""
