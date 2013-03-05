@@ -498,40 +498,35 @@ class Sign(object):
                    "GOOD_PASSPHRASE", "BEGIN_SIGNING", "CARDCTRL", "INV_SGNR"):
             pass
         elif key == "SIG_CREATED":
-            (self.type,
-             algo, hashalgo, cls,
-             self.timestamp, self.fingerprint
-             ) = value.split()
+            (self.type, algo, hashalgo, cls, self.timestamp,
+             self.fingerprint) = value.split()
         else:
             raise ValueError("Unknown status message: %r" % key)
 
 
 class GPG(object):
-
+    """Encapsulate access to the gpg executable"""
     decode_errors = 'strict'
 
-    result_map = {
-        'crypt': Crypt,
-        'delete': DeleteResult,
-        'generate': GenKey,
-        'import': ImportResult,
-        'list': ListKeys,
-        'sign': Sign,
-        'verify': Verify,
-    }
+    result_map = {'crypt': Crypt,
+                  'delete': DeleteResult,
+                  'generate': GenKey,
+                  'import': ImportResult,
+                  'list': ListKeys,
+                  'sign': Sign,
+                  'verify': Verify,}
 
-    "Encapsulate access to the gpg executable"
     def __init__(self, gpgbinary='gpg', gnupghome=None, verbose=False,
                  use_agent=False, keyring=None, options=None):
-        """Initialize a GPG process wrapper.  Options are:
+        """
+        Initialize a GPG process wrapper.
 
-        gpgbinary -- full pathname for GPG binary.
-
-        gnupghome -- full pathname to where we can find the public and
-        private keyrings.  Default is whatever gpg defaults to.
-        keyring -- name of alternative keyring file to use. If specified,
-        the default keyring is not used.
-        options =-- a list of additional options to pass to the GPG binary.
+        @param gpgbinary: Full pathname for GPG binary.
+        @param gnupghome: Full pathname to where we can find the public and
+                          private keyrings. Default is whatever gpg defaults to.
+        @param keyring: Name of alternative keyring file to use. If specified,
+                        the default keyring is not used.
+        @options: A list of additional options to pass to the GPG binary.
         """
         self.gpgbinary = gpgbinary
         self.gnupghome = gnupghome
