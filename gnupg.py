@@ -533,6 +533,15 @@ def _is_file(input):
     except AssertionError as ae:
         raise ProtectedOption(ae.message)
 
+def _underscore(input):
+    """
+    Change hyphens to underscores so that GPG option names can be easily tranlated
+    to object attributes.
+
+    @param input: The input intended for the gnupg process.
+    """
+    return input.replace('-', '_')
+
 def _sanitise(*args, **kwargs):
     """
     GnuPG has three-hundred and eighteen commandline flags. Also, not all
@@ -746,7 +755,7 @@ def _sanitise(*args, **kwargs):
         _unsanitised = []
         if args:
             for arg in args:
-                underscored = arg.replace('-', '_')
+                underscored = _underscore(arg)
                 try:
                     assert underscored in _allowed
                 except AssertionError as ae:
@@ -757,7 +766,7 @@ def _sanitise(*args, **kwargs):
                     _sanitised[underscored] = True
         if kwargs:
             for key, value in kwargs:
-                underscored = key.replace('-', '_')
+                underscored = _underscore(key)
                 try:
                     assert underscored in _allowed, \
                         "Option '%s' not supported" % underscored
