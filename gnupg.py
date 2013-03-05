@@ -506,6 +506,22 @@ class Sign(object):
 class ProtectedOption(Exception):
     """Raised when the option passed to GPG is disallowed."""
 
+def _fix_unsafe(input):
+    """
+    Find characters used to escape from a string into a shell, and wrap them
+    in quotes if they exist. Regex pilfered from python-3.x shlex module.
+    
+    @param input: The input intended for the gnupg process.
+    """
+    ## xxx do we want to add ';'?
+    _unsafe = re.compile(r'[^\w@%+=:,./-]', 256)
+    if len(_unsafe.findall(input)) == 0:
+        logger.debug("Sane arguments passed: %s" % input)
+        return input
+    else:
+        clean = "'" + gpg_args.replace("'", "'\"'\"'") + "'"
+        return clean
+
 def _is_file(input):
     """
     Check that the size of the thing which is supposed to be a filename has
@@ -750,21 +766,13 @@ def _sanitise(*args, **kwargs):
                 except AssertionError as ae:
                     raise ProtectedOption(ae.message)
                 else:
-                    ## regex pilfered from py3k shlex module
-                    _find_unsafe = re.compile(r'[^\w@%+=:,./-]', 256)
-
-                    if key == 'encrypt' or 'encrypt_file' \
-                            or 'decrypt' or 'decrypt_file' \
-                            or 'import' or 'verify':
-                    ## xxx what other things should we check for?
+                    if key == 'encrypt' or 'encrypt_file' or 'decrypt' \
+                            or 'decrypt_file' or 'import' or 'verify':
+                        ## xxx what other things should we check for?
                         _is_file(value)
-                    if len(_find_unsafe.findall(value)) == 0:
-                        logger.debug("Sane arguments passed to '%s': %"
-                                     % (underscored, value))
-                    else:
-                        clean = "'" + gpg_args.replace("'", "'\"'\"'") + "'"
-                        _sanitised[underscored] = clean
+                        _sanitised[underscored] = _fix_unsafe(value)
         return _sanitised
+
     sanitised = _type_check_and_remove_escapes(*args, **kwargs)
     return sanitised
 
