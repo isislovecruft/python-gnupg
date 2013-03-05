@@ -506,6 +506,17 @@ class Sign(object):
 class ProtectedOption(Exception):
     """Raised when the option passed to GPG is disallowed."""
 
+def _is_file(input):
+    """
+    Check that the size of the thing which is supposed to be a filename has
+    size greater than zero, without following symbolic links or using
+    :func:`os.path.isfile`.
+    """
+    try:
+        assert os.lstat(input).st_size > 0, "not a file"
+    except AssertionError as ae:
+        raise ProtectedOption(ae.message)
+
 def _sanitise(*args, **kwargs):
     """
     GnuPG has three-hundred and eighteen commandline flags. Also, not all
@@ -745,16 +756,8 @@ def _sanitise(*args, **kwargs):
                     if key == 'encrypt' or 'encrypt_file' \
                             or 'decrypt' or 'decrypt_file' \
                             or 'import' or 'verify':
-                        try:
-                            ## check that the size of the thing which is
-                            ## supposed to be a filename has size greater than
-                            ## zero, without following symbolic links or using
-                            ## os.path.isfile:
-                            assert os.lstat(value).st_size > 0, "not a file"
-                            ## xxx what other things should we check for?
-                        except AssertionError as ae:
-                            raise ProtectedOption(ae.message)
-
+                    ## xxx what other things should we check for?
+                        _is_file(value)
                     if len(_find_unsafe.findall(value)) == 0:
                         logger.debug("Sane arguments passed to '%s': %"
                                      % (underscored, value))
