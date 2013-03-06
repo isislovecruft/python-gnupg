@@ -542,22 +542,27 @@ def _underscore(input):
     """
     return input.replace('-', '_')
 
-def _sanitise(*args, **kwargs):
+def _is_allowed(input):
     """
-    GnuPG has three-hundred and eighteen commandline flags. Also, not all
-    implementations of OpenPGP parse PGP packets and headers in the same way,
-    so there is added potential there for messing with calls to GPG.
+    Check that an option or argument given to GPG is in the set of allowed
+    options, the latter being a strict subset of the set of all options known
+    to GPG.
 
-    For information on the PGP message format specification, see:
-        https://www.ietf.org/rfc/rfc1991.txt
-
-    If you're asking, "Is this *really* necessary?": No. Not really. See:
-        https://xkcd.com/1181/
-
-    @param args: (optional) The boolean arguments which will be passed to the
-                 GnuPG process.
-    @param kwargs: (optional) The arguments and their inputs, which will be passed
-                   to the GnuPG process.
+    @ivar _possible: All known GPG options and flags.
+    @ivar vars: A frozenset of all known GPG options and flags, with the
+                prefix '--' stripped, and all other hyphens replaces with
+                underscores.
+    @ivar _allowed: A frozenset of all allowed GPG options and flags, e.g. all
+                    GPG options and flags which we are willing to acknowledge
+                    and parse. If we want to support a new option, it will
+                    need to have its own parsing class and its name will need
+                    to be added to this set.
+    @raise: UsageError if :ivar:`_allowed` is not a strict subset of
+            :ivar:`_possible`.
+            ProtectedOption if :param:`input` is not within the set
+            :ivar:`_allowed`.
+    @return: The original parameter :param:`input`, unmodified and
+             unsanitized, if no errors occur.
     """
     _possible = ("""
 --allow-freeform-uid              --multifile
@@ -743,6 +748,15 @@ def _sanitise(*args, **kwargs):
             '_allowed is not a subset of known GPG options'
     except AssertionError as ae:   ## 'as' syntax requires python>=2.6
         raise UsageError(ae.message)
+
+    try:
+        assert input in _allowed
+    except AssertionError as ae:
+        logger.warn("Dropping option '%s'..." % _fix_unsafe(input))
+        raise ProtectedOption("Option '%s' not supported." % _fix_unsafe(input))
+    else:
+        logger.msg("Got allowed option '%s'." % _fix_unsafe(input))
+        return input
 
     def _type_check_and_remove_escapes(*args, **kwargs):
         """
