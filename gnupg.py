@@ -1168,6 +1168,9 @@ class GPG(object):
         >>> assert print1 in pubkeys.fingerprints
         >>> assert print2 in pubkeys.fingerprints
         """
+        ## xxx need way to validate that key_data is actually a valid GPG key
+        ##     it might be possible to use --list-packets and parse the output
+
         result = self.result_map['import'](self)
         logger.debug('import_keys: %r', key_data[:256])
         data = _make_binary_stream(key_data, self.encoding)
