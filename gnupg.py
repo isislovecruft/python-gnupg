@@ -73,6 +73,7 @@ import socket
 from subprocess import Popen
 from subprocess import PIPE
 import sys
+import tempfile
 import threading
 
 try:
@@ -1075,38 +1076,53 @@ class GPG(object):
 
     def verify_file(self, file, data_filename=None):
         """
-        Verify the signature on the contents of the file-like object 'file'.
+        Verify the signature on the contents of a file or file-like
+        object. Can handle embedded signatures as well as detached
+        signatures. If using detached signatures, the file containing the
+        detached signature should be specified as the :param:`data_filename`.
+
+        @param file: A file descriptor object. Its type will be checked with
+                     :func:`_is_file`.
+        @param data_filename: (optional) A file containing the GPG signature
+                              data for :param:`file`. If given, :param:`file`
+                              is verified via this detached signature.
         """
+        ## attempt to wrap any escape characters in quotes:
+        safe_file = _fix_unsafe(file)
+
         ## check that :param:`file` is actually a file:
-        _is_file(file)
+        _is_file(safe_file)
         
-        logger.debug('verify_file: %r, %r', file, data_filename)
+        logger.debug('verify_file: %r, %r', safe_file, data_filename)
         result = self.result_map['verify'](self)
         args = ['--verify']
         if data_filename is None:
-            self._handle_io(args, file, result, binary=True)
+            self._handle_io(args, safe_file, result, binary=True)
         else:
+            safe_data_filename = _fix_unsafe(data_filename)
+
             logger.debug('Handling detached verification')
-            import tempfile
             fd, fn = tempfile.mkstemp(prefix='pygpg')
-            s = file.read()
-            file.close()
-            logger.debug('Wrote to temp file: %r', s)
-            os.write(fd, s)
-            os.close(fd)
-            args.append(fn)
-            args.append('"%s"' % data_filename)
-            try:
-                p = self._open_subprocess(args)
-                self._collect_output(p, result, stdin=p.stdin)
-            finally:
-                os.unlink(fn)
+
+            with open(safe_file) as sf:
+                contents = sf.read()
+                os.write(fd, s)
+                os.close(fd)
+                logger.debug('Wrote to temp file: %r', contents)
+                args.append(fn)
+                args.append('"%s"' % safe_data_filename)
+
+                try:
+                    p = self._open_subprocess(args)
+                    self._collect_output(p, result, stdin=p.stdin)
+                finally:
+                    os.unlink(fn)
+
         return result
 
     #
     # KEY MANAGEMENT
     #
-
     def import_keys(self, key_data):
         """ import the key_data into our keyring
 
