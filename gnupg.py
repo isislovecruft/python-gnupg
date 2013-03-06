@@ -92,12 +92,19 @@ if not logger.handlers:
     logger.addHandler(NullHandler())
 
 def _copy_data(instream, outstream):
-    # Copy one stream to another
+    """
+    Copy data from one stream to another.
+
+    @param instream: A file descriptor to read from.
+    @param outstream: A file descriptor to write to.
+    """
     sent = 0
+
     if hasattr(sys.stdin, 'encoding'):
         enc = sys.stdin.encoding
     else:
         enc = 'ascii'
+
     while True:
         data = instream.read(1024)
         if len(data) == 0:
@@ -108,16 +115,17 @@ def _copy_data(instream, outstream):
             outstream.write(data)
         except UnicodeError:
             outstream.write(data.encode(enc))
-        except:
-            # Can sometimes get 'broken pipe' errors even when the data has all
-            # been sent
-            logger.exception('Error sending data')
+        except IOError:
+            # Can sometimes get 'broken pipe' errors even when the
+            # data has all been sent
+            logger.exception('Error sending data: Broken pipe')
             break
     try:
         outstream.close()
     except IOError:
-        logger.warning('Exception occurred while closing: ignored', exc_info=1)
-    logger.debug("closed output, %d bytes sent", sent)
+        logger.exception('Got IOError while trying to close FD outstream')
+    else:
+        logger.debug("closed output, %d bytes sent", sent)
 
 def _threaded_copy_data(instream, outstream):
     wr = threading.Thread(target=_copy_data, args=(instream, outstream))
@@ -973,9 +981,9 @@ class GPG(object):
         stdout.close()
 
     def _handle_io(self, args, file, result, passphrase=None, binary=False):
-        "Handle a call to GPG - pass input data, collect output data"
-        # Handle a basic data call - pass data to GPG, handle the output
-        # including status information. Garbage In, Garbage Out :)
+        """
+        Handle a call to GPG - pass input data, collect output data.
+        """
         p = self._open_subprocess(args, passphrase is not None)
         if not binary:
             stdin = codecs.getwriter(self.encoding)(p.stdin)
