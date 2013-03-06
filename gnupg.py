@@ -114,7 +114,11 @@ def _copy_data(instream, outstream):
         try:
             outstream.write(data)
         except UnicodeError:
-            outstream.write(data.encode(enc))
+            try:
+                outstream.write(data.encode(enc))
+            except IOError:
+                logger.exception('Error sending data: Broken pipe')
+                break
         except IOError:
             # Can sometimes get 'broken pipe' errors even when the
             # data has all been sent
