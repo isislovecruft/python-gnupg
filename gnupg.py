@@ -981,9 +981,9 @@ class GPG(object):
         stdout.close()
 
     def _handle_io(self, args, file, result, passphrase=None, binary=False):
-        "Handle a call to GPG - pass input data, collect output data"
-        # Handle a basic data call - pass data to GPG, handle the output
-        # including status information. Garbage In, Garbage Out :)
+        """
+        Handle a call to GPG - pass input data, collect output data.
+        """
         p = self._open_subprocess(args, passphrase is not None)
         if not binary:
             stdin = codecs.getwriter(self.encoding)(p.stdin)
