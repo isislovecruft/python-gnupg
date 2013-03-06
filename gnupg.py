@@ -754,12 +754,13 @@ def _is_allowed(input):
         raise UsageError(ae.message)
 
     try:
-        assert input in _allowed
+        underscored = _underscore(input)
+        assert underscored in _allowed
     except AssertionError as ae:
-        logger.warn("Dropping option '%s'..." % _fix_unsafe(input))
-        raise ProtectedOption("Option '%s' not supported." % _fix_unsafe(input))
+        logger.warn("Dropping option '%s'..." % _fix_unsafe(underscored))
+        raise ProtectedOption("Option '%s' not supported." % _fix_unsafe(underscored))
     else:
-        logger.msg("Got allowed option '%s'." % _fix_unsafe(input))
+        logger.msg("Got allowed option '%s'." % _fix_unsafe(underscored))
         return input
 
 def _sanitise(*args, **kwargs):
