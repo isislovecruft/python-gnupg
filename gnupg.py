@@ -1241,15 +1241,22 @@ class GPG(object):
         >>> assert result
 
         """
+        safe_keyserver = _fix_unsafe(keyserver)
+
         result = self.result_map['import'](self)
-        logger.debug('recv_keys: %r', keyids)
         data = _make_binary_stream("", self.encoding)
-        #data = ""
         args = ['--keyserver', keyserver, '--recv-keys']
-        args.extend(keyids)
+
+        if keyids:
+            if keyids is not None:
+                safe_keyids = ' '.join(
+                    [(lambda: _fix_unsafe(k))() for k in keyids])
+                logger.debug('recv_keys: %r', safe_keyids)
+                args.extend(safe_keyids)
+
         self._handle_io(args, data, result, binary=True)
-        logger.debug('recv_keys result: %r', result.__dict__)
         data.close()
+        logger.debug('recv_keys result: %r', result.__dict__)
         return result
 
     def delete_keys(self, fingerprints, secret=False):
