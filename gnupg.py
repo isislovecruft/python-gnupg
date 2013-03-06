@@ -92,12 +92,19 @@ if not logger.handlers:
     logger.addHandler(NullHandler())
 
 def _copy_data(instream, outstream):
-    # Copy one stream to another
+    """
+    Copy data from one stream to another.
+
+    @param instream: A file descriptor to read from.
+    @param outstream: A file descriptor to write to.
+    """
     sent = 0
+
     if hasattr(sys.stdin, 'encoding'):
         enc = sys.stdin.encoding
     else:
         enc = 'ascii'
+
     while True:
         data = instream.read(1024)
         if len(data) == 0:
