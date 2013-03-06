@@ -510,7 +510,7 @@ def _fix_unsafe(input):
     """
     Find characters used to escape from a string into a shell, and wrap them
     in quotes if they exist. Regex pilfered from python-3.x shlex module.
-    
+
     @param input: The input intended for the gnupg process.
     """
     ## xxx do we want to add ';'?
