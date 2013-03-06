@@ -1124,7 +1124,8 @@ class GPG(object):
     # KEY MANAGEMENT
     #
     def import_keys(self, key_data):
-        """ import the key_data into our keyring
+        """
+        Import the key_data into our keyring.
 
         >>> import shutil
         >>> shutil.rmtree("keys")
@@ -1166,7 +1167,6 @@ class GPG(object):
         >>> assert print1 in seckeys.fingerprints
         >>> assert print1 in pubkeys.fingerprints
         >>> assert print2 in pubkeys.fingerprints
-
         """
         result = self.result_map['import'](self)
         logger.debug('import_keys: %r', key_data[:256])
