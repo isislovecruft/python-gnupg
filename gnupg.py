@@ -765,6 +765,16 @@ def _is_allowed(input):
 
 def _sanitise(*args, **kwargs):
     """
+    Take an arg or the key portion of a kwarg and check that it is in the set
+    of allowed GPG options and flags, and that it has the correct type. Then,
+    attempt to escape any unsafe characters. If an option is not allowed,
+    drop it with a logged warning. Returns a dictionary of all sanitised,
+    allowed options.
+
+    Each new option that we support that is not a boolean, but instead has
+    some extra inputs, i.e. "--encrypt-file foo.txt", will need some basic
+    safety checks added here.
+
     GnuPG has three-hundred and eighteen commandline flags. Also, not all
     implementations of OpenPGP parse PGP packets and headers in the same way,
     so there is added potential there for messing with calls to GPG.
