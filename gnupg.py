@@ -791,7 +791,8 @@ def _is_allowed(input):
         assert underscored in _allowed
     except AssertionError as ae:
         logger.warn("Dropping option '%s'..." % _fix_unsafe(underscored))
-        raise ProtectedOption("Option '%s' not supported." % _fix_unsafe(underscored))
+        raise ProtectedOption("Option '%s' not supported."
+                              % _fix_unsafe(underscored))
     else:
         logger.msg("Got allowed option '%s'." % _fix_unsafe(underscored))
         return input
