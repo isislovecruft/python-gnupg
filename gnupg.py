@@ -553,6 +553,19 @@ def _is_file(input):
     except AssertionError as ae:
         raise ProtectedOption(ae.message)
 
+def _has_readwrite(path):
+    """
+    Determine if the real uid/gid of the executing user has read and write
+    permissions for a directory or a file.
+
+    @type path: C{str}
+    @param path: The path to the directory or file to check permissions for.
+
+    @rtype: C{bool}
+    @param: True if real uid/gid has read+write permissions, False otherwise.
+    """
+    return os.access(path, os.R_OK and os.W_OK)
+
 def _underscore(input):
     """
     Change hyphens to underscores so that GPG option names can be easily tranlated
