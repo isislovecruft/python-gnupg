@@ -1,41 +1,63 @@
-""" A wrapper for the 'gpg' command::
-
-Portions of this module are derived from A.M. Kuchling's well-designed
-GPG.py, using Richard Jones' updated version 1.3, which can be found
-in the pycrypto CVS repository on Sourceforge:
-
-http://pycrypto.cvs.sourceforge.net/viewvc/pycrypto/gpg/GPG.py
-
-This module is *not* forward-compatible with amk's; some of the
-old interface has changed.  For instance, since I've added decrypt
-functionality, I elected to initialize with a 'gnupghome' argument
-instead of 'keyring', so that gpg can find both the public and secret
-keyrings.  I've also altered some of the returned objects in order for
-the caller to not have to know as much about the internals of the
-result classes.
-
-While the rest of ISconf is released under the GPL, I am releasing
-this single file under the same terms that A.M. Kuchling used for
-pycrypto.
-
-Steve Traugott, stevegt@terraluna.org
-Thu Jun 23 21:27:20 PDT 2005
-
-This version of the module has been modified from Steve Traugott's version
-(see http://trac.t7a.org/isconf/browser/trunk/lib/python/isconf/GPG.py) by
-Vinay Sajip to make use of the subprocess module (Steve's version uses os.fork()
-and so does not work on Windows). Renamed to gnupg.py to avoid confusion with
-the previous versions.
-
-Modifications Copyright (C) 2008-2013 Vinay Sajip. All rights reserved.
-
-A unittest harness (test_gnupg.py) has also been added.
+#!/usr/bin/env python
+#-*- encoding: utf-8 -*-
 """
-import locale
+gnupg.py
+========
+A Python interface to GnuPG.
 
-__version__ = "0.3.2"
-__author__ = "Vinay Sajip"
-__date__  = "$16-Jan-2013 15:21:59$"
+This is a modified version of python-gnupg-0.3.0, which was created by Vinay
+Sajip, which itself is a modification of GPG.py written by Steve Traugott,
+which in turn is a modification of the pycrypto GnuPG interface written by
+A.M. Kuchling.
+
+This version is patched to exclude calls to :class:`subprocess.Popen([...],
+shell=True)`, and it also attempts to provide sanitization of arguments
+presented to gnupg, in order to avoid potential vulnerabilities.
+
+@authors: A.M. Kuchling
+          Steve Traugott
+          Vinay Sajip
+          Isis Lovecruft, <isis@leap.se> 0x2cdb8b35
+
+Steve Traugott's documentation:
+-------------------------------
+    Portions of this module are derived from A.M. Kuchling's well-designed
+    GPG.py, using Richard Jones' updated version 1.3, which can be found in
+    the pycrypto CVS repository on Sourceforge:
+
+    http://pycrypto.cvs.sourceforge.net/viewvc/pycrypto/gpg/GPG.py
+
+    This module is *not* forward-compatible with amk's; some of the old
+    interface has changed.  For instance, since I've added decrypt
+    functionality, I elected to initialize with a 'gnupghome' argument instead
+    of 'keyring', so that gpg can find both the public and secret keyrings.
+    I've also altered some of the returned objects in order for the caller to
+    not have to know as much about the internals of the result classes.
+
+    While the rest of ISconf is released under the GPL, I am releasing this
+    single file under the same terms that A.M. Kuchling used for pycrypto.
+
+    Steve Traugott, stevegt@terraluna.org
+    Thu Jun 23 21:27:20 PDT 2005
+
+Vinay Sajip's documentation:
+----------------------------
+    This version of the module has been modified from Steve Traugott's version
+    (see http://trac.t7a.org/isconf/browser/trunk/lib/python/isconf/GPG.py) by
+    Vinay Sajip to make use of the subprocess module (Steve's version uses
+    os.fork() and so does not work on Windows). Renamed to gnupg.py to avoid
+    confusion with the previous versions.
+
+    A unittest harness (test_gnupg.py) has also been added.
+
+    Modifications Copyright (C) 2008-2012 Vinay Sajip. All rights reserved.
+"""
+
+__version__ = "0.3.1"
+__author__ = "Isis Agora Lovecruft"
+__date__  = "12 Febuary 2013"
+
+import locale
 
 try:
     from io import StringIO
@@ -108,7 +130,7 @@ def _write_passphrase(stream, passphrase, encoding):
     passphrase = '%s\n' % passphrase
     passphrase = passphrase.encode(encoding)
     stream.write(passphrase)
-    logger.debug("Wrote passphrase: %r", passphrase)
+    logger.debug("Wrote passphrase.")
 
 def _is_sequence(instance):
     return isinstance(instance,list) or isinstance(instance,tuple)
@@ -145,7 +167,7 @@ class Verify(object):
     }
 
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
         self.valid = False
         self.fingerprint = self.creation_date = self.timestamp = None
         self.signature_id = self.key_id = None
@@ -225,7 +247,7 @@ class ImportResult(object):
             n_uids n_subk n_sigs n_revoc sec_read sec_imported
             sec_dups not_imported'''.split()
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
         self.imported = []
         self.results = []
         self.fingerprints = []
@@ -321,7 +343,7 @@ class ListKeys(list):
         rvk = revocation key
     '''
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
         self.curkey = None
         self.fingerprints = []
         self.uids = []
@@ -374,7 +396,7 @@ class Crypt(Verify):
     __bool__ = __nonzero__
 
     def __str__(self):
-        return self.data.decode(self.gpg.encoding, self.gpg.decode_errors)
+        return self.data.decode(self._gpg.encoding, self._gpg.decode_errors)
 
     def handle_status(self, key, value):
         if key in ("ENC_TO", "USERID_HINT", "GOODMDC", "END_DECRYPTION",
@@ -413,7 +435,7 @@ class Crypt(Verify):
 class GenKey(object):
     "Handle status messages for --gen-key"
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
         self.type = None
         self.fingerprint = None
 
@@ -430,14 +452,14 @@ class GenKey(object):
         if key in ("PROGRESS", "GOOD_PASSPHRASE", "NODATA", "KEY_NOT_CREATED"):
             pass
         elif key == "KEY_CREATED":
-            (self.type,self.fingerprint) = value.split()
+            (self.type, self.fingerprint) = value.split()
         else:
             raise ValueError("Unknown status message: %r" % key)
 
 class DeleteResult(object):
     "Handle status messages for --delete-key and --delete-secret-key"
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
         self.status = 'ok'
 
     def __str__(self):
@@ -447,19 +469,19 @@ class DeleteResult(object):
         '1': 'No such key',
         '2': 'Must delete secret key first',
         '3': 'Ambigious specification',
-    }
+        }
 
     def handle_status(self, key, value):
         if key == "DELETE_PROBLEM":
-            self.status = self.problem_reason.get(value,
-                                                  "Unknown error: %r" % value)
+            self.status = self.problem_reason.get(value, "Unknown error: %r"
+                                                  % value)
         else:
             raise ValueError("Unknown status message: %r" % key)
 
 class Sign(object):
     "Handle status messages for --sign"
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
         self.type = None
         self.fingerprint = None
 
@@ -469,47 +491,362 @@ class Sign(object):
     __bool__ = __nonzero__
 
     def __str__(self):
-        return self.data.decode(self.gpg.encoding, self.gpg.decode_errors)
+        return self.data.decode(self._gpg.encoding, self._gpg.decode_errors)
 
     def handle_status(self, key, value):
         if key in ("USERID_HINT", "NEED_PASSPHRASE", "BAD_PASSPHRASE",
                    "GOOD_PASSPHRASE", "BEGIN_SIGNING", "CARDCTRL", "INV_SGNR"):
             pass
         elif key == "SIG_CREATED":
-            (self.type,
-             algo, hashalgo, cls,
-             self.timestamp, self.fingerprint
-             ) = value.split()
+            (self.type, algo, hashalgo, cls, self.timestamp,
+             self.fingerprint) = value.split()
         else:
             raise ValueError("Unknown status message: %r" % key)
 
+class ProtectedOption(Exception):
+    """Raised when the option passed to GPG is disallowed."""
+
+def _fix_unsafe(input):
+    """
+    Find characters used to escape from a string into a shell, and wrap them
+    in quotes if they exist. Regex pilfered from python-3.x shlex module.
+
+    @param input: The input intended for the gnupg process.
+    """
+    ## xxx do we want to add ';'?
+    _unsafe = re.compile(r'[^\w@%+=:,./-]', 256)
+    if len(_unsafe.findall(input)) == 0:
+        logger.debug("Sane arguments passed: %s" % input)
+        return input
+    else:
+        clean = "'" + gpg_args.replace("'", "'\"'\"'") + "'"
+        return clean
+
+def _is_file(input):
+    """
+    Check that the size of the thing which is supposed to be a filename has
+    size greater than zero, without following symbolic links or using
+    :func:`os.path.isfile`.
+    """
+    try:
+        assert os.lstat(input).st_size > 0, "not a file"
+    except AssertionError as ae:
+        raise ProtectedOption(ae.message)
+
+def _underscore(input):
+    """
+    Change hyphens to underscores so that GPG option names can be easily tranlated
+    to object attributes.
+
+    @param input: The input intended for the gnupg process.
+    """
+    return input.replace('-', '_')
+
+def _is_allowed(input):
+    """
+    Check that an option or argument given to GPG is in the set of allowed
+    options, the latter being a strict subset of the set of all options known
+    to GPG.
+
+    @param input: An input meant to be parsed as an option or flag to the GnuPG
+                  process. Should begin with a letter, not a hyphen. All other
+                  hyphens found in the input will be automatically replaced with
+                  underscores.
+    @ivar _possible: All known GPG options and flags.
+    @ivar vars: A frozenset of all known GPG options and flags, with the
+                prefix '--' stripped, and all other hyphens replaces with
+                underscores.
+    @ivar _allowed: A frozenset of all allowed GPG options and flags, e.g. all
+                    GPG options and flags which we are willing to acknowledge
+                    and parse. If we want to support a new option, it will
+                    need to have its own parsing class and its name will need
+                    to be added to this set.
+    @raise: UsageError if :ivar:`_allowed` is not a strict subset of
+            :ivar:`_possible`.
+            ProtectedOption if :param:`input` is not within the set
+            :ivar:`_allowed`.
+    @return: The original parameter :param:`input`, unmodified and
+             unsanitized, if no errors occur.
+    """
+    _possible = ("""
+--allow-freeform-uid              --multifile
+--allow-multiple-messages         --no
+--allow-multisig-verification     --no-allow-freeform-uid
+--allow-non-selfsigned-uid        --no-allow-multiple-messages
+--allow-secret-key-import         --no-allow-non-selfsigned-uid
+--always-trust                    --no-armor
+--armor                           --no-armour
+--armour                          --no-ask-cert-expire
+--ask-cert-expire                 --no-ask-cert-level
+--ask-cert-level                  --no-ask-sig-expire
+--ask-sig-expire                  --no-auto-check-trustdb
+--attribute-fd                    --no-auto-key-locate
+--attribute-file                  --no-auto-key-retrieve
+--auto-check-trustdb              --no-batch
+--auto-key-locate                 --no-comments
+--auto-key-retrieve               --no-default-keyring
+--batch                           --no-default-recipient
+--bzip2-compress-level            --no-disable-mdc
+--bzip2-decompress-lowmem         --no-emit-version
+--card-edit                       --no-encrypt-to
+--card-status                     --no-escape-from-lines
+--cert-digest-algo                --no-expensive-trust-checks
+--cert-notation                   --no-expert
+--cert-policy-url                 --no-force-mdc
+--change-pin                      --no-force-v3-sigs
+--charset                         --no-force-v4-certs
+--check-sig                       --no-for-your-eyes-only
+--check-sigs                      --no-greeting
+--check-trustdb                   --no-groups
+--cipher-algo                     --no-literal
+--clearsign                       --no-mangle-dos-filenames
+--command-fd                      --no-mdc-warning
+--command-file                    --no-options
+--comment                         --no-permission-warning
+--completes-needed                --no-pgp2
+--compress-algo                   --no-pgp6
+--compression-algo                --no-pgp7
+--compress-keys                   --no-pgp8
+--compress-level                  --no-random-seed-file
+--compress-sigs                   --no-require-backsigs
+--ctapi-driver                    --no-require-cross-certification
+--dearmor                         --no-require-secmem
+--dearmour                        --no-rfc2440-text
+--debug                           --no-secmem-warning
+--debug-all                       --no-show-notation
+--debug-ccid-driver               --no-show-photos
+--debug-level                     --no-show-policy-url
+--decrypt                         --no-sig-cache
+--decrypt-files                   --no-sig-create-check
+--default-cert-check-level        --no-sk-comments
+--default-cert-expire             --no-strict
+--default-cert-level              --notation-data
+--default-comment                 --not-dash-escaped
+--default-key                     --no-textmode
+--default-keyserver-url           --no-throw-keyid
+--default-preference-list         --no-throw-keyids
+--default-recipient               --no-tty
+--default-recipient-self          --no-use-agent
+--default-sig-expire              --no-use-embedded-filename
+--delete-keys                     --no-utf8-strings
+--delete-secret-and-public-keys   --no-verbose
+--delete-secret-keys              --no-version
+--desig-revoke                    --openpgp
+--detach-sign                     --options
+--digest-algo                     --output
+--disable-ccid                    --override-session-key
+--disable-cipher-algo             --passphrase
+--disable-dsa2                    --passphrase-fd
+--disable-mdc                     --passphrase-file
+--disable-pubkey-algo             --passphrase-repeat
+--display                         --pcsc-driver
+--display-charset                 --personal-cipher-preferences
+--dry-run                         --personal-cipher-prefs
+--dump-options                    --personal-compress-preferences
+--edit-key                        --personal-compress-prefs
+--emit-version                    --personal-digest-preferences
+--enable-dsa2                     --personal-digest-prefs
+--enable-progress-filter          --pgp2
+--enable-special-filenames        --pgp6
+--enarmor                         --pgp7
+--enarmour                        --pgp8
+--encrypt                         --photo-viewer
+--encrypt-files                   --pipemode
+--encrypt-to                      --preserve-permissions
+--escape-from-lines               --primary-keyring
+--exec-path                       --print-md
+--exit-on-status-write-error      --print-mds
+--expert                          --quick-random
+--export                          --quiet
+--export-options                  --reader-port
+--export-ownertrust               --rebuild-keydb-caches
+--export-secret-keys              --recipient
+--export-secret-subkeys           --recv-keys
+--fast-import                     --refresh-keys
+--fast-list-mode                  --remote-user
+--fetch-keys                      --require-backsigs
+--fingerprint                     --require-cross-certification
+--fixed-list-mode                 --require-secmem
+--fix-trustdb                     --rfc1991
+--force-mdc                       --rfc2440
+--force-ownertrust                --rfc2440-text
+--force-v3-sigs                   --rfc4880
+--force-v4-certs                  --run-as-shm-coprocess
+--for-your-eyes-only              --s2k-cipher-algo
+--gen-key                         --s2k-count
+--gen-prime                       --s2k-digest-algo
+--gen-random                      --s2k-mode
+--gen-revoke                      --search-keys
+--gnupg                           --secret-keyring
+--gpg-agent-info                  --send-keys
+--gpgconf-list                    --set-filename
+--gpgconf-test                    --set-filesize
+--group                           --set-notation
+--help                            --set-policy-url
+--hidden-encrypt-to               --show-keyring
+--hidden-recipient                --show-notation
+--homedir                         --show-photos
+--honor-http-proxy                --show-policy-url
+--ignore-crc-error                --show-session-key
+--ignore-mdc-error                --sig-keyserver-url
+--ignore-time-conflict            --sign
+--ignore-valid-from               --sign-key
+--import                          --sig-notation
+--import-options                  --sign-with
+--import-ownertrust               --sig-policy-url
+--interactive                     --simple-sk-checksum
+--keyid-format                    --sk-comments
+--keyring                         --skip-verify
+--keyserver                       --status-fd
+--keyserver-options               --status-file
+--lc-ctype                        --store
+--lc-messages                     --strict
+--limit-card-insert-tries         --symmetric
+--list-config                     --temp-directory
+--list-key                        --textmode
+--list-keys                       --throw-keyid
+--list-only                       --throw-keyids
+--list-options                    --trustdb-name
+--list-ownertrust                 --trusted-key
+--list-packets                    --trust-model
+--list-public-keys                --try-all-secrets
+--list-secret-keys                --ttyname
+--list-sig                        --ttytype
+--list-sigs                       --ungroup
+--list-trustdb                    --update-trustdb
+--load-extension                  --use-agent
+--local-user                      --use-embedded-filename
+--lock-multiple                   --user
+--lock-never                      --utf8-strings
+--lock-once                       --verbose
+--logger-fd                       --verify
+--logger-file                     --verify-files
+--lsign-key                       --verify-options
+--mangle-dos-filenames            --version
+--marginals-needed                --warranty
+--max-cert-depth                  --with-colons
+--max-output                      --with-fingerprint
+--merge-only                      --with-key-data
+--min-cert-level                  --yes
+""").split()
+
+    ## these are all the options that GPG knows:
+    vars = frozenset([x.lstrip('-').replace('-', '_') for x in _possible])
+
+    ## these are the allowed options we will handle so far, all others should
+    ## be dropped. this dance is so that when new options are added later, we
+    ## merely add the to the _allowed list, and the ``assert
+    ## _allowed.issubset`` will check that GPG will recognise them
+    _allowed = frozenset('list_packets', 'print_mds', 'print_md',
+                         'sign', 'encrypt', 'encrypt_file',
+                         'gen_key', 'decrypt', 'decrypt_file',
+                         'list_keys', 'import', 'verify')
+    ## key fetching/retrieving options: [fetch_keys, merge_only, recv_keys]
+    ## packet viewing functions [list_packets, print_mds, print_md]
+    ##
+    ## which ones do we want as defaults?
+    ## eg, --no-show-photos would mitigate things like
+    ## https://www-01.ibm.com/support/docview.wss?uid=swg21620982
+    try:
+        assert _allowed.issubset(vars), \
+            '_allowed is not a subset of known GPG options'
+    except AssertionError as ae:   ## 'as' syntax requires python>=2.6
+        raise UsageError(ae.message)
+
+    try:
+        underscored = _underscore(input)
+        assert underscored in _allowed
+    except AssertionError as ae:
+        logger.warn("Dropping option '%s'..." % _fix_unsafe(underscored))
+        raise ProtectedOption("Option '%s' not supported." % _fix_unsafe(underscored))
+    else:
+        logger.msg("Got allowed option '%s'." % _fix_unsafe(underscored))
+        return input
+
+def _sanitise(*args, **kwargs):
+    """
+    Take an arg or the key portion of a kwarg and check that it is in the set
+    of allowed GPG options and flags, and that it has the correct type. Then,
+    attempt to escape any unsafe characters. If an option is not allowed,
+    drop it with a logged warning. Returns a dictionary of all sanitised,
+    allowed options.
+
+    Each new option that we support that is not a boolean, but instead has
+    some extra inputs, i.e. "--encrypt-file foo.txt", will need some basic
+    safety checks added here.
+
+    GnuPG has three-hundred and eighteen commandline flags. Also, not all
+    implementations of OpenPGP parse PGP packets and headers in the same way,
+    so there is added potential there for messing with calls to GPG.
+
+    For information on the PGP message format specification, see:
+        https://www.ietf.org/rfc/rfc1991.txt
+
+    If you're asking, "Is this *really* necessary?": No. Not really. See:
+        https://xkcd.com/1181/
+
+    @param args: (optional) The boolean arguments which will be passed to the
+                 GnuPG process.
+    @param kwargs: (optional) The arguments and their inputs, which will be passed
+                   to the GnuPG process.
+    @ivar sanitised: A dictionary contained the sanitised allowed options.
+    @return: :ivar:`sanitised`.
+    """
+    sanitised   = {}
+
+    if args:
+        for arg in args:
+            try:
+                allowed = _is_allowed(arg)
+            except ProtectedOption as po:
+                logger.warn("Dropping option '%s'..." % _fix_unsafe(arg))
+            else:
+                safe = _fix_unsafe(allowed)
+                logger.msg("Got allowed option '%s'." % safe)
+                _sanitised[safe] = True
+    if kwargs:
+        for key, value in kwargs:
+            try:
+                allowed = _is_allowed(key)
+                assert isinstance(value, str), "_sanitise(): value not a string"
+            except AssertionError as ae:
+                logger.warn(ae)
+            except ProtectedOption as po:
+                logger.warn("Dropping option '%s'..." % _fix_unsafe(value))
+            else:
+                if key == 'encrypt' or 'encrypt_file' or 'decrypt' or 'decrypt_file' \
+                        or 'import' or 'verify':
+                    ## Place checks here:
+                    ##
+                    ## xxx what other things should we check for?
+                    _is_file(value)
+                    _sanitised[allowed] = _fix_unsafe(value)
+
+    return sanitised
 
 class GPG(object):
-
+    """Encapsulate access to the gpg executable"""
     decode_errors = 'strict'
 
-    result_map = {
-        'crypt': Crypt,
-        'delete': DeleteResult,
-        'generate': GenKey,
-        'import': ImportResult,
-        'list': ListKeys,
-        'sign': Sign,
-        'verify': Verify,
-    }
+    result_map = {'crypt': Crypt,
+                  'delete': DeleteResult,
+                  'generate': GenKey,
+                  'import': ImportResult,
+                  'list': ListKeys,
+                  'sign': Sign,
+                  'verify': Verify,}
 
-    "Encapsulate access to the gpg executable"
     def __init__(self, gpgbinary='gpg', gnupghome=None, verbose=False,
                  use_agent=False, keyring=None, options=None):
-        """Initialize a GPG process wrapper.  Options are:
+        """
+        Initialize a GPG process wrapper.
 
-        gpgbinary -- full pathname for GPG binary.
-
-        gnupghome -- full pathname to where we can find the public and
-        private keyrings.  Default is whatever gpg defaults to.
-        keyring -- name of alternative keyring file to use. If specified,
-        the default keyring is not used.
-        options =-- a list of additional options to pass to the GPG binary.
+        @param gpgbinary: Full pathname for GPG binary.
+        @param gnupghome: Full pathname to where we can find the public and
+                          private keyrings. Default is whatever gpg defaults to.
+        @param keyring: Name of alternative keyring file to use. If specified,
+                        the default keyring is not used.
+        @options: A list of additional options to pass to the GPG binary.
         """
         self.gpgbinary = gpgbinary
         self.gnupghome = gnupghome
