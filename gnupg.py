@@ -103,8 +103,8 @@ def _copy_data(instream, outstream):
     try:
         assert isinstance(instream, file), "instream is not a file"
         assert isinstance(outsteam, file), "outstream is not a file"
-    except AssertionError:
-        logger.exception(exc_info=1)
+    except AssertionError as ae:
+        logger.exception(ae)
         return
 
     if hasattr(sys.stdin, 'encoding'):
@@ -1074,7 +1074,12 @@ class GPG(object):
         return result
 
     def verify_file(self, file, data_filename=None):
-        "Verify the signature on the contents of the file-like object 'file'"
+        """
+        Verify the signature on the contents of the file-like object 'file'.
+        """
+        ## check that :param:`file` is actually a file:
+        _is_file(file)
+        
         logger.debug('verify_file: %r, %r', file, data_filename)
         result = self.result_map['verify'](self)
         args = ['--verify']
