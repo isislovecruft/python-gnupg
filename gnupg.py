@@ -100,6 +100,13 @@ def _copy_data(instream, outstream):
     """
     sent = 0
 
+    try:
+        assert isinstance(instream, file), "instream is not a file"
+        assert isinstance(outsteam, file), "outstream is not a file"
+    except AssertionError:
+        logger.exception(exc_info=1)
+        return
+
     if hasattr(sys.stdin, 'encoding'):
         enc = sys.stdin.encoding
     else:
