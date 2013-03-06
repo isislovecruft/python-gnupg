@@ -1024,14 +1024,20 @@ class GPG(object):
             args = ['-s']
         else:
             args = ['-sa']
-        # You can't specify detach-sign and clearsign together: gpg ignores
-        # the detach-sign in that case.
-        if detach:
-            args.append("--detach-sign")
-        elif clearsign:
+
+        if clearsign:
             args.append("--clearsign")
+            if detach:
+                logger.message(
+                    "Cannot use --clearsign and --detach-sign simultaneously.")
+                logger.message(
+                    "Using default GPG behaviour: --clearsign only.")
+        elif detach and not clearsign:
+            args.append("--detach-sign")
+
         if keyid:
             args.append('--default-key "%s"' % keyid)
+
         result = self.result_map['sign'](self)
         #We could use _handle_io here except for the fact that if the
         #passphrase is bad, gpg bails and you can't write the message.
