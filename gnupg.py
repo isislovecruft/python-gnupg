@@ -115,16 +115,17 @@ def _copy_data(instream, outstream):
             outstream.write(data)
         except UnicodeError:
             outstream.write(data.encode(enc))
-        except:
-            # Can sometimes get 'broken pipe' errors even when the data has all
-            # been sent
-            logger.exception('Error sending data')
+        except IOError:
+            # Can sometimes get 'broken pipe' errors even when the
+            # data has all been sent
+            logger.exception('Error sending data: Broken pipe')
             break
     try:
         outstream.close()
     except IOError:
-        logger.warning('Exception occurred while closing: ignored', exc_info=1)
-    logger.debug("closed output, %d bytes sent", sent)
+        logger.exception('Got IOError while trying to close FD outstream')
+    else:
+        logger.debug("closed output, %d bytes sent", sent)
 
 def _threaded_copy_data(instream, outstream):
     wr = threading.Thread(target=_copy_data, args=(instream, outstream))
