@@ -1144,7 +1144,7 @@ class GPG(object):
 
         ## check that :param:`file` is actually a file:
         _is_file(safe_file)
-        
+
         logger.debug('verify_file: %r, %r', safe_file, data_filename)
         result = self.result_map['verify'](self)
         args = ['--verify']
