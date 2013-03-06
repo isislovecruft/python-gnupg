@@ -758,6 +758,23 @@ def _is_allowed(input):
         logger.msg("Got allowed option '%s'." % _fix_unsafe(input))
         return input
 
+def _sanitise(*args, **kwargs):
+    """
+    GnuPG has three-hundred and eighteen commandline flags. Also, not all
+    implementations of OpenPGP parse PGP packets and headers in the same way,
+    so there is added potential there for messing with calls to GPG.
+
+    For information on the PGP message format specification, see:
+        https://www.ietf.org/rfc/rfc1991.txt
+
+    If you're asking, "Is this *really* necessary?": No. Not really. See:
+        https://xkcd.com/1181/
+
+    @param args: (optional) The boolean arguments which will be passed to the
+                 GnuPG process.
+    @param kwargs: (optional) The arguments and their inputs, which will be passed
+                   to the GnuPG process.
+    """
     def _type_check_and_remove_escapes(*args, **kwargs):
         """
         Take an arg or the key portion of a kwarg and check that it has the
