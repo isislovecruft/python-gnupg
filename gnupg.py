@@ -548,6 +548,10 @@ def _is_allowed(input):
     options, the latter being a strict subset of the set of all options known
     to GPG.
 
+    @param input: An input meant to be parsed as an option or flag to the GnuPG
+                  process. Should begin with a letter, not a hyphen. All other
+                  hyphens found in the input will be automatically replaced with
+                  underscores.
     @ivar _possible: All known GPG options and flags.
     @ivar vars: A frozenset of all known GPG options and flags, with the
                 prefix '--' stripped, and all other hyphens replaces with
