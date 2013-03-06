@@ -779,46 +779,39 @@ def _sanitise(*args, **kwargs):
                  GnuPG process.
     @param kwargs: (optional) The arguments and their inputs, which will be passed
                    to the GnuPG process.
+    @ivar sanitised: A dictionary contained the sanitised allowed options.
+    @return: :ivar:`sanitised`.
     """
-    def _type_check_and_remove_escapes(*args, **kwargs):
-        """
-        Take an arg or the key portion of a kwarg and check that it has the
-        correct type. Each new option that we support that is not a boolean,
-        but instead has some extra inputs, i.e.  "--encrypt-file foo.txt",
-        will need some basic safety checks added here.
-        """
-        _sanitised   = {}
-        _unsanitised = []
-        if args:
-            for arg in args:
-                underscored = _underscore(arg)
-                try:
-                    assert underscored in _allowed
-                except AssertionError as ae:
-                    logger.warn("Dropping option '%s'..." % underscored)
-                    raise ProtectedOption("Option '%s' not supported." % underscored)
-                else:
-                    logger.msg("Got allowed option '%s'." % underscored)
-                    _sanitised[underscored] = True
-        if kwargs:
-            for key, value in kwargs:
-                underscored = _underscore(key)
-                try:
-                    assert underscored in _allowed, \
-                        "Option '%s' not supported" % underscored
-                    assert isinstance(value, str), \
-                        "Odd, value is not a string...it should always be."
-                except AssertionError as ae:
-                    raise ProtectedOption(ae.message)
-                else:
-                    if key == 'encrypt' or 'encrypt_file' or 'decrypt' \
-                            or 'decrypt_file' or 'import' or 'verify':
-                        ## xxx what other things should we check for?
-                        _is_file(value)
-                        _sanitised[underscored] = _fix_unsafe(value)
-        return _sanitised
+    sanitised   = {}
 
-    sanitised = _type_check_and_remove_escapes(*args, **kwargs)
+    if args:
+        for arg in args:
+            try:
+                allowed = _is_allowed(arg)
+            except ProtectedOption as po:
+                logger.warn("Dropping option '%s'..." % _fix_unsafe(arg))
+            else:
+                safe = _fix_unsafe(allowed)
+                logger.msg("Got allowed option '%s'." % safe)
+                _sanitised[safe] = True
+    if kwargs:
+        for key, value in kwargs:
+            try:
+                allowed = _is_allowed(key)
+                assert isinstance(value, str), "_sanitise(): value not a string"
+            except AssertionError as ae:
+                logger.warn(ae)
+            except ProtectedOption as po:
+                logger.warn("Dropping option '%s'..." % _fix_unsafe(value))
+            else:
+                if key == 'encrypt' or 'encrypt_file' or 'decrypt' or 'decrypt_file' \
+                        or 'import' or 'verify':
+                    ## Place checks here:
+                    ##
+                    ## xxx what other things should we check for?
+                    _is_file(value)
+                    _sanitised[allowed] = _fix_unsafe(value)
+
     return sanitised
 
 class GPG(object):
