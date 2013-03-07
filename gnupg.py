@@ -913,11 +913,19 @@ class GPG(object):
     def __init__(self, gpgbinary='gpg', gpghome=None, verbose=False,
                  use_agent=False, keyring=None, options=None):
         """
-        Initialize a GPG process wrapper.
+        Initialize a GnuPG process wrapper.
 
-        @param gpgbinary: Full pathname for GPG binary.
-        @param gnupghome: Full pathname to where we can find the public and
-                          private keyrings. Default is whatever gpg defaults to.
+        @type gpgbinary: C{str}
+        @param gpgbinary: Name for GnuPG binary executable. If the absolute
+                          path is not given, the evironment variable $PATH is
+                          searched for the executable and checked that the
+                          real uid/gid of the user has sufficient permissions.
+
+        @type gpghome: C{str}
+        @param gpghome: Full pathname to directory containing the public and
+                        private keyrings. Default is whatever GnuPG defaults
+                        to.
+
         @param keyring: Name of alternative keyring file to use. If specified,
                         the default keyring is not used.
         @options: A list of additional options to pass to the GPG binary.
@@ -931,11 +939,11 @@ class GPG(object):
             self.gpgbinary = that[0] if (len(that) > 0) else None
         else:
             self.gpgbinary = safe_gpgbinary
-        assert self.gpgbinary, "Could not find gpgbinary", safe_gpgbinary
+        assert self.gpgbinary, "Could not find gpgbinary %s" % safe_gpgbinary
 
         if gpghome:
             self.gpghome = gpghome
-            assert _has_readwrite(gpghome), "Need r+w permissions: ", gpghome
+            assert _has_readwrite(gpghome), "Need read+write: %s" % gpghome
         else:
             self.gpghome = gpghome
 
