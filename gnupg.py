@@ -984,15 +984,16 @@ class GPG(object):
             self.gpgbinary = safe_gpgbinary
         assert self.gpgbinary, "Could not find gpgbinary %s" % safe_gpgbinary
 
-        safe_gpghome = _fix_unsafe(gpghome)
-        self.gpghome = safe_gpghome
-        if not os.path.isdir(self.gpghome):
-            os.makedirs(self.gpghome, 0x1C0)
-        assert _has_readwrite(safe_gpghome), "Need read+write: %s" % safe_gpghome
+        self.gpghome = _fix_unsafe(safe_gpghome)
+        if self.gpghome is not None:
+            if not os.path.isdir(self.gpghome):
+                os.makedirs(self.gpghome, 0x1C0)
+            assert _has_readwrite(self.gpghome), \
+                "Need read+write for GnuPG home directory: %s" % self.gpghome
 
-        safe_keyring = _fix_unsafe(keyring)
-        self.keyring = safe_keyring
-        assert _is_file(self.keyring), "Could not find %s" % safe_keyring
+        self.keyring = _fix_unsafe(safe_keyring)
+        if self.keyring is not None:
+            assert _is_file(self.keyring), "Could not find %s" % self.keyring
 
         assert isinstance(verbose, bool), "'verbose' must be boolean"
         self.verbose = verbose
