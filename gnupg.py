@@ -536,10 +536,9 @@ def _fix_unsafe(input):
     ## xxx do we want to add ';'?
     _unsafe = re.compile(r'[^\w@%+=:,./-]', 256)
     if len(_unsafe.findall(input)) == 0:
-        logger.debug("Sane arguments passed: %s" % input)
         return input
     else:
-        clean = "'" + gpg_args.replace("'", "'\"'\"'") + "'"
+        clean = "'" + input.replace("'", "'\"'\"'") + "'"
         return clean
 
 def _is_file(input):
@@ -887,7 +886,7 @@ def _which(executable, flags=os.X_OK):
     if path is None:
         return []
     for p in os.environ.get('PATH', '').split(os.pathsep):
-        p = os.path.join(p, name)
+        p = os.path.join(p, executable)
         if os.access(p, flags):
             result.append(p)
         for e in exts:
