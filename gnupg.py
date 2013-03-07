@@ -960,6 +960,8 @@ class GPG(object):
         if isinstance(options, str):
             options = [options]
         self.options = options
+
+        ## xxx TODO: hack the locale module away so we can use this on android
         self.encoding = locale.getpreferredencoding()
         if self.encoding is None: # This happens on Jython!
             self.encoding = sys.stdin.encoding
