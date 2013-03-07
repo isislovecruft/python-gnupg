@@ -575,7 +575,11 @@ def _underscore(input, remove_prefix=False):
     Change hyphens to underscores so that GPG option names can be easily
     tranlated to object attributes.
 
+    @type input: C{str}
     @param input: The input intended for the gnupg process.
+
+    @type remove_prefix: C{bool}
+    @param remove_prefix: If True, strip leading hyphens from the input.
     """
     if not remove_prefix:
         return input.replace('-', '_')
