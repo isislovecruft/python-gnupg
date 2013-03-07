@@ -775,7 +775,7 @@ def _is_allowed(input):
 """).split()
 
     ## these are all the options that GPG knows:
-    vars = frozenset([x.lstrip('-').replace('-', '_') for x in _possible])
+    vars = frozenset([_underscore(x, remove_prefix=True) for x in _possible])
 
     ## these are the allowed options we will handle so far, all others should
     ## be dropped. this dance is so that when new options are added later, we
