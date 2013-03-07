@@ -29,7 +29,7 @@ Steve Traugott's documentation:
 
     This module is *not* forward-compatible with amk's; some of the old
     interface has changed.  For instance, since I've added decrypt
-    functionality, I elected to initialize with a 'gnupghome' argument instead
+    functionality, I elected to initialize with a 'gpghome' argument instead
     of 'keyring', so that gpg can find both the public and secret keyrings.
     I've also altered some of the returned objects in order for the caller to
     not have to know as much about the internals of the result classes.
@@ -907,7 +907,7 @@ class GPG(object):
                   'sign': Sign,
                   'verify': Verify,}
 
-    def __init__(self, gpgbinary='gpg', gnupghome=None, verbose=False,
+    def __init__(self, gpgbinary='gpg', gpghome=None, verbose=False,
                  use_agent=False, keyring=None, options=None):
         """
         Initialize a GPG process wrapper.
@@ -919,8 +919,23 @@ class GPG(object):
                         the default keyring is not used.
         @options: A list of additional options to pass to the GPG binary.
         """
-        self.gpgbinary = gpgbinary
-        self.gnupghome = gnupghome
+
+        safe_gpgbinary = _fix_unsafe(gpgbinary)
+        ## if using the default, or if the given gpgbinary is not absolute,
+        ## then find the absolute path and check that we have +x permissions
+        if not os.path.isabs(safe_gpgbinary):
+            that = _which(safe_gpgbinary)
+            self.gpgbinary = that[0] if (len(that) > 0) else None
+        else:
+            self.gpgbinary = safe_gpgbinary
+        assert self.gpgbinary, "Could not find gpgbinary", safe_gpgbinary
+
+        if gpghome:
+            self.gpghome = gpghome
+            assert _has_readwrite(gpghome), "Need r+w permissions: ", gpghome
+        else:
+            self.gpghome = gpghome
+
         self.keyring = keyring
         self.verbose = verbose
         self.use_agent = use_agent
@@ -930,8 +945,8 @@ class GPG(object):
         self.encoding = locale.getpreferredencoding()
         if self.encoding is None: # This happens on Jython!
             self.encoding = sys.stdin.encoding
-        if gnupghome and not os.path.isdir(self.gnupghome):
-            os.makedirs(self.gnupghome,0x1C0)
+        if gpghome and not os.path.isdir(self.gpghome):
+            os.makedirs(self.gpghome,0x1C0)
         p = self._open_subprocess(["--version"])
         result = self.result_map['verify'](self) # any result will do for this
         self._collect_output(p, result, stdin=p.stdin)
@@ -946,8 +961,8 @@ class GPG(object):
         a passphrase will be sent to GPG, else False.
         """
         cmd = [self.gpgbinary, '--status-fd 2 --no-tty']
-        if self.gnupghome:
-            cmd.append('--homedir "%s" ' % self.gnupghome)
+        if self.gpghome:
+            cmd.append('--homedir "%s" ' % self.gpghome)
         if self.keyring:
             cmd.append('--no-default-keyring --keyring "%s" ' % self.keyring)
         if passphrase:
@@ -1108,7 +1123,7 @@ class GPG(object):
     def verify(self, data):
         """Verify the signature on the contents of the string 'data'
 
-        >>> gpg = GPG(gnupghome="keys")
+        >>> gpg = GPG(gpghome="keys")
         >>> input = gpg.gen_key_input(Passphrase='foo')
         >>> key = gpg.gen_key(input)
         >>> assert key
@@ -1180,7 +1195,7 @@ class GPG(object):
 
         >>> import shutil
         >>> shutil.rmtree("keys")
-        >>> gpg = GPG(gnupghome="keys")
+        >>> gpg = GPG(gpghome="keys")
         >>> input = gpg.gen_key_input()
         >>> result = gpg.gen_key(input)
         >>> print1 = result.fingerprint
@@ -1235,7 +1250,7 @@ class GPG(object):
 
         >>> import shutil
         >>> shutil.rmtree("keys")
-        >>> gpg = GPG(gnupghome="keys")
+        >>> gpg = GPG(gpghome="keys")
         >>> result = gpg.recv_keys('pgp.mit.edu', '3FF0DB166A7476EA')
         >>> assert result
 
@@ -1292,7 +1307,7 @@ class GPG(object):
 
         >>> import shutil
         >>> shutil.rmtree("keys")
-        >>> gpg = GPG(gnupghome="keys")
+        >>> gpg = GPG(gpghome="keys")
         >>> input = gpg.gen_key_input()
         >>> result = gpg.gen_key(input)
         >>> print1 = result.fingerprint
@@ -1335,10 +1350,11 @@ class GPG(object):
         return result
 
     def gen_key(self, input):
-        """Generate a key; you might use gen_key_input() to create the
-        control input.
+        """
+        Generate a key; you might use gen_key_input() to create the control
+        input.
 
-        >>> gpg = GPG(gnupghome="keys")
+        >>> gpg = GPG(gpghome="keys")
         >>> input = gpg.gen_key_input()
         >>> result = gpg.gen_key(input)
         >>> assert result
@@ -1438,7 +1454,7 @@ class GPG(object):
         >>> import shutil
         >>> if os.path.exists("keys"):
         ...     shutil.rmtree("keys")
-        >>> gpg = GPG(gnupghome="keys")
+        >>> gpg = GPG(gpghome="keys")
         >>> input = gpg.gen_key_input(passphrase='foo')
         >>> result = gpg.gen_key(input)
         >>> print1 = result.fingerprint
