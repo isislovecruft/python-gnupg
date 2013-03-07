@@ -999,14 +999,14 @@ class GPG(object):
             self.gpgbinary = safe_gpgbinary
         assert self.gpgbinary, "Could not find gpgbinary %s" % safe_gpgbinary
 
-        self.gpghome = _fix_unsafe(safe_gpghome)
+        self.gpghome = _fix_unsafe(gpghome)
         if self.gpghome is not None:
             if not os.path.isdir(self.gpghome):
                 os.makedirs(self.gpghome, 0x1C0)
             assert _has_readwrite(self.gpghome), \
                 "Need read+write for GnuPG home directory: %s" % self.gpghome
 
-        self.keyring = _fix_unsafe(safe_keyring)
+        self.keyring = _fix_unsafe(keyring)
         if self.keyring is not None:
             assert _is_file(self.keyring), "Could not find %s" % self.keyring
 
@@ -1016,7 +1016,7 @@ class GPG(object):
         assert isinstance(use_agent, bool), "'use_agent' must be boolean"
         self.use_agent = use_agent
 
-        self.options = _sanitize(options)
+        self.options = _sanitise(options)
 
         ## xxx TODO: hack the locale module away so we can use this on android
         self.encoding = locale.getpreferredencoding()
