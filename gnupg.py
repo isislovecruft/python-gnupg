@@ -1001,9 +1001,7 @@ class GPG(object):
         assert isinstance(use_agent, bool), "'use_agent' must be boolean"
         self.use_agent = use_agent
 
-        if isinstance(options, str):
-            options = [options]
-        self.options = options
+        self.options = _sanitize(options)
 
         ## xxx TODO: hack the locale module away so we can use this on android
         self.encoding = locale.getpreferredencoding()
@@ -1014,8 +1012,8 @@ class GPG(object):
         result = self.result_map['verify'](self) # any result will do for this
         self._collect_output(p, result, stdin=p.stdin)
         if p.returncode != 0:
-            raise ValueError("Error invoking gpg: %s: %s" % (p.returncode,
-                                                             result.stderr))
+            raise ValueError("Error invoking gpg: %s: %s"
+                             % (p.returncode, result.stderr))
 
     def make_args(self, args, passphrase):
         """
