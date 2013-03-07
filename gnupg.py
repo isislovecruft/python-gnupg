@@ -837,35 +837,69 @@ def _sanitise(*args, **kwargs):
     @ivar sanitised: A dictionary contained the sanitised allowed options.
     @return: :ivar:`sanitised`.
     """
-    sanitised   = {}
+    sanitised = {}
+
+    def _check_kwarg(key, value):
+        """
+        Check that :param:key is an allowed option. If it is allowed, quote
+        out any escape characters in :param:value, and add the pair to
+        :ivar:sanitised.
+        """
+        try:
+            allowed = _is_allowed(key)
+            assert isinstance(value, str), "_sanitise(): value not a string"
+        except AssertionError as ae:
+            logger.warn(ae)
+        except ProtectedOption as po:
+            logger.warn("Dropping option '%s'..." % _fix_unsafe(value))
+        else:
+            safe_value = _fix_unsafe(value)
+            if key == 'encrypt' or 'encrypt_file' or 'decrypt' \
+                    or 'decrypt_file' or 'import' or 'verify':
+                ## Place checks here:
+                ##
+                ## xxx what other things should we check for?
+                if _is_file(safe_value):
+                    sanitised[allowed] = _fix_unsafe(value)
+
+    def _check_arg(arg):
+        """
+        Check that :param:arg is an allowed option. If it is allowed, add it
+        to :ivar:sanitised.
+        """
+        try:
+            allowed = _is_allowed(arg)
+        except ProtectedOption as po:
+            logger.warn("Dropping option '%s'..." % _fix_unsafe(arg))
+        else:
+            safe = _fix_unsafe(allowed)
+            logger.msg("Got allowed option '%s'." % safe)
+            sanitised[safe] = True
 
     if args:
         for arg in args:
-            try:
-                allowed = _is_allowed(arg)
-            except ProtectedOption as po:
-                logger.warn("Dropping option '%s'..." % _fix_unsafe(arg))
+            assert isinstance(arg, str), 'got non-string argument'
+            ## if we're given a string with a bunch of options in it split
+            ## them up and deal with them separately
+            if arg.find(' ') > 0:
+                alist = arg.split()
+                filo = alist.reverse()
+                flag = lambda x: x.startswith('-')
+                if flag(filo[0]) and flag(filo[1]):
+                    new_arg = _underscore(filo.pop())
+                    _check_arg(new_arg)
+                else:
+                    new_key = _underscore(filo.pop())
+                    new_value = str()
+                    while not flag(filo[0]):
+                        new_value += filo.pop()
+                    _check_kwarg(new_key, new_value)
             else:
-                safe = _fix_unsafe(allowed)
-                logger.msg("Got allowed option '%s'." % safe)
-                _sanitised[safe] = True
+                _check_arg(arg)
+
     if kwargs:
         for key, value in kwargs:
-            try:
-                allowed = _is_allowed(key)
-                assert isinstance(value, str), "_sanitise(): value not a string"
-            except AssertionError as ae:
-                logger.warn(ae)
-            except ProtectedOption as po:
-                logger.warn("Dropping option '%s'..." % _fix_unsafe(value))
-            else:
-                if key == 'encrypt' or 'encrypt_file' or 'decrypt' or 'decrypt_file' \
-                        or 'import' or 'verify':
-                    ## Place checks here:
-                    ##
-                    ## xxx what other things should we check for?
-                    _is_file(value)
-                    _sanitised[allowed] = _fix_unsafe(value)
+            _check_kwarg(key, value)
 
     return sanitised
 
