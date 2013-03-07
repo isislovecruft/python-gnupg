@@ -586,6 +586,21 @@ def _underscore(input, remove_prefix=False):
     else:
         return input.lstrip('-').replace('-', '_')
 
+def _hyphenate(input, add_prefix=False):
+    """
+    Change underscores to hyphens so that object attributes can be easily
+    tranlated to GPG option names.
+
+    @type input: C{str}
+    @param input: The attribute to hyphenate.
+
+    @type add_prefix: C{bool}
+    @param add_prefix: If True, add leading hyphens to the input.
+    """
+    ret  = '--' if add_prefix else ''
+    ret += input.replace('_', '-')
+    return ret
+
 def _is_allowed(input):
     """
     Check that an option or argument given to GPG is in the set of allowed
