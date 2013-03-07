@@ -941,11 +941,11 @@ class GPG(object):
             self.gpgbinary = safe_gpgbinary
         assert self.gpgbinary, "Could not find gpgbinary %s" % safe_gpgbinary
 
-        if gpghome:
-            self.gpghome = gpghome
-            assert _has_readwrite(gpghome), "Need read+write: %s" % gpghome
-        else:
-            self.gpghome = gpghome
+        safe_gpghome = _fix_unsafe(gpghome)
+        self.gpghome = safe_gpghome
+        if not os.path.isdir(self.gpghome):
+            os.makedirs(self.gpghome, 0x1C0)
+        assert _has_readwrite(safe_gpghome), "Need read+write: %s" % safe_gpghome
 
         safe_keyring = _fix_unsafe(keyring)
         self.keyring = safe_keyring
@@ -963,8 +963,7 @@ class GPG(object):
         self.encoding = locale.getpreferredencoding()
         if self.encoding is None: # This happens on Jython!
             self.encoding = sys.stdin.encoding
-        if gpghome and not os.path.isdir(self.gpghome):
-            os.makedirs(self.gpghome,0x1C0)
+
         p = self._open_subprocess(["--version"])
         result = self.result_map['verify'](self) # any result will do for this
         self._collect_output(p, result, stdin=p.stdin)
