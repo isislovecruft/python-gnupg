@@ -570,14 +570,17 @@ def _has_readwrite(path):
     """
     return os.access(path, os.R_OK and os.W_OK)
 
-def _underscore(input):
+def _underscore(input, remove_prefix=False):
     """
     Change hyphens to underscores so that GPG option names can be easily
     tranlated to object attributes.
 
     @param input: The input intended for the gnupg process.
     """
-    return input.replace('-', '_')
+    if not remove_prefix:
+        return input.replace('-', '_')
+    else:
+        return input.lstrip('-').replace('-', '_')
 
 def _is_allowed(input):
     """
