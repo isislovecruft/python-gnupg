@@ -535,11 +535,14 @@ def _fix_unsafe(input):
     """
     ## xxx do we want to add ';'?
     _unsafe = re.compile(r'[^\w@%+=:,./-]', 256)
-    if len(_unsafe.findall(input)) == 0:
-        return input
-    else:
-        clean = "'" + input.replace("'", "'\"'\"'") + "'"
-        return clean
+    try:
+        if len(_unsafe.findall(input)) == 0:
+            return input
+        else:
+            clean = "'" + input.replace("'", "'\"'\"'") + "'"
+            return clean
+    except TypeError:
+        return None
 
 def _is_file(input):
     """
