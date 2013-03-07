@@ -1030,7 +1030,7 @@ class GPG(object):
             raise ValueError("Error invoking gpg: %s: %s"
                              % (p.returncode, result.stderr))
 
-    def make_args(self, args, passphrase):
+    def make_args(self, args, passphrase=False):
         """
         Make a list of command line elements for GPG. The value of ``args``
         will be appended. The ``passphrase`` argument needs to be True if
@@ -1047,7 +1047,12 @@ class GPG(object):
             cmd.append('--use-agent')
         if self.options:
             cmd.extend(self.options)
-        cmd.extend(args)
+        if args:
+            safe_args = _sanitise(args)
+            for key, value in safe_args:
+                cmd.extend(_hyphenate(key, add_prefix=True))
+                if value is not True:
+                    cmd.extend(_hyphenate(value))
         return cmd
 
     def _open_subprocess(self, args, passphrase=False):
