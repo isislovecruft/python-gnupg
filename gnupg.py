@@ -1016,7 +1016,7 @@ class GPG(object):
         assert isinstance(use_agent, bool), "'use_agent' must be boolean"
         self.use_agent = use_agent
 
-        self.options = _sanitise(options)
+        self.options = _sanitise(options) if options else None
 
         ## xxx TODO: hack the locale module away so we can use this on android
         self.encoding = locale.getpreferredencoding()
