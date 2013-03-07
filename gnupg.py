@@ -570,8 +570,8 @@ def _has_readwrite(path):
 
 def _underscore(input):
     """
-    Change hyphens to underscores so that GPG option names can be easily tranlated
-    to object attributes.
+    Change hyphens to underscores so that GPG option names can be easily
+    tranlated to object attributes.
 
     @param input: The input intended for the gnupg process.
     """
