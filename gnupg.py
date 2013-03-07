@@ -947,9 +947,16 @@ class GPG(object):
         else:
             self.gpghome = gpghome
 
-        self.keyring = keyring
+        safe_keyring = _fix_unsafe(keyring)
+        self.keyring = safe_keyring
+        assert _is_file(self.keyring), "Could not find %s" % safe_keyring
+
+        assert isinstance(verbose, bool), "'verbose' must be boolean"
         self.verbose = verbose
+
+        assert isinstance(use_agent, bool), "'use_agent' must be boolean"
         self.use_agent = use_agent
+
         if isinstance(options, str):
             options = [options]
         self.options = options
