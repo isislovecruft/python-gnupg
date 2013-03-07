@@ -554,6 +554,8 @@ def _is_file(input):
         assert os.lstat(input).st_size > 0, "not a file"
     except AssertionError as ae:
         raise ProtectedOption(ae.message)
+    except TypeError:
+        return False
 
 def _has_readwrite(path):
     """
