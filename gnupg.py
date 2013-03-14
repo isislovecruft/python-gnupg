@@ -816,16 +816,30 @@ def _is_allowed(input):
     except AssertionError as ae:   ## 'as' syntax requires python>=2.6
         raise UsageError(ae.message)
 
-    try:
-        underscored = _underscore(input)
-        assert underscored in _allowed
-    except AssertionError as ae:
-        logger.warn("Dropping option '%s'..." % _fix_unsafe(underscored))
-        raise ProtectedOption("Option '%s' not supported."
-                              % _fix_unsafe(underscored))
-    else:
-        logger.msg("Got allowed option '%s'." % _fix_unsafe(underscored))
-        return input
+    ## if we got a list of args, join them
+    if not isinstance(input, str):
+        input = ' '.join([x for x in input])
+
+    if isinstance(input, str):
+        if input.find('_') > 0:
+            if not input.startswith('--'):
+                hyphenated = _hyphenate(input, add_prefix=True)
+            else:
+                hyphenated = _hyphenate(input)
+        else:
+            hyphenated = input
+            try:
+                assert hyphenated in _allowed
+            except AssertionError as ae:
+                logger.warn("Dropping option '%s'..."
+                            % _fix_unsafe(hyphenated))
+                raise ProtectedOption("Option '%s' not supported."
+                                      % _fix_unsafe(hyphenated))
+            else:
+                logger.debug("Got allowed option '%s'."
+                             % _fix_unsafe(hyphenated))
+                return input
+    return None
 
 def _sanitise(*args, **kwargs):
     """
