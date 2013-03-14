@@ -1139,10 +1139,11 @@ class GPG(object):
             cmd.extend(self.options)
         if args:
             safe_args = _sanitise(args)
-            for key, value in safe_args:
-                cmd.extend(_hyphenate(key, add_prefix=True))
-                if value is not True:
-                    cmd.extend(_hyphenate(value))
+            if isinstance(safe_args, dict):
+                for key, value in safe_args:
+                    cmd.extend(_hyphenate(key, add_prefix=True))
+                    if value is not True:
+                        cmd.extend(_hyphenate(value))
         return cmd
 
     def _open_subprocess(self, args, passphrase=False):
