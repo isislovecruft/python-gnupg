@@ -1077,7 +1077,7 @@ class GPG(object):
             full = _which(gpgbinary)[0]
             if full is not None:
                 assert os.path.isabs(full), "Couldn't get full path to gpg"
-                assert not os.path.islink(full), "Full path to gpg binary is link"
+                assert not os.path.islink(full), "Path to gpg binary is link"
 
         safe_gpgbinary = _fix_unsafe(gpgbinary)
         ## if using the default, or if the given gpgbinary is not absolute,
