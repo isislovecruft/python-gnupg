@@ -1146,7 +1146,7 @@ class GPG(object):
                         cmd.extend(_hyphenate(value))
         return cmd
 
-    def _open_subprocess(self, args, passphrase=False):
+    def _open_subprocess(self, args=None, passphrase=False):
         # Internal method: open a pipe to a GPG subprocess and return
         # the file objects for communicating with it.
         cmd = ' '.join(self.make_args(args, passphrase))
