@@ -119,21 +119,22 @@ class GPGTestCase(unittest.TestCase):
     def generate_key(self, first_name, last_name, domain, passphrase=None):
         "Generate a key"
         params = {
-            'Key-Type': 'DSA',
-            'Key-Length': 1024,
-            'Subkey-Type': 'ELG-E',
+            'Key-Type': 'RSA',
+            'Key-Length': 2048,
+            'Subkey-Type': 'RSA',
             'Subkey-Length': 2048,
             'Name-Comment': 'A test user',
             'Expire-Date': 0,
         }
         params['Name-Real'] = '%s %s' % (first_name, last_name)
-        params['Name-Email'] = ("%s.%s@%s" % (first_name, last_name, domain)).lower()
+        params['Name-Email'] = ("%s.%s@%s"
+                                % (first_name, last_name, domain)).lower()
         if passphrase is None:
             passphrase = ("%s%s" % (first_name[0], last_name)).lower()
         params['Passphrase'] = passphrase
         cmd = self.gpg.gen_key_input(**params)
         return self.gpg.gen_key(cmd)
-    
+
     def do_key_generation(self):
         "Test that key generation succeeds"
         result = self.generate_key("Barbara", "Brown", "beta.com")
@@ -188,7 +189,7 @@ class GPGTestCase(unittest.TestCase):
         params['name_comment'] = 'A'
         cmd = self.gpg.gen_key_input(**params)
         self.assertTrue('\nName-Comment: A\n' in cmd)
-        
+
     def test_list_keys_after_generation(self):
         "Test that after key generation, the generated key is available"
         self.test_list_keys_initial()
@@ -442,7 +443,7 @@ def suite(args=None):
             elif arg == "doc":
                 want_doctests = True
             else:
-                print("Ignoring unknown test group %r" % arg)        
+                print("Ignoring unknown test group %r" % arg)
         result = unittest.TestSuite(list(map(GPGTestCase, tests)))
     if want_doctests:
         result.addTest(doctest.DocTestSuite(gnupg))
