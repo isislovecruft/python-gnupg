@@ -1054,26 +1054,30 @@ class GPG(object):
                   'sign': Sign,
                   'verify': Verify,}
 
-    def __init__(self, gpgbinary='gpg', gpghome=None, verbose=False,
-                 use_agent=False, keyring=None, options=None):
+    def __init__(self, gpgbinary=None, gpghome=None,
+                 verbose=False, use_agent=False,
+                 keyring=None, options=None):
         """
         Initialize a GnuPG process wrapper.
 
         @type gpgbinary: C{str}
         @param gpgbinary: Name for GnuPG binary executable. If the absolute
-                          path is not given, the evironment variable $PATH is
-                          searched for the executable and checked that the
-                          real uid/gid of the user has sufficient permissions.
-
+                            path is not given, the evironment variable $PATH is
+                            searched for the executable and checked that the
+                            real uid/gid of the user has sufficient permissions.
         @type gpghome: C{str}
         @param gpghome: Full pathname to directory containing the public and
                         private keyrings. Default is whatever GnuPG defaults
                         to.
-
         @param keyring: Name of alternative keyring file to use. If specified,
                         the default keyring is not used.
         @options: A list of additional options to pass to the GPG binary.
         """
+        if gpgbinary:
+            full = _which(gpgbinary)[0]
+            if full is not None:
+                assert os.path.isabs(full), "Couldn't get full path to gpg"
+                assert not os.path.islink(full), "Full path to gpg binary is link"
 
         safe_gpgbinary = _fix_unsafe(gpgbinary)
         ## if using the default, or if the given gpgbinary is not absolute,
