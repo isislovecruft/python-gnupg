@@ -2,7 +2,8 @@
 """
 A test harness for gnupg.py.
 
-Copyright (C) 2008-2013 Vinay Sajip. All rights reserved.
+Copyright © 2013 Isis Lovecruft.
+Copyright © 2008-2013 Vinay Sajip. All rights reserved.
 """
 import doctest
 import logging
@@ -15,12 +16,16 @@ import unittest
 
 import gnupg
 
-__author__ = "Vinay Sajip"
-__date__  = "$16-Jan-2013 15:23:54$"
+__author__ = "Isis Lovecruft"
+__date__  = "2013-03-02"
 
 ALL_TESTS = True
 
 logger = logging.getLogger(__name__)
+if not logger.handlers:
+    logger.addHandler(logging.RootLogger(logging.DEBUG))
+    logging.captureWarnings(True)
+    logger.addHandler(logging.Logger("gnupg.py", level=logging.DEBUG))
 
 KEYS_TO_IMPORT = """-----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1.4.9 (MingW32)
@@ -96,7 +101,7 @@ class GPGTestCase(unittest.TestCase):
                             "Not a directory: %s" % hd)
             shutil.rmtree(hd)
         self.homedir = hd
-        self.gpg = gnupg.GPG(gnupghome=hd, gpgbinary='gpg')
+        self.gpg = gnupg.GPG(gpghome=hd, gpgbinary='gpg')
 
     def test_environment(self):
         "Test the environment by ensuring that setup worked"
@@ -360,7 +365,7 @@ class GPGTestCase(unittest.TestCase):
 
     def test_nogpg(self):
         "Test that absence of gpg is handled correctly"
-        self.assertRaises(ValueError, gnupg.GPG, gnupghome=self.homedir,
+        self.assertRaises(ValueError, gnupg.GPG, gpghome=self.homedir,
                           gpgbinary='frob')
 
     def test_make_args(self):
