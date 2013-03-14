@@ -794,21 +794,25 @@ def _is_allowed(input):
 
     ## these are the allowed options we will handle so far, all others should
     ## be dropped. this dance is so that when new options are added later, we
-    ## merely add the to the _allowed list, and the ``assert
-    ## _allowed.issubset`` will check that GPG will recognise them
-    _allowed = frozenset('list_packets', 'print_mds', 'print_md',
-                         'sign', 'encrypt', 'encrypt_file',
-                         'gen_key', 'decrypt', 'decrypt_file',
-                         'list_keys', 'import', 'verify')
-    ## key fetching/retrieving options: [fetch_keys, merge_only, recv_keys]
-    ## packet viewing functions [list_packets, print_mds, print_md]
+    ## merely add the to the _allowed list, and the `` _allowed.issubset``
+    ## assertion will check that GPG will recognise them
     ##
-    ## which ones do we want as defaults?
-    ## eg, --no-show-photos would mitigate things like
-    ## https://www-01.ibm.com/support/docview.wss?uid=swg21620982
+    ## xxx key fetching/retrieving options: [fetch_keys, merge_only, recv_keys]
+    ##
+    ## xxx which ones do we want as defaults?
+    ##     eg, --no-show-photos would mitigate things like
+    ##     https://www-01.ibm.com/support/docview.wss?uid=swg21620982
+    _allowed = frozenset(
+        ['--list-packets', '--delete-keys', '--delete-secret-keys',
+         '--encrypt', '--print-mds', '--print-md', '--sign',
+         '--encrypt-files', '--gen-key', '--decrypt', '--decrypt-files',
+         '--list-keys', '--import', '--verify', '--version'])
+
+    ## check that _allowed is a subset of _possible
     try:
-        assert _allowed.issubset(vars), \
-            '_allowed is not a subset of known GPG options'
+        assert _allowed.issubset(_possible), \
+            '_allowed is not subset of known options, difference: %s' \
+            % _allowed.difference(_possible)
     except AssertionError as ae:   ## 'as' syntax requires python>=2.6
         raise UsageError(ae.message)
 
