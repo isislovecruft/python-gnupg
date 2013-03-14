@@ -888,7 +888,7 @@ def _sanitise(*args, **kwargs):
                     --recipient isis@leap.se" to gpg, then "--encrypt" would be
                     an arg without a value, and "--recipient" would also be an
                     arg, with a value of "isis@leap.se".
-        @type sanitised: C{str} 
+        @type sanitised: C{str}
         @ivar sanitised: The sanitised, allowed options.
         """
 
@@ -955,7 +955,7 @@ def _sanitise(*args, **kwargs):
     #                 else:
     #                     logger.debug(
     #                         "_sanitise()._check_arg(): safe_value is None")
-    # 
+    #
     # def _xcheck_arg(arg, value=True):
     #     """
     #     Check that :param:arg is an allowed option. If it is allowed, add it
@@ -968,7 +968,7 @@ def _sanitise(*args, **kwargs):
     #             return None
     #         else:
     #             safe = _fix_unsafe(allowed)
-    #             return safe 
+    #             return safe
 
     sanitised = str()
 
