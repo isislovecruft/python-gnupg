@@ -22,10 +22,6 @@ __date__  = "2013-03-02"
 ALL_TESTS = True
 
 logger = logging.getLogger(__name__)
-if not logger.handlers:
-    logger.addHandler(logging.RootLogger(logging.DEBUG))
-    logging.captureWarnings(True)
-    logger.addHandler(logging.Logger("gnupg.py", level=logging.DEBUG))
 
 KEYS_TO_IMPORT = """-----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1.4.9 (MingW32)
@@ -454,7 +450,12 @@ def suite(args=None):
 
 def init_logging():
     logging.basicConfig(level=logging.DEBUG, filename="test_gnupg.log",
-                        filemode="w", format="%(asctime)s %(levelname)-5s %(name)-10s %(threadName)-10s %(message)s")
+                        filemode="a",
+                        format="%(asctime)s %(levelname)-5s %(name)-10s %(threadName)-10s %(message)s")
+    logging.captureWarnings(True)
+    if not logger.handlers:
+        logger.addHandler(logging.RootLogger(logging.DEBUG))
+        logger.addHandler(logging.Logger("gnupg.py", level=logging.DEBUG))
 
 def main():
     init_logging()
