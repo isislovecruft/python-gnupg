@@ -792,9 +792,6 @@ def _is_allowed(input):
 --min-cert-level                  --yes
 """).split()
 
-    ## these are all the options that GPG knows:
-    vars = frozenset([_underscore(x, remove_prefix=True) for x in _possible])
-
     ## these are the allowed options we will handle so far, all others should
     ## be dropped. this dance is so that when new options are added later, we
     ## merely add the to the _allowed list, and the ``assert
