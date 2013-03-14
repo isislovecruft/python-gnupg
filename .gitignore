@@ -43,3 +43,7 @@ TAGS
 
 # notes
 *.org
+
+# Ignore log files and directories from tests:
+keys/*
+*.log
