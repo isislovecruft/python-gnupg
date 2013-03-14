@@ -11,7 +11,7 @@ cleantest: clean
 	rm *.log
 
 test: cleantest 
-	python test_gnupg.py
+	python test_gnupg.py basic
 
 install: 
 	python setup.py install
