@@ -526,6 +526,9 @@ class Sign(object):
 class ProtectedOption(Exception):
     """Raised when the option passed to GPG is disallowed."""
 
+class UsageError(Exception):
+    """Raised when you're Doing It Wrong."""
+
 def _fix_unsafe(input):
     """
     Find characters used to escape from a string into a shell, and wrap them
