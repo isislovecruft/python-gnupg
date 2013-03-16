@@ -105,6 +105,13 @@ class GPGTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(hd) and os.path.isdir(hd),
                         "Not an existing directory: %s" % hd)
 
+    def test_keyring(self):
+        "Test that keyrings are found in the gpg home directory"
+        pkr = os.path.join(self.homedir, 'pubring.gpg')
+        skr = os.path.join(self.homedir, 'secring.gpg')
+        self.assertTrue(os.path.isfile(pkr))
+        self.assertTrue(os.path.isfile(skr))
+
     def test_list_keys_initial(self):
         "Test that initially there are no keys"
         logger.debug("test_list_keys_initial begins")
@@ -424,9 +431,10 @@ TEST_GROUPS = {
                  'test_key_generation_with_empty_value',
                  'test_key_generation_with_colons']),
     'import' : set(['test_import_only']),
-    'basic' : set(['test_environment', 'test_list_keys_initial',
+    'basic' : set(['test_environment', 'test_keyring',
+                   'test_list_keys_initial',
                    'test_nogpg', 'test_make_args']),
-}
+    }
 
 def suite(args=None):
     if args is None:
@@ -450,9 +458,10 @@ def suite(args=None):
     return result
 
 def init_logging():
-    logging.basicConfig(level=logging.DEBUG, filename="test_gnupg.log",
-                        filemode="a",
-                        format="%(asctime)s %(levelname)-5s %(name)-10s %(threadName)-10s %(message)s")
+    logging.basicConfig(
+        level=logging.DEBUG, filename="test_gnupg.log",
+        filemode="a",
+        format="%(asctime)s %(levelname)-5s %(name)-10s %(threadName)-10s %(message)s")
     logging.captureWarnings(True)
     if not logger.handlers:
         logger.addHandler(logging.RootLogger(logging.DEBUG))
@@ -461,7 +470,7 @@ def init_logging():
 def main():
     init_logging()
     tests = suite()
-    results = unittest.TextTestRunner(verbosity=2).run(tests)
+    results = unittest.TextTestRunner(verbosity=3).run(tests)
     return not results.wasSuccessful()
 
 

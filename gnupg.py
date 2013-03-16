@@ -1090,7 +1090,7 @@ class GPG(object):
 
         safe_keyring = _fix_unsafe(keyring)
         if not safe_keyring:
-            safe_keyring = 'pubring.asc'
+            safe_keyring = 'secring.gpg'
         self.keyring = os.path.join(self.gpghome, safe_keyring)
 
         ## xxx TODO: hack the locale module away so we can use this on android
