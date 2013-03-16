@@ -855,7 +855,7 @@ def _is_allowed(input):
                 return input
     return None
 
-def _sanitise(*args, **kwargs):
+def _sanitise(*args):
     """
     Take an arg or the key portion of a kwarg and check that it is in the set
     of allowed GPG options and flags, and that it has the correct type. Then,
@@ -880,14 +880,11 @@ def _sanitise(*args, **kwargs):
     @type args: C{str}
     @param args: (optional) The boolean arguments which will be passed to the
                  GnuPG process.
-    @type kwargs: C{dict}
-    @param kwargs: (optional) The arguments and their inputs, which will be
-                   passed to the GnuPG process.
     @rtype: C{str}
     @param: :ivar:sanitised
     """
 
-    def _check_arg(arg):
+    def _check_arg_and_value(arg, value):
         """
         Check that a single :param:arg is an allowed option. If it is allowed,
         quote out any escape characters in :param:values, and add the pair to
@@ -905,115 +902,81 @@ def _sanitise(*args, **kwargs):
         @type sanitised: C{str}
         @ivar sanitised: The sanitised, allowed options.
         """
+        safe_values = str()
 
         try:
             allowed_flag = _is_allowed(arg)
         except AssertionError as ae:
             logger.warn(ae)
-            logger.warn("Dropping option '%s'..." % _fix_unsafe(allowed_flag))
-            return None
+            logger.warn("Dropping option '%s'..." % _fix_unsafe(arg))
         except ProtectedOption:
-            logger.warn("Dropping option '%s'..." % _fix_unsafe(allowed_flag))
-            return None
+            logger.warn("Dropping option '%s'..." % _fix_unsafe(arg))
         else:
             if allowed_flag is not None:
-                return allowed_flag
+                safe_values += (allowed_flag + " ")
+                if isinstance(value, str):
+                    value_list = []
+                    if value.find(' ') > 0:
+                        value_list = value.split(' ')
+                    else:
+                        logger.debug("_check_values(): got non-string for values")
+                    for value in value_list:
+                        safe_value = _fix_unsafe(value)
+                        if allowed_flag == '--encrypt' or '--encrypt-files' \
+                                or '--decrypt' or '--decrypt-file' \
+                                or '--import' or '--verify':
+                            ## xxx what other things should we check for?
+                            ## Place checks here:
+                            if _is_file(safe_value):
+                                safe_values += (safe_value + " ")
+                            else:
+                                logger.debug("Got non-filename for %s option: %s"
+                                    % (allowed_flag, safe_value))
+                        else:
+                            safe_values += (safe_value + " ")
+                            logger.debug("Got non-checked value: %s" % safe_value)
             else:
                 logger.debug("Got null allowed_flag.")
-                return None
-
-    def _check_values(values):
-        value_list = []
-        safe_values = str()
-
-        if isinstance(value, str):
-            if value.find(' ') > 0:
-                value_list = value.split(' ')
-        else:
-            logger.debug("_check_values(): got non-string for values")
-
-        for value in value_list:
-            safe_value = _fix_unsafe(value)
-            if (safe_value is not None) and (safe_value != ''):
-                if allowed_flag == '--encrypt' or '--encrypt-files' \
-                        or '--decrypt' or '--decrypt-file' or '--import' \
-                        or '--verify':
-                    ## xxx what other things should we check for?
-                    ## Place checks here:
-                    if _is_file(safe_value):
-                        safe_values += (safe_value + " ")
-                    else:
-                        logger.debug("Got non-filename for %s option: %s"
-                                     % safe_value)
-                else:
-                    safe_values += (safe_value + " ")
-                    logger.debug("Got non-checked value: %s" % safe_value)
-            else:
-                logger.debug("Got null safe_value.")
         return safe_values
 
-    # def killme():
-    #     if values:
-    #         safe_values = str()
-    #         for value in values:
-    #             try:
-    #                 assert isinstance(value, str)
-    #             except AssertionError:
-    #                 logger.debug(
-    #                     "_sanitise()._check_arg(): value %s not str"
-    #                     % str(value.__repr__))
-    #             else:
-    #                 safe_value = _fix_unsafe(value)
-    #                 if safe_value is not None:
-    #                     safe_values += (' ' + safe_value)
-    #                 else:
-    #                     logger.debug(
-    #                         "_sanitise()._check_arg(): safe_value is None")
-    #
-    # def _xcheck_arg(arg, value=True):
-    #     """
-    #     Check that :param:arg is an allowed option. If it is allowed, add it
-    #     to sanitised.
-    #     """
-    #     if arg is not None:
-    #         try:
-    #             allowed = _is_allowed(arg)
-    #         except ProtectedOption as po:
-    #             return None
-    #         else:
-    #             safe = _fix_unsafe(allowed)
-    #             return safe
-
-    sanitised = str()
+    checked = []
 
     if args is not None:
         for arg in args:
             if isinstance(arg, str):
+                logger.debug("_sanitise(): Got arg string: %s" % arg)
                 ## if we're given a string with a bunch of options in it split
                 ## them up and deal with them separately
                 if arg.find(' ') > 0:
                     filo = arg.split()
                     filo.reverse()
                     is_flag = lambda x: x.startswith('-')
-                    if is_flag(filo[0]) and is_flag(filo[1]):
-                        new_arg = filo.pop()
-                        safe_arg = _check_arg(new_arg)
-                        if safe_arg is not None:
-                            sanitised += (safe_arg + " ")
+                    while len(filo) > 0:
+                        new_values = str()
+                        if is_flag(filo[0]) and is_flag(filo[1]):
+                            new_arg = filo.pop()
                         else:
-                            logger.debug("_check_arg(): skipping adding %s"
-                                         % new_arg)
-                    else:
-                        new_arg = filo.pop()
-                        while not is_flag(filo[0]):
-                            new_arg += filo.pop()
-                        _check_arg(new_arg)
+                            new_arg = filo.pop()
+                            while not is_flag(filo[0]):
+                                new_values += (filo.pop() + ' ')
+                        safe = _check_arg_and_value(new_arg, new_values)
+                        logger.debug("_sanitise(): appending args: %s" % safe)
+                        checked.append(safe)
+                else:
+                    safe = _check_arg_and_value(arg, None)
+                    logger.debug("_sanitise(): appending args: %s" % safe)
+                    checked.append(safe)
+            elif isinstance(arg, list): ## happens with '--version'
+                logger.debug("_sanitise(): Got arg list: %s" % arg)
+                for a in arg:
+                    if a.startswith('--'):
+                        safe = _check_arg_and_value(a, None)
+                        logger.debug("_sanitise(): appending args: %s" % safe)
+                        checked.append(safe)
             else:
-                _check_arg(arg)
-    if kwargs:
-        for key, value in kwargs:
-            _check_arg(key, value)
+                logger.debug("_sanitise(): got non string or list arg: %s" % arg)
 
+    sanitised = ' '.join(x for x in checked)
     return sanitised
 
 def _which(executable, flags=os.X_OK):
