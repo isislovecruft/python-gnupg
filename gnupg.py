@@ -584,6 +584,9 @@ def _underscore(input, remove_prefix=False):
 
     @type remove_prefix: C{bool}
     @param remove_prefix: If True, strip leading hyphens from the input.
+
+    @rtype: C{str}
+    @return: The :param:input with hyphens changed to underscores.
     """
     if not remove_prefix:
         return input.replace('-', '_')
@@ -600,6 +603,9 @@ def _hyphenate(input, add_prefix=False):
 
     @type add_prefix: C{bool}
     @param add_prefix: If True, add leading hyphens to the input.
+
+    @rtype: C{str}
+    @return: The :param:input with underscores changed to hyphens.
     """
     ret  = '--' if add_prefix else ''
     ret += input.replace('_', '-')
@@ -611,27 +617,29 @@ def _is_allowed(input):
     options, the latter being a strict subset of the set of all options known
     to GPG.
 
+    @type input: C{str}
     @param input: An input meant to be parsed as an option or flag to the GnuPG
-                  process. Should begin with a letter, not a hyphen. All other
-                  hyphens found in the input will be automatically replaced with
-                  underscores.
+                  process. Should be formatted the same as an option or flag
+                  to the commandline gpg, i.e. "--encrypt-files".
+
+    @type _possible: C{frozenset}
     @ivar _possible: All known GPG options and flags.
-    @ivar vars: A frozenset of all known GPG options and flags, with the
-                prefix '--' stripped, and all other hyphens replaces with
-                underscores.
-    @ivar _allowed: A frozenset of all allowed GPG options and flags, e.g. all
-                    GPG options and flags which we are willing to acknowledge
-                    and parse. If we want to support a new option, it will
-                    need to have its own parsing class and its name will need
-                    to be added to this set.
-    @raise: UsageError if :ivar:`_allowed` is not a strict subset of
-            :ivar:`_possible`.
-            ProtectedOption if :param:`input` is not within the set
-            :ivar:`_allowed`.
-    @return: The original parameter :param:`input`, unmodified and
-             unsanitized, if no errors occur.
+
+    @type _allowed: C{frozenset}
+    @ivar _allowed: All allowed GPG options and flags, e.g. all GPG options and
+                    flags which we are willing to acknowledge and parse. If we
+                    want to support a new option, it will need to have its own
+                    parsing class and its name will need to be added to this
+                    set.
+
+    @rtype: C{Exception} or C{str}
+    @raise: UsageError if :ivar:_allowed is not a subset of :ivar:_possible.
+            ProtectedOption if :param:input is not in the set :ivar:_allowed.
+    @return: The original parameter :param:input, unmodified and unsanitized,
+             if no errors occur.
     """
-    _possible = ("""
+
+    _all = ("""
 --allow-freeform-uid              --multifile
 --allow-multiple-messages         --no
 --allow-multisig-verification     --no-allow-freeform-uid
@@ -792,6 +800,8 @@ def _is_allowed(input):
 --merge-only                      --with-key-data
 --min-cert-level                  --yes
 """).split()
+
+    _possible = frozenset(_all)
 
     ## these are the allowed options we will handle so far, all others should
     ## be dropped. this dance is so that when new options are added later, we
