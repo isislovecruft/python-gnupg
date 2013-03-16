@@ -362,7 +362,7 @@ class GPGTestCase(unittest.TestCase):
 
     def test_nogpg(self):
         "Test that absence of gpg is handled correctly"
-        self.assertRaises(ValueError, gnupg.GPG, gpghome=self.homedir,
+        self.assertRaises(RuntimeError, gnupg.GPG, gpghome=self.homedir,
                           gpgbinary='frob')
 
     def test_make_args(self):
@@ -370,7 +370,7 @@ class GPGTestCase(unittest.TestCase):
         self.gpg.options = ['--foo', '--bar']
         args = self.gpg.make_args(['a', 'b'], False)
         self.assertTrue(len(args) > 4)
-        self.assertEqual(args[-4:], ['--foo', '--bar', 'a', 'b'])
+        self.assertEqual(args[3:], ['--foo', '--bar', 'a', 'b'])
 
     def test_file_encryption_and_decryption(self):
         "Test that encryption/decryption to/from file works"
