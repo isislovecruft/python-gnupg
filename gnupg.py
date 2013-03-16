@@ -1141,9 +1141,9 @@ class GPG(object):
         """
         cmd = [self.gpgbinary, '--status-fd 2 --no-tty']
         if self.gpghome:
-            cmd.append('--homedir "%s" ' % self.gpghome)
+            cmd.append('--homedir "%s"' % self.gpghome)
         if self.keyring:
-            cmd.append('--no-default-keyring --keyring "%s" ' % self.keyring)
+            cmd.append('--no-default-keyring --keyring "%s"' % self.keyring)
         if passphrase:
             cmd.append('--batch --passphrase-fd 0')
         if self.use_agent:
@@ -1151,12 +1151,12 @@ class GPG(object):
         if self.options:
             cmd.extend(self.options)
         if args:
-            safe_args = _sanitise(args)
-            if isinstance(safe_args, dict):
-                for key, value in safe_args:
-                    cmd.extend(_hyphenate(key, add_prefix=True))
-                    if value is not True:
-                        cmd.extend(_hyphenate(value))
+            if isinstance(args, list):
+                for arg in args:
+                    safe_arg = _sanitise(arg)
+                    if safe_arg != "":
+                        cmd.append(safe_arg)
+        logger.debug("make_args(): Using command: %s" % cmd)
         return cmd
 
     def _open_subprocess(self, args=None, passphrase=False):
