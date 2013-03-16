@@ -554,11 +554,12 @@ def _is_file(input):
     :func:`os.path.isfile`.
     """
     try:
-        assert os.lstat(input).st_size > 0, "not a file"
-    except AssertionError as ae:
-        raise ProtectedOption(ae.message)
-    except TypeError:
+        assert os.lstat(input).st_size > 0, "not a file: %s" % input
+    except (AssertionError, TypeError) as error:
+        logger.debug(error.message)
         return False
+    else:
+        return True
 
 def _has_readwrite(path):
     """
