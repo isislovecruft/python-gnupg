@@ -1488,7 +1488,7 @@ class GPG(object):
         return result.data.decode(self.encoding, self.decode_errors)
 
     def list_keys(self, secret=False):
-        """ list the keys currently in the keyring
+        """List the keys currently in the keyring.
 
         >>> import shutil
         >>> shutil.rmtree("keys")
@@ -1572,8 +1572,8 @@ class GPG(object):
         except KeyError:
             logname = os.environ['USERNAME']
         hostname = socket.gethostname()
-        parms.setdefault('Name-Email', "%s@%s" % (logname.replace(' ', '_'),
-                                                  hostname))
+        parms.setdefault('Name-Email', "%s@%s"
+                         % (logname.replace(' ', '_'), hostname))
         out = "Key-Type: %s\n" % parms.pop('Key-Type')
         for key, val in list(parms.items()):
             out += "%s: %s\n" % (key, val)
