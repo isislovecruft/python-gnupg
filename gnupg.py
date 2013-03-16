@@ -817,7 +817,9 @@ def _is_allowed(input):
         ['--list-packets', '--delete-keys', '--delete-secret-keys',
          '--encrypt', '--print-mds', '--print-md', '--sign',
          '--encrypt-files', '--gen-key', '--decrypt', '--decrypt-files',
-         '--list-keys', '--import', '--verify', '--version'])
+         '--list-keys', '--import', '--verify', '--version',
+         '--status-fd', '--no-tty', '--homedir', '--no-default-keyring',
+         '--keyring', '--passphrase-fd'])
 
     ## check that _allowed is a subset of _possible
     try:
@@ -825,6 +827,7 @@ def _is_allowed(input):
             '_allowed is not subset of known options, difference: %s' \
             % _allowed.difference(_possible)
     except AssertionError as ae:   ## 'as' syntax requires python>=2.6
+        logger.debug("gnupg._is_allowed(): %s" % ae.message)
         raise UsageError(ae.message)
 
     ## if we got a list of args, join them
