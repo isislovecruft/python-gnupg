@@ -115,12 +115,44 @@ class GPGTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(hd) and os.path.isdir(hd),
                         "Not an existing directory: %s" % hd)
 
-    def test_keyring(self):
-        "Test that keyrings are found in the gpg home directory"
-        pkr = os.path.join(self.homedir, 'pubring.gpg')
-        skr = os.path.join(self.homedir, 'secring.gpg')
-        self.assertTrue(os.path.isfile(pkr))
-        self.assertTrue(os.path.isfile(skr))
+    def test_gpg_binary(self):
+        "Test that 'gpg --version' does not return an error code"
+        proc = self.gpg._open_subprocess(['--version'])
+        result = io.StringIO()
+        self.gpg._collect_output(proc, result, stdin=proc.stdin)
+        self.assertEqual(proc.returncode, 0)
+
+    def test_gpg_binary_version_str(self):
+        "That that 'gpg --version' returns the expected output"
+        proc = self.gpg._open_subprocess(['--version'])
+        result = io.StringIO()
+        self.gpg._collect_output(proc, result, stdin=proc.stdin)
+        result.fpr
+        self.assertGreater((result.find("AES")), 0)
+
+    def test_gpg_binary_not_abs(self):
+        "Test that a non-absolute path to gpg results in a full path"
+        self.assertTrue(os.path.isabs(self.gpg.gpgbinary))
+
+    def test_make_args_drop_protected_options(self):
+        "Test that unsupported gpg options are dropped"
+        self.gpg.options = ['--tyrannosaurus-rex', '--stegosaurus']
+        self.gpg.keyring = self.secring
+        cmd = self.gpg.make_args(None, False)
+        expected = ['/usr/bin/gpg',
+                    '--status-fd 2 --no-tty',
+                    '--homedir "/home/isis/code/riseup/python-gnupg/keys"',
+                    '--no-default-keyring --keyring "%s"' % self.secring]
+        self.assertListEqual(cmd, expected)
+
+    def test_make_args(self):
+        "Test argument line construction"
+        not_allowed = ['--bicycle', '--zeppelin', 'train', 'flying-carpet']
+        self.gpg.options = not_allowed[:-2]
+        args = self.gpg.make_args(not_allowed[2:], False)
+        self.assertTrue(len(args) == 4)
+        for na in not_allowed:
+            self.assertNotIn(na, args)
 
     def test_list_keys_initial(self):
         "Test that initially there are no keys"
@@ -253,6 +285,16 @@ class GPGTestCase(unittest.TestCase):
         ddata = gpg.decrypt(edata, passphrase='bbrown')
         self.assertEqual(data, str(ddata))
 
+    def test_public_keyring(self):
+        "Test that the public keyring is found in the gpg home directory"
+        self.gpg.keyring = self.pubring
+        self.assertTrue(os.path.isfile(self.pubring))
+
+    def test_secret_keyring(self):
+        "Test that the secret keyring is found in the gpg home directory"
+        self.gpg.keyring = self.secring
+        self.assertTrue(os.path.isfile(self.secring))
+
     def test_import_and_export(self):
         "Test that key import and export works"
         logger.debug("test_import_and_export begins")
@@ -377,18 +419,6 @@ class GPGTestCase(unittest.TestCase):
                         "1-element list expected")
         logger.debug("test_deletion ends")
 
-    def test_nogpg(self):
-        "Test that absence of gpg is handled correctly"
-        self.assertRaises(RuntimeError, gnupg.GPG, gpghome=self.homedir,
-                          gpgbinary='frob')
-
-    def test_make_args(self):
-        "Test argument line construction"
-        self.gpg.options = ['--foo', '--bar']
-        args = self.gpg.make_args(['a', 'b'], False)
-        self.assertTrue(len(args) > 4)
-        self.assertEqual(args[3:], ['--foo', '--bar', 'a', 'b'])
-
     def test_file_encryption_and_decryption(self):
         "Test that encryption/decryption to/from file works"
         logger.debug("test_file_encryption_and_decryption begins")
@@ -432,18 +462,25 @@ class GPGTestCase(unittest.TestCase):
 
 
 TEST_GROUPS = {
+    'basic' : set(['test_environment',
+                   'test_gpg_binary',
+                   'test_gpg_binary_not_abs',
+                   'test_gpg_binary_version_str',
+                   'test_list_keys_initial',
+                   'test_make_args_drop_protected_options',
+                   'test_make_args']),
     'sign' : set(['test_signature_verification']),
     'crypt' : set(['test_encryption_and_decryption',
                    'test_file_encryption_and_decryption']),
-    'key' : set(['test_deletion', 'test_import_and_export',
+    'key' : set(['test_deletion',
+                 'test_import_and_export',
+                 'test_public_keyring',
+                 'test_secret_keyring',
                  'test_list_keys_after_generation',
                  'test_key_generation_with_invalid_key_type',
                  'test_key_generation_with_empty_value',
                  'test_key_generation_with_colons']),
     'import' : set(['test_import_only']),
-    'basic' : set(['test_environment', 'test_keyring',
-                   'test_list_keys_initial',
-                   'test_nogpg', 'test_make_args']),
     }
 
 def suite(args=None):
@@ -471,11 +508,12 @@ def init_logging():
     logging.basicConfig(
         level=logging.DEBUG, filename="test_gnupg.log",
         filemode="a",
-        format="%(asctime)s %(levelname)-5s %(name)-10s %(threadName)-10s %(message)s")
+        format="%(asctime)s %(levelname)-5s %(name)-7s %(threadName)-10s %(message)s")
     logging.captureWarnings(True)
-    if not logger.handlers:
-        logger.addHandler(logging.RootLogger(logging.DEBUG))
-        logger.addHandler(logging.Logger("gnupg.py", level=logging.DEBUG))
+    logging.logThreads = True
+    logger.addHandler(logging.StreamHandler(stream=sys.stdout))
+    #logger.addHandler(logging.RootLogger(logging.DEBUG))
+    #logger.addHandler(logging.Logger("gnupg.py", level=logging.DEBUG))
 
 def main():
     init_logging()
