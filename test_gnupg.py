@@ -125,15 +125,16 @@ class GPGTestCase(unittest.TestCase):
     def test_gpg_binary_version_str(self):
         "That that 'gpg --version' returns the expected output"
         proc = self.gpg._open_subprocess(['--version'])
-        result = ""
-        self.gpg._collect_output(proc, result, stdin=proc.stdin)
-        expected = """gpg (GnuPG) 1.4.12
-Copyright (C) 2012 Free Software Foundation, Inc.
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-This is free software: you are free to change and redistribute it.
-There is NO WARRANTY, to the extent permit"""
+        result = proc.stdout.read(1024)
+        expected1 = "Supported algorithms:"
+        expected2 = "Pubkey:"
+        expected3 = "Cipher:"
+        expected4 = "Compression:"
         logger.debug("'gpg --version' returned output:n%s" % result)
-        self.assertEqual(result, expected)
+        self.assertGreater(result.find(expected1), 0)
+        self.assertGreater(result.find(expected2), 0)
+        self.assertGreater(result.find(expected3), 0)
+        self.assertGreater(result.find(expected4), 0)
 
     def test_gpg_binary_not_abs(self):
         "Test that a non-absolute path to gpg results in a full path"
