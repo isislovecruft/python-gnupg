@@ -1070,26 +1070,8 @@ class GPG(object):
         @returns:
         """
 
-        ## find the absolute path, check that it is not a link, and check that
-        ## we have exec permissions
-        if not os.path.isabs(gpgbinary):
-            try: bin = _which(gpgbinary)[0]
-            except IndexError as ie:
-                logger.debug(ie.message)
-                try: bin = _which('gpg')[0]
-                except IndexError: raise RuntimeError("gpg is not installed")
-        else: bin = gpgbinary
-        try:
-            assert os.path.isabs(bin), "Path to gpg binary not absolute"
-            assert not os.path.islink(bin), "Path to gpg binary is symbolic link"
-            assert os.access(bin, os.X_OK), "Lacking +x perms for gpg binary"
-        except AssertionError as ae:
-            logger.debug("GPG.__init__(): %s" % ae.message)
-        else:
-            self.gpgbinary = bin
-
-        self.options = _sanitise(options) if options else None
-
+        if not gpghome:
+            gpghome = os.path.join(os.getcwd(), 'gnupg')
         self.gpghome = _fix_unsafe(gpghome)
         if self.gpghome:
             if not os.path.isdir(self.gpghome):
@@ -1104,10 +1086,31 @@ class GPG(object):
             message = ("Unsuitable gpg home dir: %s" % gpghome)
             logger.debug("GPG.__init__(): %s" % message)
 
-        safe_keyring = _fix_unsafe(keyring)
-        if not safe_keyring:
-            safe_keyring = 'secring.gpg'
-        self.keyring = os.path.join(self.gpghome, safe_keyring)
+        ## find the absolute path, check that it is not a link, and check that
+        ## we have exec permissions
+        bin = None
+        if gpgbinary is not None:
+            if not os.path.isabs(gpgbinary):
+                try: bin = _which(gpgbinary)[0]
+                except IndexError as ie: logger.debug(ie.message)
+        if not bin:
+            try: bin = _which('gpg')[0]
+            except IndexError: raise RuntimeError("gpg is not installed")
+        try:
+            assert os.path.isabs(bin), "Path to gpg binary not absolute"
+            assert not os.path.islink(bin), "Path to gpg binary is symbolic link"
+            assert os.access(bin, os.X_OK), "Lacking +x perms for gpg binary"
+        except (AssertionError, AttributeError) as ae:
+            logger.debug("GPG.__init__(): %s" % ae.message)
+        else:
+            self.gpgbinary = bin
+
+            safe_keyring = _fix_unsafe(keyring)
+            if not safe_keyring:
+                safe_keyring = 'secring.gpg'
+            self.keyring = os.path.join(self.gpghome, safe_keyring)
+
+        self.options = _sanitise(options) if options else None
 
         ## xxx TODO: hack the locale module away so we can use this on android
         self.encoding = locale.getpreferredencoding()
