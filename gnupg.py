@@ -956,6 +956,9 @@ def _sanitise(*args):
                             if len(filo) > 0:
                                 while not is_flag(filo[0]):
                                     new_value += (filo.pop() + ' ')
+                        else:
+                            logger.debug("Got non-flag argument: %s" % filo[0])
+                            filo.pop()
                         safe = _check_arg_and_value(new_arg, new_value)
                         if safe is not None and safe.strip() != '':
                             logger.debug("_sanitise(): appending args: %s" % safe)
