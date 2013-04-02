@@ -1051,7 +1051,8 @@ class GPG(object):
 
     def __init__(self, gpgbinary=None, gpghome=None,
                  verbose=False, use_agent=False,
-                 keyring=None, options=None):
+                 keyring=None, secring=None, pubring=None,
+                 options=None):
         """
         Initialize a GnuPG process wrapper.
 
@@ -1064,11 +1065,25 @@ class GPG(object):
         @param gpghome: Full pathname to directory containing the public and
                         private keyrings. Default is whatever GnuPG defaults
                         to.
-        @param keyring: Name of alternative keyring file to use. If specified,
-                        the default keyring is not used.
+
+        @type keyring: C{str}
+        @param keyring: raises C{DeprecationWarning}. Use :param:secring.
+
+        @type secring: C{str}
+        @param secring: Name of alternative secret keyring file to use. If left
+                        unspecified, this will default to using 'secring.gpg'
+                        in the :param:gpghome directory, and create that file
+                        if it does not exist.
+
+        @type pubring: C{str}
+        @param pubring: Name of alternative public keyring file to use. If left
+                        unspecified, this will default to using 'pubring.gpg'
+                        in the :param:gpghome directory, and create that file
+                        if it does not exist.
+
         @options: A list of additional options to pass to the GPG binary.
 
-        @rtype:
+        @rtype: C{Exception} or C{}
         @raises: RuntimeError with explanation message if there is a problem
                  invoking gpg.
         @returns:
@@ -1110,10 +1125,40 @@ class GPG(object):
             self.gpgbinary = bin
 
         if keyring is not None:
-            safe_keyring = _fix_unsafe(keyring)
-        if not safe_keyring:
-            safe_keyring = 'secring.gpg'
-        self.keyring = os.path.join(self.gpghome, safe_keyring)
+            try:
+                raise DeprecationWarning(
+                    "Option 'keyring' changing to 'secring'")
+            except DeprecationWarning as dw:
+                log.warn(dw.message)
+            finally:
+                secring = keyring
+
+        if secring is not None:
+            safe_secring = _fix_unsafe(secring)
+        if pubring is not None:
+            safe_pubring = _fix_unsafe(pubring)
+
+        if not safe_secring:
+            safe_secring = 'secring.gpg'
+        if not safe_pubring:
+            safe_pubring = 'pubring.gpg'
+
+        self.secring = os.path.join(self.gpghome, safe_secring)
+        self.pubring = os.path.join(self.gpghome, safe_pubring)
+        ## XXX should eventually be changed throughout to 'secring', but until
+        ## then let's not break backward compatibility
+        self.keyring = self.secring
+
+        for ring in [self.secring, self.pubring]:
+            if ring and not os.path.isfile(ring):
+                with open(ring, 'a+') as ringfile:
+                ringfile.write(" ")
+                ringfile.flush()
+            try:
+                assert _has_readwrite(ring), \
+                    ("Need r+w for %s" % ring)
+            except AssertionError as ae:
+                logger.debug(ae.message)
 
         self.options = _sanitise(options) if options else None
 
@@ -1145,13 +1190,6 @@ class GPG(object):
             if proc.returncode != 0:
                 raise RuntimeError("Error invoking gpg: %s: %s"
                                    % (proc.returncode, result.stderr))
-
-            if self.keyring:
-                try:
-                    assert _has_readwrite(self.keyring), ("Need r+w for %s"
-                                                          % self.keyring)
-                except AssertionError as ae:
-                    logger.debug(ae.message)
 
     def make_args(self, args, passphrase=False):
         """
