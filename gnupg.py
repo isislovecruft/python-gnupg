@@ -1097,7 +1097,7 @@ class GPG(object):
             if not os.path.isabs(gpgbinary):
                 try: bin = _which(gpgbinary)[0]
                 except IndexError as ie: logger.debug(ie.message)
-        if not bin:
+        if bin is None:
             try: bin = _which('gpg')[0]
             except IndexError: raise RuntimeError("gpg is not installed")
         try:
@@ -1109,10 +1109,11 @@ class GPG(object):
         else:
             self.gpgbinary = bin
 
+        if keyring is not None:
             safe_keyring = _fix_unsafe(keyring)
-            if not safe_keyring:
-                safe_keyring = 'secring.gpg'
-            self.keyring = os.path.join(self.gpghome, safe_keyring)
+        if not safe_keyring:
+            safe_keyring = 'secring.gpg'
+        self.keyring = os.path.join(self.gpghome, safe_keyring)
 
         self.options = _sanitise(options) if options else None
 
