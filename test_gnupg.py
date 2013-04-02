@@ -428,11 +428,11 @@ class GPGTestCase(unittest.TestCase):
         self.gpg.import_keys(KEYS_TO_IMPORT)
         public_keys = self.gpg.list_keys()
         self.assertTrue(is_list_with_len(public_keys, 2),
-                        "2-element list expected")
+                        "2-element list expected, got %d" % len(public_keys))
         self.gpg.delete_keys(public_keys[0]['fingerprint'])
         public_keys = self.gpg.list_keys()
         self.assertTrue(is_list_with_len(public_keys, 1),
-                        "1-element list expected")
+                        "1-element list expected, got %d" % len(public_keys))
         logger.debug("test_deletion ends")
 
     def test_file_encryption_and_decryption(self):
@@ -498,7 +498,7 @@ def suite(args=None):
         args = sys.argv[1:]
     if not args:
         result = unittest.TestLoader().loadTestsFromTestCase(GPGTestCase)
-        want_doctests = True
+        want_doctests = False
     else:
         tests = set()
         want_doctests = False
