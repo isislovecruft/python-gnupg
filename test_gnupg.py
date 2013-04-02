@@ -7,6 +7,7 @@ Copyright © 2008-2013 Vinay Sajip. All rights reserved.
 """
 import doctest
 import logging
+from functools import wraps
 import io
 import os.path
 import os
@@ -21,6 +22,17 @@ __author__ = "Isis Lovecruft"
 __date__  = "2013-03-02"
 
 ALL_TESTS = True
+REPO_DIR = os.getcwd()
+TEST_DIR = os.path.join(REPO_DIR, 'keys')
+
+tempfile.tempdir = os.path.join(REPO_DIR, 'temp')
+if not os.path.isdir(tempfile.gettempdir()):
+    os.mkdir(tempfile.gettempdir())
+
+@wraps(tempfile.TemporaryFile)
+def _make_tempfile(*args, **kwargs):
+    return tempfile.TemporaryFile(dir=tempfile.gettempdir(),
+                                  *args, **kwargs)
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +90,7 @@ CnOGhApkAGbjRwuLi4hJBBgRAgAJBQJIh+FVAhsMAAoJEG7bKmS7rMYA+JQAn0E2
 WdPQjKEfKnr+bW4yubwMUYKyAJ4uiE8Rv/oEED1oM3xeJqa+MJ9V1w==
 =sqld
 -----END PGP PUBLIC KEY BLOCK-----"""
+
 
 def is_list_with_len(o, n):
     return isinstance(o, list) and len(o) == n
@@ -428,13 +441,14 @@ class GPGTestCase(unittest.TestCase):
     def test_file_encryption_and_decryption(self):
         "Test that encryption/decryption to/from file works"
         logger.debug("test_file_encryption_and_decryption begins")
-        encfno, encfname = tempfile.mkstemp()
-        decfno, decfname = tempfile.mkstemp()
+
+        encfname = _make_tempfile()
+        logger.debug('Created tempfile for encrypted content: %s' % encfname)
+        decfname = _make_tempfile()
+        logger.debug('Created tempfile for decrypted content: f%s' % decfname)
         # On Windows, if the handles aren't closed, the files can't be deleted
-        os.close(encfno)
-        os.close(decfno)
-        logger.debug('Encrypting to: %r', encfname)
-        logger.debug('Decrypting to: %r', decfname)
+        #os.close(encfno)
+        #os.close(decfno)
         try:
             key = self.generate_key("Andrew", "Able", "alpha.com",
                                     passphrase="andy")
@@ -443,27 +457,20 @@ class GPGTestCase(unittest.TestCase):
             barbara = key.fingerprint
             data = "Hello, world!"
             file = gnupg._make_binary_stream(data, self.gpg.encoding)
-            edata = self.gpg.encrypt_file(file,
-                                          barbara,
+            edata = self.gpg.encrypt_file(file, barbara,
                                           armor=False, output=encfname)
-            efile = open(encfname, 'rb')
             ddata = self.gpg.decrypt_file(efile, passphrase="bbrown",
                                           output=decfname)
-            efile.seek(0, 0) # can't use os.SEEK_SET in 2.4
-            edata = efile.read()
-            efile.close()
-            dfile = open(decfname, 'rb')
-            ddata = dfile.read()
-            dfile.close()
+            encfname.seek(0, 0) # can't use os.SEEK_SET in 2.4
+            edata = encfname.read()
+            ddata = decfname.read()
             data = data.encode(self.gpg.encoding)
             if ddata != data:
                 logger.debug("was: %r", data)
                 logger.debug("new: %r", ddata)
             self.assertEqual(data, ddata, "Round-trip must work")
-        finally:
-            for fn in (encfname, decfname):
-                if os.path.exists(fn):
-                    os.remove(fn)
+        except Exception as exc:
+            logger.warn(exc.message)
         logger.debug("test_file_encryption_and_decryption ends")
 
 
