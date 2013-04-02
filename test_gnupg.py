@@ -9,7 +9,6 @@ import doctest
 import logging
 from functools import wraps
 import io
-import os.path
 import os
 import shutil
 import sys
@@ -400,8 +399,7 @@ class GPGTestCase(unittest.TestCase):
             file = gnupg._make_binary_stream(sig.data, self.gpg.encoding)
             verified = self.gpg.verify_file(file)
         except UnicodeDecodeError: #happens in Python 2.6
-            from io import BytesIO
-            verified = self.gpg.verify_file(BytesIO(sig.data))
+            verified = self.gpg.verify_file(io.BytesIO(sig.data))
         if key.fingerprint != verified.fingerprint:
             logger.debug("key: %r", key.fingerprint)
             logger.debug("ver: %r", verified.fingerprint)
@@ -416,8 +414,7 @@ class GPGTestCase(unittest.TestCase):
             file = gnupg._make_binary_stream(sig.data, self.gpg.encoding)
             verified = self.gpg.verify_file(file, 'random_binary_data')
         except UnicodeDecodeError: #happens in Python 2.6
-            from io import BytesIO
-            verified = self.gpg.verify_file(BytesIO(sig.data))
+            verified = self.gpg.verify_file(io.BytesIO(sig.data))
         if key.fingerprint != verified.fingerprint:
             logger.debug("key: %r", key.fingerprint)
             logger.debug("ver: %r", verified.fingerprint)
