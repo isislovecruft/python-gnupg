@@ -1034,7 +1034,8 @@ class Sign(object):
 
     def handle_status(self, key, value):
         if key in ("USERID_HINT", "NEED_PASSPHRASE", "BAD_PASSPHRASE",
-                   "GOOD_PASSPHRASE", "BEGIN_SIGNING", "CARDCTRL", "INV_SGNR"):
+                   "GOOD_PASSPHRASE", "BEGIN_SIGNING", "CARDCTRL",
+                   "INV_SGNR", "NODATA"):
             pass
         elif key == "SIG_CREATED":
             (self.type, algo, hashalgo, cls, self.timestamp,
