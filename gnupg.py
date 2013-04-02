@@ -1137,18 +1137,11 @@ class GPG(object):
             finally:
                 secring = keyring
 
-        if secring is not None:
-            safe_secring = _fix_unsafe(secring)
-        if pubring is not None:
-            safe_pubring = _fix_unsafe(pubring)
+        secring = 'secring.gpg' if secring is None else _fix_unsafe(secring)
+        pubring = 'pubring.gpg' if pubring is None else _fix_unsafe(pubring)
 
-        if not safe_secring:
-            safe_secring = 'secring.gpg'
-        if not safe_pubring:
-            safe_pubring = 'pubring.gpg'
-
-        self.secring = os.path.join(self.gpghome, safe_secring)
-        self.pubring = os.path.join(self.gpghome, safe_pubring)
+        self.secring = os.path.join(self.gpghome, secring)
+        self.pubring = os.path.join(self.gpghome, pubring)
         ## XXX should eventually be changed throughout to 'secring', but until
         ## then let's not break backward compatibility
         self.keyring = self.secring
@@ -1156,8 +1149,8 @@ class GPG(object):
         for ring in [self.secring, self.pubring]:
             if ring and not os.path.isfile(ring):
                 with open(ring, 'a+') as ringfile:
-                ringfile.write(" ")
-                ringfile.flush()
+                    ringfile.write(" ")
+                    ringfile.flush()
             try:
                 assert _has_readwrite(ring), \
                     ("Need r+w for %s" % ring)
