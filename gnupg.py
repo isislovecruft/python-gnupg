@@ -53,6 +53,7 @@ Vinay Sajip's documentation:
     Modifications Copyright (C) 2008-2012 Vinay Sajip. All rights reserved.
 """
 
+__module__ = 'gnupg'
 __version__ = "0.3.1"
 __author__ = "Isis Agora Lovecruft"
 __date__  = "12 Febuary 2013"
@@ -92,7 +93,7 @@ except NameError:
 
 ESCAPE_PATTERN = re.compile(r'\\x([0-9a-f][0-9a-f])', re.I)
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__module__)
 if not logger.handlers:
     logger.addHandler(NullHandler())
 
