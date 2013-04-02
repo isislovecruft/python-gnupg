@@ -61,6 +61,7 @@ import locale
 
 try:
     from io import StringIO
+    from io import BytesIO
 except ImportError:
     from cStringIO import StringIO
 
@@ -102,8 +103,8 @@ def _copy_data(instream, outstream):
     sent = 0
 
     try:
-        assert isinstance(instream, file), "instream is not a file"
-        assert isinstance(outsteam, file), "outstream is not a file"
+        assert isinstance(instream, BytesIO), "instream is not a file"
+        assert isinstance(outstream, file), "outstream is not a file"
     except AssertionError as ae:
         logger.exception(ae)
         return
