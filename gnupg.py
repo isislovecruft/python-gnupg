@@ -883,6 +883,7 @@ class ListKeys(list):
     """
 
     def __init__(self, gpg):
+        super(ListKeys, self).__init__()
         self.gpg = gpg
         self.curkey = None
         self.fingerprints = []
