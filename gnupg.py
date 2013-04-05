@@ -691,7 +691,7 @@ def _write_passphrase(stream, passphrase, encoding):
 
 
 class Verify(object):
-    "Handle status messages for --verify"
+    """Handle status messages for --verify"""
 
     TRUST_UNDEFINED = 0
     TRUST_NEVER = 1
@@ -782,7 +782,7 @@ class Verify(object):
             raise ValueError("Unknown status message: %r" % key)
 
 class ImportResult(object):
-    "Handle status messages for --import"
+    """Handle status messages for --import"""
 
     counts = '''count no_user_id imported imported_rsa unchanged
             n_uids n_subk n_sigs n_revoc sec_read sec_imported
@@ -865,7 +865,7 @@ class ImportResult(object):
         return ', '.join(l)
 
 class ListKeys(list):
-    ''' Handle status messages for --list-keys.
+    """ Handle status messages for --list-keys.
 
         Handle pub and uid (relating the latter to the former).
 
@@ -880,7 +880,8 @@ class ListKeys(list):
         pkd = public key data (special field format, see below)
         grp = reserved for gpgsm
         rvk = revocation key
-    '''
+    """
+
     def __init__(self, gpg):
         self.gpg = gpg
         self.curkey = None
@@ -921,7 +922,7 @@ class ListKeys(list):
         pass
 
 class Crypt(Verify):
-    "Handle status messages for --encrypt and --decrypt"
+    """Handle status messages for --encrypt and --decrypt"""
     def __init__(self, gpg):
         Verify.__init__(self, gpg)
         self.data = ''
@@ -972,7 +973,7 @@ class Crypt(Verify):
             Verify.handle_status(self, key, value)
 
 class GenKey(object):
-    "Handle status messages for --gen-key"
+    """Handle status messages for --gen-key"""
     def __init__(self, gpg):
         self.gpg = gpg
         self.type = None
@@ -996,7 +997,7 @@ class GenKey(object):
             raise ValueError("Unknown status message: %r" % key)
 
 class DeleteResult(object):
-    "Handle status messages for --delete-key and --delete-secret-key"
+    """Handle status messages for --delete-key and --delete-secret-key"""
     def __init__(self, gpg):
         self.gpg = gpg
         self.status = 'ok'
@@ -1018,7 +1019,7 @@ class DeleteResult(object):
             raise ValueError("Unknown status message: %r" % key)
 
 class Sign(object):
-    "Handle status messages for --sign"
+    """Handle status messages for --sign"""
     def __init__(self, gpg):
         self.gpg = gpg
         self.type = None
@@ -1528,7 +1529,7 @@ class GPG(object):
         return result
 
     def export_keys(self, keyids, secret=False):
-        "export the indicated keys. 'keyid' is anything gpg accepts"
+        """export the indicated keys. 'keyid' is anything gpg accepts"""
         which=''
         if secret:
             which='-secret-key'
@@ -1665,7 +1666,7 @@ class GPG(object):
     def encrypt_file(self, file, recipients, sign=None,
             always_trust=False, passphrase=None,
             armor=True, output=None, symmetric=False):
-        "Encrypt the message read from the file-like object 'file'"
+        """Encrypt the message read from the file-like object 'file'"""
         args = ['--encrypt']
         if symmetric:
             args = ['--symmetric']

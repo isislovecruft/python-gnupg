@@ -95,7 +95,7 @@ def is_list_with_len(o, n):
     return isinstance(o, list) and len(o) == n
 
 def compare_keys(k1, k2):
-    "Compare ASCII keys"
+    """Compare ASCII keys"""
     k1 = k1.split('\n')
     k2 = k2.split('\n')
     del k1[1] # remove version lines
@@ -122,20 +122,20 @@ class GPGTestCase(unittest.TestCase):
         self.secring = os.path.join(self.homedir, 'secring.gpg')
 
     def test_environment(self):
-        "Test the environment by ensuring that setup worked"
+        """Test the environment by ensuring that setup worked"""
         hd = self.homedir
         self.assertTrue(os.path.exists(hd) and os.path.isdir(hd),
                         "Not an existing directory: %s" % hd)
 
     def test_gpg_binary(self):
-        "Test that 'gpg --version' does not return an error code"
+        """Test that 'gpg --version' does not return an error code"""
         proc = self.gpg._open_subprocess(['--version'])
         result = io.StringIO()
         self.gpg._collect_output(proc, result, stdin=proc.stdin)
         self.assertEqual(proc.returncode, 0)
 
     def test_gpg_binary_version_str(self):
-        "That that 'gpg --version' returns the expected output"
+        """That that 'gpg --version' returns the expected output"""
         proc = self.gpg._open_subprocess(['--version'])
         result = proc.stdout.read(1024)
         expected1 = "Supported algorithms:"
@@ -149,11 +149,11 @@ class GPGTestCase(unittest.TestCase):
         self.assertGreater(result.find(expected4), 0)
 
     def test_gpg_binary_not_abs(self):
-        "Test that a non-absolute path to gpg results in a full path"
+        """Test that a non-absolute path to gpg results in a full path"""
         self.assertTrue(os.path.isabs(self.gpg.gpgbinary))
 
     def test_make_args_drop_protected_options(self):
-        "Test that unsupported gpg options are dropped"
+        """Test that unsupported gpg options are dropped"""
         self.gpg.options = ['--tyrannosaurus-rex', '--stegosaurus']
         self.gpg.keyring = self.secring
         cmd = self.gpg.make_args(None, False)
@@ -164,7 +164,7 @@ class GPGTestCase(unittest.TestCase):
         self.assertListEqual(cmd, expected)
 
     def test_make_args(self):
-        "Test argument line construction"
+        """Test argument line construction"""
         not_allowed = ['--bicycle', '--zeppelin', 'train', 'flying-carpet']
         self.gpg.options = not_allowed[:-2]
         args = self.gpg.make_args(not_allowed[2:], False)
@@ -172,12 +172,15 @@ class GPGTestCase(unittest.TestCase):
         for na in not_allowed:
             self.assertNotIn(na, args)
 
-    def test_list_keys_initial(self):
-        "Test that initially there are no keys"
-        logger.debug("test_list_keys_initial begins")
+    def test_list_keys_initial_public(self):
+        """Test that initially there are no public keys"""
         public_keys = self.gpg.list_keys()
         self.assertTrue(is_list_with_len(public_keys, 0),
-                        "Empty list expected")
+                        "Empty list expected...got instead: %s"
+                        % str(public_keys))
+
+    def test_list_keys_initial_secret(self):
+        """Test that initially there are no secret keys"""
         private_keys = self.gpg.list_keys(secret=True)
         self.assertTrue(is_list_with_len(private_keys, 0),
                         "Empty list expected")
@@ -203,13 +206,13 @@ class GPGTestCase(unittest.TestCase):
         return self.gpg.gen_key(cmd)
 
     def do_key_generation(self):
-        "Test that key generation succeeds"
+        """Test that key generation succeeds"""
         result = self.generate_key("Barbara", "Brown", "beta.com")
         self.assertNotEqual(None, result, "Non-null result")
         return result
 
     def test_key_generation_with_invalid_key_type(self):
-        "Test that key generation handles invalid key type"
+        """Test that key generation handles invalid key type"""
         params = {
             'Key-Type': 'INVALID',
             'Key-Length': 1024,
@@ -226,7 +229,7 @@ class GPGTestCase(unittest.TestCase):
         self.assertEqual(None, result.fingerprint, 'Null fingerprint result')
 
     def test_key_generation_with_colons(self):
-        "Test that key generation handles colons in key fields"
+        """Test that key generation handles colons in key fields"""
         params = {
             'key_type': 'RSA',
             'name_real': 'urn:uuid:731c22c4-830f-422f-80dc-14a9fdae8c19',
@@ -245,7 +248,7 @@ class GPGTestCase(unittest.TestCase):
                               '(dummy comment) <test.name@example.com>')
 
     def test_key_generation_with_empty_value(self):
-        "Test that key generation handles empty values"
+        """Test that key generation handles empty values"""
         params = {
             'key_type': 'RSA',
             'key_length': 1024,
@@ -258,7 +261,7 @@ class GPGTestCase(unittest.TestCase):
         self.assertTrue('\nName-Comment: A\n' in cmd)
 
     def test_list_keys_after_generation(self):
-        "Test that after key generation, the generated key is available"
+        """Test that after key generation, the generated key is available"""
         self.test_list_keys_initial()
         self.do_key_generation()
         public_keys = self.gpg.list_keys()
@@ -269,7 +272,7 @@ class GPGTestCase(unittest.TestCase):
                         "1-element list expected")
 
     def test_encryption_and_decryption(self):
-        "Test that encryption and decryption works"
+        """Test that encryption and decryption works"""
         logger.debug("test_encryption_and_decryption begins")
         key = self.generate_key("Andrew", "Able", "alpha.com",
                                 passphrase="andy")
@@ -304,17 +307,17 @@ class GPGTestCase(unittest.TestCase):
         self.assertEqual(data, str(ddata))
 
     def test_public_keyring(self):
-        "Test that the public keyring is found in the gpg home directory"
+        """Test that the public keyring is found in the gpg home directory"""
         self.gpg.keyring = self.pubring
         self.assertTrue(os.path.isfile(self.pubring))
 
     def test_secret_keyring(self):
-        "Test that the secret keyring is found in the gpg home directory"
+        """Test that the secret keyring is found in the gpg home directory"""
         self.gpg.keyring = self.secring
         self.assertTrue(os.path.isfile(self.secring))
 
     def test_import_and_export(self):
-        "Test that key import and export works"
+        """Test that key import and export works"""
         logger.debug("test_import_and_export begins")
         self.test_list_keys_initial()
         gpg = self.gpg
@@ -343,7 +346,7 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_import_and_export ends")
 
     def test_import_only(self):
-        "Test that key import works"
+        """Test that key import works"""
         logger.debug("test_import_only begins")
         self.test_list_keys_initial()
         self.gpg.import_keys(KEYS_TO_IMPORT)
@@ -365,7 +368,7 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_import_only ends")
 
     def test_signature_verification(self):
-        "Test that signing and verification works"
+        """Test that signing and verification works"""
         logger.debug("test_signature_verification begins")
         key = self.generate_key("Andrew", "Able", "alpha.com")
         self.gpg.encoding = 'latin-1'
@@ -423,7 +426,7 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_signature_verification ends")
 
     def test_deletion(self):
-        "Test that key deletion works"
+        """Test that key deletion works"""
         logger.debug("test_deletion begins")
         self.gpg.import_keys(KEYS_TO_IMPORT)
         public_keys = self.gpg.list_keys()
@@ -436,7 +439,7 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_deletion ends")
 
     def test_file_encryption_and_decryption(self):
-        "Test that encryption/decryption to/from file works"
+        """Test that encryption/decryption to/from file works"""
         logger.debug("test_file_encryption_and_decryption begins")
 
         encfname = _make_tempfile()
@@ -476,10 +479,12 @@ TEST_GROUPS = {
                    'test_gpg_binary',
                    'test_gpg_binary_not_abs',
                    'test_gpg_binary_version_str',
-                   'test_list_keys_initial',
+                   'test_list_keys_initial_public',
+                   'test_list_keys_initial_secret',
                    'test_make_args_drop_protected_options',
                    'test_make_args']),
     'sign' : set(['test_signature_verification']),
+
     'crypt' : set(['test_encryption_and_decryption',
                    'test_file_encryption_and_decryption']),
     'key' : set(['test_deletion',
