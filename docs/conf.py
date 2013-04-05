@@ -17,7 +17,13 @@ import sys, os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('./../gnupg.py'))
-#sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('.'))
+
+# -- Autodoc settings ----------------------------------------------------------
+## trying to set this somewhere...
+autodoc_member_order = 'bysource'
+autodoc_default_flags = ['members', 'show-inheritance', 'undoc-members']
+autoclass_content = 'both'
 
 # -- General configuration -----------------------------------------------------
 
