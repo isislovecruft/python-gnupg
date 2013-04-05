@@ -1,44 +1,68 @@
-""" A wrapper for the 'gpg' command::
-
-Portions of this module are derived from A.M. Kuchling's well-designed
-GPG.py, using Richard Jones' updated version 1.3, which can be found
-in the pycrypto CVS repository on Sourceforge:
-
-http://pycrypto.cvs.sourceforge.net/viewvc/pycrypto/gpg/GPG.py
-
-This module is *not* forward-compatible with amk's; some of the
-old interface has changed.  For instance, since I've added decrypt
-functionality, I elected to initialize with a 'gnupghome' argument
-instead of 'keyring', so that gpg can find both the public and secret
-keyrings.  I've also altered some of the returned objects in order for
-the caller to not have to know as much about the internals of the
-result classes.
-
-While the rest of ISconf is released under the GPL, I am releasing
-this single file under the same terms that A.M. Kuchling used for
-pycrypto.
-
-Steve Traugott, stevegt@terraluna.org
-Thu Jun 23 21:27:20 PDT 2005
-
-This version of the module has been modified from Steve Traugott's version
-(see http://trac.t7a.org/isconf/browser/trunk/lib/python/isconf/GPG.py) by
-Vinay Sajip to make use of the subprocess module (Steve's version uses os.fork()
-and so does not work on Windows). Renamed to gnupg.py to avoid confusion with
-the previous versions.
-
-Modifications Copyright (C) 2008-2013 Vinay Sajip. All rights reserved.
-
-A unittest harness (test_gnupg.py) has also been added.
+#!/usr/bin/env python
+#-*- encoding: utf-8 -*-
 """
-import locale
+gnupg.py
+========
+A Python interface to GnuPG.
 
-__version__ = "0.3.2"
-__author__ = "Vinay Sajip"
-__date__  = "$16-Jan-2013 15:21:59$"
+This is a modified version of python-gnupg-0.3.0, which was created by Vinay
+Sajip, which itself is a modification of GPG.py written by Steve Traugott,
+which in turn is a modification of the pycrypto GnuPG interface written by
+A.M. Kuchling.
+
+This version is patched to exclude calls to :class:`subprocess.Popen([...],
+shell=True)`, and it also attempts to provide sanitization of arguments
+presented to gnupg, in order to avoid potential vulnerabilities.
+
+@authors: A.M. Kuchling
+          Steve Traugott
+          Vinay Sajip
+          Isis Lovecruft, <isis@leap.se> 0x2cdb8b35
+
+Steve Traugott's documentation:
+-------------------------------
+    Portions of this module are derived from A.M. Kuchling's well-designed
+    GPG.py, using Richard Jones' updated version 1.3, which can be found in
+    the pycrypto CVS repository on Sourceforge:
+
+    http://pycrypto.cvs.sourceforge.net/viewvc/pycrypto/gpg/GPG.py
+
+    This module is *not* forward-compatible with amk's; some of the old
+    interface has changed.  For instance, since I've added decrypt
+    functionality, I elected to initialize with a 'gpghome' argument instead
+    of 'keyring', so that gpg can find both the public and secret keyrings.
+    I've also altered some of the returned objects in order for the caller to
+    not have to know as much about the internals of the result classes.
+
+    While the rest of ISconf is released under the GPL, I am releasing this
+    single file under the same terms that A.M. Kuchling used for pycrypto.
+
+    Steve Traugott, stevegt@terraluna.org
+    Thu Jun 23 21:27:20 PDT 2005
+
+Vinay Sajip's documentation:
+----------------------------
+    This version of the module has been modified from Steve Traugott's version
+    (see http://trac.t7a.org/isconf/browser/trunk/lib/python/isconf/GPG.py) by
+    Vinay Sajip to make use of the subprocess module (Steve's version uses
+    os.fork() and so does not work on Windows). Renamed to gnupg.py to avoid
+    confusion with the previous versions.
+
+    A unittest harness (test_gnupg.py) has also been added.
+
+    Modifications Copyright (C) 2008-2012 Vinay Sajip. All rights reserved.
+"""
+
+__module__ = 'gnupg'
+__version__ = "0.3.1"
+__author__ = "Isis Agora Lovecruft"
+__date__  = "12 Febuary 2013"
+
+import locale
 
 try:
     from io import StringIO
+    from io import BytesIO
 except ImportError:
     from cStringIO import StringIO
 
@@ -51,6 +75,7 @@ import socket
 from subprocess import Popen
 from subprocess import PIPE
 import sys
+import tempfile
 import threading
 
 try:
@@ -65,17 +90,42 @@ try:
 except NameError:
     _py3k = True
 
-logger = logging.getLogger(__name__)
+
+ESCAPE_PATTERN = re.compile(r'\\x([0-9a-f][0-9a-f])', re.I)
+
+logger = logging.getLogger(__module__)
 if not logger.handlers:
     logger.addHandler(NullHandler())
 
+
+class ProtectedOption(Exception):
+    """Raised when the option passed to GPG is disallowed."""
+
+class UsageError(Exception):
+    """Raised when you're Doing It Wrong."""
+
+
 def _copy_data(instream, outstream):
-    # Copy one stream to another
+    """
+    Copy data from one stream to another.
+
+    @param instream: A file descriptor to read from.
+    @param outstream: A file descriptor to write to.
+    """
     sent = 0
+
+    try:
+        assert isinstance(instream, BytesIO), "instream is not a file"
+        assert isinstance(outstream, file), "outstream is not a file"
+    except AssertionError as ae:
+        logger.exception(ae)
+        return
+
     if hasattr(sys.stdin, 'encoding'):
         enc = sys.stdin.encoding
     else:
         enc = 'ascii'
+
     while True:
         data = instream.read(1024)
         if len(data) == 0:
@@ -85,30 +135,329 @@ def _copy_data(instream, outstream):
         try:
             outstream.write(data)
         except UnicodeError:
-            outstream.write(data.encode(enc))
-        except:
-            # Can sometimes get 'broken pipe' errors even when the data has all
-            # been sent
-            logger.exception('Error sending data')
+            try:
+                outstream.write(data.encode(enc))
+            except IOError:
+                logger.exception('Error sending data: Broken pipe')
+                break
+        except IOError:
+            # Can sometimes get 'broken pipe' errors even when the
+            # data has all been sent
+            logger.exception('Error sending data: Broken pipe')
             break
     try:
         outstream.close()
     except IOError:
-        logger.warning('Exception occurred while closing: ignored', exc_info=1)
-    logger.debug("closed output, %d bytes sent", sent)
+        logger.exception('Got IOError while trying to close FD outstream')
+    else:
+        logger.debug("closed output, %d bytes sent", sent)
 
-def _threaded_copy_data(instream, outstream):
-    wr = threading.Thread(target=_copy_data, args=(instream, outstream))
-    wr.setDaemon(True)
-    logger.debug('data copier: %r, %r, %r', wr, instream, outstream)
-    wr.start()
-    return wr
+def _fix_unsafe(input):
+    """
+    Find characters used to escape from a string into a shell, and wrap them
+    in quotes if they exist. Regex pilfered from python-3.x shlex module.
 
-def _write_passphrase(stream, passphrase, encoding):
-    passphrase = '%s\n' % passphrase
-    passphrase = passphrase.encode(encoding)
-    stream.write(passphrase)
-    logger.debug("Wrote passphrase: %r", passphrase)
+    @param input: The input intended for the gnupg process.
+    """
+    ## xxx do we want to add ';'?
+    _unsafe = re.compile(r'[^\w@%+=:,./-]', 256)
+    try:
+        if len(_unsafe.findall(input)) == 0:
+            return input
+        else:
+            clean = "'" + input.replace("'", "'\"'\"'") + "'"
+            return clean
+    except TypeError:
+        return None
+
+def _has_readwrite(path):
+    """
+    Determine if the real uid/gid of the executing user has read and write
+    permissions for a directory or a file.
+
+    @type path: C{str}
+    @param path: The path to the directory or file to check permissions for.
+
+    @rtype: C{bool}
+    @param: True if real uid/gid has read+write permissions, False otherwise.
+    """
+    return os.access(path, os.R_OK and os.W_OK)
+
+def _hyphenate(input, add_prefix=False):
+    """
+    Change underscores to hyphens so that object attributes can be easily
+    tranlated to GPG option names.
+
+    @type input: C{str}
+    @param input: The attribute to hyphenate.
+
+    @type add_prefix: C{bool}
+    @param add_prefix: If True, add leading hyphens to the input.
+
+    @rtype: C{str}
+    @return: The :param:input with underscores changed to hyphens.
+    """
+    ret  = '--' if add_prefix else ''
+    ret += input.replace('_', '-')
+    return ret
+
+def _is_allowed(input):
+    """
+    Check that an option or argument given to GPG is in the set of allowed
+    options, the latter being a strict subset of the set of all options known
+    to GPG.
+
+    @type input: C{str}
+    @param input: An input meant to be parsed as an option or flag to the GnuPG
+                  process. Should be formatted the same as an option or flag
+                  to the commandline gpg, i.e. "--encrypt-files".
+
+    @type _possible: C{frozenset}
+    @ivar _possible: All known GPG options and flags.
+
+    @type _allowed: C{frozenset}
+    @ivar _allowed: All allowed GPG options and flags, e.g. all GPG options and
+                    flags which we are willing to acknowledge and parse. If we
+                    want to support a new option, it will need to have its own
+                    parsing class and its name will need to be added to this
+                    set.
+
+    @rtype: C{Exception} or C{str}
+    @raise: UsageError if :ivar:_allowed is not a subset of :ivar:_possible.
+            ProtectedOption if :param:input is not in the set :ivar:_allowed.
+    @return: The original parameter :param:input, unmodified and unsanitized,
+             if no errors occur.
+    """
+
+    _all = ("""
+--allow-freeform-uid              --multifile
+--allow-multiple-messages         --no
+--allow-multisig-verification     --no-allow-freeform-uid
+--allow-non-selfsigned-uid        --no-allow-multiple-messages
+--allow-secret-key-import         --no-allow-non-selfsigned-uid
+--always-trust                    --no-armor
+--armor                           --no-armour
+--armour                          --no-ask-cert-expire
+--ask-cert-expire                 --no-ask-cert-level
+--ask-cert-level                  --no-ask-sig-expire
+--ask-sig-expire                  --no-auto-check-trustdb
+--attribute-fd                    --no-auto-key-locate
+--attribute-file                  --no-auto-key-retrieve
+--auto-check-trustdb              --no-batch
+--auto-key-locate                 --no-comments
+--auto-key-retrieve               --no-default-keyring
+--batch                           --no-default-recipient
+--bzip2-compress-level            --no-disable-mdc
+--bzip2-decompress-lowmem         --no-emit-version
+--card-edit                       --no-encrypt-to
+--card-status                     --no-escape-from-lines
+--cert-digest-algo                --no-expensive-trust-checks
+--cert-notation                   --no-expert
+--cert-policy-url                 --no-force-mdc
+--change-pin                      --no-force-v3-sigs
+--charset                         --no-force-v4-certs
+--check-sig                       --no-for-your-eyes-only
+--check-sigs                      --no-greeting
+--check-trustdb                   --no-groups
+--cipher-algo                     --no-literal
+--clearsign                       --no-mangle-dos-filenames
+--command-fd                      --no-mdc-warning
+--command-file                    --no-options
+--comment                         --no-permission-warning
+--completes-needed                --no-pgp2
+--compress-algo                   --no-pgp6
+--compression-algo                --no-pgp7
+--compress-keys                   --no-pgp8
+--compress-level                  --no-random-seed-file
+--compress-sigs                   --no-require-backsigs
+--ctapi-driver                    --no-require-cross-certification
+--dearmor                         --no-require-secmem
+--dearmour                        --no-rfc2440-text
+--debug                           --no-secmem-warning
+--debug-all                       --no-show-notation
+--debug-ccid-driver               --no-show-photos
+--debug-level                     --no-show-policy-url
+--decrypt                         --no-sig-cache
+--decrypt-files                   --no-sig-create-check
+--default-cert-check-level        --no-sk-comments
+--default-cert-expire             --no-strict
+--default-cert-level              --notation-data
+--default-comment                 --not-dash-escaped
+--default-key                     --no-textmode
+--default-keyserver-url           --no-throw-keyid
+--default-preference-list         --no-throw-keyids
+--default-recipient               --no-tty
+--default-recipient-self          --no-use-agent
+--default-sig-expire              --no-use-embedded-filename
+--delete-keys                     --no-utf8-strings
+--delete-secret-and-public-keys   --no-verbose
+--delete-secret-keys              --no-version
+--desig-revoke                    --openpgp
+--detach-sign                     --options
+--digest-algo                     --output
+--disable-ccid                    --override-session-key
+--disable-cipher-algo             --passphrase
+--disable-dsa2                    --passphrase-fd
+--disable-mdc                     --passphrase-file
+--disable-pubkey-algo             --passphrase-repeat
+--display                         --pcsc-driver
+--display-charset                 --personal-cipher-preferences
+--dry-run                         --personal-cipher-prefs
+--dump-options                    --personal-compress-preferences
+--edit-key                        --personal-compress-prefs
+--emit-version                    --personal-digest-preferences
+--enable-dsa2                     --personal-digest-prefs
+--enable-progress-filter          --pgp2
+--enable-special-filenames        --pgp6
+--enarmor                         --pgp7
+--enarmour                        --pgp8
+--encrypt                         --photo-viewer
+--encrypt-files                   --pipemode
+--encrypt-to                      --preserve-permissions
+--escape-from-lines               --primary-keyring
+--exec-path                       --print-md
+--exit-on-status-write-error      --print-mds
+--expert                          --quick-random
+--export                          --quiet
+--export-options                  --reader-port
+--export-ownertrust               --rebuild-keydb-caches
+--export-secret-keys              --recipient
+--export-secret-subkeys           --recv-keys
+--fast-import                     --refresh-keys
+--fast-list-mode                  --remote-user
+--fetch-keys                      --require-backsigs
+--fingerprint                     --require-cross-certification
+--fixed-list-mode                 --require-secmem
+--fix-trustdb                     --rfc1991
+--force-mdc                       --rfc2440
+--force-ownertrust                --rfc2440-text
+--force-v3-sigs                   --rfc4880
+--force-v4-certs                  --run-as-shm-coprocess
+--for-your-eyes-only              --s2k-cipher-algo
+--gen-key                         --s2k-count
+--gen-prime                       --s2k-digest-algo
+--gen-random                      --s2k-mode
+--gen-revoke                      --search-keys
+--gnupg                           --secret-keyring
+--gpg-agent-info                  --send-keys
+--gpgconf-list                    --set-filename
+--gpgconf-test                    --set-filesize
+--group                           --set-notation
+--help                            --set-policy-url
+--hidden-encrypt-to               --show-keyring
+--hidden-recipient                --show-notation
+--homedir                         --show-photos
+--honor-http-proxy                --show-policy-url
+--ignore-crc-error                --show-session-key
+--ignore-mdc-error                --sig-keyserver-url
+--ignore-time-conflict            --sign
+--ignore-valid-from               --sign-key
+--import                          --sig-notation
+--import-options                  --sign-with
+--import-ownertrust               --sig-policy-url
+--interactive                     --simple-sk-checksum
+--keyid-format                    --sk-comments
+--keyring                         --skip-verify
+--keyserver                       --status-fd
+--keyserver-options               --status-file
+--lc-ctype                        --store
+--lc-messages                     --strict
+--limit-card-insert-tries         --symmetric
+--list-config                     --temp-directory
+--list-key                        --textmode
+--list-keys                       --throw-keyid
+--list-only                       --throw-keyids
+--list-options                    --trustdb-name
+--list-ownertrust                 --trusted-key
+--list-packets                    --trust-model
+--list-public-keys                --try-all-secrets
+--list-secret-keys                --ttyname
+--list-sig                        --ttytype
+--list-sigs                       --ungroup
+--list-trustdb                    --update-trustdb
+--load-extension                  --use-agent
+--local-user                      --use-embedded-filename
+--lock-multiple                   --user
+--lock-never                      --utf8-strings
+--lock-once                       --verbose
+--logger-fd                       --verify
+--logger-file                     --verify-files
+--lsign-key                       --verify-options
+--mangle-dos-filenames            --version
+--marginals-needed                --warranty
+--max-cert-depth                  --with-colons
+--max-output                      --with-fingerprint
+--merge-only                      --with-key-data
+--min-cert-level                  --yes
+""").split()
+
+    _possible = frozenset(_all)
+
+    ## these are the allowed options we will handle so far, all others should
+    ## be dropped. this dance is so that when new options are added later, we
+    ## merely add the to the _allowed list, and the `` _allowed.issubset``
+    ## assertion will check that GPG will recognise them
+    ##
+    ## xxx key fetching/retrieving options: [fetch_keys, merge_only, recv_keys]
+    ##
+    ## xxx which ones do we want as defaults?
+    ##     eg, --no-show-photos would mitigate things like
+    ##     https://www-01.ibm.com/support/docview.wss?uid=swg21620982
+    _allowed = frozenset(
+        ['--list-packets', '--delete-keys', '--delete-secret-keys',
+         '--encrypt', '--print-mds', '--print-md', '--sign',
+         '--encrypt-files', '--gen-key', '--decrypt', '--decrypt-files',
+         '--list-keys', '--import', '--verify', '--version',
+         '--status-fd', '--no-tty', '--homedir', '--no-default-keyring',
+         '--keyring', '--passphrase-fd', '--fingerprint', '--with-colons'])
+
+    ## check that _allowed is a subset of _possible
+    try:
+        assert _allowed.issubset(_possible), \
+            '_allowed is not subset of known options, difference: %s' \
+            % _allowed.difference(_possible)
+    except AssertionError as ae:   ## 'as' syntax requires python>=2.6
+        logger.debug("gnupg._is_allowed(): %s" % ae.message)
+        raise UsageError(ae.message)
+
+    ## if we got a list of args, join them
+    if not isinstance(input, str):
+        input = ' '.join([x for x in input])
+
+    if isinstance(input, str):
+        if input.find('_') > 0:
+            if not input.startswith('--'):
+                hyphenated = _hyphenate(input, add_prefix=True)
+            else:
+                hyphenated = _hyphenate(input)
+        else:
+            hyphenated = input
+            try:
+                assert hyphenated in _allowed
+            except AssertionError as ae:
+                logger.warn("Dropping option '%s'..."
+                            % _fix_unsafe(hyphenated))
+                raise ProtectedOption("Option '%s' not supported."
+                                      % _fix_unsafe(hyphenated))
+            else:
+                logger.debug("Got allowed option '%s'."
+                             % _fix_unsafe(hyphenated))
+                return input
+    return None
+
+def _is_file(input):
+    """
+    Check that the size of the thing which is supposed to be a filename has
+    size greater than zero, without following symbolic links or using
+    :func:`os.path.isfile`.
+    """
+    try:
+        assert os.lstat(input).st_size > 0, "not a file: %s" % input
+    except (AssertionError, TypeError) as error:
+        logger.debug(error.message)
+        return False
+    else:
+        return True
 
 def _is_sequence(instance):
     return isinstance(instance,list) or isinstance(instance,tuple)
@@ -127,8 +476,222 @@ def _make_binary_stream(s, encoding):
         rv = StringIO(s)
     return rv
 
+def _sanitise(*args):
+    """
+    Take an arg or the key portion of a kwarg and check that it is in the set
+    of allowed GPG options and flags, and that it has the correct type. Then,
+    attempt to escape any unsafe characters. If an option is not allowed,
+    drop it with a logged warning. Returns a dictionary of all sanitised,
+    allowed options.
+
+    Each new option that we support that is not a boolean, but instead has
+    some extra inputs, i.e. "--encrypt-file foo.txt", will need some basic
+    safety checks added here.
+
+    GnuPG has three-hundred and eighteen commandline flags. Also, not all
+    implementations of OpenPGP parse PGP packets and headers in the same way,
+    so there is added potential there for messing with calls to GPG.
+
+    For information on the PGP message format specification, see:
+        https://www.ietf.org/rfc/rfc1991.txt
+
+    If you're asking, "Is this *really* necessary?": No. Not really. See:
+        https://xkcd.com/1181/
+
+    @type args: C{str}
+    @param args: (optional) The boolean arguments which will be passed to the
+                 GnuPG process.
+    @rtype: C{str}
+    @param: :ivar:sanitised
+    """
+
+    def _check_arg_and_value(arg, value):
+        """
+        Check that a single :param:arg is an allowed option. If it is allowed,
+        quote out any escape characters in :param:values, and add the pair to
+        :ivar:sanitised.
+
+        @type arg: C{str}
+
+        @param arg: The arguments which will be passed to the GnuPG process,
+                    and, optionally their corresponding values.  The values are
+                    any additional arguments following the GnuPG option or
+                    flag. For example, if we wanted to pass "--encrypt
+                    --recipient isis@leap.se" to gpg, then "--encrypt" would be
+                    an arg without a value, and "--recipient" would also be an
+                    arg, with a value of "isis@leap.se".
+        @type sanitised: C{str}
+        @ivar sanitised: The sanitised, allowed options.
+        """
+        safe_values = str()
+
+        try:
+            allowed_flag = _is_allowed(arg)
+            assert allowed_flag is not None, \
+                "_check_arg_and_value(): got None for allowed_flag"
+        except (AssertionError, ProtectedOption) as error:
+            logger.warn(error.message)
+            logger.debug("Dropping option '%s'..." % _fix_unsafe(arg))
+        else:
+            safe_values += (allowed_flag + " ")
+            if isinstance(value, str):
+                value_list = []
+                if value.find(' ') > 0:
+                    value_list = value.split(' ')
+                else:
+                    logger.debug("_check_values(): got non-string for values")
+                for value in value_list:
+                    safe_value = _fix_unsafe(value)
+                    if allowed_flag == '--encrypt' or '--encrypt-files' \
+                            or '--decrypt' or '--decrypt-file' \
+                            or '--import' or '--verify':
+                        ## xxx what other things should we check for?
+                        ## Place checks here:
+                        if _is_file(safe_value):
+                            safe_values += (safe_value + " ")
+                        else:
+                            logger.debug("Got non-filename for %s option: %s"
+                                         % (allowed_flag, safe_value))
+                    else:
+                        safe_values += (safe_value + " ")
+                        logger.debug("Got non-checked value: %s" % safe_value)
+        return safe_values
+
+    checked = []
+
+    if args is not None:
+        for arg in args:
+            if isinstance(arg, str):
+                logger.debug("_sanitise(): Got arg string: %s" % arg)
+                ## if we're given a string with a bunch of options in it split
+                ## them up and deal with them separately
+                if arg.find(' ') > 0:
+                    filo = arg.split()
+                    filo.reverse()
+                    is_flag = lambda x: x.startswith('-')
+                    new_arg, new_value = str(), str()
+                    while len(filo) > 0:
+                        if is_flag(filo[0]):
+                            new_arg = filo.pop()
+                            if len(filo) > 0:
+                                while not is_flag(filo[0]):
+                                    new_value += (filo.pop() + ' ')
+                        else:
+                            logger.debug("Got non-flag argument: %s" % filo[0])
+                            filo.pop()
+                        safe = _check_arg_and_value(new_arg, new_value)
+                        if safe is not None and safe.strip() != '':
+                            logger.debug("_sanitise(): appending args: %s" % safe)
+                            checked.append(safe)
+                else:
+                    safe = _check_arg_and_value(arg, None)
+                    logger.debug("_sanitise(): appending args: %s" % safe)
+                    checked.append(safe)
+            elif isinstance(arg, list): ## happens with '--version'
+                logger.debug("_sanitise(): Got arg list: %s" % arg)
+                for a in arg:
+                    if a.startswith('--'):
+                        safe = _check_arg_and_value(a, None)
+                        logger.debug("_sanitise(): appending args: %s" % safe)
+                        checked.append(safe)
+            else:
+                logger.debug("_sanitise(): got non string or list arg: %s" % arg)
+
+    sanitised = ' '.join(x for x in checked)
+    return sanitised
+
+def _sanitise_list(arg_list):
+    """
+    A generator for running through a list of gpg options and sanitising them.
+
+    @type arg_list: C{list}
+    @param arg_list: A list of options and flags for gpg.
+    @rtype: C{generator}
+    @return: A generator whose next() method returns each of the items in
+             :param:arg_list after calling :func:_sanitise with that item as a
+             parameter.
+    """
+    if isinstance(arg_list, list):
+        for arg in arg_list:
+            safe_arg = _sanitise(arg)
+            if safe_arg != "":
+                yield safe_arg
+
+def _threaded_copy_data(instream, outstream):
+    wr = threading.Thread(target=_copy_data, args=(instream, outstream))
+    wr.setDaemon(True)
+    logger.debug('data copier: %r, %r, %r', wr, instream, outstream)
+    wr.start()
+    return wr
+
+def _underscore(input, remove_prefix=False):
+    """
+    Change hyphens to underscores so that GPG option names can be easily
+    tranlated to object attributes.
+
+    @type input: C{str}
+    @param input: The input intended for the gnupg process.
+
+    @type remove_prefix: C{bool}
+    @param remove_prefix: If True, strip leading hyphens from the input.
+
+    @rtype: C{str}
+    @return: The :param:input with hyphens changed to underscores.
+    """
+    if not remove_prefix:
+        return input.replace('-', '_')
+    else:
+        return input.lstrip('-').replace('-', '_')
+
+def _which(executable, flags=os.X_OK):
+    """Borrowed from Twisted's :mod:twisted.python.proutils .
+
+    Search PATH for executable files with the given name.
+
+    On newer versions of MS-Windows, the PATHEXT environment variable will be
+    set to the list of file extensions for files considered executable. This
+    will normally include things like ".EXE". This fuction will also find files
+    with the given name ending with any of these extensions.
+
+    On MS-Windows the only flag that has any meaning is os.F_OK. Any other
+    flags will be ignored.
+
+    Note: This function does not help us prevent an attacker who can already
+    manipulate the environment's PATH settings from placing malicious code
+    higher in the PATH. It also does happily follows links.
+
+    @type name: C{str}
+    @param name: The name for which to search.
+    @type flags: C{int}
+    @param flags: Arguments to L{os.access}.
+    @rtype: C{list}
+    @param: A list of the full paths to files found, in the order in which
+            they were found.
+    """
+    result = []
+    exts = filter(None, os.environ.get('PATHEXT', '').split(os.pathsep))
+    path = os.environ.get('PATH', None)
+    if path is None:
+        return []
+    for p in os.environ.get('PATH', '').split(os.pathsep):
+        p = os.path.join(p, executable)
+        if os.access(p, flags):
+            result.append(p)
+        for e in exts:
+            pext = p + e
+            if os.access(pext, flags):
+                result.append(pext)
+    return result
+
+def _write_passphrase(stream, passphrase, encoding):
+    passphrase = '%s\n' % passphrase
+    passphrase = passphrase.encode(encoding)
+    stream.write(passphrase)
+    logger.debug("Wrote passphrase.")
+
+
 class Verify(object):
-    "Handle status messages for --verify"
+    """Handle status messages for --verify"""
 
     TRUST_UNDEFINED = 0
     TRUST_NEVER = 1
@@ -219,7 +782,7 @@ class Verify(object):
             raise ValueError("Unknown status message: %r" % key)
 
 class ImportResult(object):
-    "Handle status messages for --import"
+    """Handle status messages for --import"""
 
     counts = '''count no_user_id imported imported_rsa unchanged
             n_uids n_subk n_sigs n_revoc sec_read sec_imported
@@ -301,10 +864,8 @@ class ImportResult(object):
             l.append('%d not imported' % self.not_imported)
         return ', '.join(l)
 
-ESCAPE_PATTERN = re.compile(r'\\x([0-9a-f][0-9a-f])', re.I)
-
 class ListKeys(list):
-    ''' Handle status messages for --list-keys.
+    """ Handle status messages for --list-keys.
 
         Handle pub and uid (relating the latter to the former).
 
@@ -319,8 +880,10 @@ class ListKeys(list):
         pkd = public key data (special field format, see below)
         grp = reserved for gpgsm
         rvk = revocation key
-    '''
+    """
+
     def __init__(self, gpg):
+        super(ListKeys, self).__init__()
         self.gpg = gpg
         self.curkey = None
         self.fingerprints = []
@@ -360,7 +923,7 @@ class ListKeys(list):
         pass
 
 class Crypt(Verify):
-    "Handle status messages for --encrypt and --decrypt"
+    """Handle status messages for --encrypt and --decrypt"""
     def __init__(self, gpg):
         Verify.__init__(self, gpg)
         self.data = ''
@@ -411,7 +974,7 @@ class Crypt(Verify):
             Verify.handle_status(self, key, value)
 
 class GenKey(object):
-    "Handle status messages for --gen-key"
+    """Handle status messages for --gen-key"""
     def __init__(self, gpg):
         self.gpg = gpg
         self.type = None
@@ -430,12 +993,12 @@ class GenKey(object):
         if key in ("PROGRESS", "GOOD_PASSPHRASE", "NODATA", "KEY_NOT_CREATED"):
             pass
         elif key == "KEY_CREATED":
-            (self.type,self.fingerprint) = value.split()
+            (self.type, self.fingerprint) = value.split()
         else:
             raise ValueError("Unknown status message: %r" % key)
 
 class DeleteResult(object):
-    "Handle status messages for --delete-key and --delete-secret-key"
+    """Handle status messages for --delete-key and --delete-secret-key"""
     def __init__(self, gpg):
         self.gpg = gpg
         self.status = 'ok'
@@ -447,17 +1010,17 @@ class DeleteResult(object):
         '1': 'No such key',
         '2': 'Must delete secret key first',
         '3': 'Ambigious specification',
-    }
+        }
 
     def handle_status(self, key, value):
         if key == "DELETE_PROBLEM":
-            self.status = self.problem_reason.get(value,
-                                                  "Unknown error: %r" % value)
+            self.status = self.problem_reason.get(value, "Unknown error: %r"
+                                                  % value)
         else:
             raise ValueError("Unknown status message: %r" % key)
 
 class Sign(object):
-    "Handle status messages for --sign"
+    """Handle status messages for --sign"""
     def __init__(self, gpg):
         self.gpg = gpg
         self.type = None
@@ -473,85 +1036,185 @@ class Sign(object):
 
     def handle_status(self, key, value):
         if key in ("USERID_HINT", "NEED_PASSPHRASE", "BAD_PASSPHRASE",
-                   "GOOD_PASSPHRASE", "BEGIN_SIGNING", "CARDCTRL", "INV_SGNR"):
+                   "GOOD_PASSPHRASE", "BEGIN_SIGNING", "CARDCTRL",
+                   "INV_SGNR", "NODATA"):
             pass
         elif key == "SIG_CREATED":
-            (self.type,
-             algo, hashalgo, cls,
-             self.timestamp, self.fingerprint
-             ) = value.split()
+            (self.type, algo, hashalgo, cls, self.timestamp,
+             self.fingerprint) = value.split()
         else:
             raise ValueError("Unknown status message: %r" % key)
 
-
 class GPG(object):
-
+    """Encapsulate access to the gpg executable"""
     decode_errors = 'strict'
 
-    result_map = {
-        'crypt': Crypt,
-        'delete': DeleteResult,
-        'generate': GenKey,
-        'import': ImportResult,
-        'list': ListKeys,
-        'sign': Sign,
-        'verify': Verify,
-    }
+    result_map = {'crypt': Crypt,
+                  'delete': DeleteResult,
+                  'generate': GenKey,
+                  'import': ImportResult,
+                  'list': ListKeys,
+                  'sign': Sign,
+                  'verify': Verify,}
 
-    "Encapsulate access to the gpg executable"
-    def __init__(self, gpgbinary='gpg', gnupghome=None, verbose=False,
-                 use_agent=False, keyring=None, options=None):
-        """Initialize a GPG process wrapper.  Options are:
-
-        gpgbinary -- full pathname for GPG binary.
-
-        gnupghome -- full pathname to where we can find the public and
-        private keyrings.  Default is whatever gpg defaults to.
-        keyring -- name of alternative keyring file to use. If specified,
-        the default keyring is not used.
-        options =-- a list of additional options to pass to the GPG binary.
+    def __init__(self, gpgbinary=None, gpghome=None,
+                 verbose=False, use_agent=False,
+                 keyring=None, secring=None, pubring=None,
+                 options=None):
         """
-        self.gpgbinary = gpgbinary
-        self.gnupghome = gnupghome
-        self.keyring = keyring
-        self.verbose = verbose
-        self.use_agent = use_agent
-        if isinstance(options, str):
-            options = [options]
-        self.options = options
+        Initialize a GnuPG process wrapper.
+
+        @type gpgbinary: C{str}
+        @param gpgbinary: Name for GnuPG binary executable. If the absolute
+                            path is not given, the evironment variable $PATH is
+                            searched for the executable and checked that the
+                            real uid/gid of the user has sufficient permissions.
+        @type gpghome: C{str}
+        @param gpghome: Full pathname to directory containing the public and
+                        private keyrings. Default is whatever GnuPG defaults
+                        to.
+
+        @type keyring: C{str}
+        @param keyring: raises C{DeprecationWarning}. Use :param:secring.
+
+        @type secring: C{str}
+        @param secring: Name of alternative secret keyring file to use. If left
+                        unspecified, this will default to using 'secring.gpg'
+                        in the :param:gpghome directory, and create that file
+                        if it does not exist.
+
+        @type pubring: C{str}
+        @param pubring: Name of alternative public keyring file to use. If left
+                        unspecified, this will default to using 'pubring.gpg'
+                        in the :param:gpghome directory, and create that file
+                        if it does not exist.
+
+        @options: A list of additional options to pass to the GPG binary.
+
+        @rtype: C{Exception} or C{}
+        @raises: RuntimeError with explanation message if there is a problem
+                 invoking gpg.
+        @returns:
+        """
+
+        if not gpghome:
+            gpghome = os.path.join(os.getcwd(), 'gnupg')
+        self.gpghome = _fix_unsafe(gpghome)
+        if self.gpghome:
+            if not os.path.isdir(self.gpghome):
+                message = ("Creating gpg home dir: %s" % gpghome)
+                logger.debug("GPG.__init__(): %s" % message)
+                os.makedirs(self.gpghome, 0x1C0)
+            if not os.path.isabs(self.gpghome):
+                message = ("Got non-abs gpg home dir path: %s" % self.gpghome)
+                logger.debug("GPG.__init__(): %s" % message)
+                self.gpghome = os.path.abspath(self.gpghome)
+        else:
+            message = ("Unsuitable gpg home dir: %s" % gpghome)
+            logger.debug("GPG.__init__(): %s" % message)
+
+        ## find the absolute path, check that it is not a link, and check that
+        ## we have exec permissions
+        bin = None
+        if gpgbinary is not None:
+            if not os.path.isabs(gpgbinary):
+                try: bin = _which(gpgbinary)[0]
+                except IndexError as ie: logger.debug(ie.message)
+        if bin is None:
+            try: bin = _which('gpg')[0]
+            except IndexError: raise RuntimeError("gpg is not installed")
+        try:
+            assert os.path.isabs(bin), "Path to gpg binary not absolute"
+            assert not os.path.islink(bin), "Path to gpg binary is symbolic link"
+            assert os.access(bin, os.X_OK), "Lacking +x perms for gpg binary"
+        except (AssertionError, AttributeError) as ae:
+            logger.debug("GPG.__init__(): %s" % ae.message)
+        else:
+            self.gpgbinary = bin
+
+        if keyring is not None:
+            try:
+                raise DeprecationWarning(
+                    "Option 'keyring' changing to 'secring'")
+            except DeprecationWarning as dw:
+                log.warn(dw.message)
+            finally:
+                secring = keyring
+
+        secring = 'secring.gpg' if secring is None else _fix_unsafe(secring)
+        pubring = 'pubring.gpg' if pubring is None else _fix_unsafe(pubring)
+
+        self.secring = os.path.join(self.gpghome, secring)
+        self.pubring = os.path.join(self.gpghome, pubring)
+        ## XXX should eventually be changed throughout to 'secring', but until
+        ## then let's not break backward compatibility
+        self.keyring = self.secring
+
+        for ring in [self.secring, self.pubring]:
+            if ring and not os.path.isfile(ring):
+                with open(ring, 'a+') as ringfile:
+                    ringfile.write(" ")
+                    ringfile.flush()
+            try:
+                assert _has_readwrite(ring), \
+                    ("Need r+w for %s" % ring)
+            except AssertionError as ae:
+                logger.debug(ae.message)
+
+        self.options = _sanitise(options) if options else None
+
+        ## xxx TODO: hack the locale module away so we can use this on android
         self.encoding = locale.getpreferredencoding()
         if self.encoding is None: # This happens on Jython!
             self.encoding = sys.stdin.encoding
-        if gnupghome and not os.path.isdir(self.gnupghome):
-            os.makedirs(self.gnupghome,0x1C0)
-        p = self._open_subprocess(["--version"])
-        result = self.result_map['verify'](self) # any result will do for this
-        self._collect_output(p, result, stdin=p.stdin)
-        if p.returncode != 0:
-            raise ValueError("Error invoking gpg: %s: %s" % (p.returncode,
-                                                             result.stderr))
 
-    def make_args(self, args, passphrase):
+        try:
+            assert self.gpghome is not None, "Got None for self.gpghome"
+            assert _has_readwrite(self.gpghome), ("Home dir %s needs r+w"
+                                                  % self.gpghome)
+            assert self.gpgbinary, "Could not find gpgbinary %s" % full
+            assert isinstance(verbose, bool), "'verbose' must be boolean"
+            assert isinstance(use_agent, bool), "'use_agent' must be boolean"
+            if self.options:
+                assert isinstance(options, str), ("options not formatted: %s"
+                                                  % options)
+        except (AssertionError, AttributeError) as ae:
+            logger.debug("GPG.__init__(): %s" % ae.message)
+            raise RuntimeError(ae.message)
+        else:
+            self.verbose = verbose
+            self.use_agent = use_agent
+
+            proc = self._open_subprocess(["--version"])
+            result = self.result_map['list'](self)
+            self._collect_output(proc, result, stdin=proc.stdin)
+            if proc.returncode != 0:
+                raise RuntimeError("Error invoking gpg: %s: %s"
+                                   % (proc.returncode, result.stderr))
+
+    def make_args(self, args, passphrase=False):
         """
         Make a list of command line elements for GPG. The value of ``args``
         will be appended. The ``passphrase`` argument needs to be True if
         a passphrase will be sent to GPG, else False.
         """
         cmd = [self.gpgbinary, '--status-fd 2 --no-tty']
-        if self.gnupghome:
-            cmd.append('--homedir "%s" ' % self.gnupghome)
+        if self.gpghome:
+            cmd.append('--homedir "%s"' % self.gpghome)
         if self.keyring:
-            cmd.append('--no-default-keyring --keyring "%s" ' % self.keyring)
+            cmd.append('--no-default-keyring --keyring "%s"' % self.keyring)
         if passphrase:
             cmd.append('--batch --passphrase-fd 0')
         if self.use_agent:
             cmd.append('--use-agent')
         if self.options:
-            cmd.extend(self.options)
-        cmd.extend(args)
+            [cmd.append(opt) for opt in iter(_sanitise_list(self.options))]
+        if args:
+            [cmd.append(arg) for arg in iter(_sanitise_list(args))]
+        logger.debug("make_args(): Using command: %s" % cmd)
         return cmd
 
-    def _open_subprocess(self, args, passphrase=False):
+    def _open_subprocess(self, args=None, passphrase=False):
         # Internal method: open a pipe to a GPG subprocess and return
         # the file objects for communicating with it.
         cmd = ' '.join(self.make_args(args, passphrase))
@@ -636,10 +1299,14 @@ class GPG(object):
         stdout.close()
 
     def _handle_io(self, args, file, result, passphrase=None, binary=False):
-        "Handle a call to GPG - pass input data, collect output data"
-        # Handle a basic data call - pass data to GPG, handle the output
-        # including status information. Garbage In, Garbage Out :)
-        p = self._open_subprocess(args, passphrase is not None)
+        """
+        Handle a call to GPG - pass input data, collect output data.
+        """
+        if passphrase is not None:
+            ask_passphrase = True
+        else:
+            ask_passphrase = False
+        p = self._open_subprocess(args, ask_passphrase)
         if not binary:
             stdin = codecs.getwriter(self.encoding)(p.stdin)
         else:
@@ -668,14 +1335,20 @@ class GPG(object):
             args = ['-s']
         else:
             args = ['-sa']
-        # You can't specify detach-sign and clearsign together: gpg ignores
-        # the detach-sign in that case.
-        if detach:
-            args.append("--detach-sign")
-        elif clearsign:
+
+        if clearsign:
             args.append("--clearsign")
+            if detach:
+                logger.debug(
+                    "Cannot use --clearsign and --detach-sign simultaneously.")
+                logger.debug(
+                    "Using default GPG behaviour: --clearsign only.")
+        elif detach and not clearsign:
+            args.append("--detach-sign")
+
         if keyid:
             args.append('--default-key "%s"' % keyid)
+
         result = self.result_map['sign'](self)
         #We could use _handle_io here except for the fact that if the
         #passphrase is bad, gpg bails and you can't write the message.
@@ -694,7 +1367,7 @@ class GPG(object):
     def verify(self, data):
         """Verify the signature on the contents of the string 'data'
 
-        >>> gpg = GPG(gnupghome="keys")
+        >>> gpg = GPG(gpghome="keys")
         >>> input = gpg.gen_key_input(Passphrase='foo')
         >>> key = gpg.gen_key(input)
         >>> assert key
@@ -712,40 +1385,61 @@ class GPG(object):
         return result
 
     def verify_file(self, file, data_filename=None):
-        "Verify the signature on the contents of the file-like object 'file'"
-        logger.debug('verify_file: %r, %r', file, data_filename)
+        """
+        Verify the signature on the contents of a file or file-like
+        object. Can handle embedded signatures as well as detached
+        signatures. If using detached signatures, the file containing the
+        detached signature should be specified as the :param:`data_filename`.
+
+        @param file: A file descriptor object. Its type will be checked with
+                     :func:`_is_file`.
+        @param data_filename: (optional) A file containing the GPG signature
+                              data for :param:`file`. If given, :param:`file`
+                              is verified via this detached signature.
+        """
+        ## attempt to wrap any escape characters in quotes:
+        safe_file = _fix_unsafe(file)
+
+        ## check that :param:`file` is actually a file:
+        _is_file(safe_file)
+
+        logger.debug('verify_file: %r, %r', safe_file, data_filename)
         result = self.result_map['verify'](self)
         args = ['--verify']
         if data_filename is None:
-            self._handle_io(args, file, result, binary=True)
+            self._handle_io(args, safe_file, result, binary=True)
         else:
+            safe_data_filename = _fix_unsafe(data_filename)
+
             logger.debug('Handling detached verification')
-            import tempfile
             fd, fn = tempfile.mkstemp(prefix='pygpg')
-            s = file.read()
-            file.close()
-            logger.debug('Wrote to temp file: %r', s)
-            os.write(fd, s)
-            os.close(fd)
-            args.append(fn)
-            args.append('"%s"' % data_filename)
-            try:
-                p = self._open_subprocess(args)
-                self._collect_output(p, result, stdin=p.stdin)
-            finally:
-                os.unlink(fn)
+
+            with open(safe_file) as sf:
+                contents = sf.read()
+                os.write(fd, s)
+                os.close(fd)
+                logger.debug('Wrote to temp file: %r', contents)
+                args.append(fn)
+                args.append('"%s"' % safe_data_filename)
+
+                try:
+                    p = self._open_subprocess(args)
+                    self._collect_output(p, result, stdin=p.stdin)
+                finally:
+                    os.unlink(fn)
+
         return result
 
     #
     # KEY MANAGEMENT
     #
-
     def import_keys(self, key_data):
-        """ import the key_data into our keyring
+        """
+        Import the key_data into our keyring.
 
         >>> import shutil
         >>> shutil.rmtree("keys")
-        >>> gpg = GPG(gnupghome="keys")
+        >>> gpg = GPG(gpghome="keys")
         >>> input = gpg.gen_key_input()
         >>> result = gpg.gen_key(input)
         >>> print1 = result.fingerprint
@@ -783,8 +1477,10 @@ class GPG(object):
         >>> assert print1 in seckeys.fingerprints
         >>> assert print1 in pubkeys.fingerprints
         >>> assert print2 in pubkeys.fingerprints
-
         """
+        ## xxx need way to validate that key_data is actually a valid GPG key
+        ##     it might be possible to use --list-packets and parse the output
+
         result = self.result_map['import'](self)
         logger.debug('import_keys: %r', key_data[:256])
         data = _make_binary_stream(key_data, self.encoding)
@@ -798,20 +1494,27 @@ class GPG(object):
 
         >>> import shutil
         >>> shutil.rmtree("keys")
-        >>> gpg = GPG(gnupghome="keys")
+        >>> gpg = GPG(gpghome="keys")
         >>> result = gpg.recv_keys('pgp.mit.edu', '3FF0DB166A7476EA')
         >>> assert result
 
         """
+        safe_keyserver = _fix_unsafe(keyserver)
+
         result = self.result_map['import'](self)
-        logger.debug('recv_keys: %r', keyids)
         data = _make_binary_stream("", self.encoding)
-        #data = ""
         args = ['--keyserver', keyserver, '--recv-keys']
-        args.extend(keyids)
+
+        if keyids:
+            if keyids is not None:
+                safe_keyids = ' '.join(
+                    [(lambda: _fix_unsafe(k))() for k in keyids])
+                logger.debug('recv_keys: %r', safe_keyids)
+                args.extend(safe_keyids)
+
         self._handle_io(args, data, result, binary=True)
-        logger.debug('recv_keys result: %r', result.__dict__)
         data.close()
+        logger.debug('recv_keys result: %r', result.__dict__)
         return result
 
     def delete_keys(self, fingerprints, secret=False):
@@ -827,7 +1530,7 @@ class GPG(object):
         return result
 
     def export_keys(self, keyids, secret=False):
-        "export the indicated keys. 'keyid' is anything gpg accepts"
+        """export the indicated keys. 'keyid' is anything gpg accepts"""
         which=''
         if secret:
             which='-secret-key'
@@ -844,11 +1547,11 @@ class GPG(object):
         return result.data.decode(self.encoding, self.decode_errors)
 
     def list_keys(self, secret=False):
-        """ list the keys currently in the keyring
+        """List the keys currently in the keyring.
 
         >>> import shutil
         >>> shutil.rmtree("keys")
-        >>> gpg = GPG(gnupghome="keys")
+        >>> gpg = GPG(gpghome="keys")
         >>> input = gpg.gen_key_input()
         >>> result = gpg.gen_key(input)
         >>> print1 = result.fingerprint
@@ -891,10 +1594,11 @@ class GPG(object):
         return result
 
     def gen_key(self, input):
-        """Generate a key; you might use gen_key_input() to create the
-        control input.
+        """
+        Generate a key; you might use gen_key_input() to create the control
+        input.
 
-        >>> gpg = GPG(gnupghome="keys")
+        >>> gpg = GPG(gpghome="keys")
         >>> input = gpg.gen_key_input()
         >>> result = gpg.gen_key(input)
         >>> assert result
@@ -918,8 +1622,8 @@ class GPG(object):
             key = key.replace('_','-').title()
             if str(val).strip():    # skip empty strings
                 parms[key] = val
-        parms.setdefault('Key-Type','RSA')
-        parms.setdefault('Key-Length',1024)
+        parms.setdefault('Key-Type', 'RSA')
+        parms.setdefault('Key-Length', 2048)
         parms.setdefault('Name-Real', "Autogenerated Key")
         parms.setdefault('Name-Comment', "Generated by gnupg.py")
         try:
@@ -927,8 +1631,8 @@ class GPG(object):
         except KeyError:
             logname = os.environ['USERNAME']
         hostname = socket.gethostname()
-        parms.setdefault('Name-Email', "%s@%s" % (logname.replace(' ', '_'),
-                                                  hostname))
+        parms.setdefault('Name-Email', "%s@%s"
+                         % (logname.replace(' ', '_'), hostname))
         out = "Key-Type: %s\n" % parms.pop('Key-Type')
         for key, val in list(parms.items()):
             out += "%s: %s\n" % (key, val)
@@ -963,7 +1667,7 @@ class GPG(object):
     def encrypt_file(self, file, recipients, sign=None,
             always_trust=False, passphrase=None,
             armor=True, output=None, symmetric=False):
-        "Encrypt the message read from the file-like object 'file'"
+        """Encrypt the message read from the file-like object 'file'"""
         args = ['--encrypt']
         if symmetric:
             args = ['--symmetric']
@@ -994,7 +1698,7 @@ class GPG(object):
         >>> import shutil
         >>> if os.path.exists("keys"):
         ...     shutil.rmtree("keys")
-        >>> gpg = GPG(gnupghome="keys")
+        >>> gpg = GPG(gpghome="keys")
         >>> input = gpg.gen_key_input(passphrase='foo')
         >>> result = gpg.gen_key(input)
         >>> print1 = result.fingerprint
