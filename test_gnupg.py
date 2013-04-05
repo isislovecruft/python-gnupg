@@ -183,22 +183,28 @@ class GPGTestCase(unittest.TestCase):
         """Test that initially there are no secret keys"""
         private_keys = self.gpg.list_keys(secret=True)
         self.assertTrue(is_list_with_len(private_keys, 0),
-                        "Empty list expected")
-        logger.debug("test_list_keys_initial ends")
+                        "Empty list expected...got instead: %s"
+                        % str(private_keys))
+
+
+    def test_copy_data(self):
+        """Test that _copy_data() is able to duplicate byte streams"""
+        instream = io.BytesIO("This is a string of bytes mapped in memory.")
+        outstream = str("And this one is just a string.")
+
 
     def generate_key(self, first_name, last_name, domain, passphrase=None):
-        "Generate a key"
-        params = {
-            'Key-Type': 'RSA',
-            'Key-Length': 2048,
-            'Subkey-Type': 'RSA',
-            'Subkey-Length': 2048,
-            'Name-Comment': 'A test user',
-            'Expire-Date': 0,
-        }
-        params['Name-Real'] = '%s %s' % (first_name, last_name)
-        params['Name-Email'] = ("%s.%s@%s"
-                                % (first_name, last_name, domain)).lower()
+        """Generate a key"""
+
+        params = {'Key-Type': 'RSA',
+                  'Key-Length': 2048,
+                  'Subkey-Type': 'RSA',
+                  'Subkey-Length': 2048,
+                  'Name-Comment': 'A test user',
+                  'Expire-Date': 0,
+                  'Name-Real': '%s %s' % (first_name, last_name),
+                  'Name-Email': ("%s.%s@%s"
+                                 % (first_name, last_name, domain)).lower()}
         if passphrase is None:
             passphrase = ("%s%s" % (first_name[0], last_name)).lower()
         params['Passphrase'] = passphrase
