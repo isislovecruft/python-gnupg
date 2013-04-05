@@ -1,0 +1,1 @@
+Search.setIndex({objects:{},terms:{index:0,search:0,welcom:0,python:0,modul:[0,1,2,3],indic:0,content:0,test_gnupg:[0,2],gnupg:[0,3],tabl:0,setup:[0,1],document:0,page:0},objtypes:{},titles:["Welcome to python-gnupg&#8217;s documentation!","setup Module","test_gnupg Module","gnupg Module"],objnames:{},filenames:["index","setup","test_gnupg","gnupg"]})
