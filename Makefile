@@ -14,5 +14,15 @@ test: cleantest
 	python test_gnupg.py basic
 
 install: 
-	python setup.py install
+	python setup.py install --record installed-files.txt
 
+uninstall:
+	cat installed-files.txt | sudo xargs rm -rf
+
+clean-docs:
+	sphinx-apidoc -o docs -F -A "Isis Agora Lovecruft" -H "python-gnupg" -V 0.3.1 -R 0.3.1 .
+
+docs:
+	cd docs
+	make clean
+	make html

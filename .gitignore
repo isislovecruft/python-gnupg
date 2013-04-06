@@ -47,3 +47,6 @@ TAGS
 # Ignore log files and directories from tests:
 keys/*
 *.log
+
+# Ignore distutils record of installed files:
+installed-files.txt

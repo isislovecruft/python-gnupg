@@ -14,13 +14,15 @@ This version is patched to exclude calls to :class:`subprocess.Popen([...],
 shell=True)`, and it also attempts to provide sanitization of arguments
 presented to gnupg, in order to avoid potential vulnerabilities.
 
-@authors: A.M. Kuchling
-          Steve Traugott
-          Vinay Sajip
-          Isis Lovecruft, <isis@leap.se> 0x2cdb8b35
+:Info: see <https://www.github.com/isislovecruft/python-gnupg>
+:Authors: A.M. Kuchling, Steve Traugott, Vinay Sajip, Isis Lovecruft
+:Date: $Date: 2013-04-04 01:11:01 +0000 (Thursday, April 4, 2013) $
+:Description: Documentation of python-gnupg, a Python module for GnuPG.
+
+Previous Authors' Documentation:
+--------------------------------
 
 Steve Traugott's documentation:
--------------------------------
     Portions of this module are derived from A.M. Kuchling's well-designed
     GPG.py, using Richard Jones' updated version 1.3, which can be found in
     the pycrypto CVS repository on Sourceforge:
@@ -41,7 +43,6 @@ Steve Traugott's documentation:
     Thu Jun 23 21:27:20 PDT 2005
 
 Vinay Sajip's documentation:
-----------------------------
     This version of the module has been modified from Steve Traugott's version
     (see http://trac.t7a.org/isconf/browser/trunk/lib/python/isconf/GPG.py) by
     Vinay Sajip to make use of the subprocess module (Steve's version uses
@@ -51,6 +52,7 @@ Vinay Sajip's documentation:
     A unittest harness (test_gnupg.py) has also been added.
 
     Modifications Copyright (C) 2008-2012 Vinay Sajip. All rights reserved.
+
 """
 
 __module__ = 'gnupg'
@@ -102,15 +104,15 @@ class ProtectedOption(Exception):
     """Raised when the option passed to GPG is disallowed."""
 
 class UsageError(Exception):
-    """Raised when you're Doing It Wrong."""
+    """Raised when incorrect usage of the API occurs.."""
 
 
 def _copy_data(instream, outstream):
     """
     Copy data from one stream to another.
 
-    @param instream: A file descriptor to read from.
-    @param outstream: A file descriptor to write to.
+    :param instream: A file descriptor to read from.
+    :param outstream: A file descriptor to write to.
     """
     sent = 0
 
@@ -157,7 +159,7 @@ def _fix_unsafe(input):
     Find characters used to escape from a string into a shell, and wrap them
     in quotes if they exist. Regex pilfered from python-3.x shlex module.
 
-    @param input: The input intended for the gnupg process.
+    :param input: The input intended for the gnupg process.
     """
     ## xxx do we want to add ';'?
     _unsafe = re.compile(r'[^\w@%+=:,./-]', 256)
@@ -175,11 +177,11 @@ def _has_readwrite(path):
     Determine if the real uid/gid of the executing user has read and write
     permissions for a directory or a file.
 
-    @type path: C{str}
-    @param path: The path to the directory or file to check permissions for.
+    :type path: C{str}
+    :param path: The path to the directory or file to check permissions for.
 
-    @rtype: C{bool}
-    @param: True if real uid/gid has read+write permissions, False otherwise.
+    :rtype: C{bool}
+    :param: True if real uid/gid has read+write permissions, False otherwise.
     """
     return os.access(path, os.R_OK and os.W_OK)
 
@@ -188,14 +190,14 @@ def _hyphenate(input, add_prefix=False):
     Change underscores to hyphens so that object attributes can be easily
     tranlated to GPG option names.
 
-    @type input: C{str}
-    @param input: The attribute to hyphenate.
+    :type input: C{str}
+    :param input: The attribute to hyphenate.
 
-    @type add_prefix: C{bool}
-    @param add_prefix: If True, add leading hyphens to the input.
+    :type add_prefix: C{bool}
+    :param add_prefix: If True, add leading hyphens to the input.
 
-    @rtype: C{str}
-    @return: The :param:input with underscores changed to hyphens.
+    :rtype: C{str}
+    :return: The :param:input with underscores changed to hyphens.
     """
     ret  = '--' if add_prefix else ''
     ret += input.replace('_', '-')
@@ -207,25 +209,25 @@ def _is_allowed(input):
     options, the latter being a strict subset of the set of all options known
     to GPG.
 
-    @type input: C{str}
-    @param input: An input meant to be parsed as an option or flag to the GnuPG
+    :type input: C{str}
+    :param input: An input meant to be parsed as an option or flag to the GnuPG
                   process. Should be formatted the same as an option or flag
                   to the commandline gpg, i.e. "--encrypt-files".
 
-    @type _possible: C{frozenset}
-    @ivar _possible: All known GPG options and flags.
+    :type _possible: C{frozenset}
+    :ivar _possible: All known GPG options and flags.
 
-    @type _allowed: C{frozenset}
-    @ivar _allowed: All allowed GPG options and flags, e.g. all GPG options and
+    :type _allowed: C{frozenset}
+    :ivar _allowed: All allowed GPG options and flags, e.g. all GPG options and
                     flags which we are willing to acknowledge and parse. If we
                     want to support a new option, it will need to have its own
                     parsing class and its name will need to be added to this
                     set.
 
-    @rtype: C{Exception} or C{str}
-    @raise: UsageError if :ivar:_allowed is not a subset of :ivar:_possible.
+    :rtype: C{Exception} or C{str}
+    :raise: UsageError if :ivar:_allowed is not a subset of :ivar:_possible.
             ProtectedOption if :param:input is not in the set :ivar:_allowed.
-    @return: The original parameter :param:input, unmodified and unsanitized,
+    :return: The original parameter :param:input, unmodified and unsanitized,
              if no errors occur.
     """
 
@@ -498,11 +500,11 @@ def _sanitise(*args):
     If you're asking, "Is this *really* necessary?": No. Not really. See:
         https://xkcd.com/1181/
 
-    @type args: C{str}
-    @param args: (optional) The boolean arguments which will be passed to the
+    :type args: C{str}
+    :param args: (optional) The boolean arguments which will be passed to the
                  GnuPG process.
-    @rtype: C{str}
-    @param: :ivar:sanitised
+    :rtype: C{str}
+    :param: :ivar:sanitised
     """
 
     def _check_arg_and_value(arg, value):
@@ -511,17 +513,17 @@ def _sanitise(*args):
         quote out any escape characters in :param:values, and add the pair to
         :ivar:sanitised.
 
-        @type arg: C{str}
+        :type arg: C{str}
 
-        @param arg: The arguments which will be passed to the GnuPG process,
+        :param arg: The arguments which will be passed to the GnuPG process,
                     and, optionally their corresponding values.  The values are
                     any additional arguments following the GnuPG option or
                     flag. For example, if we wanted to pass "--encrypt
                     --recipient isis@leap.se" to gpg, then "--encrypt" would be
                     an arg without a value, and "--recipient" would also be an
                     arg, with a value of "isis@leap.se".
-        @type sanitised: C{str}
-        @ivar sanitised: The sanitised, allowed options.
+        :type sanitised: C{str}
+        :ivar sanitised: The sanitised, allowed options.
         """
         safe_values = str()
 
@@ -604,10 +606,10 @@ def _sanitise_list(arg_list):
     """
     A generator for running through a list of gpg options and sanitising them.
 
-    @type arg_list: C{list}
-    @param arg_list: A list of options and flags for gpg.
-    @rtype: C{generator}
-    @return: A generator whose next() method returns each of the items in
+    :type arg_list: C{list}
+    :param arg_list: A list of options and flags for gpg.
+    :rtype: C{generator}
+    :return: A generator whose next() method returns each of the items in
              :param:arg_list after calling :func:_sanitise with that item as a
              parameter.
     """
@@ -629,14 +631,14 @@ def _underscore(input, remove_prefix=False):
     Change hyphens to underscores so that GPG option names can be easily
     tranlated to object attributes.
 
-    @type input: C{str}
-    @param input: The input intended for the gnupg process.
+    :type input: C{str}
+    :param input: The input intended for the gnupg process.
 
-    @type remove_prefix: C{bool}
-    @param remove_prefix: If True, strip leading hyphens from the input.
+    :type remove_prefix: C{bool}
+    :param remove_prefix: If True, strip leading hyphens from the input.
 
-    @rtype: C{str}
-    @return: The :param:input with hyphens changed to underscores.
+    :rtype: C{str}
+    :return: The :param:input with hyphens changed to underscores.
     """
     if not remove_prefix:
         return input.replace('-', '_')
@@ -660,12 +662,12 @@ def _which(executable, flags=os.X_OK):
     manipulate the environment's PATH settings from placing malicious code
     higher in the PATH. It also does happily follows links.
 
-    @type name: C{str}
-    @param name: The name for which to search.
-    @type flags: C{int}
-    @param flags: Arguments to L{os.access}.
-    @rtype: C{list}
-    @param: A list of the full paths to files found, in the order in which
+    :type name: C{str}
+    :param name: The name for which to search.
+    :type flags: C{int}
+    :param flags: Arguments to L{os.access}.
+    :rtype: C{list}
+    :param: A list of the full paths to files found, in the order in which
             they were found.
     """
     result = []
@@ -1064,37 +1066,37 @@ class GPG(object):
         """
         Initialize a GnuPG process wrapper.
 
-        @type gpgbinary: C{str}
-        @param gpgbinary: Name for GnuPG binary executable. If the absolute
+        :type gpgbinary: C{str}
+        :param gpgbinary: Name for GnuPG binary executable. If the absolute
                             path is not given, the evironment variable $PATH is
                             searched for the executable and checked that the
                             real uid/gid of the user has sufficient permissions.
-        @type gpghome: C{str}
-        @param gpghome: Full pathname to directory containing the public and
+        :type gpghome: C{str}
+        :param gpghome: Full pathname to directory containing the public and
                         private keyrings. Default is whatever GnuPG defaults
                         to.
 
-        @type keyring: C{str}
-        @param keyring: raises C{DeprecationWarning}. Use :param:secring.
+        :type keyring: C{str}
+        :param keyring: raises C{DeprecationWarning}. Use :param:secring.
 
-        @type secring: C{str}
-        @param secring: Name of alternative secret keyring file to use. If left
+        :type secring: C{str}
+        :param secring: Name of alternative secret keyring file to use. If left
                         unspecified, this will default to using 'secring.gpg'
                         in the :param:gpghome directory, and create that file
                         if it does not exist.
 
-        @type pubring: C{str}
-        @param pubring: Name of alternative public keyring file to use. If left
+        :type pubring: C{str}
+        :param pubring: Name of alternative public keyring file to use. If left
                         unspecified, this will default to using 'pubring.gpg'
                         in the :param:gpghome directory, and create that file
                         if it does not exist.
 
-        @options: A list of additional options to pass to the GPG binary.
+        :options: A list of additional options to pass to the GPG binary.
 
-        @rtype: C{Exception} or C{}
-        @raises: RuntimeError with explanation message if there is a problem
+        :rtype: C{Exception} or C{}
+        :raises: RuntimeError with explanation message if there is a problem
                  invoking gpg.
-        @returns:
+        :returns:
         """
 
         if not gpghome:
@@ -1389,13 +1391,13 @@ class GPG(object):
         Verify the signature on the contents of a file or file-like
         object. Can handle embedded signatures as well as detached
         signatures. If using detached signatures, the file containing the
-        detached signature should be specified as the :param:`data_filename`.
+        detached signature should be specified as the :param:data_filename.
 
-        @param file: A file descriptor object. Its type will be checked with
-                     :func:`_is_file`.
-        @param data_filename: (optional) A file containing the GPG signature
-                              data for :param:`file`. If given, :param:`file`
-                              is verified via this detached signature.
+        :param file: A file descriptor object. Its type will be checked with
+                     :func:_is_file.
+        :param data_filename: A file containing the GPG signature data for
+                              :param:file. If given, :param:file is verified
+                              via this detached signature.
         """
         ## attempt to wrap any escape characters in quotes:
         safe_file = _fix_unsafe(file)
@@ -1667,7 +1669,7 @@ class GPG(object):
     def encrypt_file(self, file, recipients, sign=None,
             always_trust=False, passphrase=None,
             armor=True, output=None, symmetric=False):
-        """Encrypt the message read from the file-like object 'file'"""
+        """Encrypt the message read from the file-like object :param:file ."""
         args = ['--encrypt']
         if symmetric:
             args = ['--symmetric']
@@ -1693,7 +1695,7 @@ class GPG(object):
         return result
 
     def encrypt(self, data, recipients, **kwargs):
-        """Encrypt the message contained in the string 'data'
+        """Encrypt the message contained in the string :param:data .
 
         >>> import shutil
         >>> if os.path.exists("keys"):
@@ -1739,6 +1741,11 @@ class GPG(object):
         return result
 
     def decrypt(self, message, **kwargs):
+        """
+        Decrypt the contents of a string or file-like object :param:message .
+
+        :param message: A string or file-like object to decrypt.
+        """
         data = _make_binary_stream(message, self.encoding)
         result = self.decrypt_file(data, **kwargs)
         data.close()
@@ -1746,6 +1753,14 @@ class GPG(object):
 
     def decrypt_file(self, file, always_trust=False, passphrase=None,
                      output=None):
+        """
+        Decrypt the contents of a file-like object :param:file .
+
+        :param file: A file-like object to decrypt.
+        :param always_trust: Instruct GnuPG to ignore trust checks.
+        :param passphrase: The passphrase for the secret key used for decryption.
+        :param output: A file to write the decrypted output to.
+        """        
         args = ["--decrypt"]
         if output:  # write the output to a file with the specified name
             if os.path.exists(output):
