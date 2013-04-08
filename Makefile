@@ -26,3 +26,6 @@ docs:
 	cd docs
 	make clean
 	make html
+
+venv:
+	-source /usr/shared/python/ns/virtualenvwrapper.sh && mkvirtualenv -a "$PWD" --unzip-setuptools --distribute python-gnupg
