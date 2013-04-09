@@ -406,12 +406,18 @@ def _is_allowed(input):
     ##     eg, --no-show-photos would mitigate things like
     ##     https://www-01.ibm.com/support/docview.wss?uid=swg21620982
     _allowed = frozenset(
-        ['--list-packets', '--delete-keys', '--delete-secret-keys',
-         '--encrypt', '--print-mds', '--print-md', '--sign',
-         '--encrypt-files', '--gen-key', '--decrypt', '--decrypt-files',
-         '--list-keys', '--import', '--verify', '--version',
-         '--status-fd', '--no-tty', '--homedir', '--no-default-keyring',
-         '--keyring', '--passphrase-fd', '--fingerprint', '--with-colons'])
+        ['--list-keys', '--list-packets',  '--with-colons',
+         '--delete-keys', '--delete-secret-keys',
+         '--encrypt', '--encrypt-files',
+         '--print-mds', '--print-md', '--sign',
+         '--gen-key', '--batch',
+         '--decrypt', '--decrypt-files',
+         '--import',
+         '--verify',
+         '--version',
+         '--status-fd', '--no-tty', '--passphrase-fd',
+         '--homedir', '--no-default-keyring', '--keyring',
+         '--fingerprint'])
 
     ## check that _allowed is a subset of _possible
     try:
@@ -1760,7 +1766,7 @@ class GPG(object):
         :param always_trust: Instruct GnuPG to ignore trust checks.
         :param passphrase: The passphrase for the secret key used for decryption.
         :param output: A file to write the decrypted output to.
-        """        
+        """
         args = ["--decrypt"]
         if output:  # write the output to a file with the specified name
             if os.path.exists(output):
