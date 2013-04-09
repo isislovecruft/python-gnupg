@@ -192,30 +192,81 @@ class GPGTestCase(unittest.TestCase):
         instream = io.BytesIO("This is a string of bytes mapped in memory.")
         outstream = str("And this one is just a string.")
 
+    def expire_today(self):
+        """Make an expiry date set for today"""
+        from datetime import datetime
+        today = datetime.today()
+        date  = "%s" % today.date()
+        return date
 
-    def generate_key(self, first_name, last_name, domain, passphrase=None):
-        """Generate a key"""
+    def generate_key_input(self, real_name, email_domain, key_length=None,
+                           key_type=None, subkey_type=None, passphrase=None):
+        """Generate a GnuPG batch file for key unattended key creation"""
+        name = real_name.lower().replace(' ', '')
 
-        params = {'Key-Type': 'RSA',
-                  'Key-Length': 2048,
-                  'Subkey-Type': 'RSA',
-                  'Subkey-Length': 2048,
-                  'Name-Comment': 'A test user',
-                  'Expire-Date': 0,
-                  'Name-Real': '%s %s' % (first_name, last_name),
-                  'Name-Email': ("%s.%s@%s"
-                                 % (first_name, last_name, domain)).lower()}
-        if passphrase is None:
-            passphrase = ("%s%s" % (first_name[0], last_name)).lower()
-        params['Passphrase'] = passphrase
-        cmd = self.gpg.gen_key_input(**params)
-        return self.gpg.gen_key(cmd)
+        ## XXX will GPG just use it's defaults? does it have defaults if
+        ## we've just given it a homedir without a gpg.conf?
+        key_type   = 'RSA'if key_type is None else key_type
+        key_length = 2048 if key_length is None else key_length
 
-    def do_key_generation(self):
-        """Test that key generation succeeds"""
-        result = self.generate_key("Barbara", "Brown", "beta.com")
-        self.assertNotEqual(None, result, "Non-null result")
-        return result
+        batch = {'Key-Type': key_type,
+                 'Key-Length': key_length,
+                 'Name-Comment': 'python-gnupg tester',
+                 'Expire-Date': self.expire_today(),
+                 'Name-Real': '%s' % real_name,
+                 'Name-Email': ("%s.%s@%s" % (name, domain)) }
+
+        batch['Passphrase'] = name if passphrase is None else passphrase
+
+        if subkey_type is not None:
+            batch['Subkey-Type'] = subkey_type
+            batch['Subkey-Length'] = key_length
+
+        key_input = self.gpg.gen_key_input(**batch)
+        return key_input
+
+    def generate_key(self, real_name, email_domain, **kwargs):
+        """Generate a basic key"""
+        key_input = self.generate_key_input(real_name, email_domain, **kwargs):
+        key = self.gpg.gen_key(key_input)
+
+
+    def test_gen_key_input(self):
+        """Test that GnuPG batch file creation is successful."""
+        key_input = self.generate_key_input("Francisco Ferrer", "an.ok")
+
+
+    def test_rsa_key_generation(self):
+        """Test that RSA key generation succeeds"""
+        key = self.generate_key("Barbara Brown", "beta.com")
+        self.assertIsNotNone(key.fingerprint)
+
+    def test_rsa_key_generation_with_unicode(self):
+        """Test that RSA key generation succeeds with unicode characters."""
+        key = self.generate_key("Anaïs de Flavigny", "êtrerien.fr")
+        self.assertIsNotNone(key.fingerprint)
+
+    def test_rsa_key_generation_with_subkey(self):
+        """Test that RSA key generation succeeds with additional subkey."""
+        key = self.generate_key("Need Caffeine", "nowplea.se",
+                                subkey_type='RSA')
+        self.assertIsNotNone(key.fingerprint)
+
+    def test_dsa_key_generation(self):
+        """Test that DSA key generation succeeds"""
+        key = self.generate_key("DSA Signonly", "test.com")
+        self.assertIsNotNone(key.fingerprint)
+
+    def test_dsa_key_generation_with_unicode(self):
+        """Test that DSA key generation succeeds with unicode characters."""
+        key = self.generate_key("破壊合計する", "破壊合計する.日本")
+        self.assertIsNotNone(key.fingerprint)
+
+    def test_dsa_key_generation_with_subkey(self):
+        """Test that RSA key generation succeeds with additional subkey."""
+        key = self.generate_key("OMG Moar Coffee", "giveitto.me",
+                                subkey_type='ELG-E')
+        self.assertIsNotNone(key.fingerprint)
 
     def test_key_generation_with_invalid_key_type(self):
         """Test that key generation handles invalid key type"""
@@ -225,14 +276,15 @@ class GPGTestCase(unittest.TestCase):
             'Subkey-Type': 'ELG-E',
             'Subkey-Length': 2048,
             'Name-Comment': 'A test user',
-            'Expire-Date': 0,
+            'Expire-Date': self.expire_tomorrow(),
             'Name-Real': 'Test Name',
             'Name-Email': 'test.name@example.com',
         }
-        cmd = self.gpg.gen_key_input(**params)
-        result = self.gpg.gen_key(cmd)
-        self.assertFalse(result.data, 'Null data result')
-        self.assertEqual(None, result.fingerprint, 'Null fingerprint result')
+        batch = self.gpg.gen_key_input(**params)
+        key = self.gpg.gen_key(batch)
+        self.assertIsInstance(key.data, str)
+        self.assertEquals(key.data, '')
+        self.assertIs(None, result.fingerprint, 'Null fingerprint result')
 
     def test_key_generation_with_colons(self):
         """Test that key generation handles colons in key fields"""
@@ -489,6 +541,16 @@ TEST_GROUPS = {
                    'test_list_keys_initial_secret',
                    'test_make_args_drop_protected_options',
                    'test_make_args']),
+    'genkey' : set(['test_gen_key_input',
+                    'test_rsa_key_generation',
+                    'test_rsa_key_generation_with_unicode',
+                    'test_rsa_key_generation_with_subkey',
+                    'test_dsa_key_generation',
+                    'test_dsa_key_generation_with_unicode',
+                    'test_dsa_key_generation_with_subkey',
+                    'test_key_generation_with_invalid_key_type',
+                    'test_key_generation_with_empty_value',
+                    'test_key_generation_with_colons']),
     'sign' : set(['test_signature_verification']),
 
     'crypt' : set(['test_encryption_and_decryption',
