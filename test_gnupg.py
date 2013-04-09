@@ -214,7 +214,7 @@ class GPGTestCase(unittest.TestCase):
                  'Name-Comment': 'python-gnupg tester',
                  'Expire-Date': self.expire_today(),
                  'Name-Real': '%s' % real_name,
-                 'Name-Email': ("%s.%s@%s" % (name, domain)) }
+                 'Name-Email': ("%s@%s" % (name, email_domain)) }
 
         batch['Passphrase'] = name if passphrase is None else passphrase
 
@@ -227,9 +227,8 @@ class GPGTestCase(unittest.TestCase):
 
     def generate_key(self, real_name, email_domain, **kwargs):
         """Generate a basic key"""
-        key_input = self.generate_key_input(real_name, email_domain, **kwargs):
+        key_input = self.generate_key_input(real_name, email_domain, **kwargs)
         key = self.gpg.gen_key(key_input)
-
 
     def test_gen_key_input(self):
         """Test that GnuPG batch file creation is successful."""
@@ -276,7 +275,7 @@ class GPGTestCase(unittest.TestCase):
             'Subkey-Type': 'ELG-E',
             'Subkey-Length': 2048,
             'Name-Comment': 'A test user',
-            'Expire-Date': self.expire_tomorrow(),
+            'Expire-Date': self.expire_today(),
             'Name-Real': 'Test Name',
             'Name-Email': 'test.name@example.com',
         }
@@ -556,10 +555,10 @@ TEST_GROUPS = {
     'crypt' : set(['test_encryption_and_decryption',
                    'test_file_encryption_and_decryption']),
     'listkeys': set(['test_list_keys_after_generation']),
-    'keyrings' set(['test_public_keyring',
-                    'test_secret_keyring',
-                    'test_import_and_export',
-                    'test_deletion']),
+    'keyrings': set(['test_public_keyring',
+                     'test_secret_keyring',
+                     'test_import_and_export',
+                     'test_deletion']),
     'import' : set(['test_import_only']),
     }
 
