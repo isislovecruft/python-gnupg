@@ -42,7 +42,9 @@ Steve Traugott's documentation:
     Steve Traugott, stevegt@terraluna.org
     Thu Jun 23 21:27:20 PDT 2005
 
+
 Vinay Sajip's documentation:
+
     This version of the module has been modified from Steve Traugott's version
     (see http://trac.t7a.org/isconf/browser/trunk/lib/python/isconf/GPG.py) by
     Vinay Sajip to make use of the subprocess module (Steve's version uses
@@ -56,7 +58,7 @@ Vinay Sajip's documentation:
 """
 
 __module__ = 'gnupg'
-__version__ = "0.3.1"
+__version__ = "0.4.0"
 __author__ = "Isis Agora Lovecruft"
 __date__  = "12 Febuary 2013"
 
