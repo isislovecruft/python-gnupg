@@ -555,14 +555,11 @@ TEST_GROUPS = {
 
     'crypt' : set(['test_encryption_and_decryption',
                    'test_file_encryption_and_decryption']),
-    'key' : set(['test_deletion',
-                 'test_import_and_export',
-                 'test_public_keyring',
-                 'test_secret_keyring',
-                 'test_list_keys_after_generation',
-                 'test_key_generation_with_invalid_key_type',
-                 'test_key_generation_with_empty_value',
-                 'test_key_generation_with_colons']),
+    'listkeys': set(['test_list_keys_after_generation']),
+    'keyrings' set(['test_public_keyring',
+                    'test_secret_keyring',
+                    'test_import_and_export',
+                    'test_deletion']),
     'import' : set(['test_import_only']),
     }
 
