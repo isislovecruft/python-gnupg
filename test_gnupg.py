@@ -239,13 +239,6 @@ class GPGTestCase(unittest.TestCase):
         instream = io.BytesIO("This is a string of bytes mapped in memory.")
         outstream = str("And this one is just a string.")
 
-    def expire_today(self):
-        """Make an expiry date set for today"""
-        from datetime import datetime
-        today = datetime.today()
-        date  = "%s" % today.date()
-        return date
-
     def generate_key_input(self, real_name, email_domain, key_length=None,
                            key_type=None, subkey_type=None, passphrase=None):
         """Generate a GnuPG batch file for key unattended key creation"""
@@ -259,7 +252,7 @@ class GPGTestCase(unittest.TestCase):
         batch = {'Key-Type': key_type,
                  'Key-Length': key_length,
                  'Name-Comment': 'python-gnupg tester',
-                 'Expire-Date': self.expire_today(),
+                 'Expire-Date': 1,
                  'Name-Real': '%s' % real_name,
                  'Name-Email': ("%s@%s" % (name, email_domain)) }
 
