@@ -195,7 +195,8 @@ class GPGTestCase(unittest.TestCase):
         expected = ['/usr/bin/gpg',
                     '--status-fd 2 --no-tty',
                     '--homedir "%s"' % os.path.join(os.getcwd(), 'keys'),
-                    '--no-default-keyring --keyring "%s"' % self.secring]
+                    '--no-default-keyring --keyring %s --secret-keyring %s'
+                    % (self.pubring, self.secring)]
         self.assertListEqual(cmd, expected)
 
     def test_make_args(self):
