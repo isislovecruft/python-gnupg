@@ -1076,7 +1076,7 @@ class GPG(object):
                         to.
 
         :type keyring: C{str}
-        :param keyring: raises C{DeprecationWarning}. Use :param:secring.
+        :param keyring: raises C{DeprecationWarning}. Use :param:pubring.
 
         :type secring: C{str}
         :param secring: Name of alternative secret keyring file to use. If left
@@ -1140,7 +1140,7 @@ class GPG(object):
             except DeprecationWarning as dw:
                 log.warn(dw.message)
             finally:
-                secring = keyring
+                pubring = keyring
 
         secring = 'secring.gpg' if secring is None else _fix_unsafe(secring)
         pubring = 'pubring.gpg' if pubring is None else _fix_unsafe(pubring)
@@ -1149,7 +1149,7 @@ class GPG(object):
         self.pubring = os.path.join(self.gpghome, pubring)
         ## XXX should eventually be changed throughout to 'secring', but until
         ## then let's not break backward compatibility
-        self.keyring = self.secring
+        self.keyring = self.pubring
 
         for ring in [self.secring, self.pubring]:
             if ring and not os.path.isfile(ring):
@@ -1203,7 +1203,8 @@ class GPG(object):
         if self.gpghome:
             cmd.append('--homedir "%s"' % self.gpghome)
         if self.keyring:
-            cmd.append('--no-default-keyring --keyring "%s"' % self.keyring)
+            cmd.append('--no-default-keyring --keyring %s --secret-keyring %s'
+                       % (self.pubring, self.secring))
         if passphrase:
             cmd.append('--batch --passphrase-fd 0')
         if self.use_agent:
