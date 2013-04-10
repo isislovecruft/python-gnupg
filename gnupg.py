@@ -1308,15 +1308,11 @@ class GPG(object):
         stderr.close()
         stdout.close()
 
-    def _handle_io(self, args, file, result, passphrase=None, binary=False):
+    def _handle_io(self, args, file, result, passphrase=False, binary=False):
         """
         Handle a call to GPG - pass input data, collect output data.
         """
-        if passphrase is not None:
-            ask_passphrase = True
-        else:
-            ask_passphrase = False
-        p = self._open_subprocess(args, ask_passphrase)
+        p = self._open_subprocess(args, passphrase)
         if not binary:
             stdin = codecs.getwriter(self.encoding)(p.stdin)
         else:
