@@ -267,7 +267,8 @@ class GPGTestCase(unittest.TestCase):
     def test_gen_key_input(self):
         """Test that GnuPG batch file creation is successful."""
         key_input = self.generate_key_input("Francisco Ferrer", "an.ok")
-
+        self.assertIsNotNone(key_input)
+        self.assertGreater(key_input.find('Francisco Ferrer'), 0)
 
     def test_rsa_key_generation(self):
         """
