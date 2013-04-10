@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 A test harness for gnupg.py.
@@ -5,26 +6,34 @@ A test harness for gnupg.py.
 Copyright © 2013 Isis Lovecruft.
 Copyright © 2008-2013 Vinay Sajip. All rights reserved.
 """
+
+import argparse
 import doctest
 import logging
 from functools import wraps
+import inspect
 import io
 import os
 import shutil
 import sys
 import tempfile
-import unittest
+
+## Use unittest2 if we're on Python2.6 or less:
+if sys.version_info.major == 2 and sys.version_info.minor <= 6:
+    unittest = __import__(unittest2)
+else:
+    import unittest
 
 import gnupg
 
-__author__ = "Isis Lovecruft"
-__date__  = "2013-03-02"
+__author__  = gnupg.__author__
+__date__    = gnupg.__date__
+__version__ = gnupg.__version__
 
-ALL_TESTS = True
 REPO_DIR = os.getcwd()
-TEST_DIR = os.path.join(REPO_DIR, 'keys')
+HOME_DIR = os.path.join(REPO_DIR, 'keys')
 
-tempfile.tempdir = os.path.join(REPO_DIR, 'temp')
+tempfile.tempdir = os.path.join(REPO_DIR, 'tmp_test')
 if not os.path.isdir(tempfile.gettempdir()):
     os.mkdir(tempfile.gettempdir())
 
@@ -33,7 +42,7 @@ def _make_tempfile(*args, **kwargs):
     return tempfile.TemporaryFile(dir=tempfile.gettempdir(),
                                   *args, **kwargs)
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(gnupg.logger.name)
 
 KEYS_TO_IMPORT = """-----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1.4.9 (MingW32)
@@ -95,12 +104,15 @@ def is_list_with_len(o, n):
     return isinstance(o, list) and len(o) == n
 
 def compare_keys(k1, k2):
-    """Compare ASCII keys"""
+    """
+    Compare ASCII keys.
+    """
     k1 = k1.split('\n')
     k2 = k2.split('\n')
     del k1[1] # remove version lines
     del k2[1]
     return k1 != k2
+
 
 class ResultStringIO(io.StringIO):
     def __init__(self):
@@ -109,12 +121,29 @@ class ResultStringIO(io.StringIO):
     def write(self, data):
         super(self, io.StringIO).write(unicode(data))
 
+
 class GPGTestCase(unittest.TestCase):
+    """
+    A group of :class:`unittest.TestCase` unittests for testing python-gnupg.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        """
+        Setup the :class:`GPGTestCase` and runtime environment for tests.
+
+        This function must be called manually.
+        xxx or is called by TestSuite.
+        """
+        pass
+
     def setUp(self):
-        hd = os.path.join(os.getcwd(), 'keys')
+        """
+        This method is called once per self.test_* method.
+        """
+        hd = HOME_DIR
         if os.path.exists(hd):
-            self.assertTrue(os.path.isdir(hd),
-                            "Not a directory: %s" % hd)
+            self.assertTrue(os.path.isdir(hd), "Not a directory: %s" % hd)
             shutil.rmtree(hd)
         self.homedir = hd
         self.gpg = gnupg.GPG(gpghome=hd, gpgbinary='gpg')
@@ -122,20 +151,26 @@ class GPGTestCase(unittest.TestCase):
         self.secring = os.path.join(self.homedir, 'secring.gpg')
 
     def test_environment(self):
-        """Test the environment by ensuring that setup worked"""
+        """
+        Test the environment by ensuring that setup worked.
+        """
         hd = self.homedir
         self.assertTrue(os.path.exists(hd) and os.path.isdir(hd),
                         "Not an existing directory: %s" % hd)
 
     def test_gpg_binary(self):
-        """Test that 'gpg --version' does not return an error code"""
+        """
+        Test that 'gpg --version' does not return an error code.
+        """
         proc = self.gpg._open_subprocess(['--version'])
         result = io.StringIO()
         self.gpg._collect_output(proc, result, stdin=proc.stdin)
         self.assertEqual(proc.returncode, 0)
 
     def test_gpg_binary_version_str(self):
-        """That that 'gpg --version' returns the expected output"""
+        """
+        That that 'gpg --version' returns the expected output.
+        """
         proc = self.gpg._open_subprocess(['--version'])
         result = proc.stdout.read(1024)
         expected1 = "Supported algorithms:"
@@ -149,22 +184,28 @@ class GPGTestCase(unittest.TestCase):
         self.assertGreater(result.find(expected4), 0)
 
     def test_gpg_binary_not_abs(self):
-        """Test that a non-absolute path to gpg results in a full path"""
+        """
+        Test that a non-absolute path to gpg results in a full path.
+        """
         self.assertTrue(os.path.isabs(self.gpg.gpgbinary))
 
     def test_make_args_drop_protected_options(self):
-        """Test that unsupported gpg options are dropped"""
+        """
+        Test that unsupported gpg options are dropped.
+        """
         self.gpg.options = ['--tyrannosaurus-rex', '--stegosaurus']
         self.gpg.keyring = self.secring
         cmd = self.gpg.make_args(None, False)
         expected = ['/usr/bin/gpg',
                     '--status-fd 2 --no-tty',
-                    '--homedir "/home/isis/code/riseup/python-gnupg/keys"',
+                    '--homedir "%s"' % os.path.join(os.getcwd(), 'keys'),
                     '--no-default-keyring --keyring "%s"' % self.secring]
         self.assertListEqual(cmd, expected)
 
     def test_make_args(self):
-        """Test argument line construction"""
+        """
+        Test argument line construction.
+        """
         not_allowed = ['--bicycle', '--zeppelin', 'train', 'flying-carpet']
         self.gpg.options = not_allowed[:-2]
         args = self.gpg.make_args(not_allowed[2:], False)
@@ -173,14 +214,18 @@ class GPGTestCase(unittest.TestCase):
             self.assertNotIn(na, args)
 
     def test_list_keys_initial_public(self):
-        """Test that initially there are no public keys"""
+        """
+        Test that initially there are no public keys.
+        """
         public_keys = self.gpg.list_keys()
         self.assertTrue(is_list_with_len(public_keys, 0),
                         "Empty list expected...got instead: %s"
                         % str(public_keys))
 
     def test_list_keys_initial_secret(self):
-        """Test that initially there are no secret keys"""
+        """
+        Test that initially there are no secret keys.
+        """
         private_keys = self.gpg.list_keys(secret=True)
         self.assertTrue(is_list_with_len(private_keys, 0),
                         "Empty list expected...got instead: %s"
@@ -188,63 +233,156 @@ class GPGTestCase(unittest.TestCase):
 
 
     def test_copy_data(self):
-        """Test that _copy_data() is able to duplicate byte streams"""
+        """
+        XXX implement me
+        XXX add me to a test suite
+
+        Test that _copy_data() is able to duplicate byte streams.
+        """
         instream = io.BytesIO("This is a string of bytes mapped in memory.")
         outstream = str("And this one is just a string.")
 
+    def generate_key_input(self, real_name, email_domain, key_length=None,
+                           key_type=None, subkey_type=None, passphrase=None):
+        """
+        Generate a GnuPG batch file for key unattended key creation.
+        """
+        name = real_name.lower().replace(' ', '')
 
-    def generate_key(self, first_name, last_name, domain, passphrase=None):
-        """Generate a key"""
+        ## XXX will GPG just use it's defaults? does it have defaults if
+        ## we've just given it a homedir without a gpg.conf?
+        key_type   = 'RSA'if key_type is None else key_type
+        key_length = 2048 if key_length is None else key_length
 
-        params = {'Key-Type': 'RSA',
-                  'Key-Length': 2048,
-                  'Subkey-Type': 'RSA',
-                  'Subkey-Length': 2048,
-                  'Name-Comment': 'A test user',
-                  'Expire-Date': 0,
-                  'Name-Real': '%s %s' % (first_name, last_name),
-                  'Name-Email': ("%s.%s@%s"
-                                 % (first_name, last_name, domain)).lower()}
-        if passphrase is None:
-            passphrase = ("%s%s" % (first_name[0], last_name)).lower()
-        params['Passphrase'] = passphrase
-        cmd = self.gpg.gen_key_input(**params)
-        return self.gpg.gen_key(cmd)
+        batch = {'Key-Type': key_type,
+                 'Key-Length': key_length,
+                 'Name-Comment': 'python-gnupg tester',
+                 'Expire-Date': 1,
+                 'Name-Real': '%s' % real_name,
+                 'Name-Email': ("%s@%s" % (name, email_domain)) }
 
-    def do_key_generation(self):
-        """Test that key generation succeeds"""
-        result = self.generate_key("Barbara", "Brown", "beta.com")
-        self.assertNotEqual(None, result, "Non-null result")
-        return result
+        batch['Passphrase'] = name if passphrase is None else passphrase
+
+        if subkey_type is not None:
+            batch['Subkey-Type'] = subkey_type
+            batch['Subkey-Length'] = key_length
+
+        key_input = self.gpg.gen_key_input(**batch)
+        return key_input
+
+    def generate_key(self, real_name, email_domain, **kwargs):
+        """
+        Generate a basic key.
+        """
+        key_input = self.generate_key_input(real_name, email_domain, **kwargs)
+        key = self.gpg.gen_key(key_input)
+
+    def test_gen_key_input(self):
+        """
+        Test that GnuPG batch file creation is successful.
+        """
+        key_input = self.generate_key_input("Francisco Ferrer", "an.ok")
+
+
+    def test_rsa_key_generation(self):
+        """
+        Test that RSA key generation succeeds.
+        """
+        key = self.generate_key("Barbara Brown", "beta.com")
+        self.assertIsNotNone(key)
+        self.assertIsNotNone(key.fingerprint)
+
+    def test_rsa_key_generation_with_unicode(self):
+        """
+        Test that RSA key generation succeeds with unicode characters.
+        """
+        key = self.generate_key("Anaïs de Flavigny", "êtrerien.fr")
+        self.assertIsNotNone(key)
+        self.assertIsNotNone(key.fingerprint)
+
+    def test_rsa_key_generation_with_subkey(self):
+        """
+        Test that RSA key generation succeeds with additional subkey.
+        """
+        key = self.generate_key("Need Caffeine", "nowplea.se",
+                                subkey_type='RSA')
+        self.assertIsNotNone(key)
+        self.assertIsNotNone(key.fingerprint)
+
+    def test_dsa_key_generation(self):
+        """
+        Test that DSA key generation succeeds.
+        """
+        key = self.generate_key("DSA Signonly", "test.com")
+        self.assertIsNotNone(key)
+        self.assertIsNotNone(key.fingerprint)
+
+    def test_dsa_key_generation_with_unicode(self):
+        """
+        Test that DSA key generation succeeds with unicode characters.
+        """
+        key = self.generate_key("破壊合計する", "破壊合計する.日本")
+        self.assertIsNotNone(key)
+        self.assertIsNotNone(key.fingerprint)
+
+    def test_dsa_key_generation_with_subkey(self):
+        """
+        Test that RSA key generation succeeds with additional subkey.
+        """
+        key = self.generate_key("OMG Moar Coffee", "giveitto.me",
+                                subkey_type='ELG-E')
+        self.assertIsNotNone(key)
+        self.assertIsNotNone(key.fingerprint)
 
     def test_key_generation_with_invalid_key_type(self):
-        """Test that key generation handles invalid key type"""
+        """
+        Test that key generation handles invalid key type.
+        """
         params = {
             'Key-Type': 'INVALID',
             'Key-Length': 1024,
             'Subkey-Type': 'ELG-E',
             'Subkey-Length': 2048,
             'Name-Comment': 'A test user',
-            'Expire-Date': 0,
+            'Expire-Date': self.expire_today(),
             'Name-Real': 'Test Name',
             'Name-Email': 'test.name@example.com',
         }
-        cmd = self.gpg.gen_key_input(**params)
-        result = self.gpg.gen_key(cmd)
-        self.assertFalse(result.data, 'Null data result')
-        self.assertEqual(None, result.fingerprint, 'Null fingerprint result')
+        batch = self.gpg.gen_key_input(**params)
+        key = self.gpg.gen_key(batch)
+        self.assertIsInstance(key.data, str)
+        self.assertEquals(key.data, '')
+        self.assertIs(None, key.fingerprint, 'Null fingerprint result')
 
     def test_key_generation_with_colons(self):
-        """Test that key generation handles colons in key fields"""
+        """
+        Test that key generation handles colons in Name fields.
+        """
         params = {
             'key_type': 'RSA',
             'name_real': 'urn:uuid:731c22c4-830f-422f-80dc-14a9fdae8c19',
             'name_comment': 'dummy comment',
             'name_email': 'test.name@example.com',
         }
-        cmd = self.gpg.gen_key_input(**params)
-        result = self.gpg.gen_key(cmd)
+        batch = self.gpg.gen_key_input(**params)
+        key = self.gpg.gen_key(cmd)
+        print "KEY DATA\n", key.data
+        print "KEY FINGERPRINT\n", key.fingerprint
+
+    def test_key_generation_import_list_with_colons(self):
+        """
+        Test that key generation handles colons in Name fields.
+        """
+        params = {
+            'key_type': 'RSA',
+            'name_real': 'urn:uuid:731c22c4-830f-422f-80dc-14a9fdae8c19',
+            'name_comment': 'dummy comment',
+            'name_email': 'test.name@example.com',
+        }
+        batch = self.gpg.gen_key_input(**params)
+        key = self.gpg.gen_key(cmd)
         keys = self.gpg.list_keys()
+        self.assertIsNotNone(key)
         self.assertEqual(len(keys), 1)
         key = keys[0]
         uids = key['uids']
@@ -254,7 +392,9 @@ class GPGTestCase(unittest.TestCase):
                               '(dummy comment) <test.name@example.com>')
 
     def test_key_generation_with_empty_value(self):
-        """Test that key generation handles empty values"""
+        """
+        Test that key generation handles empty values.
+        """
         params = {
             'key_type': 'RSA',
             'key_length': 1024,
@@ -267,7 +407,9 @@ class GPGTestCase(unittest.TestCase):
         self.assertTrue('\nName-Comment: A\n' in cmd)
 
     def test_list_keys_after_generation(self):
-        """Test that after key generation, the generated key is available"""
+        """
+	Test that after key generation, the generated key is available.
+	"""
         self.test_list_keys_initial()
         self.do_key_generation()
         public_keys = self.gpg.list_keys()
@@ -278,7 +420,9 @@ class GPGTestCase(unittest.TestCase):
                         "1-element list expected")
 
     def test_encryption_and_decryption(self):
-        """Test that encryption and decryption works"""
+        """
+	Test that encryption and decryption works.
+	"""
         logger.debug("test_encryption_and_decryption begins")
         key = self.generate_key("Andrew", "Able", "alpha.com",
                                 passphrase="andy")
@@ -313,17 +457,23 @@ class GPGTestCase(unittest.TestCase):
         self.assertEqual(data, str(ddata))
 
     def test_public_keyring(self):
-        """Test that the public keyring is found in the gpg home directory"""
+        """
+	Test that the public keyring is found in the gpg home directory.
+	"""
         self.gpg.keyring = self.pubring
         self.assertTrue(os.path.isfile(self.pubring))
 
     def test_secret_keyring(self):
-        """Test that the secret keyring is found in the gpg home directory"""
+        """
+	Test that the secret keyring is found in the gpg home directory.
+	"""
         self.gpg.keyring = self.secring
         self.assertTrue(os.path.isfile(self.secring))
 
     def test_import_and_export(self):
-        """Test that key import and export works"""
+        """
+	Test that key import and export works.
+	"""
         logger.debug("test_import_and_export begins")
         self.test_list_keys_initial()
         gpg = self.gpg
@@ -352,7 +502,9 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_import_and_export ends")
 
     def test_import_only(self):
-        """Test that key import works"""
+	"""
+	Test that key import works.
+	"""
         logger.debug("test_import_only begins")
         self.test_list_keys_initial()
         self.gpg.import_keys(KEYS_TO_IMPORT)
@@ -374,7 +526,9 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_import_only ends")
 
     def test_signature_verification(self):
-        """Test that signing and verification works"""
+        """
+	Test that signing and verification works.
+	"""
         logger.debug("test_signature_verification begins")
         key = self.generate_key("Andrew", "Able", "alpha.com")
         self.gpg.encoding = 'latin-1'
@@ -432,7 +586,9 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_signature_verification ends")
 
     def test_deletion(self):
-        """Test that key deletion works"""
+        """
+	Test that key deletion works.
+	"""
         logger.debug("test_deletion begins")
         self.gpg.import_keys(KEYS_TO_IMPORT)
         public_keys = self.gpg.list_keys()
@@ -445,7 +601,9 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_deletion ends")
 
     def test_file_encryption_and_decryption(self):
-        """Test that encryption/decryption to/from file works"""
+        """
+	Test that encryption/decryption to/from file works.
+	"""
         logger.debug("test_file_encryption_and_decryption begins")
 
         encfname = _make_tempfile()
@@ -480,68 +638,121 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_file_encryption_and_decryption ends")
 
 
-TEST_GROUPS = {
-    'basic' : set(['test_environment',
-                   'test_gpg_binary',
-                   'test_gpg_binary_not_abs',
-                   'test_gpg_binary_version_str',
-                   'test_list_keys_initial_public',
-                   'test_list_keys_initial_secret',
-                   'test_make_args_drop_protected_options',
-                   'test_make_args']),
-    'sign' : set(['test_signature_verification']),
+suites = { 'basic': set(['test_environment',
+                         'test_gpg_binary',
+                         'test_gpg_binary_not_abs',
+                         'test_gpg_binary_version_str',
+                         'test_list_keys_initial_public',
+                         'test_list_keys_initial_secret',
+                         'test_make_args_drop_protected_options',
+                         'test_make_args']),
+           'genkey': set(['test_gen_key_input',
+                          'test_rsa_key_generation',
+                          'test_rsa_key_generation_with_unicode',
+                          'test_rsa_key_generation_with_subkey',
+                          'test_dsa_key_generation',
+                          'test_dsa_key_generation_with_unicode',
+                          'test_dsa_key_generation_with_subkey',
+                          'test_key_generation_with_invalid_key_type',
+                          'test_key_generation_with_empty_value',
+                          'test_key_generation_with_colons']),
+           'sign': set(['test_signature_verification']),
+           'crypt': set(['test_encryption_and_decryption',
+                         'test_file_encryption_and_decryption']),
+           'listkeys': set(['test_list_keys_after_generation']),
+           'keyrings': set(['test_public_keyring',
+                            'test_secret_keyring',
+                            'test_import_and_export',
+                            'test_deletion']),
+           'import': set(['test_import_only']), }
 
-    'crypt' : set(['test_encryption_and_decryption',
-                   'test_file_encryption_and_decryption']),
-    'key' : set(['test_deletion',
-                 'test_import_and_export',
-                 'test_public_keyring',
-                 'test_secret_keyring',
-                 'test_list_keys_after_generation',
-                 'test_key_generation_with_invalid_key_type',
-                 'test_key_generation_with_empty_value',
-                 'test_key_generation_with_colons']),
-    'import' : set(['test_import_only']),
-    }
-
-def suite(args=None):
-    if args is None:
-        args = sys.argv[1:]
-    if not args:
-        result = unittest.TestLoader().loadTestsFromTestCase(GPGTestCase)
-        want_doctests = False
-    else:
-        tests = set()
-        want_doctests = False
-        for arg in args:
-            if arg in TEST_GROUPS:
-                tests.update(TEST_GROUPS[arg])
-            elif arg == "doc":
-                want_doctests = True
-            else:
-                print("Ignoring unknown test group %r" % arg)
-        result = unittest.TestSuite(list(map(GPGTestCase, tests)))
-    if want_doctests:
-        result.addTest(doctest.DocTestSuite(gnupg))
-    return result
-
-def init_logging():
+def _init_logging():
     logging.basicConfig(
         level=logging.DEBUG, filename="test_gnupg.log",
         filemode="a",
         format="%(asctime)s %(levelname)-5s %(name)-7s %(threadName)-10s %(message)s")
     logging.captureWarnings(True)
     logging.logThreads = True
-    logger.addHandler(logging.StreamHandler(stream=sys.stdout))
-    #logger.addHandler(logging.RootLogger(logging.DEBUG))
-    #logger.addHandler(logging.Logger("gnupg.py", level=logging.DEBUG))
+    stream_handler = logging.StreamHandler(stream=sys.stdout)
+    stream_handler.setLevel(logging.DEBUG)
+    logger = gnupg.logger
+    logger.addHandler(stream_handler)
+    logger.debug("Starting the logger...")
 
-def main():
-    init_logging()
-    tests = suite()
-    results = unittest.TextTestRunner(verbosity=3).run(tests)
-    return not results.wasSuccessful()
+def main(args):
+    if not args.quiet:
+        _init_logging()
 
+    loader = unittest.TestLoader()
+
+    def _createTests(prog):
+        load_tests = list()
+        if args.test is not None:
+            for suite in args.test:
+                if suite in args.suites.keys():
+                    logger.debug("Adding %d items from test suite '%s':"
+                                 % (len(args.suites[suite]), suite))
+                    for method in args.suites[suite]:
+                        load_tests.append(method)
+                        logger.debug("\t%s" % method)
+                else:
+                    logger.debug("Ignoring unknown test suite %r" % suite)
+            tests = unittest.TestSuite(list(map(GPGTestCase, load_tests)))
+        else:
+            tests = prog.testLoader.loadTestsFromTestCase(GPGTestCase)
+            args.run_doctest = True ## xxx can we set options here?
+        if args.run_doctest:
+            tests.addTest(doctest.DocTestSuite(gnupg))
+        logger.debug("Loaded %d tests..." % tests.countTestCases())
+        prog.test = tests
+
+    runner = unittest.TextTestRunner(verbosity=args.verbose, stream=sys.stderr)
+    runner.resultclass = unittest.TextTestResult
+
+    prog = unittest.TestProgram
+    prog.createTests = _createTests
+    program = prog(module=GPGTestCase,
+                   testRunner=runner,
+                   testLoader=loader,
+                   verbosity=args.verbose,
+                   catchbreak=True)
 
 if __name__ == "__main__":
-    sys.exit(main())
+
+    suite_names = list()
+    for name, methodset in suites.items():
+        suite_names.append(name)
+        this_file = inspect.getfile(inspect.currentframe()).split('.', 1)[0]
+        #mod = getattr(this_file, '__dict__', None)
+        #func = getattr(gnupg.__module__, '__setattr__', None)
+        #if func is not None:
+        #    func(name, list(methodset))
+        setattr(GPGTestCase, name, list(methodset))
+
+    parser = argparse.ArgumentParser(description="Unittests for python-gnupg")
+    parser.add_argument('--doctest',
+                        dest='run_doctest',
+                        type=bool,
+                        default=False,
+                        help='Run example code in docstrings')
+    parser.add_argument('--quiet',
+                        dest='quiet',
+                        type=bool,
+                        default=False,
+                        help='Disable logging to stdout')
+    parser.add_argument('--verbose',
+                        dest='verbose',
+                        type=int,
+                        default=4,
+                        help='Set verbosity level (low=1 high=5) (default: 4)')
+    parser.add_argument('test',
+                        metavar='test',
+                        nargs='+',
+                        type=str,
+                        help='Select a test suite to run (default: all)')
+    parser.epilog = "Available test suites: %s" % " ".join(suite_names)
+
+    args = parser.parse_args()
+    args.suites = suites
+
+    sys.exit(main(args))

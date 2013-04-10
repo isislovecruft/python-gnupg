@@ -406,12 +406,18 @@ def _is_allowed(input):
     ##     eg, --no-show-photos would mitigate things like
     ##     https://www-01.ibm.com/support/docview.wss?uid=swg21620982
     _allowed = frozenset(
-        ['--list-packets', '--delete-keys', '--delete-secret-keys',
-         '--encrypt', '--print-mds', '--print-md', '--sign',
-         '--encrypt-files', '--gen-key', '--decrypt', '--decrypt-files',
-         '--list-keys', '--import', '--verify', '--version',
-         '--status-fd', '--no-tty', '--homedir', '--no-default-keyring',
-         '--keyring', '--passphrase-fd', '--fingerprint', '--with-colons'])
+        ['--list-keys', '--list-packets',  '--with-colons',
+         '--delete-keys', '--delete-secret-keys',
+         '--encrypt', '--encrypt-files',
+         '--print-mds', '--print-md', '--sign',
+         '--gen-key', '--batch',
+         '--decrypt', '--decrypt-files',
+         '--import',
+         '--verify',
+         '--version',
+         '--status-fd', '--no-tty', '--passphrase-fd',
+         '--homedir', '--no-default-keyring', '--keyring', '--secret-keyring',
+         '--fingerprint'])
 
     ## check that _allowed is a subset of _possible
     try:
@@ -442,8 +448,6 @@ def _is_allowed(input):
                 raise ProtectedOption("Option '%s' not supported."
                                       % _fix_unsafe(hyphenated))
             else:
-                logger.debug("Got allowed option '%s'."
-                             % _fix_unsafe(hyphenated))
                 return input
     return None
 
@@ -537,19 +541,14 @@ def _sanitise(*args):
         else:
             safe_values += (allowed_flag + " ")
             if isinstance(value, str):
-                value_list = []
-                if value.find(' ') > 0:
-                    value_list = value.split(' ')
-                else:
-                    logger.debug("_check_values(): got non-string for values")
+                value_list = value.split(' ')
                 for value in value_list:
                     safe_value = _fix_unsafe(value)
                     if allowed_flag == '--encrypt' or '--encrypt-files' \
                             or '--decrypt' or '--decrypt-file' \
                             or '--import' or '--verify':
-                        ## xxx what other things should we check for?
                         ## Place checks here:
-                        if _is_file(safe_value):
+                        if not safe_value == "" and _is_file(safe_value):
                             safe_values += (safe_value + " ")
                         else:
                             logger.debug("Got non-filename for %s option: %s"
@@ -1077,7 +1076,7 @@ class GPG(object):
                         to.
 
         :type keyring: C{str}
-        :param keyring: raises C{DeprecationWarning}. Use :param:secring.
+        :param keyring: raises C{DeprecationWarning}. Use :param:pubring.
 
         :type secring: C{str}
         :param secring: Name of alternative secret keyring file to use. If left
@@ -1141,7 +1140,7 @@ class GPG(object):
             except DeprecationWarning as dw:
                 log.warn(dw.message)
             finally:
-                secring = keyring
+                pubring = keyring
 
         secring = 'secring.gpg' if secring is None else _fix_unsafe(secring)
         pubring = 'pubring.gpg' if pubring is None else _fix_unsafe(pubring)
@@ -1150,7 +1149,7 @@ class GPG(object):
         self.pubring = os.path.join(self.gpghome, pubring)
         ## XXX should eventually be changed throughout to 'secring', but until
         ## then let's not break backward compatibility
-        self.keyring = self.secring
+        self.keyring = self.pubring
 
         for ring in [self.secring, self.pubring]:
             if ring and not os.path.isfile(ring):
@@ -1204,7 +1203,8 @@ class GPG(object):
         if self.gpghome:
             cmd.append('--homedir "%s"' % self.gpghome)
         if self.keyring:
-            cmd.append('--no-default-keyring --keyring "%s"' % self.keyring)
+            cmd.append('--no-default-keyring --keyring %s --secret-keyring %s'
+                       % (self.pubring, self.secring))
         if passphrase:
             cmd.append('--batch --passphrase-fd 0')
         if self.use_agent:
@@ -1760,7 +1760,7 @@ class GPG(object):
         :param always_trust: Instruct GnuPG to ignore trust checks.
         :param passphrase: The passphrase for the secret key used for decryption.
         :param output: A file to write the decrypted output to.
-        """        
+        """
         args = ["--decrypt"]
         if output:  # write the output to a file with the specified name
             if os.path.exists(output):
