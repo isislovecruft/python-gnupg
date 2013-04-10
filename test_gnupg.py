@@ -328,9 +328,9 @@ class GPGTestCase(unittest.TestCase):
             'Key-Type': 'INVALID',
             'Key-Length': 1024,
             'Subkey-Type': 'ELG-E',
-            'Subkey-Length': 2048,
+            'Subkey-Length': 1024,
             'Name-Comment': 'A test user',
-            'Expire-Date': self.expire_today(),
+            'Expire-Date': 1,
             'Name-Real': 'Test Name',
             'Name-Email': 'test.name@example.com',
         }
