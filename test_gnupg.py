@@ -195,7 +195,7 @@ class GPGTestCase(unittest.TestCase):
         cmd = self.gpg.make_args(None, False)
         expected = ['/usr/bin/gpg',
                     '--status-fd 2 --no-tty',
-                    '--homedir "/home/isis/code/riseup/python-gnupg/keys"',
+                    '--homedir "%s"' % os.path.join(os.getcwd(), 'keys'),
                     '--no-default-keyring --keyring "%s"' % self.secring]
         self.assertListEqual(cmd, expected)
 
