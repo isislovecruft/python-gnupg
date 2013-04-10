@@ -545,8 +545,10 @@ def _sanitise(*args):
                     --recipient isis@leap.se" to gpg, then "--encrypt" would be
                     an arg without a value, and "--recipient" would also be an
                     arg, with a value of "isis@leap.se".
-        :type sanitised: C{str}
-        :ivar sanitised: The sanitised, allowed options.
+        :type checked: C{list}
+        :ivar checked: The sanitised, allowed options and values.
+        :rtype: C{str}
+        :returns: A string of the items in :ivar:`checked` delimited by spaces.
         """
         safe_values = str()
 
