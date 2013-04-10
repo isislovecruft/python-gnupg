@@ -416,7 +416,7 @@ def _is_allowed(input):
          '--verify',
          '--version',
          '--status-fd', '--no-tty', '--passphrase-fd',
-         '--homedir', '--no-default-keyring', '--keyring',
+         '--homedir', '--no-default-keyring', '--keyring', '--secret-keyring',
          '--fingerprint'])
 
     ## check that _allowed is a subset of _possible
