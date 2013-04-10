@@ -140,8 +140,7 @@ class GPGTestCase(unittest.TestCase):
         """
         hd = HOME_DIR
         if os.path.exists(hd):
-            self.assertTrue(os.path.isdir(hd),
-                            "Not a directory: %s" % hd)
+            self.assertTrue(os.path.isdir(hd), "Not a directory: %s" % hd)
             shutil.rmtree(hd)
         self.homedir = hd
         self.gpg = gnupg.GPG(gpghome=hd, gpgbinary='gpg')
