@@ -541,19 +541,14 @@ def _sanitise(*args):
         else:
             safe_values += (allowed_flag + " ")
             if isinstance(value, str):
-                value_list = []
-                if value.find(' ') > 0:
-                    value_list = value.split(' ')
-                else:
-                    logger.debug("_check_values(): got non-string for values")
+                value_list = value.split(' ')
                 for value in value_list:
                     safe_value = _fix_unsafe(value)
                     if allowed_flag == '--encrypt' or '--encrypt-files' \
                             or '--decrypt' or '--decrypt-file' \
                             or '--import' or '--verify':
-                        ## xxx what other things should we check for?
                         ## Place checks here:
-                        if _is_file(safe_value):
+                        if not safe_value == "" and _is_file(safe_value):
                             safe_values += (safe_value + " ")
                         else:
                             logger.debug("Got non-filename for %s option: %s"
