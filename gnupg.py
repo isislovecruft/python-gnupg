@@ -1215,7 +1215,9 @@ class GPG(object):
             [cmd.append(opt) for opt in iter(_sanitise_list(self.options))]
         if args:
             [cmd.append(arg) for arg in iter(_sanitise_list(args))]
-        logger.debug("make_args(): Using command: %s" % cmd)
+        ## so that we don't print it twice, here and in _open_subprocess():
+        if not self.verbose:
+            logger.debug("make_args(): Using command: %s" % cmd)
         return cmd
 
     def _open_subprocess(self, args=None, passphrase=False):
