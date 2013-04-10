@@ -241,14 +241,14 @@ class GPGTestCase(unittest.TestCase):
         ## XXX will GPG just use it's defaults? does it have defaults if
         ## we've just given it a homedir without a gpg.conf?
         key_type   = 'RSA'if key_type is None else key_type
-        key_length = 2048 if key_length is None else key_length
+        key_length = 4096 if key_length is None else key_length
 
         batch = {'Key-Type': key_type,
                  'Key-Length': key_length,
                  'Name-Comment': 'python-gnupg tester',
                  'Expire-Date': 1,
                  'Name-Real': '%s' % real_name,
-                 'Name-Email': ("%s@%s" % (name, email_domain)) }
+                 'Name-Email': ("%s@%s" % (name, email_domain))}
 
         batch['Passphrase'] = name if passphrase is None else passphrase
 
