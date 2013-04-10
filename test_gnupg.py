@@ -27,11 +27,10 @@ __author__  = gnupg.__author__
 __date__    = gnupg.__date__
 __version__ = gnupg.__version__
 
-ALL_TESTS = True
 REPO_DIR = os.getcwd()
-TEST_DIR = os.path.join(REPO_DIR, 'keys')
+HOME_DIR = os.path.join(REPO_DIR, 'keys')
 
-tempfile.tempdir = os.path.join(REPO_DIR, 'temp')
+tempfile.tempdir = os.path.join(REPO_DIR, 'tmp_test')
 if not os.path.isdir(tempfile.gettempdir()):
     os.mkdir(tempfile.gettempdir())
 
