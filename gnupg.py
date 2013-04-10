@@ -1620,8 +1620,15 @@ class GPG(object):
         return result
 
     def gen_key_input(self, **kwargs):
-        """
-        Generate --gen-key input per gpg doc/DETAILS
+        """Generate GnuPG key(s) through batch file key generation.
+
+        The GnuPG batch file key generation feature allows unattended key
+        generation by creating a file with special syntax and then providing it
+        to:
+            $ gpg --gen-key --batch <batch file>
+
+        see http://www.gnupg.org/documentation/manuals/gnupg-devel/Unattended-GPG-key-generation.html#Unattended-GPG-key-generation
+        for more details.
         """
         parms = {}
         for key, val in list(kwargs.items()):
