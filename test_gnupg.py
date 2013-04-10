@@ -635,75 +635,84 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_file_encryption_and_decryption ends")
 
 
-TEST_GROUPS = {
-    'basic' : set(['test_environment',
-                   'test_gpg_binary',
-                   'test_gpg_binary_not_abs',
-                   'test_gpg_binary_version_str',
-                   'test_list_keys_initial_public',
-                   'test_list_keys_initial_secret',
-                   'test_make_args_drop_protected_options',
-                   'test_make_args']),
-    'genkey' : set(['test_gen_key_input',
-                    'test_rsa_key_generation',
-                    'test_rsa_key_generation_with_unicode',
-                    'test_rsa_key_generation_with_subkey',
-                    'test_dsa_key_generation',
-                    'test_dsa_key_generation_with_unicode',
-                    'test_dsa_key_generation_with_subkey',
-                    'test_key_generation_with_invalid_key_type',
-                    'test_key_generation_with_empty_value',
-                    'test_key_generation_with_colons']),
-    'sign' : set(['test_signature_verification']),
+suites = { 'basic': set(['test_environment',
+                         'test_gpg_binary',
+                         'test_gpg_binary_not_abs',
+                         'test_gpg_binary_version_str',
+                         'test_list_keys_initial_public',
+                         'test_list_keys_initial_secret',
+                         'test_make_args_drop_protected_options',
+                         'test_make_args']),
+           'genkey': set(['test_gen_key_input',
+                          'test_rsa_key_generation',
+                          'test_rsa_key_generation_with_unicode',
+                          'test_rsa_key_generation_with_subkey',
+                          'test_dsa_key_generation',
+                          'test_dsa_key_generation_with_unicode',
+                          'test_dsa_key_generation_with_subkey',
+                          'test_key_generation_with_invalid_key_type',
+                          'test_key_generation_with_empty_value',
+                          'test_key_generation_with_colons']),
+           'sign': set(['test_signature_verification']),
+           'crypt': set(['test_encryption_and_decryption',
+                         'test_file_encryption_and_decryption']),
+           'listkeys': set(['test_list_keys_after_generation']),
+           'keyrings': set(['test_public_keyring',
+                            'test_secret_keyring',
+                            'test_import_and_export',
+                            'test_deletion']),
+           'import': set(['test_import_only']), }
 
-    'crypt' : set(['test_encryption_and_decryption',
-                   'test_file_encryption_and_decryption']),
-    'listkeys': set(['test_list_keys_after_generation']),
-    'keyrings': set(['test_public_keyring',
-                     'test_secret_keyring',
-                     'test_import_and_export',
-                     'test_deletion']),
-    'import' : set(['test_import_only']),
-    }
-
-def suite(args=None):
-    if args is None:
-        args = sys.argv[1:]
-    if not args:
-        result = unittest.TestLoader().loadTestsFromTestCase(GPGTestCase)
-        want_doctests = False
-    else:
-        tests = set()
-        want_doctests = False
-        for arg in args:
-            if arg in TEST_GROUPS:
-                tests.update(TEST_GROUPS[arg])
-            elif arg == "doc":
-                want_doctests = True
-            else:
-                print("Ignoring unknown test group %r" % arg)
-        result = unittest.TestSuite(list(map(GPGTestCase, tests)))
-    if want_doctests:
-        result.addTest(doctest.DocTestSuite(gnupg))
-    return result
-
-def init_logging():
+def _init_logging():
     logging.basicConfig(
         level=logging.DEBUG, filename="test_gnupg.log",
         filemode="a",
         format="%(asctime)s %(levelname)-5s %(name)-7s %(threadName)-10s %(message)s")
     logging.captureWarnings(True)
     logging.logThreads = True
-    logger.addHandler(logging.StreamHandler(stream=sys.stdout))
-    #logger.addHandler(logging.RootLogger(logging.DEBUG))
-    #logger.addHandler(logging.Logger("gnupg.py", level=logging.DEBUG))
+    stream_handler = logging.StreamHandler(stream=sys.stdout)
+    stream_handler.setLevel(logging.DEBUG)
+    logger = gnupg.logger
+    logger.addHandler(stream_handler)
+    logger.debug("Starting the logger...")
 
-def main():
-    init_logging()
-    tests = suite()
-    results = unittest.TextTestRunner(verbosity=3).run(tests)
-    return not results.wasSuccessful()
+def main(args):
+    if not args.quiet:
+        _init_logging()
 
+    loader = unittest.TestLoader()
+
+    def _createTests(prog):
+        load_tests = list()
+        if args.test is not None:
+            for suite in args.test:
+                if suite in args.suites.keys():
+                    logger.debug("Adding %d items from test suite '%s':"
+                                 % (len(args.suites[suite]), suite))
+                    for method in args.suites[suite]:
+                        load_tests.append(method)
+                        logger.debug("\t%s" % method)
+                else:
+                    logger.debug("Ignoring unknown test suite %r" % suite)
+            tests = unittest.TestSuite(list(map(GPGTestCase, load_tests)))
+        else:
+            tests = prog.testLoader.loadTestsFromTestCase(GPGTestCase)
+            args.run_doctest = True ## xxx can we set options here?
+        if args.run_doctest:
+            tests.addTest(doctest.DocTestSuite(gnupg))
+        logger.debug("Loaded %d tests..." % tests.countTestCases())
+        prog.test = tests
+
+    runner = unittest.TextTestRunner(verbosity=args.verbose, stream=sys.stderr)
+    runner.resultclass = unittest.TextTestResult
+
+    prog = unittest.TestProgram
+    prog.createTests = _createTests
+    program = prog(module=GPGTestCase,
+                   testRunner=runner,
+                   testLoader=loader,
+                   verbosity=args.verbose,
+                   catchbreak=True)
 
 if __name__ == "__main__":
     sys.exit(main())
