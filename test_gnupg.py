@@ -286,6 +286,7 @@ class GPGTestCase(unittest.TestCase):
         Test that RSA key generation succeeds.
         """
         key = self.generate_key("Barbara Brown", "beta.com")
+        self.assertIsNotNone(key)
         self.assertIsNotNone(key.fingerprint)
 
     def test_rsa_key_generation_with_unicode(self):
@@ -293,6 +294,7 @@ class GPGTestCase(unittest.TestCase):
         Test that RSA key generation succeeds with unicode characters.
         """
         key = self.generate_key("Anaïs de Flavigny", "êtrerien.fr")
+        self.assertIsNotNone(key)
         self.assertIsNotNone(key.fingerprint)
 
     def test_rsa_key_generation_with_subkey(self):
@@ -301,6 +303,7 @@ class GPGTestCase(unittest.TestCase):
         """
         key = self.generate_key("Need Caffeine", "nowplea.se",
                                 subkey_type='RSA')
+        self.assertIsNotNone(key)
         self.assertIsNotNone(key.fingerprint)
 
     def test_dsa_key_generation(self):
@@ -308,6 +311,7 @@ class GPGTestCase(unittest.TestCase):
         Test that DSA key generation succeeds.
         """
         key = self.generate_key("DSA Signonly", "test.com")
+        self.assertIsNotNone(key)
         self.assertIsNotNone(key.fingerprint)
 
     def test_dsa_key_generation_with_unicode(self):
@@ -315,6 +319,7 @@ class GPGTestCase(unittest.TestCase):
         Test that DSA key generation succeeds with unicode characters.
         """
         key = self.generate_key("破壊合計する", "破壊合計する.日本")
+        self.assertIsNotNone(key)
         self.assertIsNotNone(key.fingerprint)
 
     def test_dsa_key_generation_with_subkey(self):
@@ -323,6 +328,7 @@ class GPGTestCase(unittest.TestCase):
         """
         key = self.generate_key("OMG Moar Coffee", "giveitto.me",
                                 subkey_type='ELG-E')
+        self.assertIsNotNone(key)
         self.assertIsNotNone(key.fingerprint)
 
     def test_key_generation_with_invalid_key_type(self):
@@ -343,7 +349,7 @@ class GPGTestCase(unittest.TestCase):
         key = self.gpg.gen_key(batch)
         self.assertIsInstance(key.data, str)
         self.assertEquals(key.data, '')
-        self.assertIs(None, result.fingerprint, 'Null fingerprint result')
+        self.assertIs(None, key.fingerprint, 'Null fingerprint result')
 
     def test_key_generation_with_colons(self):
         """
