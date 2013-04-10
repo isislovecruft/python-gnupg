@@ -70,6 +70,8 @@ try:
 except ImportError:
     from cStringIO import StringIO
 
+from datetime import datetime
+
 import codecs
 import locale
 import logging
@@ -483,6 +485,11 @@ def _make_binary_stream(s, encoding):
     except ImportError:
         rv = StringIO(s)
     return rv
+
+def _today():
+    """Get the current date as a string in the form %Y-%m-%d."""
+    now_string = datetime.now().__str__()
+    return now_string.split(' ', 1)[0]
 
 def _sanitise(*args):
     """
