@@ -429,7 +429,7 @@ def _is_allowed(input):
         assert _allowed.issubset(_possible), \
             '_allowed is not subset of known options, difference: %s' \
             % _allowed.difference(_possible)
-    except AssertionError as ae:   ## 'as' syntax requires python>=2.6
+    except AssertionError as ae:
         logger.debug("gnupg._is_allowed(): %s" % ae.message)
         raise UsageError(ae.message)
 
