@@ -448,8 +448,6 @@ def _is_allowed(input):
                 raise ProtectedOption("Option '%s' not supported."
                                       % _fix_unsafe(hyphenated))
             else:
-                logger.debug("Got allowed option '%s'."
-                             % _fix_unsafe(hyphenated))
                 return input
     return None
 
