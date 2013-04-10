@@ -230,7 +230,12 @@ class GPGTestCase(unittest.TestCase):
 
 
     def test_copy_data(self):
-        """Test that _copy_data() is able to duplicate byte streams"""
+        """
+        XXX implement me
+        XXX add me to a test suite
+
+        Test that _copy_data() is able to duplicate byte streams.
+        """
         instream = io.BytesIO("This is a string of bytes mapped in memory.")
         outstream = str("And this one is just a string.")
 
