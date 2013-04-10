@@ -14,7 +14,12 @@ import os
 import shutil
 import sys
 import tempfile
-import unittest
+
+## Use unittest2 if we're on Python2.6 or less:
+if sys.version_info.major == 2 and sys.version_info.minor <= 6:
+    unittest = __import__(unittest2)
+else:
+    import unittest
 
 import gnupg
 
