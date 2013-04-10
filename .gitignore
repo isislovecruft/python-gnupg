@@ -50,3 +50,14 @@ keys/*
 
 # Ignore distutils record of installed files:
 installed-files.txt
+
+# Ignore PyCharm files:
+.idea/*
+
+# and git-tickets and tickets:
+.tickets/*
+tickets/*
+
+# Ignore virtualenv folders, if they are here:
+include/*
+local/*

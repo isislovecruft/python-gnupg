@@ -5,24 +5,25 @@ Summary: A wrapper for the Gnu Privacy Guard (GPG or GnuPG)
 Home-page: https://www.github.com/isislovecruft/python-gnupg
 Author: Isis Lovecruft
 Author-email: isis@leap.se
-License: Copyright (C) 2013 by Isis Lovecruft. All Rights Reserved. See LICENSE for license. See COPYLEFT for "copyright".
-Download-URL: https://github.com/isislovecruft/python-gnupg.git
-Description: This module allows easy access to GnuPG's key management, encryption and signature functionality from Python programs. It is intended for use with Python 2.4 or greater.
-Platform: No particular restrictions
-Classifier: Development Status :: 3 - Alpha
-Classifier: Intended Audience :: Developers
-Classifier: License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)
-Classifier: Programming Language :: Python
-Classifier: Programming Language :: Python :: 2
-Classifier: Programming Language :: Python :: 3
-Classifier: Programming Language :: Python :: 2.4
-Classifier: Programming Language :: Python :: 2.5
-Classifier: Programming Language :: Python :: 2.6
-Classifier: Programming Language :: Python :: 2.7
-Classifier: Programming Language :: Python :: 3.0
-Classifier: Programming Language :: Python :: 3.1
-Classifier: Programming Language :: Python :: 3.2
-Classifier: Operating System :: OS Independent
-Classifier: Topic :: Security :: Cryptography
-Classifier: Topic :: Software Development :: Libraries :: Python Modules
-Classifier: Topic :: Utilities
+Download-URL: https://github.com/isislovecruft/python-gnupg/archives/develop.zip
+Description:: This module allows easy access to GnuPG's key management, encryption and signature functionality from Python programs. It is intended for use with Python 2.6 or greater.
+Classifier:: Development Status :: 3 - Alpha
+License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)
+Operating System :: MacOS :: MacOS X
+Operating System :: Microsoft :: Windows :: Windows 7
+Operating System :: Microsoft :: Windows :: Windows XP
+Operating System :: POSIX :: BSD
+Operating System :: POSIX :: Linux
+Classifier:: Intended Audience :: Developers
+Classifier:: License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)
+Classifier:: Programming Language :: Python
+Classifier:: Programming Language :: Python :: 2
+Classifier:: Programming Language :: Python :: 3
+Classifier:: Programming Language :: Python :: 2.6
+Classifier:: Programming Language :: Python :: 2.7
+Classifier:: Programming Language :: Python :: 3.0
+Classifier:: Programming Language :: Python :: 3.1
+Classifier:: Programming Language :: Python :: 3.2
+Classifier:: Topic :: Security :: Cryptography
+Classifier:: Topic :: Software Development :: Libraries :: Python Modules
+Classifier:: Topic :: Utilities
