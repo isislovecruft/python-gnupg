@@ -39,7 +39,7 @@ def _make_tempfile(*args, **kwargs):
     return tempfile.TemporaryFile(dir=tempfile.gettempdir(),
                                   *args, **kwargs)
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(gnupg.logger.name)
 
 KEYS_TO_IMPORT = """-----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1.4.9 (MingW32)
