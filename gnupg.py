@@ -645,7 +645,7 @@ def _sanitise_list(arg_list):
 def _threaded_copy_data(instream, outstream):
     wr = threading.Thread(target=_copy_data, args=(instream, outstream))
     wr.setDaemon(True)
-    logger.debug('data copier: %r, %r, %r', wr, instream, outstream)
+    logger.debug('_threaded_copy_data(): %r, %r, %r', wr, instream, outstream)
     wr.start()
     return wr
 
