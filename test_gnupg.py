@@ -361,9 +361,25 @@ class GPGTestCase(unittest.TestCase):
             'name_comment': 'dummy comment',
             'name_email': 'test.name@example.com',
         }
-        cmd = self.gpg.gen_key_input(**params)
-        result = self.gpg.gen_key(cmd)
+        batch = self.gpg.gen_key_input(**params)
+        key = self.gpg.gen_key(cmd)
+        print "KEY DATA\n", key.data
+        print "KEY FINGERPRINT\n", key.fingerprint
+
+    def test_key_generation_import_list_with_colons(self):
+        """
+        Test that key generation handles colons in Name fields.
+        """
+        params = {
+            'key_type': 'RSA',
+            'name_real': 'urn:uuid:731c22c4-830f-422f-80dc-14a9fdae8c19',
+            'name_comment': 'dummy comment',
+            'name_email': 'test.name@example.com',
+        }
+        batch = self.gpg.gen_key_input(**params)
+        key = self.gpg.gen_key(cmd)
         keys = self.gpg.list_keys()
+        self.assertIsNotNone(key)
         self.assertEqual(len(keys), 1)
         key = keys[0]
         uids = key['uids']
