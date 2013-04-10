@@ -6,9 +6,12 @@ A test harness for gnupg.py.
 Copyright © 2013 Isis Lovecruft.
 Copyright © 2008-2013 Vinay Sajip. All rights reserved.
 """
+
+import argparse
 import doctest
 import logging
 from functools import wraps
+import inspect
 import io
 import os
 import shutil
@@ -715,4 +718,41 @@ def main(args):
                    catchbreak=True)
 
 if __name__ == "__main__":
-    sys.exit(main())
+
+    suite_names = list()
+    for name, methodset in suites.items():
+        suite_names.append(name)
+        this_file = inspect.getfile(inspect.currentframe()).split('.', 1)[0]
+        #mod = getattr(this_file, '__dict__', None)
+        #func = getattr(gnupg.__module__, '__setattr__', None)
+        #if func is not None:
+        #    func(name, list(methodset))
+        setattr(GPGTestCase, name, list(methodset))
+
+    parser = argparse.ArgumentParser(description="Unittests for python-gnupg")
+    parser.add_argument('--doctest',
+                        dest='run_doctest',
+                        type=bool,
+                        default=False,
+                        help='Run example code in docstrings')
+    parser.add_argument('--quiet',
+                        dest='quiet',
+                        type=bool,
+                        default=False,
+                        help='Disable logging to stdout')
+    parser.add_argument('--verbose',
+                        dest='verbose',
+                        type=int,
+                        default=4,
+                        help='Set verbosity level (low=1 high=5) (default: 4)')
+    parser.add_argument('test',
+                        metavar='test',
+                        nargs='+',
+                        type=str,
+                        help='Select a test suite to run (default: all)')
+    parser.epilog = "Available test suites: %s" % " ".join(suite_names)
+
+    args = parser.parse_args()
+    args.suites = suites
+
+    sys.exit(main(args))
