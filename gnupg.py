@@ -448,7 +448,7 @@ def _is_allowed(input):
             try:
                 assert hyphenated in _allowed
             except AssertionError as ae:
-                logger.warn("Dropping option '%s'..."
+                logger.warn("_is_allowed(): Dropping option '%s'..."
                             % _fix_unsafe(hyphenated))
                 raise ProtectedOption("Option '%s' not supported."
                                       % _fix_unsafe(hyphenated))
@@ -555,8 +555,7 @@ def _sanitise(*args):
             assert allowed_flag is not None, \
                 "_check_arg_and_value(): got None for allowed_flag"
         except (AssertionError, ProtectedOption) as error:
-            logger.warn(error.message)
-            logger.debug("Dropping option '%s'..." % _fix_unsafe(arg))
+            logger.warn("_sanitise(): %s" % error.message)
         else:
             safe_values += (allowed_flag + " ")
             if isinstance(value, str):
@@ -1117,17 +1116,19 @@ class GPG(object):
         :returns:
         """
 
+        logger.warn("")
+
         if not gpghome:
             gpghome = os.path.join(os.getcwd(), 'gnupg')
         self.gpghome = _fix_unsafe(gpghome)
         if self.gpghome:
             if not os.path.isdir(self.gpghome):
                 message = ("Creating gpg home dir: %s" % gpghome)
-                logger.debug("GPG.__init__(): %s" % message)
+                logger.warn("GPG.__init__(): %s" % message)
                 os.makedirs(self.gpghome, 0x1C0)
             if not os.path.isabs(self.gpghome):
                 message = ("Got non-abs gpg home dir path: %s" % self.gpghome)
-                logger.debug("GPG.__init__(): %s" % message)
+                logger.warn("GPG.__init__(): %s" % message)
                 self.gpghome = os.path.abspath(self.gpghome)
         else:
             message = ("Unsuitable gpg home dir: %s" % gpghome)
