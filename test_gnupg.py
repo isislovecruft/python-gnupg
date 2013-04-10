@@ -241,7 +241,9 @@ class GPGTestCase(unittest.TestCase):
 
     def generate_key_input(self, real_name, email_domain, key_length=None,
                            key_type=None, subkey_type=None, passphrase=None):
-        """Generate a GnuPG batch file for key unattended key creation"""
+        """
+        Generate a GnuPG batch file for key unattended key creation.
+        """
         name = real_name.lower().replace(' ', '')
 
         ## XXX will GPG just use it's defaults? does it have defaults if
@@ -266,49 +268,67 @@ class GPGTestCase(unittest.TestCase):
         return key_input
 
     def generate_key(self, real_name, email_domain, **kwargs):
-        """Generate a basic key"""
+        """
+        Generate a basic key.
+        """
         key_input = self.generate_key_input(real_name, email_domain, **kwargs)
         key = self.gpg.gen_key(key_input)
 
     def test_gen_key_input(self):
-        """Test that GnuPG batch file creation is successful."""
+        """
+        Test that GnuPG batch file creation is successful.
+        """
         key_input = self.generate_key_input("Francisco Ferrer", "an.ok")
 
 
     def test_rsa_key_generation(self):
-        """Test that RSA key generation succeeds"""
+        """
+        Test that RSA key generation succeeds.
+        """
         key = self.generate_key("Barbara Brown", "beta.com")
         self.assertIsNotNone(key.fingerprint)
 
     def test_rsa_key_generation_with_unicode(self):
-        """Test that RSA key generation succeeds with unicode characters."""
+        """
+        Test that RSA key generation succeeds with unicode characters.
+        """
         key = self.generate_key("Anaïs de Flavigny", "êtrerien.fr")
         self.assertIsNotNone(key.fingerprint)
 
     def test_rsa_key_generation_with_subkey(self):
-        """Test that RSA key generation succeeds with additional subkey."""
+        """
+        Test that RSA key generation succeeds with additional subkey.
+        """
         key = self.generate_key("Need Caffeine", "nowplea.se",
                                 subkey_type='RSA')
         self.assertIsNotNone(key.fingerprint)
 
     def test_dsa_key_generation(self):
-        """Test that DSA key generation succeeds"""
+        """
+        Test that DSA key generation succeeds.
+        """
         key = self.generate_key("DSA Signonly", "test.com")
         self.assertIsNotNone(key.fingerprint)
 
     def test_dsa_key_generation_with_unicode(self):
-        """Test that DSA key generation succeeds with unicode characters."""
+        """
+        Test that DSA key generation succeeds with unicode characters.
+        """
         key = self.generate_key("破壊合計する", "破壊合計する.日本")
         self.assertIsNotNone(key.fingerprint)
 
     def test_dsa_key_generation_with_subkey(self):
-        """Test that RSA key generation succeeds with additional subkey."""
+        """
+        Test that RSA key generation succeeds with additional subkey.
+        """
         key = self.generate_key("OMG Moar Coffee", "giveitto.me",
                                 subkey_type='ELG-E')
         self.assertIsNotNone(key.fingerprint)
 
     def test_key_generation_with_invalid_key_type(self):
-        """Test that key generation handles invalid key type"""
+        """
+        Test that key generation handles invalid key type.
+        """
         params = {
             'Key-Type': 'INVALID',
             'Key-Length': 1024,
@@ -326,7 +346,9 @@ class GPGTestCase(unittest.TestCase):
         self.assertIs(None, result.fingerprint, 'Null fingerprint result')
 
     def test_key_generation_with_colons(self):
-        """Test that key generation handles colons in key fields"""
+        """
+        Test that key generation handles colons in Name fields.
+        """
         params = {
             'key_type': 'RSA',
             'name_real': 'urn:uuid:731c22c4-830f-422f-80dc-14a9fdae8c19',
@@ -345,7 +367,9 @@ class GPGTestCase(unittest.TestCase):
                               '(dummy comment) <test.name@example.com>')
 
     def test_key_generation_with_empty_value(self):
-        """Test that key generation handles empty values"""
+        """
+        Test that key generation handles empty values.
+        """
         params = {
             'key_type': 'RSA',
             'key_length': 1024,
@@ -358,7 +382,9 @@ class GPGTestCase(unittest.TestCase):
         self.assertTrue('\nName-Comment: A\n' in cmd)
 
     def test_list_keys_after_generation(self):
-        """Test that after key generation, the generated key is available"""
+        """
+	Test that after key generation, the generated key is available.
+	"""
         self.test_list_keys_initial()
         self.do_key_generation()
         public_keys = self.gpg.list_keys()
@@ -369,7 +395,9 @@ class GPGTestCase(unittest.TestCase):
                         "1-element list expected")
 
     def test_encryption_and_decryption(self):
-        """Test that encryption and decryption works"""
+        """
+	Test that encryption and decryption works.
+	"""
         logger.debug("test_encryption_and_decryption begins")
         key = self.generate_key("Andrew", "Able", "alpha.com",
                                 passphrase="andy")
@@ -404,17 +432,23 @@ class GPGTestCase(unittest.TestCase):
         self.assertEqual(data, str(ddata))
 
     def test_public_keyring(self):
-        """Test that the public keyring is found in the gpg home directory"""
+        """
+	Test that the public keyring is found in the gpg home directory.
+	"""
         self.gpg.keyring = self.pubring
         self.assertTrue(os.path.isfile(self.pubring))
 
     def test_secret_keyring(self):
-        """Test that the secret keyring is found in the gpg home directory"""
+        """
+	Test that the secret keyring is found in the gpg home directory.
+	"""
         self.gpg.keyring = self.secring
         self.assertTrue(os.path.isfile(self.secring))
 
     def test_import_and_export(self):
-        """Test that key import and export works"""
+        """
+	Test that key import and export works.
+	"""
         logger.debug("test_import_and_export begins")
         self.test_list_keys_initial()
         gpg = self.gpg
@@ -443,7 +477,9 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_import_and_export ends")
 
     def test_import_only(self):
-        """Test that key import works"""
+	"""
+	Test that key import works.
+	"""
         logger.debug("test_import_only begins")
         self.test_list_keys_initial()
         self.gpg.import_keys(KEYS_TO_IMPORT)
@@ -465,7 +501,9 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_import_only ends")
 
     def test_signature_verification(self):
-        """Test that signing and verification works"""
+        """
+	Test that signing and verification works.
+	"""
         logger.debug("test_signature_verification begins")
         key = self.generate_key("Andrew", "Able", "alpha.com")
         self.gpg.encoding = 'latin-1'
@@ -523,7 +561,9 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_signature_verification ends")
 
     def test_deletion(self):
-        """Test that key deletion works"""
+        """
+	Test that key deletion works.
+	"""
         logger.debug("test_deletion begins")
         self.gpg.import_keys(KEYS_TO_IMPORT)
         public_keys = self.gpg.list_keys()
@@ -536,7 +576,9 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_deletion ends")
 
     def test_file_encryption_and_decryption(self):
-        """Test that encryption/decryption to/from file works"""
+        """
+	Test that encryption/decryption to/from file works.
+	"""
         logger.debug("test_file_encryption_and_decryption begins")
 
         encfname = _make_tempfile()
