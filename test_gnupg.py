@@ -101,12 +101,15 @@ def is_list_with_len(o, n):
     return isinstance(o, list) and len(o) == n
 
 def compare_keys(k1, k2):
-    """Compare ASCII keys"""
+    """
+    Compare ASCII keys.
+    """
     k1 = k1.split('\n')
     k2 = k2.split('\n')
     del k1[1] # remove version lines
     del k2[1]
     return k1 != k2
+
 
 class ResultStringIO(io.StringIO):
     def __init__(self):
@@ -115,9 +118,27 @@ class ResultStringIO(io.StringIO):
     def write(self, data):
         super(self, io.StringIO).write(unicode(data))
 
+
 class GPGTestCase(unittest.TestCase):
+    """
+    A group of :class:`unittest.TestCase` unittests for testing python-gnupg.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        """
+        Setup the :class:`GPGTestCase` and runtime environment for tests.
+
+        This function must be called manually.
+        xxx or is called by TestSuite.
+        """
+        pass
+
     def setUp(self):
-        hd = os.path.join(os.getcwd(), 'keys')
+        """
+        This method is called once per self.test_* method.
+        """
+        hd = HOME_DIR
         if os.path.exists(hd):
             self.assertTrue(os.path.isdir(hd),
                             "Not a directory: %s" % hd)
@@ -128,20 +149,26 @@ class GPGTestCase(unittest.TestCase):
         self.secring = os.path.join(self.homedir, 'secring.gpg')
 
     def test_environment(self):
-        """Test the environment by ensuring that setup worked"""
+        """
+        Test the environment by ensuring that setup worked.
+        """
         hd = self.homedir
         self.assertTrue(os.path.exists(hd) and os.path.isdir(hd),
                         "Not an existing directory: %s" % hd)
 
     def test_gpg_binary(self):
-        """Test that 'gpg --version' does not return an error code"""
+        """
+        Test that 'gpg --version' does not return an error code.
+        """
         proc = self.gpg._open_subprocess(['--version'])
         result = io.StringIO()
         self.gpg._collect_output(proc, result, stdin=proc.stdin)
         self.assertEqual(proc.returncode, 0)
 
     def test_gpg_binary_version_str(self):
-        """That that 'gpg --version' returns the expected output"""
+        """
+        That that 'gpg --version' returns the expected output.
+        """
         proc = self.gpg._open_subprocess(['--version'])
         result = proc.stdout.read(1024)
         expected1 = "Supported algorithms:"
@@ -155,11 +182,15 @@ class GPGTestCase(unittest.TestCase):
         self.assertGreater(result.find(expected4), 0)
 
     def test_gpg_binary_not_abs(self):
-        """Test that a non-absolute path to gpg results in a full path"""
+        """
+        Test that a non-absolute path to gpg results in a full path.
+        """
         self.assertTrue(os.path.isabs(self.gpg.gpgbinary))
 
     def test_make_args_drop_protected_options(self):
-        """Test that unsupported gpg options are dropped"""
+        """
+        Test that unsupported gpg options are dropped.
+        """
         self.gpg.options = ['--tyrannosaurus-rex', '--stegosaurus']
         self.gpg.keyring = self.secring
         cmd = self.gpg.make_args(None, False)
@@ -170,7 +201,9 @@ class GPGTestCase(unittest.TestCase):
         self.assertListEqual(cmd, expected)
 
     def test_make_args(self):
-        """Test argument line construction"""
+        """
+        Test argument line construction.
+        """
         not_allowed = ['--bicycle', '--zeppelin', 'train', 'flying-carpet']
         self.gpg.options = not_allowed[:-2]
         args = self.gpg.make_args(not_allowed[2:], False)
@@ -179,14 +212,18 @@ class GPGTestCase(unittest.TestCase):
             self.assertNotIn(na, args)
 
     def test_list_keys_initial_public(self):
-        """Test that initially there are no public keys"""
+        """
+        Test that initially there are no public keys.
+        """
         public_keys = self.gpg.list_keys()
         self.assertTrue(is_list_with_len(public_keys, 0),
                         "Empty list expected...got instead: %s"
                         % str(public_keys))
 
     def test_list_keys_initial_secret(self):
-        """Test that initially there are no secret keys"""
+        """
+        Test that initially there are no secret keys.
+        """
         private_keys = self.gpg.list_keys(secret=True)
         self.assertTrue(is_list_with_len(private_keys, 0),
                         "Empty list expected...got instead: %s"
