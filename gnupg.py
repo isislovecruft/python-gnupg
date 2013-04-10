@@ -410,7 +410,8 @@ def _is_allowed(input):
     ##     eg, --no-show-photos would mitigate things like
     ##     https://www-01.ibm.com/support/docview.wss?uid=swg21620982
     _allowed = frozenset(
-        ['--list-keys', '--list-packets',  '--with-colons',
+        ['--list-keys', '--list-secret-keys', '--fixed-list-mode',
+         '--list-packets',  '--with-colons',
          '--delete-keys', '--delete-secret-keys',
          '--encrypt', '--encrypt-files',
          '--print-mds', '--print-md', '--sign',
