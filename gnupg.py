@@ -562,18 +562,22 @@ def _sanitise(*args):
                 value_list = value.split(' ')
                 for value in value_list:
                     safe_value = _fix_unsafe(value)
-                    if allowed_flag == '--encrypt' or '--encrypt-files' \
-                            or '--decrypt' or '--decrypt-file' \
-                            or '--import' or '--verify':
+                    if safe_value is not None and not safe_value.strip() == "":
+                        if allowed_flag in ['--encrypt', '--encrypt-files',
+                                            '--decrypt', '--decrypt-file',
+                                            '--import', '--verify']:
                         ## Place checks here:
-                        if not safe_value == "" and _is_file(safe_value):
-                            safe_values += (safe_value + " ")
+                            if _is_file(safe_value):
+                                safe_values += (safe_value + " ")
+                            else:
+                                logger.debug(
+                                    "_sanitize(): Got non-file for %s option: %s"
+                                    % (allowed_flag, safe_value))
                         else:
-                            logger.debug("Got non-filename for %s option: %s"
-                                         % (allowed_flag, safe_value))
-                    else:
-                        safe_values += (safe_value + " ")
-                        logger.debug("Got non-checked value: %s" % safe_value)
+                            safe_values += (safe_value + " ")
+                            logger.debug(
+                                "_sanitize(): No configured checks for value: %s"
+                                % safe_value)
         return safe_values
 
     checked = []
@@ -599,7 +603,7 @@ def _sanitise(*args):
                             logger.debug("Got non-flag argument: %s" % filo[0])
                             filo.pop()
                         safe = _check_arg_and_value(new_arg, new_value)
-                        if safe is not None and safe.strip() != '':
+                        if safe is not None and not safe.strip() == '':
                             logger.debug("_sanitise(): appending args: %s" % safe)
                             checked.append(safe)
                 else:
