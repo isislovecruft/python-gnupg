@@ -184,15 +184,11 @@ class GPGTestCase(unittest.TestCase):
         self.assertGreater(result.find(expected4), 0)
 
     def test_gpg_binary_not_abs(self):
-        """
-        Test that a non-absolute path to gpg results in a full path.
-        """
+        """Test that a non-absolute path to gpg results in a full path."""
         self.assertTrue(os.path.isabs(self.gpg.gpgbinary))
 
     def test_make_args_drop_protected_options(self):
-        """
-        Test that unsupported gpg options are dropped.
-        """
+        """Test that unsupported gpg options are dropped."""
         self.gpg.options = ['--tyrannosaurus-rex', '--stegosaurus']
         self.gpg.keyring = self.secring
         cmd = self.gpg.make_args(None, False)
@@ -203,9 +199,7 @@ class GPGTestCase(unittest.TestCase):
         self.assertListEqual(cmd, expected)
 
     def test_make_args(self):
-        """
-        Test argument line construction.
-        """
+        """Test argument line construction."""
         not_allowed = ['--bicycle', '--zeppelin', 'train', 'flying-carpet']
         self.gpg.options = not_allowed[:-2]
         args = self.gpg.make_args(not_allowed[2:], False)
@@ -214,18 +208,14 @@ class GPGTestCase(unittest.TestCase):
             self.assertNotIn(na, args)
 
     def test_list_keys_initial_public(self):
-        """
-        Test that initially there are no public keys.
-        """
+        """Test that initially there are no public keys."""
         public_keys = self.gpg.list_keys()
         self.assertTrue(is_list_with_len(public_keys, 0),
                         "Empty list expected...got instead: %s"
                         % str(public_keys))
 
     def test_list_keys_initial_secret(self):
-        """
-        Test that initially there are no secret keys.
-        """
+        """Test that initially there are no secret keys."""
         private_keys = self.gpg.list_keys(secret=True)
         self.assertTrue(is_list_with_len(private_keys, 0),
                         "Empty list expected...got instead: %s"
@@ -244,9 +234,7 @@ class GPGTestCase(unittest.TestCase):
 
     def generate_key_input(self, real_name, email_domain, key_length=None,
                            key_type=None, subkey_type=None, passphrase=None):
-        """
-        Generate a GnuPG batch file for key unattended key creation.
-        """
+        """Generate a GnuPG batch file for key unattended key creation."""
         name = real_name.lower().replace(' ', '')
 
         ## XXX will GPG just use it's defaults? does it have defaults if
@@ -271,16 +259,12 @@ class GPGTestCase(unittest.TestCase):
         return key_input
 
     def generate_key(self, real_name, email_domain, **kwargs):
-        """
-        Generate a basic key.
-        """
+        """Generate a basic key."""
         key_input = self.generate_key_input(real_name, email_domain, **kwargs)
         key = self.gpg.gen_key(key_input)
 
     def test_gen_key_input(self):
-        """
-        Test that GnuPG batch file creation is successful.
-        """
+        """Test that GnuPG batch file creation is successful."""
         key_input = self.generate_key_input("Francisco Ferrer", "an.ok")
 
 
