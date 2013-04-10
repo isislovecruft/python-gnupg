@@ -116,12 +116,12 @@ def _copy_data(instream, outstream):
     Copy data from one stream to another.
 
     :param instream: A file descriptor to read from.
-    :param outstream: A file descriptor to write to.
+    :param outstream: The file descriptor of a tmpfile to write to.
     """
     sent = 0
 
     try:
-        assert isinstance(instream, BytesIO), "instream is not a file"
+        assert _is_stream(instream), "instream is not a stream"
         assert isinstance(outstream, file), "outstream is not a file"
     except AssertionError as ae:
         logger.exception(ae)
@@ -468,6 +468,15 @@ def _is_file(input):
         return False
     else:
         return True
+
+def _is_stream(input):
+    """Check that the input is a byte stream.
+
+    :param input: An object provided for reading from or writing to
+    :rtype: C{bool}
+    :returns: True if :param:`input` is a stream, False if otherwise.
+    """
+    return isinstance(input, BytesIO)
 
 def _is_sequence(instance):
     return isinstance(instance,list) or isinstance(instance,tuple)
