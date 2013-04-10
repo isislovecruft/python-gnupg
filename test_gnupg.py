@@ -23,8 +23,9 @@ else:
 
 import gnupg
 
-__author__ = "Isis Lovecruft"
-__date__  = "2013-03-02"
+__author__  = gnupg.__author__
+__date__    = gnupg.__date__
+__version__ = gnupg.__version__
 
 ALL_TESTS = True
 REPO_DIR = os.getcwd()
