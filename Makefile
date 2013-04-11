@@ -5,22 +5,23 @@ clean:
 	rm -f ./*.pyo
 
 cleantest: clean
-	mkdir -p keys
-	touch placeholder.log
-	rm -rf keys
-	rm *.log
+	mkdir -p gnupg/tests/keys
+	touch gnupg/tests/placeholder.log
+	rm -rf gnupg/tests/keys
+	rm gnupg/tests/*.log
 
-test: cleantest 
-	python test_gnupg.py basic
+test: cleantest
+	python gnupg/tests/test_gnupg.py basic
 
 install: 
 	python setup.py install --record installed-files.txt
 
 uninstall:
+	touch installed-files.txt
 	cat installed-files.txt | sudo xargs rm -rf
 
 clean-docs:
-	sphinx-apidoc -o docs -F -A "Isis Agora Lovecruft" -H "python-gnupg" -V 0.3.1 -R 0.3.1 .
+	sphinx-apidoc -F -A "Isis Agora Lovecruft" -H "python-gnupg" -V 0.4.0 -R 0.4.0 -o docs gnupg/ tests/
 
 docs:
 	cd docs
