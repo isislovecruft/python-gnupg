@@ -931,7 +931,7 @@ class ListKeys(list):
 class Crypt(Verify):
     """Handle status messages for --encrypt and --decrypt"""
     def __init__(self, gpg):
-        Verify.__init__(self, gpg)
+        super(Crypt, self).__init__(self, gpg)
         self.data = ''
         self.ok = False
         self.status = ''
