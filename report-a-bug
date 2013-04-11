@@ -1,0 +1,260 @@
+#!/usr/bin/env python
+#-*- coding: utf-8 -*-
+'''
+ report-a-bug
+ ------------
+ File a bug against python-gnupg.
+
+ :authors: Wade Leftwich,
+           Will Holcomb, <wholcomb@gmail.com>
+           Isis Lovecruft, <isis@leap.se>
+ :license: AGPLv3, see LICENSE and COPYRIGHT files
+ :copyright: © 2002-2013 Wade Leftwich 
+             © 2006 Will Holcomb
+             © 2013 Isis Agora Lovecruft 
+ :date: 11 April 2013
+ :version: 0.0.1
+
+'''
+
+from __future__ import print_function
+from cStringIO import StringIO
+from datetime import datetime
+
+import cookielib
+import mimetools
+import mimetypes
+#import httplib
+import os
+import stat
+import tempfile
+import urllib
+import urllib2
+
+# Controls how sequences are uncoded. If true, elements may be given multiple
+# values by assigning a sequence.
+doseq = 1
+
+def _has_py3k():
+    """Check if we're running on Python>=3.0."""
+    try:
+        unicode
+        return False
+    except NameError:
+        return True
+
+## patch the stupid Python2.x input() problem:
+if not _has_py3k():
+    input = raw_input
+
+def _today():
+    """Get the current date as a string in the form %Y-%m-%d."""
+    now_string = datetime.now().__str__()
+    return now_string.split(' ', 1)[0]
+
+def _create_upload_list():
+    """Create a dictionary containing information about files to upload."""
+
+    upload_list = list()
+
+    WANT_UPLOAD = True
+    FILE_NUMBER = 1
+    FILENAME_FIELD = 'attachments[' + str(FILE_NUMBER) + '][file]'
+    FILEDESC_FIELD = 'attachments[' + str(FILE_NUMBER) + '][description]'
+
+    while WANT_UPLOAD:
+        do_upload = input("Would you like to attach a file to this ticket? "
+                          + "(y/N) ")
+        if do_upload.strip() == "":
+            WANT_UPLOAD = False
+            break
+        else:
+            WANT_UPLOAD = True
+
+        upload = input("Please specify the file to upload, as a filesystem "
+                       + "absolute path or as relative to this directory (%s): " 
+                       % os.getcwd()).strip()
+
+        if len(upload) > 0:
+            if upload.startswith('~'):
+                upload = os.path.expanduser(upload)
+            if not os.path.isabs(upload):
+                upload = os.path.abspath(upload)
+            try:
+                assert os.path.isfile(upload), "is not a file"
+            except AssertionError as ae:
+                print("Skipping: '%s' %s" % (upload, ae.message))
+            else:
+                upload_fields = {'fields': [FILENAME_FIELD, FILEDESC_FIELD],
+                                 'filepath': upload,}
+                upload_list.append(upload_fields)
+                FILE_NUMBER += 1
+    return upload_list
+
+def _create_fields_and_headers(host, url, assign_to=None,
+                               category=None, target_version=None):
+    REPO_NAME = os.getcwd().rsplit(os.path.sep, 1)[1]
+
+    subject   = input("Please provide a brief subject line for the ticket: ")
+    subject   = REPO_NAME + ": " + subject
+    descript  = input("Ticket description:\n ")
+    whatisit  = input("Is this a feature request or a bug report? "
+                      + "(1=feature, 2=bug) ")
+    if whatisit not in ['1', '2']:
+        whatisit = '2'    
+    serious = input("How important is this? (1=important, 2=normal, 3=trivial) ")
+    if serious not in ['1', '2', '3']:
+        serious = '2'
+
+    headers = { 
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept-Language': 'en-us,en-gb;q=0.9,en;',
+        'Connection': 'keep-alive',
+        'DNT': '1',
+        'Host': host,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:10.0) Gecko/20100101 Firefox/10.0', }
+
+    fields = {
+        'issue[tracker_id]': whatisit,
+        'issue[subject]': subject,
+        'issue[description]': descript,
+        'issue[status_id]': '2',
+        'issue[priority_id]': serious,
+        'issue[assigned_to_id]': assign_to,
+        'issue[category_id]': category,
+        'issue[fixed_version_id]': target_version,
+        'issue[start_date]': _today(),
+        'issue[due_date]': '',
+        'issue[estimated_hours]': '',
+        'issue[done_ratio]': '0',
+        'issue[custom_field_values][3]': '',
+        'issue[custom_field_values][4]': '',
+        'issue[custom_field_values][5]': '0',
+        'send_notification': '0',
+        'send_notification': '1',
+        'commit': 'Create', }
+
+    return fields, headers
+
+
+class Callable:
+    def __init__(self, anycallable):
+        self.__call__ = anycallable
+
+class MultipartPostHandler(urllib2.BaseHandler):
+    handler_order = urllib2.HTTPHandler.handler_order - 10 # needs to run first
+
+    def http_request(self, request):
+        data = request.get_data()
+        if data is not None and type(data) != str:
+            v_files = []
+            v_vars = []
+            try:
+                 for (key, value) in data.items():
+                     if type(value) == file:
+                         v_files.append((key, value))
+                     else:
+                         v_vars.append((key, value))
+            except TypeError:
+                systype, value, traceback = sys.exc_info()
+                raise TypeError("not non-string sequence or mapping object\n%s"
+                                % traceback)
+
+            if len(v_files) == 0:
+                data = urllib.urlencode(v_vars, doseq)
+            else:
+                boundary, data = self.multipart_encode(v_vars, v_files)
+                contenttype = 'multipart/form-data; boundary=%s' % boundary
+                if (request.has_header('Content-Type') and request.get_header(
+                        'Content-Type').find('multipart/form-data') != 0):
+                    print("Replacing %s with %s"
+                          % (request.get_header('content-type'),
+                             'multipart/form-data'))
+                request.add_unredirected_header('Content-Type', contenttype)
+            request.add_data(data)
+        return request
+
+    def multipart_encode(self, fields=None, upload_list=None,
+                         boundary=None, buf=None):
+        if fields is None:
+            fields = self.fields
+        if upload_list is None:
+            upload_list = self.upload_list
+        if boundary is None:
+            boundary = mimetools.choose_boundary()
+        if buf is None:
+            buf = StringIO()
+
+        for (key, value) in fields:
+            buf.write('--%s\r\n' % boundary)
+            buf.write('Content-Disposition: form-data; name="%s"' % key)
+            buf.write('\r\n\r\n' + value + '\r\n')
+
+        if isinstance(upload_list, list) and len(upload_list) > 0:
+            for upload in upload_list:
+                for (name, filepath) in upload:
+                    with open(filepath) as fd:
+                        file_size = os.fstat(fd.fileno())[stat.ST_SIZE]
+                        filename = fd.name.split('/')[-1]
+                        contenttype = mimetypes.guess_type(filename)[0] \
+                            or 'application/octet-stream'
+                        buf.write('--%s\r\n' % boundary)
+                        buf.write('Content-Disposition: form-data; ')
+                        buf.write('name="%s"; filename="%s"'
+                                  % (name[0], filename))
+                        buf.write('Content-Type: %s\r\n' % contenttype)
+                        # buf.write('Content-Length: %s\r\n' % file_size)
+                        fd.seek(0)
+                        buf.write('\r\n' + fd.read() + '\r\n')
+                        buf.write('--' + boundary + '--\r\n\r\n')
+                        buf.write('--%s\r\n' % boundary)
+                        buf.write('Content-Disposition: form-data; ')
+                        buf.write('name="%s"; filename="%s"'
+                                  % (name[1], filename))
+                        buf.write('\r\n\r\n')
+                        buf.write('--' + boundary + '--\r\n\r\n')
+
+        buf = buf.getvalue()
+        return boundary, buf
+    multipart_encode = Callable(multipart_encode)
+
+    https_request = http_request
+
+
+if __name__ == "__main__":
+
+    raise SystemExit("Please fix me! This script needs a login handler.\n"
+                     + "Everything else is finished.")
+
+    ## if you're reusing this script please change these!
+    host           = 'leap.se'
+    selector       = '/code/projects/eip-server/issues/new'
+    assign_to      = '30'   ## isis
+    category       = '26'   ## email
+    target_version = '29'   ## the close future
+    
+    url = 'https://' + host + selector
+    fields, headers = _create_fields_and_headers(host, selector, assign_to,
+                                                 category, target_version)
+    upload_list = _create_upload_list()
+    cookies = cookielib.CookieJar()
+    opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookies),
+                                  MultipartPostHandler())
+    urllib2.install_opener(opener)
+
+    temp = tempfile.mkstemp(suffix=".html")
+    temp1 = tempfile.mkstemp(suffix=".html")
+    os.write(temp[0], opener.open('https://'+host+'/code/login',
+                                  {'username': 'cypherpunks',
+                                   'password': 'writecode'}).read())
+
+    for index,upload in enumerate(upload_list):
+        for (field, filepath) in upload:
+            fields['file'+'-'+index] = open(filepath, 'rb')
+    res = opener.open(url, fields)
+    print("Posted to: %s" % res.geturl())
+    print("Server response: %s " % res.code)
+    print(res.info())
+    print(res.read())
+    os.remove(temp[1])
