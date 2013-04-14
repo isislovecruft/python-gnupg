@@ -12,6 +12,7 @@ Contents:
    :maxdepth: 4
 
    gnupg
+   parsers
 
 
 Indices and tables
