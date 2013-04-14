@@ -5,9 +5,3 @@ gnupg Module
     :members:
     :undoc-members:
     :show-inheritance:
-
-
-GPG
----
-
-.. autoclass:: gnupg.GPG
