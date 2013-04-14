@@ -20,7 +20,7 @@ uninstall:
 	touch installed-files.txt
 	cat installed-files.txt | sudo xargs rm -rf
 
-clean-docs:
+cleandocs:
 	sphinx-apidoc -F -A "Isis Agora Lovecruft" -H "python-gnupg" -V 0.4.0 -R 0.4.0 -o docs gnupg/ tests/
 
 docs:
