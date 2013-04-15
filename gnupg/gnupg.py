@@ -181,20 +181,13 @@ def _threaded_copy_data(instream, outstream):
     :param instream: A byte stream to read from.
     :param file outstream: The file descriptor of a tmpfile to write to.
     """
-    result = []
-    exts = filter(None, os.environ.get('PATHEXT', '').split(os.pathsep))
-    path = os.environ.get('PATH', None)
-    if path is None:
-        return []
-    for p in os.environ.get('PATH', '').split(os.pathsep):
-        p = os.path.join(p, executable)
-        if os.access(p, flags):
-            result.append(p)
-        for e in exts:
-            pext = p + e
-            if os.access(pext, flags):
-                result.append(pext)
-    return result
+    copy_thread = threading.Thread(target=_copy_data,
+                                   args=(instream, outstream))
+    copy_thread.setDaemon(True)
+    logger.debug('_threaded_copy_data(): %r, %r, %r', copy_thread,
+                 instream, outstream)
+    copy_thread.start()
+    return copy_thread
 
 def _write_passphrase(stream, passphrase, encoding):
     passphrase = '%s\n' % passphrase
