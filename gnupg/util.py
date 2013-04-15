@@ -1,15 +1,35 @@
-"""
-Utilities for Soledad.
-"""
+#!/usr/bin/env python
+#-*- encoding: utf-8 -*-
+#
+# This file is part of python-gnupg, a Python wrapper around GnuPG.
+# Copyright © 2013 Isis Lovecruft, Andrej B.
+#           © 2008-2012 Vinay Sajip
+#           © 2005 Steve Traugott
+#           © 2004 A.M. Kuchling
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+'''
+utils.py
+----------
+Extra utilities for python-gnupg.
+'''
 
+from gnupg import __author__
+from gnupg import __version__
+__module__ = 'gnupg.util'
+
+from datetime   import datetime
+
+import logging
 import os
-import gnupg
-import re
-from gnupg import (
-    logger,
-    _is_sequence,
-    _make_binary_stream,
-)
 
 
 class ListPackets():

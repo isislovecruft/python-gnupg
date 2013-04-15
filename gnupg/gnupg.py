@@ -86,7 +86,8 @@ try:
 except ImportError:
     from cStringIO import StringIO
 
-from datetime import datetime
+from subprocess import Popen
+from subprocess import PIPE
 
 import codecs
 import locale
@@ -94,30 +95,16 @@ import logging
 import os
 import re
 import socket
-from subprocess import Popen
-from subprocess import PIPE
 import sys
 import tempfile
 import threading
 
-try:
-    import logging.NullHandler as NullHandler
-except ImportError:
-    class NullHandler(logging.Handler):
-        def handle(self, record):
-            pass
-finally:
-    logger = logging.getLogger(__module__)
-    if not logger.handlers:
-        logger.addHandler(NullHandler())
+from parsers import Verify, Crypt, DeleteResult, ImportResult
+from parsers import GenKey, Sign, ListKeys, ListPackets
+from parsers import _fix_unsafe, _sanitise, _is_allowed, _sanitise_list
+from util    import logger, _conf
 
-try:
-    unicode
-    _py3k = False
-except NameError:
-    _py3k = True
-
-ESCAPE_PATTERN = re.compile(r'\\x([0-9a-f][0-9a-f])', re.I)
+import util
 
 
 def _copy_data(instream, outstream):
