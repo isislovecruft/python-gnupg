@@ -827,7 +827,7 @@ class GPG(object):
                 recipients = (recipients,)
             for recipient in recipients:
                 args.append('--recipient "%s"' % recipient)
-        if armor:   # create ascii-armored output - set to False for binary output
+        if armor:
             args.append('--armor')
         if output:  # write the output to a file with the specified name
             if os.path.exists(output):
