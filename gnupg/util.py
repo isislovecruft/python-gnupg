@@ -94,7 +94,11 @@ def _find_gpgbinary(gpgbinary=None):
     Also run checks that the binary is not a symlink, and check that
     our process real uid has exec permissions.
 
-class ListPackets():
+    :param str gpgbinary: The path to the GnuPG binary.
+    :raises: :exc:RuntimeError if it appears that GnuPG is not installed.
+    :rtype: str
+    :returns: The absolute path to the GnuPG binary to use, if no exceptions
+              occur.
     """
     Handle status messages for --list-packets.
     """
