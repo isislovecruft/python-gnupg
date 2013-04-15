@@ -513,8 +513,8 @@ class GPG(object):
         ## attempt to wrap any escape characters in quotes:
         safe_file = _fix_unsafe(file)
 
-        ## check that :param:`file` is actually a file:
-        _is_file(safe_file)
+        ## check that :param:file is actually a file:
+        util._is_file(safe_file)
 
         logger.debug('verify_file: %r, %r', safe_file, data_filename)
         result = self.result_map['verify'](self)
