@@ -823,7 +823,7 @@ class GPG(object):
             args = ['--symmetric']
         else:
             args = ['--encrypt']
-            if not _is_sequence(recipients):
+            if not util._is_list_or_tuple(recipients):
                 recipients = (recipients,)
             for recipient in recipients:
                 args.append('--recipient "%s"' % recipient)
@@ -837,7 +837,7 @@ class GPG(object):
             args.append('--sign --default-key "%s"' % sign)
         if always_trust:
             args.append("--always-trust")
-        result = self.result_map['crypt'](self)
+        result = self._result_map['crypt'](self)
         self._handle_io(args, file, result, passphrase=passphrase, binary=True)
         logger.debug('encrypt result: %r', result.data)
         return result
@@ -916,7 +916,7 @@ class GPG(object):
             args.append('--output "%s"' % output)
         if always_trust:
             args.append("--always-trust")
-        result = self.result_map['crypt'](self)
+        result = self._result_map['crypt'](self)
         self._handle_io(args, file, result, passphrase, binary=True)
         logger.debug('decrypt result: %r', result.data)
         return result
