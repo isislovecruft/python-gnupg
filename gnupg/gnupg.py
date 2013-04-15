@@ -247,24 +247,7 @@ class GPG(object):
             message = ("Unsuitable gpg home dir: %s" % gpghome)
             logger.debug("GPG.__init__(): %s" % message)
 
-        ## find the absolute path, check that it is not a link, and check that
-        ## we have exec permissions
-        bin = None
-        if gpgbinary is not None:
-            if not os.path.isabs(gpgbinary):
-                try: bin = _which(gpgbinary)[0]
-                except IndexError as ie: logger.debug(ie.message)
-        if bin is None:
-            try: bin = _which('gpg')[0]
-            except IndexError: raise RuntimeError("gpg is not installed")
-        try:
-            assert os.path.isabs(bin), "Path to gpg binary not absolute"
-            assert not os.path.islink(bin), "Path to gpg binary is symbolic link"
-            assert os.access(bin, os.X_OK), "Lacking +x perms for gpg binary"
-        except (AssertionError, AttributeError) as ae:
-            logger.debug("GPG.__init__(): %s" % ae.message)
-        else:
-            self.gpgbinary = bin
+        self.gpgbinary = util._find_gpgbinary(gpgbinary)
 
         if keyring is not None:
             try:
