@@ -372,40 +372,35 @@ def _sanitise(*args):
         :rtype: str
         :returns: A string of the items in ``checked`` delimited by spaces.
         """
-        safe_values = str()
-
+        safe_option = str()
         try:
-            allowed_flag = _is_allowed(arg)
-            assert allowed_flag is not None, \
-                "_check_arg_and_value(): got None for allowed_flag"
+            flag = _is_allowed(arg)
+            assert flag is not None, "_check_option(): got None for flag"
         except (AssertionError, ProtectedOption) as error:
-            logger.warn("_sanitise(): %s" % error.message)
+            logger.warn("_check_option(): %s" % error.message)
         else:
-            safe_values += (allowed_flag + " ")
+            safe_option += (flag + " ")
             if isinstance(value, str):
-                value_list = value.split(' ')
-                for value in value_list:
-                    safe_value = _fix_unsafe(value)
-                    if safe_value is not None and not safe_value.strip() == "":
-                        if allowed_flag in ['--encrypt', '--encrypt-files',
-                                            '--decrypt', '--decrypt-file',
-                                            '--import', '--verify']:
-                        ## Place checks here:
-                            if _is_file(safe_value):
-                                safe_values += (safe_value + " ")
+                values = value.split(' ')
+                for v in values:
+                    val = _fix_unsafe(v)
+                    if val is not None and val.strip() != "":
+                        if flag in ['--encrypt', '--encrypt-files', '--decrypt',
+                                    '--decrypt-file', '--import', '--verify']:
+                            ## Place checks here:
+                            if _is_file(val):
+                                safe_option += (val + " ")
                             else:
-                                logger.debug(
-                                    "_sanitize(): Option %s not file: %s"
-                                    % (allowed_flag, safe_value))
+                                logger.debug("_check_option(): %s not file: %s"
+                                             % (flag, val))
                         else:
-                            safe_values += (safe_value + " ")
-                            logger.debug(
-                                "_sanitize(): No configured checks for: %s"
-                                % safe_value)
-        return safe_values
+                            safe_option += (val + " ")
+                            logger.debug("_check_option(): No checks for %s"
+                                         % val)
+        return safe_option
 
+    is_flag = lambda x: x.startswith('-')
     checked = []
-
     if args is not None:
         for arg in args:
             if isinstance(arg, str):
@@ -415,33 +410,37 @@ def _sanitise(*args):
                 if arg.find(' ') > 0:
                     filo = arg.split()
                     filo.reverse()
-                    is_flag = lambda x: x.startswith('-')
                     new_arg, new_value = str(), str()
                     while len(filo) > 0:
-                        if is_flag(filo[0]):
+                        if not is_flag(filo[0]):
+                            logger.debug("_sanitise(): Got non-flag arg %s"
+                                         % filo[0])
+                            new_value += (filo.pop() + " ")
+                        else:
+                            logger.debug("_sanitise(): Got arg: %s" % filo[0])
                             new_arg = filo.pop()
                             if len(filo) > 0:
                                 while not is_flag(filo[0]):
-                                    new_value += (filo.pop() + ' ')
-                        else:
-                            logger.debug("Got non-flag argument: %s" % filo[0])
-                            filo.pop()
-                        safe = _check_arg_and_value(new_arg, new_value)
-                        if safe is not None and not safe.strip() == '':
-                            logger.debug("_sanitise(): appending args: %s"
-                                         % safe)
-                            checked.append(safe)
+                                    logger.debug("_sanitise(): Got value: %s"
+                                                 % filo[0])
+                                    new_value += (filo.pop() + " ")
+                            safe = _check_option(new_arg, new_value)
+                            if safe is not None and not safe.strip() == "":
+                                logger.debug("_sanitise(): appending option: %s"
+                                             % safe)
+                                checked.append(safe)
                 else:
-                    safe = _check_arg_and_value(arg, None)
-                    logger.debug("_sanitise(): appending args: %s" % safe)
-                    checked.append(safe)
-            elif isinstance(arg, list): ## happens with '--version'
-                logger.debug("_sanitise(): Got arg list: %s" % arg)
-                for a in arg:
-                    if a.startswith('--'):
-                        safe = _check_arg_and_value(a, None)
+                    safe = _check_option(arg, None)
+                    if safe is not None:
                         logger.debug("_sanitise(): appending args: %s" % safe)
                         checked.append(safe)
+                    else:
+                        logger.debug("_sanitise(): got None for safe")
+            elif isinstance(arg, list):
+                logger.debug("_sanitise(): Got arg list: %s" % arg)
+                allow = _one_flag(arg)
+                if allow is not None:
+                    checked.append(allow)
             else:
                 logger.debug("_sanitise(): got non string or list arg: %s"
                              % arg)
