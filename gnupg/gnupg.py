@@ -193,7 +193,8 @@ def _write_passphrase(stream, passphrase, encoding):
     passphrase = '%s\n' % passphrase
     passphrase = passphrase.encode(encoding)
     stream.write(passphrase)
-    logger.debug("Wrote passphrase.")
+    logger.debug("_write_passphrase(): Wrote passphrase.")
+
 
  
 class GPG(object):
