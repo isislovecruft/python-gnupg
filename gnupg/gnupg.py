@@ -731,8 +731,7 @@ class GPG(object):
 
         The GnuPG batch file key generation feature allows unattended key
         generation by creating a file with special syntax and then providing it
-        to:
-            $ gpg --gen-key --batch <batch file>
+        to:      gpg --gen-key --batch <batch file>
 
         see http://www.gnupg.org/documentation/manuals/gnupg-devel/Unattended-GPG-key-generation.html#Unattended-GPG-key-generation
         for more details.
