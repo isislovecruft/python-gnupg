@@ -10,7 +10,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Index &mdash; python-gnupg 0.3.1 documentation</title>
+    <title>Index &mdash; python-gnupg 0.4.0 documentation</title>
     
     <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -19,7 +19,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.3.1',
+        VERSION:     '0.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -29,11 +29,11 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/theme_extras.js"></script>
-    <link rel="top" title="python-gnupg 0.3.1 documentation" href="index.html" /> 
+    <link rel="top" title="python-gnupg 0.4.0 documentation" href="index.html" /> 
   </head>
   <body>
       <div class="header"><h1 class="heading"><a href="index.html">
-          <span>python-gnupg 0.3.1 documentation</span></a></h1>
+          <span>python-gnupg 0.4.0 documentation</span></a></h1>
         <h2 class="heading"><span>Index</span></h2>
       </div>
       <div class="topnav">
@@ -59,8 +59,6 @@
  | <a href="#I"><strong>I</strong></a>
  | <a href="#K"><strong>K</strong></a>
  | <a href="#L"><strong>L</strong></a>
- | <a href="#M"><strong>M</strong></a>
- | <a href="#N"><strong>N</strong></a>
  | <a href="#O"><strong>O</strong></a>
  | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
@@ -68,19 +66,20 @@
  | <a href="#T"><strong>T</strong></a>
  | <a href="#U"><strong>U</strong></a>
  | <a href="#V"><strong>V</strong></a>
+ | <a href="#W"><strong>W</strong></a>
  
 </div>
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.ImportResult.counts">counts (gnupg.ImportResult attribute)</a>
+  <dt><a href="parsers.html#parsers.ImportResult.counts">counts (parsers.ImportResult attribute)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.Crypt">Crypt (class in gnupg)</a>
+  <dt><a href="parsers.html#parsers.Crypt">Crypt (class in parsers)</a>
   </dt>
 
   </dl></td>
@@ -90,25 +89,27 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.GPG.decode_errors">decode_errors (gnupg.GPG attribute)</a>, <a href="gnupg.html#gnupg.GPG.decode_errors">[1]</a>
+  <dt><a href="gnupg.html#gnupg.GPG.decrypt">decrypt() (gnupg.GPG method)</a>
   </dt>
 
-      
-  <dt><a href="gnupg.html#gnupg.GPG.decrypt">decrypt() (gnupg.GPG method)</a>, <a href="gnupg.html#gnupg.GPG.decrypt">[1]</a>
+      <dd><dl>
+        
+  <dt><a href="gnupg.html#gnupg.GPGWrapper.decrypt">(gnupg.GPGWrapper method)</a>
   </dt>
 
+      </dl></dd>
       
-  <dt><a href="gnupg.html#gnupg.GPG.decrypt_file">decrypt_file() (gnupg.GPG method)</a>, <a href="gnupg.html#gnupg.GPG.decrypt_file">[1]</a>
+  <dt><a href="gnupg.html#gnupg.GPG.decrypt_file">decrypt_file() (gnupg.GPG method)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.GPG.delete_keys">delete_keys() (gnupg.GPG method)</a>, <a href="gnupg.html#gnupg.GPG.delete_keys">[1]</a>
+  <dt><a href="gnupg.html#gnupg.GPG.delete_keys">delete_keys() (gnupg.GPG method)</a>
   </dt>
 
       
-  <dt><a href="gnupg.html#gnupg.DeleteResult">DeleteResult (class in gnupg)</a>
+  <dt><a href="parsers.html#parsers.DeleteResult">DeleteResult (class in parsers)</a>
   </dt>
 
   </dl></td>
@@ -118,17 +119,33 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.GPG.encrypt">encrypt() (gnupg.GPG method)</a>, <a href="gnupg.html#gnupg.GPG.encrypt">[1]</a>
+  <dt><a href="gnupg.html#gnupg.GPG.encrypt">encrypt() (gnupg.GPG method)</a>
   </dt>
 
+      <dd><dl>
+        
+  <dt><a href="gnupg.html#gnupg.GPGWrapper.encrypt">(gnupg.GPGWrapper method)</a>
+  </dt>
+
+      </dl></dd>
       
-  <dt><a href="gnupg.html#gnupg.GPG.encrypt_file">encrypt_file() (gnupg.GPG method)</a>, <a href="gnupg.html#gnupg.GPG.encrypt_file">[1]</a>
+  <dt><a href="gnupg.html#gnupg.GPG.encrypt_file">encrypt_file() (gnupg.GPG method)</a>
   </dt>
 
+      <dd><dl>
+        
+  <dt><a href="gnupg.html#gnupg.GPGWrapper.encrypt_file">(gnupg.GPGWrapper method)</a>
+  </dt>
+
+      </dl></dd>
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.GPG.export_keys">export_keys() (gnupg.GPG method)</a>, <a href="gnupg.html#gnupg.GPG.export_keys">[1]</a>
+  <dt><a href="gnupg.html#gnupg.GPGWrapper.encrypted_to">encrypted_to() (gnupg.GPGWrapper method)</a>
+  </dt>
+
+      
+  <dt><a href="gnupg.html#gnupg.GPG.export_keys">export_keys() (gnupg.GPG method)</a>
   </dt>
 
   </dl></td>
@@ -138,7 +155,29 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.ListKeys.fpr">fpr() (gnupg.ListKeys method)</a>
+  <dt><a href="gnupg.html#gnupg.GPGWrapper.find_key_by_email">find_key_by_email() (gnupg.GPGWrapper method)</a>
+  </dt>
+
+      
+  <dt><a href="gnupg.html#gnupg.GPGWrapper.find_key_by_keyid">find_key_by_keyid() (gnupg.GPGWrapper method)</a>
+  </dt>
+
+      
+  <dt><a href="gnupg.html#gnupg.GPGWrapper.find_key_by_subkey">find_key_by_subkey() (gnupg.GPGWrapper method)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="parsers.html#parsers.Sign.fingerprint">fingerprint (parsers.Sign attribute)</a>
+  </dt>
+
+      
+  <dt><a href="parsers.html#parsers.ImportResult.fingerprints">fingerprints (parsers.ImportResult attribute)</a>
+  </dt>
+
+      
+  <dt><a href="parsers.html#parsers.ListKeys.fpr">fpr() (parsers.ListKeys method)</a>
   </dt>
 
   </dl></td>
@@ -148,15 +187,15 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.GPG.gen_key">gen_key() (gnupg.GPG method)</a>, <a href="gnupg.html#gnupg.GPG.gen_key">[1]</a>
+  <dt><a href="gnupg.html#gnupg.GPG.gen_key">gen_key() (gnupg.GPG method)</a>
   </dt>
 
       
-  <dt><a href="gnupg.html#gnupg.GPG.gen_key_input">gen_key_input() (gnupg.GPG method)</a>, <a href="gnupg.html#gnupg.GPG.gen_key_input">[1]</a>
+  <dt><a href="gnupg.html#gnupg.GPG.gen_key_input">gen_key_input() (gnupg.GPG method)</a>
   </dt>
 
       
-  <dt><a href="gnupg.html#gnupg.GenKey">GenKey (class in gnupg)</a>
+  <dt><a href="parsers.html#parsers.GenKey">GenKey (class in parsers)</a>
   </dt>
 
   </dl></td>
@@ -166,7 +205,11 @@
   </dt>
 
       
-  <dt><a href="gnupg.html#gnupg.GPG">GPG (class in gnupg)</a>, <a href="gnupg.html#gnupg.GPG">[1]</a>
+  <dt><a href="gnupg.html#gnupg.GPG">GPG (class in gnupg)</a>
+  </dt>
+
+      
+  <dt><a href="gnupg.html#gnupg.GPGWrapper">GPGWrapper (class in gnupg)</a>
   </dt>
 
   </dl></td>
@@ -176,38 +219,36 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.NullHandler.handle">handle() (gnupg.NullHandler method)</a>
-  </dt>
-
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
-      
-  <dt><a href="gnupg.html#gnupg.Crypt.handle_status">handle_status() (gnupg.Crypt method)</a>
+  <dt><a href="parsers.html#parsers.Crypt.handle_status">handle_status() (parsers.Crypt method)</a>
   </dt>
 
       <dd><dl>
         
-  <dt><a href="gnupg.html#gnupg.DeleteResult.handle_status">(gnupg.DeleteResult method)</a>
+  <dt><a href="parsers.html#parsers.DeleteResult.handle_status">(parsers.DeleteResult method)</a>
   </dt>
 
         
-  <dt><a href="gnupg.html#gnupg.GenKey.handle_status">(gnupg.GenKey method)</a>
+  <dt><a href="parsers.html#parsers.GenKey.handle_status">(parsers.GenKey method)</a>
   </dt>
 
         
-  <dt><a href="gnupg.html#gnupg.ImportResult.handle_status">(gnupg.ImportResult method)</a>
+  <dt><a href="parsers.html#parsers.ImportResult.handle_status">(parsers.ImportResult method)</a>
   </dt>
 
         
-  <dt><a href="gnupg.html#gnupg.ListKeys.handle_status">(gnupg.ListKeys method)</a>
+  <dt><a href="parsers.html#parsers.ListKeys.handle_status">(parsers.ListKeys method)</a>
   </dt>
 
         
-  <dt><a href="gnupg.html#gnupg.Sign.handle_status">(gnupg.Sign method)</a>
+  <dt><a href="parsers.html#parsers.ListPackets.handle_status">(parsers.ListPackets method)</a>
   </dt>
 
         
-  <dt><a href="gnupg.html#gnupg.Verify.handle_status">(gnupg.Verify method)</a>
+  <dt><a href="parsers.html#parsers.Sign.handle_status">(parsers.Sign method)</a>
+  </dt>
+
+        
+  <dt><a href="parsers.html#parsers.Verify.handle_status">(parsers.Verify method)</a>
   </dt>
 
       </dl></dd>
@@ -218,13 +259,29 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.GPG.import_keys">import_keys() (gnupg.GPG method)</a>, <a href="gnupg.html#gnupg.GPG.import_keys">[1]</a>
+  <dt><a href="gnupg.html#gnupg.GPG.import_keys">import_keys() (gnupg.GPG method)</a>
+  </dt>
+
+      
+  <dt><a href="parsers.html#parsers.ImportResult.imported">imported (parsers.ImportResult attribute)</a>
+  </dt>
+
+      
+  <dt><a href="parsers.html#parsers.ImportResult">ImportResult (class in parsers)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.ImportResult">ImportResult (class in gnupg)</a>
+  <dt><a href="gnupg.html#gnupg.GPGWrapper.is_encrypted">is_encrypted() (gnupg.GPGWrapper method)</a>
+  </dt>
+
+      
+  <dt><a href="gnupg.html#gnupg.GPGWrapper.is_encrypted_asym">is_encrypted_asym() (gnupg.GPGWrapper method)</a>
+  </dt>
+
+      
+  <dt><a href="gnupg.html#gnupg.GPGWrapper.is_encrypted_sym">is_encrypted_sym() (gnupg.GPGWrapper method)</a>
   </dt>
 
   </dl></td>
@@ -234,7 +291,7 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.ListKeys.key">key() (gnupg.ListKeys method)</a>
+  <dt><a href="parsers.html#parsers.ListKeys.key">key() (parsers.ListKeys method)</a>
   </dt>
 
   </dl></td>
@@ -244,33 +301,21 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.GPG.list_keys">list_keys() (gnupg.GPG method)</a>, <a href="gnupg.html#gnupg.GPG.list_keys">[1]</a>
+  <dt><a href="gnupg.html#gnupg.GPG.list_keys">list_keys() (gnupg.GPG method)</a>
+  </dt>
+
+      
+  <dt><a href="gnupg.html#gnupg.GPGWrapper.list_packets">list_packets() (gnupg.GPGWrapper method)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.ListKeys">ListKeys (class in gnupg)</a>
+  <dt><a href="parsers.html#parsers.ListKeys">ListKeys (class in parsers)</a>
   </dt>
 
-  </dl></td>
-</tr></table>
-
-<h2 id="M">M</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.GPG.make_args">make_args() (gnupg.GPG method)</a>, <a href="gnupg.html#gnupg.GPG.make_args">[1]</a>
-  </dt>
-
-  </dl></td>
-</tr></table>
-
-<h2 id="N">N</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%" valign="top"><dl>
-      
-  <dt><a href="gnupg.html#gnupg.NullHandler">NullHandler (class in gnupg)</a>
+  <dt><a href="parsers.html#parsers.ListPackets">ListPackets (class in parsers)</a>
   </dt>
 
   </dl></td>
@@ -280,7 +325,7 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.ImportResult.ok_reason">ok_reason (gnupg.ImportResult attribute)</a>
+  <dt><a href="parsers.html#parsers.ImportResult.ok_reason">ok_reason (parsers.ImportResult attribute)</a>
   </dt>
 
   </dl></td>
@@ -290,23 +335,27 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.DeleteResult.problem_reason">problem_reason (gnupg.DeleteResult attribute)</a>
+  <dt><a href="parsers.html#module-parsers">parsers (module)</a>
+  </dt>
+
+      
+  <dt><a href="parsers.html#parsers.DeleteResult.problem_reason">problem_reason (parsers.DeleteResult attribute)</a>
   </dt>
 
       <dd><dl>
         
-  <dt><a href="gnupg.html#gnupg.ImportResult.problem_reason">(gnupg.ImportResult attribute)</a>
+  <dt><a href="parsers.html#parsers.ImportResult.problem_reason">(parsers.ImportResult attribute)</a>
   </dt>
 
       </dl></dd>
-      
-  <dt><a href="gnupg.html#gnupg.ProtectedOption">ProtectedOption</a>
-  </dt>
-
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.ListKeys.pub">pub() (gnupg.ListKeys method)</a>
+  <dt><a href="parsers.html#parsers.ProtectedOption">ProtectedOption</a>
+  </dt>
+
+      
+  <dt><a href="parsers.html#parsers.ListKeys.pub">pub() (parsers.ListKeys method)</a>
   </dt>
 
   </dl></td>
@@ -316,13 +365,13 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.GPG.recv_keys">recv_keys() (gnupg.GPG method)</a>, <a href="gnupg.html#gnupg.GPG.recv_keys">[1]</a>
+  <dt><a href="gnupg.html#gnupg.GPG.recv_keys">recv_keys() (gnupg.GPG method)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.GPG.result_map">result_map (gnupg.GPG attribute)</a>, <a href="gnupg.html#gnupg.GPG.result_map">[1]</a>
+  <dt><a href="parsers.html#parsers.ImportResult.results">results (parsers.ImportResult attribute)</a>
   </dt>
 
   </dl></td>
@@ -332,29 +381,41 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.ListKeys.sec">sec() (gnupg.ListKeys method)</a>
+  <dt><a href="parsers.html#parsers.ListKeys.sec">sec() (parsers.ListKeys method)</a>
   </dt>
 
       
-  <dt><a href="gnupg.html#gnupg.Sign">Sign (class in gnupg)</a>
+  <dt><a href="gnupg.html#gnupg.GPGWrapper.send_keys">send_keys() (gnupg.GPGWrapper method)</a>
   </dt>
 
       
-  <dt><a href="gnupg.html#gnupg.GPG.sign">sign() (gnupg.GPG method)</a>, <a href="gnupg.html#gnupg.GPG.sign">[1]</a>
+  <dt><a href="parsers.html#parsers.Sign.sig_algo">sig_algo (parsers.Sign attribute)</a>
+  </dt>
+
+      
+  <dt><a href="parsers.html#parsers.Sign.sig_hash_also">sig_hash_also (parsers.Sign attribute)</a>
+  </dt>
+
+      
+  <dt><a href="parsers.html#parsers.Sign.sig_type">sig_type (parsers.Sign attribute)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.GPG.sign_file">sign_file() (gnupg.GPG method)</a>, <a href="gnupg.html#gnupg.GPG.sign_file">[1]</a>
+  <dt><a href="parsers.html#parsers.Sign">Sign (class in parsers)</a>
   </dt>
 
       
-  <dt><a href="gnupg.html#gnupg.ListKeys.sub">sub() (gnupg.ListKeys method)</a>
+  <dt><a href="gnupg.html#gnupg.GPG.sign">sign() (gnupg.GPG method)</a>
   </dt>
 
       
-  <dt><a href="gnupg.html#gnupg.ImportResult.summary">summary() (gnupg.ImportResult method)</a>
+  <dt><a href="parsers.html#parsers.ListKeys.sub">sub() (parsers.ListKeys method)</a>
+  </dt>
+
+      
+  <dt><a href="parsers.html#parsers.ImportResult.summary">summary() (parsers.ImportResult method)</a>
   </dt>
 
   </dl></td>
@@ -364,29 +425,33 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.Verify.TRUST_FULLY">TRUST_FULLY (gnupg.Verify attribute)</a>
+  <dt><a href="parsers.html#parsers.Sign.timestamp">timestamp (parsers.Sign attribute)</a>
   </dt>
 
       
-  <dt><a href="gnupg.html#gnupg.Verify.TRUST_LEVELS">TRUST_LEVELS (gnupg.Verify attribute)</a>
+  <dt><a href="parsers.html#parsers.Verify.TRUST_FULLY">TRUST_FULLY (parsers.Verify attribute)</a>
   </dt>
 
       
-  <dt><a href="gnupg.html#gnupg.Verify.TRUST_MARGINAL">TRUST_MARGINAL (gnupg.Verify attribute)</a>
+  <dt><a href="parsers.html#parsers.Verify.TRUST_LEVELS">TRUST_LEVELS (parsers.Verify attribute)</a>
+  </dt>
+
+      
+  <dt><a href="parsers.html#parsers.Verify.TRUST_MARGINAL">TRUST_MARGINAL (parsers.Verify attribute)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.Verify.TRUST_NEVER">TRUST_NEVER (gnupg.Verify attribute)</a>
+  <dt><a href="parsers.html#parsers.Verify.TRUST_NEVER">TRUST_NEVER (parsers.Verify attribute)</a>
   </dt>
 
       
-  <dt><a href="gnupg.html#gnupg.Verify.TRUST_ULTIMATE">TRUST_ULTIMATE (gnupg.Verify attribute)</a>
+  <dt><a href="parsers.html#parsers.Verify.TRUST_ULTIMATE">TRUST_ULTIMATE (parsers.Verify attribute)</a>
   </dt>
 
       
-  <dt><a href="gnupg.html#gnupg.Verify.TRUST_UNDEFINED">TRUST_UNDEFINED (gnupg.Verify attribute)</a>
+  <dt><a href="parsers.html#parsers.Verify.TRUST_UNDEFINED">TRUST_UNDEFINED (parsers.Verify attribute)</a>
   </dt>
 
   </dl></td>
@@ -396,13 +461,13 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.ListKeys.uid">uid() (gnupg.ListKeys method)</a>
+  <dt><a href="parsers.html#parsers.ListKeys.uid">uid() (parsers.ListKeys method)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.UsageError">UsageError</a>
+  <dt><a href="parsers.html#parsers.UsageError">UsageError</a>
   </dt>
 
   </dl></td>
@@ -412,17 +477,27 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.Verify">Verify (class in gnupg)</a>
+  <dt><a href="parsers.html#parsers.Verify">Verify (class in parsers)</a>
   </dt>
 
       
-  <dt><a href="gnupg.html#gnupg.GPG.verify">verify() (gnupg.GPG method)</a>, <a href="gnupg.html#gnupg.GPG.verify">[1]</a>
+  <dt><a href="gnupg.html#gnupg.GPG.verify">verify() (gnupg.GPG method)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="gnupg.html#gnupg.GPG.verify_file">verify_file() (gnupg.GPG method)</a>, <a href="gnupg.html#gnupg.GPG.verify_file">[1]</a>
+  <dt><a href="gnupg.html#gnupg.GPG.verify_file">verify_file() (gnupg.GPG method)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
+<h2 id="W">W</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="parsers.html#parsers.Sign.what">what (parsers.Sign attribute)</a>
   </dt>
 
   </dl></td>

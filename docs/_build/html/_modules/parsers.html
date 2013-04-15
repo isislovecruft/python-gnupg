@@ -1,0 +1,1094 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>parsers &mdash; python-gnupg 0.4.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/print.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/theme_extras.js"></script>
+    <link rel="top" title="python-gnupg 0.4.0 documentation" href="../index.html" />
+    <link rel="up" title="Module code" href="index.html" /> 
+  </head>
+  <body>
+      <div class="header"><h1 class="heading"><a href="../index.html">
+          <span>python-gnupg 0.4.0 documentation</span></a></h1>
+        <h2 class="heading"><span>parsers</span></h2>
+      </div>
+      <div class="topnav">
+      
+        <p>
+        <a class="uplink" href="../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <h1>Source code for parsers</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python</span>
+<span class="c">#-*- encoding: utf-8 -*-</span>
+<span class="c">#</span>
+<span class="c"># This file is part of python-gnupg, a Python wrapper around GnuPG.</span>
+<span class="c"># Copyright © 2013 Isis Lovecruft</span>
+<span class="c">#           © 2008-2012 Vinay Sajip</span>
+<span class="c">#           © 2005 Steve Traugott</span>
+<span class="c">#           © 2004 A.M. Kuchling</span>
+<span class="c">#</span>
+<span class="c"># This program is free software: you can redistribute it and/or modify</span>
+<span class="c"># it under the terms of the GNU Affero General Public License as published</span>
+<span class="c"># by the Free Software Foundation, either version 3 of the License, or</span>
+<span class="c"># (at your option) any later version.</span>
+<span class="c">#</span>
+<span class="c"># This program is distributed in the hope that it will be useful,</span>
+<span class="c"># but WITHOUT ANY WARRANTY; without even the implied warranty of</span>
+<span class="c"># MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the</span>
+<span class="c"># GNU Affero General Public License for more details.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">parsers.py</span>
+<span class="sd">----------</span>
+<span class="sd">Classes for parsing GnuPG status messages and sanitising commandline options.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="kn">from</span> <span class="nn">gnupg</span> <span class="kn">import</span> <span class="n">__author__</span>
+<span class="kn">from</span> <span class="nn">gnupg</span> <span class="kn">import</span> <span class="n">__version__</span>
+<span class="n">__module__</span> <span class="o">=</span> <span class="s">&#39;gnupg.parsers&#39;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+<span class="kn">from</span> <span class="nn">util</span> <span class="kn">import</span> <span class="n">logger</span>
+<span class="kn">import</span> <span class="nn">util</span>
+
+
+<span class="n">ESCAPE_PATTERN</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;</span><span class="se">\\</span><span class="s">x([0-9a-f][0-9a-f])&#39;</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ProtectedOption"><a class="viewcode-back" href="../parsers.html#parsers.ProtectedOption">[docs]</a><span class="k">class</span> <span class="nc">ProtectedOption</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Raised when the option passed to GPG is disallowed.&quot;&quot;&quot;</span>
+</div>
+<div class="viewcode-block" id="UsageError"><a class="viewcode-back" href="../parsers.html#parsers.UsageError">[docs]</a><span class="k">class</span> <span class="nc">UsageError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Raised when incorrect usage of the API occurs..&quot;&quot;&quot;</span>
+
+</div>
+<span class="k">def</span> <span class="nf">_fix_unsafe</span><span class="p">(</span><span class="n">shell_input</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Find characters used to escape from a string into a shell, and wrap them</span>
+<span class="sd">    in quotes if they exist. Regex pilfered from python-3.x shlex module.</span>
+
+<span class="sd">    :param str shell_input: The input intended for the GnuPG process.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c">## xxx do we want to add &#39;;&#39;?</span>
+    <span class="n">_unsafe</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;[^\w@%+=:,./-]&#39;</span><span class="p">,</span> <span class="mi">256</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">_unsafe</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">shell_input</span><span class="p">))</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">shell_input</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">clean</span> <span class="o">=</span> <span class="s">&quot;&#39;&quot;</span> <span class="o">+</span> <span class="n">shell_input</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s">&quot;&#39;</span><span class="se">\&quot;</span><span class="s">&#39;</span><span class="se">\&quot;</span><span class="s">&#39;&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;&#39;&quot;</span>
+            <span class="k">return</span> <span class="n">clean</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">None</span>
+
+<span class="k">def</span> <span class="nf">_hyphenate</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">add_prefix</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Change underscores to hyphens so that object attributes can be easily</span>
+<span class="sd">    tranlated to GPG option names.</span>
+
+<span class="sd">    :param str input: The attribute to hyphenate.</span>
+<span class="sd">    :param bool add_prefix: If True, add leading hyphens to the input.</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    :return: The ``input`` with underscores changed to hyphens.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ret</span>  <span class="o">=</span> <span class="s">&#39;--&#39;</span> <span class="k">if</span> <span class="n">add_prefix</span> <span class="k">else</span> <span class="s">&#39;&#39;</span>
+    <span class="n">ret</span> <span class="o">+=</span> <span class="nb">input</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">,</span> <span class="s">&#39;-&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ret</span>
+
+<span class="k">def</span> <span class="nf">_is_allowed</span><span class="p">(</span><span class="nb">input</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check that an option or argument given to GPG is in the set of allowed</span>
+<span class="sd">    options, the latter being a strict subset of the set of all options known</span>
+<span class="sd">    to GPG.</span>
+
+<span class="sd">    :param str input: An input meant to be parsed as an option or flag to the</span>
+<span class="sd">                      GnuPG process. Should be formatted the same as an option</span>
+<span class="sd">                      or flag to the commandline gpg, i.e. &quot;--encrypt-files&quot;.</span>
+<span class="sd">    :ivar frozenset _possible: All known GPG options and flags.</span>
+<span class="sd">    :ivar frozenset _allowed: All allowed GPG options and flags, e.g. all GPG</span>
+<span class="sd">                              options and flags which we are willing to</span>
+<span class="sd">                              acknowledge and parse. If we want to support a</span>
+<span class="sd">                              new option, it will need to have its own parsing</span>
+<span class="sd">                              class and its name will need to be added to this</span>
+<span class="sd">                              set.</span>
+
+<span class="sd">    :rtype: Exception or str</span>
+<span class="sd">    :raise: :exc:UsageError if ``_allowed`` is not a subset of ``_possible``.</span>
+<span class="sd">            ProtectedOption if ``input`` is not in the set ``_allowed``.</span>
+<span class="sd">    :return: The original parameter ``input``, unmodified and unsanitized,</span>
+<span class="sd">             if no errors occur.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_all</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;&quot;&quot;</span>
+<span class="s">--allow-freeform-uid              --multifile</span>
+<span class="s">--allow-multiple-messages         --no</span>
+<span class="s">--allow-multisig-verification     --no-allow-freeform-uid</span>
+<span class="s">--allow-non-selfsigned-uid        --no-allow-multiple-messages</span>
+<span class="s">--allow-secret-key-import         --no-allow-non-selfsigned-uid</span>
+<span class="s">--always-trust                    --no-armor</span>
+<span class="s">--armor                           --no-armour</span>
+<span class="s">--armour                          --no-ask-cert-expire</span>
+<span class="s">--ask-cert-expire                 --no-ask-cert-level</span>
+<span class="s">--ask-cert-level                  --no-ask-sig-expire</span>
+<span class="s">--ask-sig-expire                  --no-auto-check-trustdb</span>
+<span class="s">--attribute-fd                    --no-auto-key-locate</span>
+<span class="s">--attribute-file                  --no-auto-key-retrieve</span>
+<span class="s">--auto-check-trustdb              --no-batch</span>
+<span class="s">--auto-key-locate                 --no-comments</span>
+<span class="s">--auto-key-retrieve               --no-default-keyring</span>
+<span class="s">--batch                           --no-default-recipient</span>
+<span class="s">--bzip2-compress-level            --no-disable-mdc</span>
+<span class="s">--bzip2-decompress-lowmem         --no-emit-version</span>
+<span class="s">--card-edit                       --no-encrypt-to</span>
+<span class="s">--card-status                     --no-escape-from-lines</span>
+<span class="s">--cert-digest-algo                --no-expensive-trust-checks</span>
+<span class="s">--cert-notation                   --no-expert</span>
+<span class="s">--cert-policy-url                 --no-force-mdc</span>
+<span class="s">--change-pin                      --no-force-v3-sigs</span>
+<span class="s">--charset                         --no-force-v4-certs</span>
+<span class="s">--check-sig                       --no-for-your-eyes-only</span>
+<span class="s">--check-sigs                      --no-greeting</span>
+<span class="s">--check-trustdb                   --no-groups</span>
+<span class="s">--cipher-algo                     --no-literal</span>
+<span class="s">--clearsign                       --no-mangle-dos-filenames</span>
+<span class="s">--command-fd                      --no-mdc-warning</span>
+<span class="s">--command-file                    --no-options</span>
+<span class="s">--comment                         --no-permission-warning</span>
+<span class="s">--completes-needed                --no-pgp2</span>
+<span class="s">--compress-algo                   --no-pgp6</span>
+<span class="s">--compression-algo                --no-pgp7</span>
+<span class="s">--compress-keys                   --no-pgp8</span>
+<span class="s">--compress-level                  --no-random-seed-file</span>
+<span class="s">--compress-sigs                   --no-require-backsigs</span>
+<span class="s">--ctapi-driver                    --no-require-cross-certification</span>
+<span class="s">--dearmor                         --no-require-secmem</span>
+<span class="s">--dearmour                        --no-rfc2440-text</span>
+<span class="s">--debug                           --no-secmem-warning</span>
+<span class="s">--debug-all                       --no-show-notation</span>
+<span class="s">--debug-ccid-driver               --no-show-photos</span>
+<span class="s">--debug-level                     --no-show-policy-url</span>
+<span class="s">--decrypt                         --no-sig-cache</span>
+<span class="s">--decrypt-files                   --no-sig-create-check</span>
+<span class="s">--default-cert-check-level        --no-sk-comments</span>
+<span class="s">--default-cert-expire             --no-strict</span>
+<span class="s">--default-cert-level              --notation-data</span>
+<span class="s">--default-comment                 --not-dash-escaped</span>
+<span class="s">--default-key                     --no-textmode</span>
+<span class="s">--default-keyserver-url           --no-throw-keyid</span>
+<span class="s">--default-preference-list         --no-throw-keyids</span>
+<span class="s">--default-recipient               --no-tty</span>
+<span class="s">--default-recipient-self          --no-use-agent</span>
+<span class="s">--default-sig-expire              --no-use-embedded-filename</span>
+<span class="s">--delete-keys                     --no-utf8-strings</span>
+<span class="s">--delete-secret-and-public-keys   --no-verbose</span>
+<span class="s">--delete-secret-keys              --no-version</span>
+<span class="s">--desig-revoke                    --openpgp</span>
+<span class="s">--detach-sign                     --options</span>
+<span class="s">--digest-algo                     --output</span>
+<span class="s">--disable-ccid                    --override-session-key</span>
+<span class="s">--disable-cipher-algo             --passphrase</span>
+<span class="s">--disable-dsa2                    --passphrase-fd</span>
+<span class="s">--disable-mdc                     --passphrase-file</span>
+<span class="s">--disable-pubkey-algo             --passphrase-repeat</span>
+<span class="s">--display                         --pcsc-driver</span>
+<span class="s">--display-charset                 --personal-cipher-preferences</span>
+<span class="s">--dry-run                         --personal-cipher-prefs</span>
+<span class="s">--dump-options                    --personal-compress-preferences</span>
+<span class="s">--edit-key                        --personal-compress-prefs</span>
+<span class="s">--emit-version                    --personal-digest-preferences</span>
+<span class="s">--enable-dsa2                     --personal-digest-prefs</span>
+<span class="s">--enable-progress-filter          --pgp2</span>
+<span class="s">--enable-special-filenames        --pgp6</span>
+<span class="s">--enarmor                         --pgp7</span>
+<span class="s">--enarmour                        --pgp8</span>
+<span class="s">--encrypt                         --photo-viewer</span>
+<span class="s">--encrypt-files                   --pipemode</span>
+<span class="s">--encrypt-to                      --preserve-permissions</span>
+<span class="s">--escape-from-lines               --primary-keyring</span>
+<span class="s">--exec-path                       --print-md</span>
+<span class="s">--exit-on-status-write-error      --print-mds</span>
+<span class="s">--expert                          --quick-random</span>
+<span class="s">--export                          --quiet</span>
+<span class="s">--export-options                  --reader-port</span>
+<span class="s">--export-ownertrust               --rebuild-keydb-caches</span>
+<span class="s">--export-secret-keys              --recipient</span>
+<span class="s">--export-secret-subkeys           --recv-keys</span>
+<span class="s">--fast-import                     --refresh-keys</span>
+<span class="s">--fast-list-mode                  --remote-user</span>
+<span class="s">--fetch-keys                      --require-backsigs</span>
+<span class="s">--fingerprint                     --require-cross-certification</span>
+<span class="s">--fixed-list-mode                 --require-secmem</span>
+<span class="s">--fix-trustdb                     --rfc1991</span>
+<span class="s">--force-mdc                       --rfc2440</span>
+<span class="s">--force-ownertrust                --rfc2440-text</span>
+<span class="s">--force-v3-sigs                   --rfc4880</span>
+<span class="s">--force-v4-certs                  --run-as-shm-coprocess</span>
+<span class="s">--for-your-eyes-only              --s2k-cipher-algo</span>
+<span class="s">--gen-key                         --s2k-count</span>
+<span class="s">--gen-prime                       --s2k-digest-algo</span>
+<span class="s">--gen-random                      --s2k-mode</span>
+<span class="s">--gen-revoke                      --search-keys</span>
+<span class="s">--gnupg                           --secret-keyring</span>
+<span class="s">--gpg-agent-info                  --send-keys</span>
+<span class="s">--gpgconf-list                    --set-filename</span>
+<span class="s">--gpgconf-test                    --set-filesize</span>
+<span class="s">--group                           --set-notation</span>
+<span class="s">--help                            --set-policy-url</span>
+<span class="s">--hidden-encrypt-to               --show-keyring</span>
+<span class="s">--hidden-recipient                --show-notation</span>
+<span class="s">--homedir                         --show-photos</span>
+<span class="s">--honor-http-proxy                --show-policy-url</span>
+<span class="s">--ignore-crc-error                --show-session-key</span>
+<span class="s">--ignore-mdc-error                --sig-keyserver-url</span>
+<span class="s">--ignore-time-conflict            --sign</span>
+<span class="s">--ignore-valid-from               --sign-key</span>
+<span class="s">--import                          --sig-notation</span>
+<span class="s">--import-options                  --sign-with</span>
+<span class="s">--import-ownertrust               --sig-policy-url</span>
+<span class="s">--interactive                     --simple-sk-checksum</span>
+<span class="s">--keyid-format                    --sk-comments</span>
+<span class="s">--keyring                         --skip-verify</span>
+<span class="s">--keyserver                       --status-fd</span>
+<span class="s">--keyserver-options               --status-file</span>
+<span class="s">--lc-ctype                        --store</span>
+<span class="s">--lc-messages                     --strict</span>
+<span class="s">--limit-card-insert-tries         --symmetric</span>
+<span class="s">--list-config                     --temp-directory</span>
+<span class="s">--list-key                        --textmode</span>
+<span class="s">--list-keys                       --throw-keyid</span>
+<span class="s">--list-only                       --throw-keyids</span>
+<span class="s">--list-options                    --trustdb-name</span>
+<span class="s">--list-ownertrust                 --trusted-key</span>
+<span class="s">--list-packets                    --trust-model</span>
+<span class="s">--list-public-keys                --try-all-secrets</span>
+<span class="s">--list-secret-keys                --ttyname</span>
+<span class="s">--list-sig                        --ttytype</span>
+<span class="s">--list-sigs                       --ungroup</span>
+<span class="s">--list-trustdb                    --update-trustdb</span>
+<span class="s">--load-extension                  --use-agent</span>
+<span class="s">--local-user                      --use-embedded-filename</span>
+<span class="s">--lock-multiple                   --user</span>
+<span class="s">--lock-never                      --utf8-strings</span>
+<span class="s">--lock-once                       --verbose</span>
+<span class="s">--logger-fd                       --verify</span>
+<span class="s">--logger-file                     --verify-files</span>
+<span class="s">--lsign-key                       --verify-options</span>
+<span class="s">--mangle-dos-filenames            --version</span>
+<span class="s">--marginals-needed                --warranty</span>
+<span class="s">--max-cert-depth                  --with-colons</span>
+<span class="s">--max-output                      --with-fingerprint</span>
+<span class="s">--merge-only                      --with-key-data</span>
+<span class="s">--min-cert-level                  --yes</span>
+<span class="s">&quot;&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+    <span class="n">_possible</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">_all</span><span class="p">)</span>
+
+    <span class="c">## these are the allowed options we will handle so far, all others should</span>
+    <span class="c">## be dropped. this dance is so that when new options are added later, we</span>
+    <span class="c">## merely add the to the _allowed list, and the `` _allowed.issubset``</span>
+    <span class="c">## assertion will check that GPG will recognise them</span>
+    <span class="c">##</span>
+    <span class="c">## xxx checkout the --store option for creating rfc1991 data packets</span>
+    <span class="c">## xxx also --multifile use with verify encrypt &amp; decrypt</span>
+    <span class="c">## xxx key fetching/retrieving options: [fetch_keys, merge_only, recv_keys]</span>
+    <span class="c">##</span>
+    <span class="c">## xxx which ones do we want as defaults?</span>
+    <span class="c">##     eg, --no-show-photos would mitigate things like</span>
+    <span class="c">##     https://www-01.ibm.com/support/docview.wss?uid=swg21620982</span>
+    <span class="n">_allowed</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span>
+        <span class="p">[</span><span class="s">&#39;--list-keys&#39;</span><span class="p">,</span> <span class="s">&#39;--list-key&#39;</span><span class="p">,</span> <span class="s">&#39;--fixed-list-mode&#39;</span><span class="p">,</span>
+         <span class="s">&#39;--list-secret-keys&#39;</span><span class="p">,</span> <span class="s">&#39;--list-public-keys&#39;</span><span class="p">,</span>
+         <span class="s">&#39;--list-packets&#39;</span><span class="p">,</span>  <span class="s">&#39;--with-colons&#39;</span><span class="p">,</span>
+         <span class="s">&#39;--delete-keys&#39;</span><span class="p">,</span> <span class="s">&#39;--delete-secret-keys&#39;</span><span class="p">,</span>
+         <span class="s">&#39;--encrypt&#39;</span><span class="p">,</span> <span class="s">&#39;--encrypt-files&#39;</span><span class="p">,</span>
+         <span class="s">&#39;--decrypt&#39;</span><span class="p">,</span> <span class="s">&#39;--decrypt-files&#39;</span><span class="p">,</span>
+         <span class="s">&#39;--print-mds&#39;</span><span class="p">,</span> <span class="s">&#39;--print-md&#39;</span><span class="p">,</span>
+         <span class="s">&#39;--sign&#39;</span><span class="p">,</span> <span class="s">&#39;--clearsign&#39;</span><span class="p">,</span> <span class="s">&#39;--detach-sign&#39;</span><span class="p">,</span>
+         <span class="s">&#39;--armor&#39;</span><span class="p">,</span> <span class="s">&#39;--armour&#39;</span><span class="p">,</span>
+         <span class="s">&#39;--gen-key&#39;</span><span class="p">,</span> <span class="s">&#39;--batch&#39;</span><span class="p">,</span>
+         <span class="s">&#39;--decrypt&#39;</span><span class="p">,</span> <span class="s">&#39;--decrypt-files&#39;</span><span class="p">,</span>
+         <span class="s">&#39;--import&#39;</span><span class="p">,</span>
+         <span class="s">&#39;--export&#39;</span><span class="p">,</span> <span class="s">&#39;--export-secret-keys&#39;</span><span class="p">,</span> <span class="s">&#39;--export-secret-subkeys&#39;</span><span class="p">,</span>
+         <span class="s">&#39;--verify&#39;</span><span class="p">,</span>
+         <span class="s">&#39;--version&#39;</span><span class="p">,</span> <span class="s">&#39;--output&#39;</span><span class="p">,</span>
+         <span class="s">&#39;--status-fd&#39;</span><span class="p">,</span> <span class="s">&#39;--no-tty&#39;</span><span class="p">,</span> <span class="s">&#39;--passphrase-fd&#39;</span><span class="p">,</span>
+         <span class="s">&#39;--homedir&#39;</span><span class="p">,</span> <span class="s">&#39;--no-default-keyring&#39;</span><span class="p">,</span> <span class="s">&#39;--default-key&#39;</span><span class="p">,</span>
+         <span class="s">&#39;--keyring&#39;</span><span class="p">,</span> <span class="s">&#39;--secret-keyring&#39;</span><span class="p">,</span> <span class="s">&#39;--primary-keyring&#39;</span><span class="p">,</span>
+         <span class="s">&#39;--fingerprint&#39;</span><span class="p">,])</span>
+
+    <span class="c">## check that _allowed is a subset of _possible</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">_allowed</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">_possible</span><span class="p">),</span> \
+            <span class="s">&#39;_allowed is not subset of known options, difference: </span><span class="si">%s</span><span class="s">&#39;</span> \
+            <span class="o">%</span> <span class="n">_allowed</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">_possible</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">AssertionError</span> <span class="k">as</span> <span class="n">ae</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;_is_allowed(): </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">ae</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">UsageError</span><span class="p">(</span><span class="n">ae</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+
+    <span class="c">## if we got a list of args, join them</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="nb">input</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">input</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">input</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">input</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;--&#39;</span><span class="p">):</span>
+                <span class="n">hyphenated</span> <span class="o">=</span> <span class="n">_hyphenate</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">add_prefix</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">hyphenated</span> <span class="o">=</span> <span class="n">_hyphenate</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">hyphenated</span> <span class="o">=</span> <span class="nb">input</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">hyphenated</span> <span class="ow">in</span> <span class="n">_allowed</span>
+            <span class="k">except</span> <span class="ne">AssertionError</span> <span class="k">as</span> <span class="n">ae</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;_is_allowed(): Dropping option &#39;</span><span class="si">%s</span><span class="s">&#39;...&quot;</span>
+                            <span class="o">%</span> <span class="n">_fix_unsafe</span><span class="p">(</span><span class="n">hyphenated</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="n">ProtectedOption</span><span class="p">(</span><span class="s">&quot;Option &#39;</span><span class="si">%s</span><span class="s">&#39; not supported.&quot;</span>
+                                      <span class="o">%</span> <span class="n">_fix_unsafe</span><span class="p">(</span><span class="n">hyphenated</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="nb">input</span>
+    <span class="k">return</span> <span class="bp">None</span>
+
+<span class="k">def</span> <span class="nf">_sanitise</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Take an arg or the key portion of a kwarg and check that it is in the</span>
+<span class="sd">    set of allowed GPG options and flags, and that it has the correct</span>
+<span class="sd">    type. Then, attempt to escape any unsafe characters. If an option is not</span>
+<span class="sd">    allowed, drop it with a logged warning. Returns a dictionary of all</span>
+<span class="sd">    sanitised, allowed options.</span>
+
+<span class="sd">    Each new option that we support that is not a boolean, but instead has</span>
+<span class="sd">    some extra inputs, i.e. &quot;--encrypt-file foo.txt&quot;, will need some basic</span>
+<span class="sd">    safety checks added here.</span>
+
+<span class="sd">    GnuPG has three-hundred and eighteen commandline flags. Also, not all</span>
+<span class="sd">    implementations of OpenPGP parse PGP packets and headers in the same way,</span>
+<span class="sd">    so there is added potential there for messing with calls to GPG.</span>
+
+<span class="sd">    For information on the PGP message format specification, see:</span>
+<span class="sd">        https://www.ietf.org/rfc/rfc1991.txt</span>
+
+<span class="sd">    If you&#39;re asking, &quot;Is this *really* necessary?&quot;: No. Not really. See:</span>
+<span class="sd">        https://xkcd.com/1181/</span>
+
+<span class="sd">    :param str args: (optional) The boolean arguments which will be passed to</span>
+<span class="sd">                     the GnuPG process.</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    :returns: ``sanitised``</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_check_option</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check that a single :param:arg is an allowed option. If it is allowed,</span>
+<span class="sd">        quote out any escape characters in :param:values, and add the pair to</span>
+<span class="sd">        :ivar:sanitised.</span>
+
+<span class="sd">        :param str arg: The arguments which will be passed to the GnuPG</span>
+<span class="sd">                        process, and, optionally their corresponding values.</span>
+<span class="sd">                        The values are any additional arguments following the</span>
+<span class="sd">                        GnuPG option or flag. For example, if we wanted to pass</span>
+<span class="sd">                        &quot;--encrypt --recipient isis@leap.se&quot; to gpg, then</span>
+<span class="sd">                        &quot;--encrypt&quot; would be an arg without a value, and</span>
+<span class="sd">                        &quot;--recipient&quot; would also be an arg, with a value of</span>
+<span class="sd">                        &quot;isis@leap.se&quot;.</span>
+<span class="sd">        :ivar list checked: The sanitised, allowed options and values.</span>
+<span class="sd">        :rtype: str</span>
+<span class="sd">        :returns: A string of the items in ``checked`` delimited by spaces.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">safe_option</span> <span class="o">=</span> <span class="nb">str</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">flag</span> <span class="o">=</span> <span class="n">_is_allowed</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">flag</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">,</span> <span class="s">&quot;_check_option(): got None for flag&quot;</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">AssertionError</span><span class="p">,</span> <span class="n">ProtectedOption</span><span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;_check_option(): </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">error</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">safe_option</span> <span class="o">+=</span> <span class="p">(</span><span class="n">flag</span> <span class="o">+</span> <span class="s">&quot; &quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">values</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>
+                    <span class="n">val</span> <span class="o">=</span> <span class="n">_fix_unsafe</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">val</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">!=</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">flag</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;--encrypt&#39;</span><span class="p">,</span> <span class="s">&#39;--encrypt-files&#39;</span><span class="p">,</span> <span class="s">&#39;--decrypt&#39;</span><span class="p">,</span>
+                                    <span class="s">&#39;--decrypt-file&#39;</span><span class="p">,</span> <span class="s">&#39;--import&#39;</span><span class="p">,</span> <span class="s">&#39;--verify&#39;</span><span class="p">]:</span>
+                            <span class="c">## Place checks here:</span>
+                            <span class="k">if</span> <span class="n">_is_file</span><span class="p">(</span><span class="n">val</span><span class="p">):</span>
+                                <span class="n">safe_option</span> <span class="o">+=</span> <span class="p">(</span><span class="n">val</span> <span class="o">+</span> <span class="s">&quot; &quot;</span><span class="p">)</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;_check_option(): </span><span class="si">%s</span><span class="s"> not file: </span><span class="si">%s</span><span class="s">&quot;</span>
+                                             <span class="o">%</span> <span class="p">(</span><span class="n">flag</span><span class="p">,</span> <span class="n">val</span><span class="p">))</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">safe_option</span> <span class="o">+=</span> <span class="p">(</span><span class="n">val</span> <span class="o">+</span> <span class="s">&quot; &quot;</span><span class="p">)</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;_check_option(): No checks for </span><span class="si">%s</span><span class="s">&quot;</span>
+                                         <span class="o">%</span> <span class="n">val</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">safe_option</span>
+
+    <span class="n">is_flag</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;-&#39;</span><span class="p">)</span>
+    <span class="n">checked</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">args</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;_sanitise(): Got arg string: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">arg</span><span class="p">)</span>
+                <span class="c">## if we&#39;re given a string with a bunch of options in it split</span>
+                <span class="c">## them up and deal with them separately</span>
+                <span class="k">if</span> <span class="n">arg</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">filo</span> <span class="o">=</span> <span class="n">arg</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                    <span class="n">filo</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+                    <span class="n">new_arg</span><span class="p">,</span> <span class="n">new_value</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(),</span> <span class="nb">str</span><span class="p">()</span>
+                    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">filo</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_flag</span><span class="p">(</span><span class="n">filo</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;_sanitise(): Got non-flag arg </span><span class="si">%s</span><span class="s">&quot;</span>
+                                         <span class="o">%</span> <span class="n">filo</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                            <span class="n">new_value</span> <span class="o">+=</span> <span class="p">(</span><span class="n">filo</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span> <span class="o">+</span> <span class="s">&quot; &quot;</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;_sanitise(): Got arg: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">filo</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                            <span class="n">new_arg</span> <span class="o">=</span> <span class="n">filo</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+                            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">filo</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                                <span class="k">while</span> <span class="ow">not</span> <span class="n">is_flag</span><span class="p">(</span><span class="n">filo</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;_sanitise(): Got value: </span><span class="si">%s</span><span class="s">&quot;</span>
+                                                 <span class="o">%</span> <span class="n">filo</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                                    <span class="n">new_value</span> <span class="o">+=</span> <span class="p">(</span><span class="n">filo</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span> <span class="o">+</span> <span class="s">&quot; &quot;</span><span class="p">)</span>
+                            <span class="n">safe</span> <span class="o">=</span> <span class="n">_check_option</span><span class="p">(</span><span class="n">new_arg</span><span class="p">,</span> <span class="n">new_value</span><span class="p">)</span>
+                            <span class="k">if</span> <span class="n">safe</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">safe</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+                                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;_sanitise(): appending option: </span><span class="si">%s</span><span class="s">&quot;</span>
+                                             <span class="o">%</span> <span class="n">safe</span><span class="p">)</span>
+                                <span class="n">checked</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">safe</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">safe</span> <span class="o">=</span> <span class="n">_check_option</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">safe</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;_sanitise(): appending args: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">safe</span><span class="p">)</span>
+                        <span class="n">checked</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">safe</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;_sanitise(): got None for safe&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;_sanitise(): Got arg list: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">arg</span><span class="p">)</span>
+                <span class="n">allow</span> <span class="o">=</span> <span class="n">_one_flag</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">allow</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">checked</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">allow</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;_sanitise(): got non string or list arg: </span><span class="si">%s</span><span class="s">&quot;</span>
+                             <span class="o">%</span> <span class="n">arg</span><span class="p">)</span>
+
+    <span class="n">sanitised</span> <span class="o">=</span> <span class="s">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">checked</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sanitised</span>
+
+<span class="k">def</span> <span class="nf">_sanitise_list</span><span class="p">(</span><span class="n">arg_list</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A generator for iterating through a list of gpg options and sanitising</span>
+<span class="sd">    them.</span>
+
+<span class="sd">    :param list arg_list: A list of options and flags for GnuPG.</span>
+<span class="sd">    :rtype: generator</span>
+<span class="sd">    :return: A generator whose next() method returns each of the items in</span>
+<span class="sd">             ``arg_list`` after calling ``_sanitise()`` with that item as a</span>
+<span class="sd">             parameter.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg_list</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">arg_list</span><span class="p">:</span>
+            <span class="n">safe_arg</span> <span class="o">=</span> <span class="n">_sanitise</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">safe_arg</span> <span class="o">!=</span> <span class="s">&quot;&quot;</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">safe_arg</span>
+
+
+<span class="k">class</span> <span class="nc">Verify</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Parser for internal status messages from GnuPG for ``--verify``.&quot;&quot;&quot;</span>
+
+    <span class="n">TRUST_UNDEFINED</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">TRUST_NEVER</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">TRUST_MARGINAL</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">TRUST_FULLY</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">TRUST_ULTIMATE</span> <span class="o">=</span> <span class="mi">4</span>
+
+    <span class="n">TRUST_LEVELS</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&quot;TRUST_UNDEFINED&quot;</span> <span class="p">:</span> <span class="n">TRUST_UNDEFINED</span><span class="p">,</span>
+        <span class="s">&quot;TRUST_NEVER&quot;</span> <span class="p">:</span> <span class="n">TRUST_NEVER</span><span class="p">,</span>
+        <span class="s">&quot;TRUST_MARGINAL&quot;</span> <span class="p">:</span> <span class="n">TRUST_MARGINAL</span><span class="p">,</span>
+        <span class="s">&quot;TRUST_FULLY&quot;</span> <span class="p">:</span> <span class="n">TRUST_FULLY</span><span class="p">,</span>
+        <span class="s">&quot;TRUST_ULTIMATE&quot;</span> <span class="p">:</span> <span class="n">TRUST_ULTIMATE</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gpg</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpg</span> <span class="o">=</span> <span class="n">gpg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fingerprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">creation_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signature_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">key_id</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pubkey_fingerprint</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expire_timestamp</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sig_timestamp</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trust_text</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trust_level</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__nonzero__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid</span>
+
+    <span class="n">__bool__</span> <span class="o">=</span> <span class="n">__nonzero__</span>
+
+    <span class="k">def</span> <span class="nf">handle_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">TRUST_LEVELS</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trust_text</span> <span class="o">=</span> <span class="n">key</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trust_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TRUST_LEVELS</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;RSA_OR_IDEA&quot;</span><span class="p">,</span> <span class="s">&quot;NODATA&quot;</span><span class="p">,</span> <span class="s">&quot;IMPORT_RES&quot;</span><span class="p">,</span> <span class="s">&quot;PLAINTEXT&quot;</span><span class="p">,</span>
+                   <span class="s">&quot;PLAINTEXT_LENGTH&quot;</span><span class="p">,</span> <span class="s">&quot;POLICY_URL&quot;</span><span class="p">,</span> <span class="s">&quot;DECRYPTION_INFO&quot;</span><span class="p">,</span>
+                   <span class="s">&quot;DECRYPTION_OKAY&quot;</span><span class="p">,</span> <span class="s">&quot;INV_SGNR&quot;</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;BADSIG&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;signature bad&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">key_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;GOODSIG&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;signature good&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">key_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;VALIDSIG&quot;</span><span class="p">:</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fingerprint</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">creation_date</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">sig_timestamp</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">expire_timestamp</span><span class="p">)</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">()[:</span><span class="mi">4</span><span class="p">]</span>
+            <span class="c"># may be different if signature is made with a subkey</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pubkey_fingerprint</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;signature valid&#39;</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;SIG_ID&quot;</span><span class="p">:</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">signature_id</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">creation_date</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span><span class="p">)</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;ERRSIG&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key_id</span><span class="p">,</span>
+             <span class="n">algo</span><span class="p">,</span> <span class="n">hash_algo</span><span class="p">,</span>
+             <span class="n">cls</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span><span class="p">)</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">()[:</span><span class="mi">5</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;signature error&#39;</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;DECRYPTION_FAILED&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">key_id</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;decryption failed&#39;</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;NO_PUBKEY&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">key_id</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;no public key&#39;</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;KEYEXPIRED&quot;</span><span class="p">,</span> <span class="s">&quot;SIGEXPIRED&quot;</span><span class="p">):</span>
+            <span class="c"># these are useless in verify, since they are spit out for any</span>
+            <span class="c"># pub/subkeys on the key, not just the one doing the signing.</span>
+            <span class="c"># if we want to check for signatures with expired key,</span>
+            <span class="c"># the relevant flag is EXPKEYSIG.</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;EXPKEYSIG&quot;</span><span class="p">,</span> <span class="s">&quot;REVKEYSIG&quot;</span><span class="p">):</span>
+            <span class="c"># signed with expired or revoked key</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">key_id</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="p">((</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">[:</span><span class="mi">3</span><span class="p">],</span> <span class="n">key</span><span class="p">[</span><span class="mi">3</span><span class="p">:]))</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Unknown status message: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Crypt"><a class="viewcode-back" href="../parsers.html#parsers.Crypt">[docs]</a><span class="k">class</span> <span class="nc">Crypt</span><span class="p">(</span><span class="n">Verify</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Parser for internal status messages from GnuPG for ``--encrypt`` and</span>
+<span class="sd">    ``--decrypt``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gpg</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Crypt</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">gpg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="nb">str</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ok</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="nb">str</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__nonzero__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="bp">False</span>
+
+    <span class="n">__bool__</span> <span class="o">=</span> <span class="n">__nonzero__</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpg</span><span class="o">.</span><span class="n">encoding</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpg</span><span class="o">.</span><span class="n">decode_errors</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Crypt.handle_status"><a class="viewcode-back" href="../parsers.html#parsers.Crypt.handle_status">[docs]</a>    <span class="k">def</span> <span class="nf">handle_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parse a status code from the attached GnuPG process.</span>
+
+<span class="sd">        :raises: :exc:`ValueError` if the status message is unknown.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;ENC_TO&quot;</span><span class="p">,</span> <span class="s">&quot;USERID_HINT&quot;</span><span class="p">,</span> <span class="s">&quot;GOODMDC&quot;</span><span class="p">,</span> <span class="s">&quot;END_DECRYPTION&quot;</span><span class="p">,</span>
+                   <span class="s">&quot;BEGIN_SIGNING&quot;</span><span class="p">,</span> <span class="s">&quot;NO_SECKEY&quot;</span><span class="p">,</span> <span class="s">&quot;ERROR&quot;</span><span class="p">,</span> <span class="s">&quot;NODATA&quot;</span><span class="p">,</span>
+                   <span class="s">&quot;CARDCTRL&quot;</span><span class="p">):</span>
+            <span class="c"># in the case of ERROR, this is because a more specific error</span>
+            <span class="c"># message will have come first</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;NEED_PASSPHRASE&quot;</span><span class="p">,</span> <span class="s">&quot;BAD_PASSPHRASE&quot;</span><span class="p">,</span> <span class="s">&quot;GOOD_PASSPHRASE&quot;</span><span class="p">,</span>
+                     <span class="s">&quot;MISSING_PASSPHRASE&quot;</span><span class="p">,</span> <span class="s">&quot;DECRYPTION_FAILED&quot;</span><span class="p">,</span>
+                     <span class="s">&quot;KEY_NOT_CREATED&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&quot;_&quot;</span><span class="p">,</span> <span class="s">&quot; &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;NEED_PASSPHRASE_SYM&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;need symmetric passphrase&#39;</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;BEGIN_DECRYPTION&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;decryption incomplete&#39;</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;BEGIN_ENCRYPTION&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;encryption incomplete&#39;</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;DECRYPTION_OKAY&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;decryption ok&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ok</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;END_ENCRYPTION&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;encryption ok&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ok</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;INV_RECP&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;invalid recipient&#39;</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;KEYEXPIRED&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;key expired&#39;</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;SIG_CREATED&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;sig created&#39;</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;SIGEXPIRED&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;sig expired&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">Verify</span><span class="o">.</span><span class="n">handle_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="GenKey"><a class="viewcode-back" href="../parsers.html#parsers.GenKey">[docs]</a><span class="k">class</span> <span class="nc">GenKey</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Handle status messages for --gen-key&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gpg</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpg</span> <span class="o">=</span> <span class="n">gpg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fingerprint</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__nonzero__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fingerprint</span><span class="p">:</span> <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">return</span> <span class="bp">False</span>
+
+    <span class="n">__bool__</span> <span class="o">=</span> <span class="n">__nonzero__</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fingerprint</span> <span class="ow">or</span> <span class="s">&#39;&#39;</span>
+
+<div class="viewcode-block" id="GenKey.handle_status"><a class="viewcode-back" href="../parsers.html#parsers.GenKey.handle_status">[docs]</a>    <span class="k">def</span> <span class="nf">handle_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parse a status code from the attached GnuPG process.</span>
+
+<span class="sd">        :raises: :exc:`ValueError` if the status message is unknown.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;PROGRESS&quot;</span><span class="p">,</span> <span class="s">&quot;GOOD_PASSPHRASE&quot;</span><span class="p">,</span> <span class="s">&quot;NODATA&quot;</span><span class="p">,</span> <span class="s">&quot;KEY_NOT_CREATED&quot;</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;KEY_CREATED&quot;</span><span class="p">:</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fingerprint</span><span class="p">)</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Unknown status message: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="DeleteResult"><a class="viewcode-back" href="../parsers.html#parsers.DeleteResult">[docs]</a><span class="k">class</span> <span class="nc">DeleteResult</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Handle status messages for --delete-key and --delete-secret-key&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gpg</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpg</span> <span class="o">=</span> <span class="n">gpg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;ok&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span>
+
+    <span class="n">problem_reason</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;1&#39;</span><span class="p">:</span> <span class="s">&#39;No such key&#39;</span><span class="p">,</span>
+        <span class="s">&#39;2&#39;</span><span class="p">:</span> <span class="s">&#39;Must delete secret key first&#39;</span><span class="p">,</span>
+        <span class="s">&#39;3&#39;</span><span class="p">:</span> <span class="s">&#39;Ambigious specification&#39;</span><span class="p">,</span>
+        <span class="p">}</span>
+
+<div class="viewcode-block" id="DeleteResult.handle_status"><a class="viewcode-back" href="../parsers.html#parsers.DeleteResult.handle_status">[docs]</a>    <span class="k">def</span> <span class="nf">handle_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parse a status code from the attached GnuPG process.</span>
+
+<span class="sd">        :raises: :exc:`ValueError` if the status message is unknown.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;DELETE_PROBLEM&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">problem_reason</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s">&quot;Unknown error: </span><span class="si">%r</span><span class="s">&quot;</span>
+                                                  <span class="o">%</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Unknown status message: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="Sign"><a class="viewcode-back" href="../parsers.html#parsers.Sign">[docs]</a><span class="k">class</span> <span class="nc">Sign</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Parse GnuPG status messages for signing operations.</span>
+
+<span class="sd">    :param gpg: An instance of :class:`gnupg.GPG`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c">#: The type of signature created.</span>
+    <span class="n">sig_type</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="c">#: The algorithm used to create the signature.</span>
+    <span class="n">sig_algo</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="c">#: The hash algorithm used to create the signature.</span>
+    <span class="n">sig_hash_also</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="c">#: The fingerprint of the signing keyid.</span>
+    <span class="n">fingerprint</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="c">#: The timestamp on the signature.</span>
+    <span class="n">timestamp</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="c">#: xxx fill me in</span>
+    <span class="n">what</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gpg</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpg</span> <span class="o">=</span> <span class="n">gpg</span>
+
+    <span class="k">def</span> <span class="nf">__nonzero__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Override the determination for truthfulness evaluation.</span>
+
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        :returns: True if we have a valid signature, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fingerprint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span>
+    <span class="n">__bool__</span> <span class="o">=</span> <span class="n">__nonzero__</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpg</span><span class="o">.</span><span class="n">encoding</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpg</span><span class="o">.</span><span class="n">decode_errors</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Sign.handle_status"><a class="viewcode-back" href="../parsers.html#parsers.Sign.handle_status">[docs]</a>    <span class="k">def</span> <span class="nf">handle_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parse a status code from the attached GnuPG process.</span>
+
+<span class="sd">        :raises: :exc:`ValueError` if the status message is unknown.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;USERID_HINT&quot;</span><span class="p">,</span> <span class="s">&quot;NEED_PASSPHRASE&quot;</span><span class="p">,</span> <span class="s">&quot;BAD_PASSPHRASE&quot;</span><span class="p">,</span>
+                   <span class="s">&quot;GOOD_PASSPHRASE&quot;</span><span class="p">,</span> <span class="s">&quot;BEGIN_SIGNING&quot;</span><span class="p">,</span> <span class="s">&quot;CARDCTRL&quot;</span><span class="p">,</span>
+                   <span class="s">&quot;INV_SGNR&quot;</span><span class="p">,</span> <span class="s">&quot;NODATA&quot;</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;SIG_CREATED&quot;</span><span class="p">:</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sig_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sig_algo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sig_hash_algo</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">what</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fingerprint</span><span class="p">)</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Unknown status message: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="ListKeys"><a class="viewcode-back" href="../parsers.html#parsers.ListKeys">[docs]</a><span class="k">class</span> <span class="nc">ListKeys</span><span class="p">(</span><span class="nb">list</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Handle status messages for --list-keys.</span>
+
+<span class="sd">        Handle pub and uid (relating the latter to the former).</span>
+
+<span class="sd">        Don&#39;t care about (info from src/DETAILS):</span>
+
+<span class="sd">        crt = X.509 certificate</span>
+<span class="sd">        crs = X.509 certificate and private key available</span>
+<span class="sd">        ssb = secret subkey (secondary key)</span>
+<span class="sd">        uat = user attribute (same as user id except for field 10).</span>
+<span class="sd">        sig = signature</span>
+<span class="sd">        rev = revocation signature</span>
+<span class="sd">        pkd = public key data (special field format, see below)</span>
+<span class="sd">        grp = reserved for gpgsm</span>
+<span class="sd">        rvk = revocation key</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gpg</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ListKeys</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpg</span> <span class="o">=</span> <span class="n">gpg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">curkey</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fingerprints</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uids</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="ListKeys.key"><a class="viewcode-back" href="../parsers.html#parsers.ListKeys.key">[docs]</a>    <span class="k">def</span> <span class="nf">key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="nb">vars</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;&quot;&quot;</span>
+<span class="s">            type trust length algo keyid date expires dummy ownertrust uid</span>
+<span class="s">        &quot;&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">curkey</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nb">vars</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">curkey</span><span class="p">[</span><span class="nb">vars</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">curkey</span><span class="p">[</span><span class="s">&#39;uids&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">curkey</span><span class="p">[</span><span class="s">&#39;uid&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">curkey</span><span class="p">[</span><span class="s">&#39;uids&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">curkey</span><span class="p">[</span><span class="s">&#39;uid&#39;</span><span class="p">])</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">curkey</span><span class="p">[</span><span class="s">&#39;uid&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">curkey</span><span class="p">[</span><span class="s">&#39;subkeys&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">curkey</span><span class="p">)</span>
+</div>
+    <span class="n">pub</span> <span class="o">=</span> <span class="n">sec</span> <span class="o">=</span> <span class="n">key</span>
+
+<div class="viewcode-block" id="ListKeys.fpr"><a class="viewcode-back" href="../parsers.html#parsers.ListKeys.fpr">[docs]</a>    <span class="k">def</span> <span class="nf">fpr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">curkey</span><span class="p">[</span><span class="s">&#39;fingerprint&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fingerprints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="mi">9</span><span class="p">])</span>
+</div>
+<div class="viewcode-block" id="ListKeys.uid"><a class="viewcode-back" href="../parsers.html#parsers.ListKeys.uid">[docs]</a>    <span class="k">def</span> <span class="nf">uid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="n">uid</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span>
+        <span class="n">uid</span> <span class="o">=</span> <span class="n">ESCAPE_PATTERN</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="nb">chr</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="mi">16</span><span class="p">)),</span> <span class="n">uid</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">curkey</span><span class="p">[</span><span class="s">&#39;uids&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">uid</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">uid</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ListKeys.sub"><a class="viewcode-back" href="../parsers.html#parsers.ListKeys.sub">[docs]</a>    <span class="k">def</span> <span class="nf">sub</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+        <span class="n">subkey</span> <span class="o">=</span> <span class="p">[</span><span class="n">args</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">args</span><span class="p">[</span><span class="mi">11</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">curkey</span><span class="p">[</span><span class="s">&#39;subkeys&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subkey</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ListKeys.handle_status"><a class="viewcode-back" href="../parsers.html#parsers.ListKeys.handle_status">[docs]</a>    <span class="k">def</span> <span class="nf">handle_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+</div></div>
+<div class="viewcode-block" id="ImportResult"><a class="viewcode-back" href="../parsers.html#parsers.ImportResult">[docs]</a><span class="k">class</span> <span class="nc">ImportResult</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Parse GnuPG status messages for key import operations.</span>
+
+<span class="sd">    :type gpg: :class:`gnupg.GPG`</span>
+<span class="sd">    :param gpg: An instance of :class:`gnupg.GPG`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">counts</span> <span class="o">=</span> <span class="s">&#39;&#39;&#39;count no_user_id imported imported_rsa unchanged</span>
+<span class="s">            n_uids n_subk n_sigs n_revoc sec_read sec_imported</span>
+<span class="s">            sec_dups not_imported&#39;&#39;&#39;</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+
+    <span class="c">#: List of all keys imported.</span>
+    <span class="n">imported</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+    <span class="c">#: A list of strings containing the fingerprints of the GnuPG keyIDs</span>
+    <span class="c">#: imported.</span>
+    <span class="n">fingerprints</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+    <span class="c">#: A list containing dictionaries with information gathered on keys</span>
+    <span class="c">#: imported.</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gpg</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpg</span> <span class="o">=</span> <span class="n">gpg</span>
+        <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__nonzero__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Override the determination for truthfulness evaluation.</span>
+
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        :returns: True if we have immport some keys, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">not_imported</span><span class="p">:</span> <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">fingerprints</span><span class="p">:</span> <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
+    <span class="n">__bool__</span> <span class="o">=</span> <span class="n">__nonzero__</span>
+
+    <span class="n">ok_reason</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;0&#39;</span><span class="p">:</span> <span class="s">&#39;Not actually changed&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;1&#39;</span><span class="p">:</span> <span class="s">&#39;Entirely new key&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;2&#39;</span><span class="p">:</span> <span class="s">&#39;New user IDs&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;4&#39;</span><span class="p">:</span> <span class="s">&#39;New signatures&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;8&#39;</span><span class="p">:</span> <span class="s">&#39;New subkeys&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;16&#39;</span><span class="p">:</span> <span class="s">&#39;Contains private key&#39;</span><span class="p">,}</span>
+
+    <span class="n">problem_reason</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&#39;0&#39;</span><span class="p">:</span> <span class="s">&#39;No specific reason given&#39;</span><span class="p">,</span>
+                       <span class="s">&#39;1&#39;</span><span class="p">:</span> <span class="s">&#39;Invalid Certificate&#39;</span><span class="p">,</span>
+                       <span class="s">&#39;2&#39;</span><span class="p">:</span> <span class="s">&#39;Issuer Certificate missing&#39;</span><span class="p">,</span>
+                       <span class="s">&#39;3&#39;</span><span class="p">:</span> <span class="s">&#39;Certificate Chain too long&#39;</span><span class="p">,</span>
+                       <span class="s">&#39;4&#39;</span><span class="p">:</span> <span class="s">&#39;Error storing certificate&#39;</span><span class="p">,</span> <span class="p">}</span>
+
+<div class="viewcode-block" id="ImportResult.handle_status"><a class="viewcode-back" href="../parsers.html#parsers.ImportResult.handle_status">[docs]</a>    <span class="k">def</span> <span class="nf">handle_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parse a status code from the attached GnuPG process.</span>
+
+<span class="sd">        :raises: :exc:`ValueError` if the status message is unknown.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;IMPORTED&quot;</span><span class="p">:</span>
+            <span class="c"># this duplicates info we already see in import_ok &amp; import_problem</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;NODATA&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s">&#39;fingerprint&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+                <span class="s">&#39;problem&#39;</span><span class="p">:</span> <span class="s">&#39;0&#39;</span><span class="p">,</span> <span class="s">&#39;text&#39;</span><span class="p">:</span> <span class="s">&#39;No valid data found&#39;</span><span class="p">})</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;IMPORT_OK&quot;</span><span class="p">:</span>
+            <span class="n">reason</span><span class="p">,</span> <span class="n">fingerprint</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="n">reasons</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">code</span><span class="p">,</span> <span class="n">text</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ok_reason</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">reason</span><span class="p">)</span> <span class="o">|</span> <span class="nb">int</span><span class="p">(</span><span class="n">code</span><span class="p">)</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">reason</span><span class="p">):</span>
+                    <span class="n">reasons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+            <span class="n">reasontext</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">reasons</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s">&#39;fingerprint&#39;</span><span class="p">:</span> <span class="n">fingerprint</span><span class="p">,</span>
+                <span class="s">&#39;ok&#39;</span><span class="p">:</span> <span class="n">reason</span><span class="p">,</span> <span class="s">&#39;text&#39;</span><span class="p">:</span> <span class="n">reasontext</span><span class="p">})</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fingerprints</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fingerprint</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;IMPORT_PROBLEM&quot;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">reason</span><span class="p">,</span> <span class="n">fingerprint</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">reason</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="n">fingerprint</span> <span class="o">=</span> <span class="s">&#39;&lt;unknown&gt;&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s">&#39;fingerprint&#39;</span><span class="p">:</span> <span class="n">fingerprint</span><span class="p">,</span>
+                <span class="s">&#39;problem&#39;</span><span class="p">:</span> <span class="n">reason</span><span class="p">,</span> <span class="s">&#39;text&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">problem_reason</span><span class="p">[</span><span class="n">reason</span><span class="p">]})</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;IMPORT_RES&quot;</span><span class="p">:</span>
+            <span class="n">import_res</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">counts</span><span class="p">)):</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">counts</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="nb">int</span><span class="p">(</span><span class="n">import_res</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;KEYEXPIRED&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s">&#39;fingerprint&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+                <span class="s">&#39;problem&#39;</span><span class="p">:</span> <span class="s">&#39;0&#39;</span><span class="p">,</span> <span class="s">&#39;text&#39;</span><span class="p">:</span> <span class="s">&#39;Key expired&#39;</span><span class="p">})</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;SIGEXPIRED&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s">&#39;fingerprint&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
+                <span class="s">&#39;problem&#39;</span><span class="p">:</span> <span class="s">&#39;0&#39;</span><span class="p">,</span> <span class="s">&#39;text&#39;</span><span class="p">:</span> <span class="s">&#39;Signature expired&#39;</span><span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Unknown status message: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ImportResult.summary"><a class="viewcode-back" href="../parsers.html#parsers.ImportResult.summary">[docs]</a>    <span class="k">def</span> <span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">l</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%d</span><span class="s"> imported&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">imported</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">not_imported</span><span class="p">:</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%d</span><span class="s"> not imported&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">not_imported</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="Verify"><a class="viewcode-back" href="../parsers.html#parsers.Verify">[docs]</a><span class="k">class</span> <span class="nc">Verify</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Classes for parsing GnuPG status messages for signature verification.</span>
+
+<span class="sd">    :type gpg: :class:`gnupg.GPG`</span>
+<span class="sd">    :param gpg: An instance of :class:`gnupg.GPG`.</span>
+<span class="sd">    :attr bool valid: True if the signature or file was verified successfully,</span>
+<span class="sd">                      False otherwise.</span>
+<span class="sd">    :attr str fingerprint: The fingerprint of the GnuPG keyID which created the</span>
+<span class="sd">                           signature.</span>
+
+<span class="sd">    :attr str creation_date: The date the signature was made.</span>
+<span class="sd">    :attr str timestamp: The timestamp used internally in the signature.</span>
+<span class="sd">    :attr str signature_id: The uid of the signing GnuPG key.</span>
+<span class="sd">    :attr str status: The internal status message from the GnuPG process.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c">## xxx finish documentation</span>
+
+    <span class="n">TRUST_UNDEFINED</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">TRUST_NEVER</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">TRUST_MARGINAL</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">TRUST_FULLY</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">TRUST_ULTIMATE</span> <span class="o">=</span> <span class="mi">4</span>
+
+    <span class="n">TRUST_LEVELS</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;TRUST_UNDEFINED&quot;</span> <span class="p">:</span> <span class="n">TRUST_UNDEFINED</span><span class="p">,</span>
+                    <span class="s">&quot;TRUST_NEVER&quot;</span> <span class="p">:</span> <span class="n">TRUST_NEVER</span><span class="p">,</span>
+                    <span class="s">&quot;TRUST_MARGINAL&quot;</span> <span class="p">:</span> <span class="n">TRUST_MARGINAL</span><span class="p">,</span>
+                    <span class="s">&quot;TRUST_FULLY&quot;</span> <span class="p">:</span> <span class="n">TRUST_FULLY</span><span class="p">,</span>
+                    <span class="s">&quot;TRUST_ULTIMATE&quot;</span> <span class="p">:</span> <span class="n">TRUST_ULTIMATE</span><span class="p">,}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gpg</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpg</span> <span class="o">=</span> <span class="n">gpg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fingerprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">creation_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">signature_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">key_id</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pubkey_fingerprint</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expire_timestamp</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sig_timestamp</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trust_text</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trust_level</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__nonzero__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Override the determination for truthfulness evaluation.</span>
+
+<span class="sd">        :rtype: bool</span>
+<span class="sd">        :returns: True if we have a valid signature, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid</span>
+    <span class="n">__bool__</span> <span class="o">=</span> <span class="n">__nonzero__</span>
+
+<div class="viewcode-block" id="Verify.handle_status"><a class="viewcode-back" href="../parsers.html#parsers.Verify.handle_status">[docs]</a>    <span class="k">def</span> <span class="nf">handle_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parse a status code from the attached GnuPG process.</span>
+
+<span class="sd">        :raises: :exc:`ValueError` if the status message is unknown.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">TRUST_LEVELS</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trust_text</span> <span class="o">=</span> <span class="n">key</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trust_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">TRUST_LEVELS</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;RSA_OR_IDEA&quot;</span><span class="p">,</span> <span class="s">&quot;NODATA&quot;</span><span class="p">,</span> <span class="s">&quot;IMPORT_RES&quot;</span><span class="p">,</span> <span class="s">&quot;PLAINTEXT&quot;</span><span class="p">,</span>
+                     <span class="s">&quot;PLAINTEXT_LENGTH&quot;</span><span class="p">,</span> <span class="s">&quot;POLICY_URL&quot;</span><span class="p">,</span> <span class="s">&quot;DECRYPTION_INFO&quot;</span><span class="p">,</span>
+                     <span class="s">&quot;DECRYPTION_OKAY&quot;</span><span class="p">,</span> <span class="s">&quot;INV_SGNR&quot;</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;BADSIG&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;signature bad&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">key_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;GOODSIG&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;signature good&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">key_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;VALIDSIG&quot;</span><span class="p">:</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fingerprint</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">creation_date</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">sig_timestamp</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">expire_timestamp</span><span class="p">)</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">()[:</span><span class="mi">4</span><span class="p">]</span>
+            <span class="c"># may be different if signature is made with a subkey</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pubkey_fingerprint</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;signature valid&#39;</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;SIG_ID&quot;</span><span class="p">:</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">signature_id</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">creation_date</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span><span class="p">)</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;ERRSIG&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key_id</span><span class="p">,</span>
+             <span class="n">algo</span><span class="p">,</span> <span class="n">hash_algo</span><span class="p">,</span>
+             <span class="n">cls</span><span class="p">,</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span><span class="p">)</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">()[:</span><span class="mi">5</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;signature error&#39;</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;DECRYPTION_FAILED&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">key_id</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;decryption failed&#39;</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&quot;NO_PUBKEY&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">key_id</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s">&#39;no public key&#39;</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;KEYEXPIRED&quot;</span><span class="p">,</span> <span class="s">&quot;SIGEXPIRED&quot;</span><span class="p">):</span>
+            <span class="c"># these are useless in verify, since they are spit out for any</span>
+            <span class="c"># pub/subkeys on the key, not just the one doing the signing.</span>
+            <span class="c"># if we want to check for signatures with expired key,</span>
+            <span class="c"># the relevant flag is EXPKEYSIG.</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&quot;EXPKEYSIG&quot;</span><span class="p">,</span> <span class="s">&quot;REVKEYSIG&quot;</span><span class="p">):</span>
+            <span class="c"># signed with expired or revoked key</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">valid</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">key_id</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="p">((</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">[:</span><span class="mi">3</span><span class="p">],</span> <span class="n">key</span><span class="p">[</span><span class="mi">3</span><span class="p">:]))</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Unknown status message: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+
+<span class="c">## xxx old style class</span>
+</div></div>
+<div class="viewcode-block" id="ListPackets"><a class="viewcode-back" href="../parsers.html#parsers.ListPackets">[docs]</a><span class="k">class</span> <span class="nc">ListPackets</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Handle status messages for --list-packets.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gpg</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpg</span> <span class="o">=</span> <span class="n">gpg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodata</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">need_passphrase</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">need_passphrase_sym</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">userid_hint</span> <span class="o">=</span> <span class="bp">None</span>
+
+<div class="viewcode-block" id="ListPackets.handle_status"><a class="viewcode-back" href="../parsers.html#parsers.ListPackets.handle_status">[docs]</a>    <span class="k">def</span> <span class="nf">handle_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parse a status code from the attached GnuPG process.</span>
+
+<span class="sd">        :raises: :exc:`ValueError` if the status message is unknown.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># TODO: write tests for handle_status</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;NODATA&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nodata</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;ENC_TO&#39;</span><span class="p">:</span>
+            <span class="c"># This will only capture keys in our keyring. In the future we</span>
+            <span class="c"># may want to include multiple unknown keys in this list.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;NEED_PASSPHRASE&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">need_passphrase</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;NEED_PASSPHRASE_SYM&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">need_passphrase_sym</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">elif</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;USERID_HINT&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">userid_hint</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Unknown status message: </span><span class="si">%r</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span></div></div>
+</pre></div>
+
+      </div>
+      <div class="bottomnav">
+      
+        <p>
+        <a class="uplink" href="../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer">
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

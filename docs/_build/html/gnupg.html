@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>gnupg Module &mdash; python-gnupg 0.3.1 documentation</title>
+    <title>gnupg Module &mdash; python-gnupg 0.4.0 documentation</title>
     
     <link rel="stylesheet" href="_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.3.1',
+        VERSION:     '0.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -27,12 +27,13 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="_static/theme_extras.js"></script>
-    <link rel="top" title="python-gnupg 0.3.1 documentation" href="index.html" />
+    <link rel="top" title="python-gnupg 0.4.0 documentation" href="index.html" />
+    <link rel="next" title="parsers Module" href="parsers.html" />
     <link rel="prev" title="python-gnupg documentation" href="index.html" /> 
   </head>
   <body>
       <div class="header"><h1 class="heading"><a href="index.html">
-          <span>python-gnupg 0.3.1 documentation</span></a></h1>
+          <span>python-gnupg 0.4.0 documentation</span></a></h1>
         <h2 class="heading"><span>gnupg Module</span></h2>
       </div>
       <div class="topnav">
@@ -41,6 +42,8 @@
         «&#160;&#160;<a href="index.html">python-gnupg documentation</a>
         &#160;&#160;::&#160;&#160;
         <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="parsers.html">parsers Module</a>&#160;&#160;»
         </p>
 
       </div>
@@ -74,10 +77,10 @@ presented to gnupg, in order to avoid potential vulnerabilities.</p>
 </tbody>
 </table>
 <div class="section" id="previous-authors-documentation">
-<h3>Previous Authors&#8217; Documentation:<a class="headerlink" href="#previous-authors-documentation" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt>Steve Traugott&#8217;s documentation:</dt>
-<dd><p class="first">Portions of this module are derived from A.M. Kuchling&#8217;s well-designed
+<h3>Previous Authors&#8217; Documentation<a class="headerlink" href="#previous-authors-documentation" title="Permalink to this headline">¶</a></h3>
+<p>Steve Traugott&#8217;s documentation:</p>
+<blockquote>
+<div><p>Portions of this module are derived from A.M. Kuchling&#8217;s well-designed
 GPG.py, using Richard Jones&#8217; updated version 1.3, which can be found in
 the pycrypto CVS repository on Sourceforge:</p>
 <p><a class="reference external" href="http://pycrypto.cvs.sourceforge.net/viewvc/pycrypto/gpg/GPG.py">http://pycrypto.cvs.sourceforge.net/viewvc/pycrypto/gpg/GPG.py</a></p>
@@ -89,226 +92,19 @@ I&#8217;ve also altered some of the returned objects in order for the caller to
 not have to know as much about the internals of the result classes.</p>
 <p>While the rest of ISconf is released under the GPL, I am releasing this
 single file under the same terms that A.M. Kuchling used for pycrypto.</p>
-<p class="last">Steve Traugott, <a class="reference external" href="mailto:stevegt&#37;&#52;&#48;terraluna&#46;org">stevegt<span>&#64;</span>terraluna<span>&#46;</span>org</a>
+<p>Steve Traugott, <a class="reference external" href="mailto:stevegt&#37;&#52;&#48;terraluna&#46;org">stevegt<span>&#64;</span>terraluna<span>&#46;</span>org</a>
 Thu Jun 23 21:27:20 PDT 2005</p>
-</dd>
-<dt>Vinay Sajip&#8217;s documentation:</dt>
-<dd><p class="first">This version of the module has been modified from Steve Traugott&#8217;s version
+</div></blockquote>
+<p>Vinay Sajip&#8217;s documentation:</p>
+<blockquote>
+<div><p>This version of the module has been modified from Steve Traugott&#8217;s version
 (see <a class="reference external" href="http://trac.t7a.org/isconf/browser/trunk/lib/python/isconf/GPG.py">http://trac.t7a.org/isconf/browser/trunk/lib/python/isconf/GPG.py</a>) by
 Vinay Sajip to make use of the subprocess module (Steve&#8217;s version uses
 os.fork() and so does not work on Windows). Renamed to gnupg.py to avoid
 confusion with the previous versions.</p>
 <p>A unittest harness (test_gnupg.py) has also been added.</p>
-<p class="last">Modifications Copyright (C) 2008-2012 Vinay Sajip. All rights reserved.</p>
-</dd>
-</dl>
-<dl class="class">
-<dt id="gnupg.NullHandler">
-<em class="property">class </em><tt class="descclassname">gnupg.</tt><tt class="descname">NullHandler</tt><big>(</big><em>level=0</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#NullHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.NullHandler" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">logging.Handler</span></tt></p>
-<p>Initializes the instance - basically setting the formatter to None
-and the filter list to empty.</p>
-<dl class="method">
-<dt id="gnupg.NullHandler.handle">
-<tt class="descname">handle</tt><big>(</big><em>record</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#NullHandler.handle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.NullHandler.handle" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="exception">
-<dt id="gnupg.ProtectedOption">
-<em class="property">exception </em><tt class="descclassname">gnupg.</tt><tt class="descname">ProtectedOption</tt><a class="reference internal" href="_modules/gnupg.html#ProtectedOption"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.ProtectedOption" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></tt></p>
-<p>Raised when the option passed to GPG is disallowed.</p>
-</dd></dl>
-
-<dl class="exception">
-<dt id="gnupg.UsageError">
-<em class="property">exception </em><tt class="descclassname">gnupg.</tt><tt class="descname">UsageError</tt><a class="reference internal" href="_modules/gnupg.html#UsageError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.UsageError" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">exceptions.Exception</span></tt></p>
-<p>Raised when incorrect usage of the API occurs..</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="gnupg.Verify">
-<em class="property">class </em><tt class="descclassname">gnupg.</tt><tt class="descname">Verify</tt><big>(</big><em>gpg</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#Verify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.Verify" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
-<p>Handle status messages for &#8211;verify</p>
-<dl class="attribute">
-<dt id="gnupg.Verify.TRUST_UNDEFINED">
-<tt class="descname">TRUST_UNDEFINED</tt><em class="property"> = 0</em><a class="headerlink" href="#gnupg.Verify.TRUST_UNDEFINED" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="gnupg.Verify.TRUST_NEVER">
-<tt class="descname">TRUST_NEVER</tt><em class="property"> = 1</em><a class="headerlink" href="#gnupg.Verify.TRUST_NEVER" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="gnupg.Verify.TRUST_MARGINAL">
-<tt class="descname">TRUST_MARGINAL</tt><em class="property"> = 2</em><a class="headerlink" href="#gnupg.Verify.TRUST_MARGINAL" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="gnupg.Verify.TRUST_FULLY">
-<tt class="descname">TRUST_FULLY</tt><em class="property"> = 3</em><a class="headerlink" href="#gnupg.Verify.TRUST_FULLY" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="gnupg.Verify.TRUST_ULTIMATE">
-<tt class="descname">TRUST_ULTIMATE</tt><em class="property"> = 4</em><a class="headerlink" href="#gnupg.Verify.TRUST_ULTIMATE" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="gnupg.Verify.TRUST_LEVELS">
-<tt class="descname">TRUST_LEVELS</tt><em class="property"> = {'TRUST_UNDEFINED': 0, 'TRUST_FULLY': 3, 'TRUST_NEVER': 1, 'TRUST_MARGINAL': 2, 'TRUST_ULTIMATE': 4}</em><a class="headerlink" href="#gnupg.Verify.TRUST_LEVELS" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="gnupg.Verify.handle_status">
-<tt class="descname">handle_status</tt><big>(</big><em>key</em>, <em>value</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#Verify.handle_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.Verify.handle_status" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="gnupg.ImportResult">
-<em class="property">class </em><tt class="descclassname">gnupg.</tt><tt class="descname">ImportResult</tt><big>(</big><em>gpg</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#ImportResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.ImportResult" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
-<p>Handle status messages for &#8211;import</p>
-<dl class="attribute">
-<dt id="gnupg.ImportResult.counts">
-<tt class="descname">counts</tt><em class="property"> = ['count', 'no_user_id', 'imported', 'imported_rsa', 'unchanged', 'n_uids', 'n_subk', 'n_sigs', 'n_revoc', 'sec_read', 'sec_imported', 'sec_dups', 'not_imported']</em><a class="headerlink" href="#gnupg.ImportResult.counts" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="gnupg.ImportResult.ok_reason">
-<tt class="descname">ok_reason</tt><em class="property"> = {'16': 'Contains private key', '1': 'Entirely new key', '0': 'Not actually changed', '2': 'New user IDs', '4': 'New signatures', '8': 'New subkeys'}</em><a class="headerlink" href="#gnupg.ImportResult.ok_reason" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="gnupg.ImportResult.problem_reason">
-<tt class="descname">problem_reason</tt><em class="property"> = {'1': 'Invalid Certificate', '0': 'No specific reason given', '3': 'Certificate Chain too long', '2': 'Issuer Certificate missing', '4': 'Error storing certificate'}</em><a class="headerlink" href="#gnupg.ImportResult.problem_reason" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="gnupg.ImportResult.handle_status">
-<tt class="descname">handle_status</tt><big>(</big><em>key</em>, <em>value</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#ImportResult.handle_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.ImportResult.handle_status" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="gnupg.ImportResult.summary">
-<tt class="descname">summary</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/gnupg.html#ImportResult.summary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.ImportResult.summary" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="gnupg.ListKeys">
-<em class="property">class </em><tt class="descclassname">gnupg.</tt><tt class="descname">ListKeys</tt><big>(</big><em>gpg</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#ListKeys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.ListKeys" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">list</span></tt></p>
-<p>Handle status messages for &#8211;list-keys.</p>
-<p>Handle pub and uid (relating the latter to the former).</p>
-<p>Don&#8217;t care about (info from src/DETAILS):</p>
-<p>crt = X.509 certificate
-crs = X.509 certificate and private key available
-ssb = secret subkey (secondary key)
-uat = user attribute (same as user id except for field 10).
-sig = signature
-rev = revocation signature
-pkd = public key data (special field format, see below)
-grp = reserved for gpgsm
-rvk = revocation key</p>
-<dl class="method">
-<dt id="gnupg.ListKeys.key">
-<tt class="descname">key</tt><big>(</big><em>args</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#ListKeys.key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.ListKeys.key" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="gnupg.ListKeys.pub">
-<tt class="descname">pub</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#gnupg.ListKeys.pub" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="gnupg.ListKeys.sec">
-<tt class="descname">sec</tt><big>(</big><em>args</em><big>)</big><a class="headerlink" href="#gnupg.ListKeys.sec" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="gnupg.ListKeys.fpr">
-<tt class="descname">fpr</tt><big>(</big><em>args</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#ListKeys.fpr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.ListKeys.fpr" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="gnupg.ListKeys.uid">
-<tt class="descname">uid</tt><big>(</big><em>args</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#ListKeys.uid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.ListKeys.uid" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="gnupg.ListKeys.sub">
-<tt class="descname">sub</tt><big>(</big><em>args</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#ListKeys.sub"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.ListKeys.sub" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="gnupg.ListKeys.handle_status">
-<tt class="descname">handle_status</tt><big>(</big><em>key</em>, <em>value</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#ListKeys.handle_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.ListKeys.handle_status" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="gnupg.Crypt">
-<em class="property">class </em><tt class="descclassname">gnupg.</tt><tt class="descname">Crypt</tt><big>(</big><em>gpg</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#Crypt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.Crypt" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#gnupg.Verify" title="gnupg.Verify"><tt class="xref py py-class docutils literal"><span class="pre">gnupg.Verify</span></tt></a></p>
-<p>Handle status messages for &#8211;encrypt and &#8211;decrypt</p>
-<dl class="method">
-<dt id="gnupg.Crypt.handle_status">
-<tt class="descname">handle_status</tt><big>(</big><em>key</em>, <em>value</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#Crypt.handle_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.Crypt.handle_status" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="gnupg.GenKey">
-<em class="property">class </em><tt class="descclassname">gnupg.</tt><tt class="descname">GenKey</tt><big>(</big><em>gpg</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GenKey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GenKey" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
-<p>Handle status messages for &#8211;gen-key</p>
-<dl class="method">
-<dt id="gnupg.GenKey.handle_status">
-<tt class="descname">handle_status</tt><big>(</big><em>key</em>, <em>value</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GenKey.handle_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GenKey.handle_status" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="gnupg.DeleteResult">
-<em class="property">class </em><tt class="descclassname">gnupg.</tt><tt class="descname">DeleteResult</tt><big>(</big><em>gpg</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#DeleteResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.DeleteResult" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
-<p>Handle status messages for &#8211;delete-key and &#8211;delete-secret-key</p>
-<dl class="attribute">
-<dt id="gnupg.DeleteResult.problem_reason">
-<tt class="descname">problem_reason</tt><em class="property"> = {'1': 'No such key', '3': 'Ambigious specification', '2': 'Must delete secret key first'}</em><a class="headerlink" href="#gnupg.DeleteResult.problem_reason" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="gnupg.DeleteResult.handle_status">
-<tt class="descname">handle_status</tt><big>(</big><em>key</em>, <em>value</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#DeleteResult.handle_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.DeleteResult.handle_status" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="gnupg.Sign">
-<em class="property">class </em><tt class="descclassname">gnupg.</tt><tt class="descname">Sign</tt><big>(</big><em>gpg</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#Sign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.Sign" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
-<p>Handle status messages for &#8211;sign</p>
-<dl class="method">
-<dt id="gnupg.Sign.handle_status">
-<tt class="descname">handle_status</tt><big>(</big><em>key</em>, <em>value</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#Sign.handle_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.Sign.handle_status" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
+<p>Modifications Copyright (C) 2008-2012 Vinay Sajip. All rights reserved.</p>
+</div></blockquote>
 <dl class="class">
 <dt id="gnupg.GPG">
 <em class="property">class </em><tt class="descclassname">gnupg.</tt><tt class="descname">GPG</tt><big>(</big><em>gpgbinary=None</em>, <em>gpghome=None</em>, <em>verbose=False</em>, <em>use_agent=False</em>, <em>keyring=None</em>, <em>secring=None</em>, <em>pubring=None</em>, <em>options=None</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPG" title="Permalink to this definition">¶</a></dt>
@@ -320,74 +116,44 @@ rvk = revocation key</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>gpgbinary</strong> (<em>C{str}</em>) &#8211; Name for GnuPG binary executable. If the absolute
-path is not given, the evironment variable $PATH is
-searched for the executable and checked that the
-real uid/gid of the user has sufficient permissions.</li>
-<li><strong>gpghome</strong> (<em>C{str}</em>) &#8211; Full pathname to directory containing the public and
-private keyrings. Default is whatever GnuPG defaults
-to.</li>
-<li><strong>keyring</strong> (<em>C{str}</em>) &#8211; raises C{DeprecationWarning}. Use :param:secring.</li>
-<li><strong>secring</strong> (<em>C{str}</em>) &#8211; Name of alternative secret keyring file to use. If left
-unspecified, this will default to using &#8216;secring.gpg&#8217;
-in the :param:gpghome directory, and create that file
-if it does not exist.</li>
-<li><strong>pubring</strong> (<em>C{str}</em>) &#8211; Name of alternative public keyring file to use. If left
-unspecified, this will default to using &#8216;pubring.gpg&#8217;
-in the :param:gpghome directory, and create that file
-if it does not exist.</li>
+<li><strong>gpgbinary</strong> (<em>str</em>) &#8211; Name for GnuPG binary executable. If the absolute
+path is not given, the evironment variable $PATH
+is searched for the executable and checked that
+the real uid/gid of the user has sufficient
+permissions.</li>
+<li><strong>gpghome</strong> (<em>str</em>) &#8211; Full pathname to directory containing the public
+and private keyrings. Default is whatever GnuPG
+defaults to.</li>
+<li><strong>keyring</strong> (<em>str</em>) &#8211; raises :exc:DeprecationWarning. Use :param:pubring.</li>
+<li><strong>secring</strong> (<em>str</em>) &#8211; Name of alternative secret keyring file to use. If
+left unspecified, this will default to using
+&#8216;secring.gpg&#8217; in the :param:gpghome directory, and
+create that file if it does not exist.</li>
+<li><strong>pubring</strong> (<em>str</em>) &#8211; Name of alternative public keyring file to use. If
+left unspecified, this will default to using
+&#8216;pubring.gpg&#8217; in the :param:gpghome directory, and
+create that file if it does not exist.</li>
+<li><strong>options</strong> (<em>list</em>) &#8211; A list of additional options to pass to the GPG
+binary.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Options :</th><td class="field-body"><p class="first">A list of additional options to pass to the GPG binary.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">C{Exception} or C{}</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first">RuntimeError with explanation message if there is a problem
-invoking gpg.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first last"><tt class="xref py py-exc docutils literal"><span class="pre">RuntimeError</span></tt> with explanation message if there is a
+problem invoking gpg.</p>
 </td>
 </tr>
 </tbody>
 </table>
-<dl class="attribute">
-<dt id="gnupg.GPG.decode_errors">
-<tt class="descname">decode_errors</tt><em class="property"> = 'strict'</em><a class="headerlink" href="#gnupg.GPG.decode_errors" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="gnupg.GPG.result_map">
-<tt class="descname">result_map</tt><em class="property"> = {'crypt': &lt;class 'gnupg.Crypt'&gt;, 'list': &lt;class 'gnupg.ListKeys'&gt;, 'sign': &lt;class 'gnupg.Sign'&gt;, 'verify': &lt;class 'gnupg.Verify'&gt;, 'import': &lt;class 'gnupg.ImportResult'&gt;, 'generate': &lt;class 'gnupg.GenKey'&gt;, 'delete': &lt;class 'gnupg.DeleteResult'&gt;}</em><a class="headerlink" href="#gnupg.GPG.result_map" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="gnupg.GPG.make_args">
-<tt class="descname">make_args</tt><big>(</big><em>args</em>, <em>passphrase=False</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.make_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPG.make_args" title="Permalink to this definition">¶</a></dt>
-<dd><p>Make a list of command line elements for GPG. The value of <tt class="docutils literal"><span class="pre">args</span></tt>
-will be appended. The <tt class="docutils literal"><span class="pre">passphrase</span></tt> argument needs to be True if
-a passphrase will be sent to GPG, else False.</p>
-</dd></dl>
-
 <dl class="method">
 <dt id="gnupg.GPG.sign">
 <tt class="descname">sign</tt><big>(</big><em>message</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.sign"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPG.sign" title="Permalink to this definition">¶</a></dt>
-<dd><p>sign message</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="gnupg.GPG.sign_file">
-<tt class="descname">sign_file</tt><big>(</big><em>file</em>, <em>keyid=None</em>, <em>passphrase=None</em>, <em>clearsign=True</em>, <em>detach=False</em>, <em>binary=False</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.sign_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPG.sign_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>sign file</p>
+<dd><p>Create a signature for a message or file.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="gnupg.GPG.verify">
 <tt class="descname">verify</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.verify"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPG.verify" title="Permalink to this definition">¶</a></dt>
-<dd><p>Verify the signature on the contents of the string &#8216;data&#8217;</p>
+<dd><p>Verify the signature on the contents of the string <tt class="docutils literal"><span class="pre">data</span></tt>.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">gpg</span> <span class="o">=</span> <span class="n">GPG</span><span class="p">(</span><span class="n">gpghome</span><span class="o">=</span><span class="s">&quot;keys&quot;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">input</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">gen_key_input</span><span class="p">(</span><span class="n">Passphrase</span><span class="o">=</span><span class="s">&#39;foo&#39;</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">key</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">gen_key</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
@@ -414,11 +180,11 @@ detached signature should be specified as the :param:data_filename.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>file</strong> &#8211; A file descriptor object. Its type will be checked with
-:func:_is_file.</li>
-<li><strong>data_filename</strong> &#8211; A file containing the GPG signature data for
-:param:file. If given, :param:file is verified
-via this detached signature.</li>
+<li><strong>file</strong> (<em>file</em>) &#8211; A file descriptor object. Its type will be checked
+with :func:util._is_file.</li>
+<li><strong>data_filename</strong> (<em>file</em>) &#8211; A file containing the GPG signature data for
+:param:file. If given, :param:file is
+verified via this detached signature.</li>
 </ul>
 </td>
 </tr>
@@ -535,19 +301,53 @@ input.</p>
 <dl class="method">
 <dt id="gnupg.GPG.gen_key_input">
 <tt class="descname">gen_key_input</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.gen_key_input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPG.gen_key_input" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate &#8211;gen-key input per gpg doc/DETAILS</p>
+<dd><p>Generate GnuPG key(s) through batch file key generation.</p>
+<p>The GnuPG batch file key generation feature allows unattended key
+generation by creating a file with special syntax and then providing it
+to:      gpg &#8211;gen-key &#8211;batch &lt;batch file&gt;</p>
+<p>see <a class="reference external" href="http://www.gnupg.org/documentation/manuals/gnupg-devel/Unattended-GPG-key-generation.html#Unattended-GPG-key-generation">http://www.gnupg.org/documentation/manuals/gnupg-devel/Unattended-GPG-key-generation.html#Unattended-GPG-key-generation</a>
+for more details.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="gnupg.GPG.encrypt_file">
 <tt class="descname">encrypt_file</tt><big>(</big><em>file</em>, <em>recipients</em>, <em>sign=None</em>, <em>always_trust=False</em>, <em>passphrase=None</em>, <em>armor=True</em>, <em>output=None</em>, <em>symmetric=False</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.encrypt_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPG.encrypt_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Encrypt the message read from the file-like object :param:file .</p>
+<dd><p>Encrypt the message read from <tt class="docutils literal"><span class="pre">file</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>file</strong> (<em>file or :class:BytesIO</em>) &#8211; The file or bytestream to encrypt.</li>
+<li><strong>recipients</strong> (<em>str or list or tuple</em>) &#8211; The recipients to encrypt to. Recipients may be
+specified by UID or keyID/fingerprint.</li>
+<li><strong>sign</strong> (<em>str</em>) &#8211; The keyID to use for signing, i.e.
+&#8220;gpg &#8211;sign &#8211;default-key A3ADB67A2CDB8B35 ...&#8221;</li>
+<li><strong>always_trust</strong> (<em>bool</em>) &#8211; If True, ignore trust warnings on recipient
+keys. If False, display trust warnings.
+(default: False)</li>
+<li><strong>passphrase</strong> (<em>bool</em>) &#8211; If True, use the stored passphrase for our
+secret key.</li>
+<li><strong>armor</strong> (<em>bool</em>) &#8211; If True, ascii armor the encrypted output; if False,
+the encrypted output will be in binary
+format. (default: True)</li>
+<li><strong>output</strong> (<em>str</em>) &#8211; The output file to write to. If not specified, the
+encrypted output is returned, and thus should be
+stored as an object in Python. For example:</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">gpg</span> <span class="o">=</span> <span class="n">gnupg</span><span class="o">.</span><span class="n">GPG</span><span class="p">(</span><span class="n">gpghome</span><span class="o">=</span><span class="s">&#39;./tmp_test&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="method">
 <dt id="gnupg.GPG.encrypt">
 <tt class="descname">encrypt</tt><big>(</big><em>data</em>, <em>recipients</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.encrypt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPG.encrypt" title="Permalink to this definition">¶</a></dt>
-<dd><p>Encrypt the message contained in the string :param:data .</p>
+<dd><p>Encrypt the message contained in <tt class="docutils literal"><span class="pre">data</span></tt> to <tt class="docutils literal"><span class="pre">recipients</span></tt>.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shutil</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s">&quot;keys&quot;</span><span class="p">):</span>
 <span class="gp">... </span>    <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="s">&quot;keys&quot;</span><span class="p">)</span>
@@ -624,325 +424,81 @@ input.</p>
 
 </dd></dl>
 
-</div>
-</div>
-<div class="section" id="gpg">
-<h2>GPG<a class="headerlink" href="#gpg" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt>
-<em class="property">class </em><tt class="descclassname">gnupg.</tt><tt class="descname">GPG</tt><big>(</big><em>gpgbinary=None</em>, <em>gpghome=None</em>, <em>verbose=False</em>, <em>use_agent=False</em>, <em>keyring=None</em>, <em>secring=None</em>, <em>pubring=None</em>, <em>options=None</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">object</span></tt></p>
-<p>Encapsulate access to the gpg executable</p>
-<p>Initialize a GnuPG process wrapper.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>gpgbinary</strong> (<em>C{str}</em>) &#8211; Name for GnuPG binary executable. If the absolute
-path is not given, the evironment variable $PATH is
-searched for the executable and checked that the
-real uid/gid of the user has sufficient permissions.</li>
-<li><strong>gpghome</strong> (<em>C{str}</em>) &#8211; Full pathname to directory containing the public and
-private keyrings. Default is whatever GnuPG defaults
-to.</li>
-<li><strong>keyring</strong> (<em>C{str}</em>) &#8211; raises C{DeprecationWarning}. Use :param:secring.</li>
-<li><strong>secring</strong> (<em>C{str}</em>) &#8211; Name of alternative secret keyring file to use. If left
-unspecified, this will default to using &#8216;secring.gpg&#8217;
-in the :param:gpghome directory, and create that file
-if it does not exist.</li>
-<li><strong>pubring</strong> (<em>C{str}</em>) &#8211; Name of alternative public keyring file to use. If left
-unspecified, this will default to using &#8216;pubring.gpg&#8217;
-in the :param:gpghome directory, and create that file
-if it does not exist.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Options :</th><td class="field-body"><p class="first">A list of additional options to pass to the GPG binary.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">C{Exception} or C{}</p>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Raises :</th><td class="field-body"><p class="first">RuntimeError with explanation message if there is a problem
-invoking gpg.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
-</td>
-</tr>
-</tbody>
-</table>
-<dl class="attribute">
-<dt>
-<tt class="descname">decode_errors</tt><em class="property"> = 'strict'</em></dt>
-<dd></dd></dl>
+<dt id="gnupg.GPGWrapper">
+<em class="property">class </em><tt class="descclassname">gnupg.</tt><tt class="descname">GPGWrapper</tt><big>(</big><em>gpgbinary=None</em>, <em>gnupghome='/home/isis/.config/python-gnupg'</em>, <em>verbose=False</em>, <em>use_agent=False</em>, <em>keyring=None</em>, <em>options=None</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPGWrapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPGWrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#gnupg.GPG" title="gnupg.GPG"><tt class="xref py py-class docutils literal"><span class="pre">gnupg.GPG</span></tt></a></p>
+<p>This is a temporary class for handling GPG requests, and should be
+replaced by a more general class used throughout the project.</p>
+<dl class="method">
+<dt id="gnupg.GPGWrapper.find_key_by_email">
+<tt class="descname">find_key_by_email</tt><big>(</big><em>email</em>, <em>secret=False</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPGWrapper.find_key_by_email"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPGWrapper.find_key_by_email" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find user&#8217;s key based on their email.</p>
+</dd></dl>
 
-<dl class="attribute">
-<dt>
-<tt class="descname">result_map</tt><em class="property"> = {'crypt': &lt;class 'gnupg.Crypt'&gt;, 'list': &lt;class 'gnupg.ListKeys'&gt;, 'sign': &lt;class 'gnupg.Sign'&gt;, 'verify': &lt;class 'gnupg.Verify'&gt;, 'import': &lt;class 'gnupg.ImportResult'&gt;, 'generate': &lt;class 'gnupg.GenKey'&gt;, 'delete': &lt;class 'gnupg.DeleteResult'&gt;}</em></dt>
+<dl class="method">
+<dt id="gnupg.GPGWrapper.find_key_by_subkey">
+<tt class="descname">find_key_by_subkey</tt><big>(</big><em>subkey</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPGWrapper.find_key_by_subkey"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPGWrapper.find_key_by_subkey" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt>
-<tt class="descname">make_args</tt><big>(</big><em>args</em>, <em>passphrase=False</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.make_args"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Make a list of command line elements for GPG. The value of <tt class="docutils literal"><span class="pre">args</span></tt>
-will be appended. The <tt class="docutils literal"><span class="pre">passphrase</span></tt> argument needs to be True if
-a passphrase will be sent to GPG, else False.</p>
-</dd></dl>
-
-<dl class="method">
-<dt>
-<tt class="descname">sign</tt><big>(</big><em>message</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.sign"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>sign message</p>
-</dd></dl>
-
-<dl class="method">
-<dt>
-<tt class="descname">sign_file</tt><big>(</big><em>file</em>, <em>keyid=None</em>, <em>passphrase=None</em>, <em>clearsign=True</em>, <em>detach=False</em>, <em>binary=False</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.sign_file"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>sign file</p>
-</dd></dl>
-
-<dl class="method">
-<dt>
-<tt class="descname">verify</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.verify"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Verify the signature on the contents of the string &#8216;data&#8217;</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">gpg</span> <span class="o">=</span> <span class="n">GPG</span><span class="p">(</span><span class="n">gpghome</span><span class="o">=</span><span class="s">&quot;keys&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">input</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">gen_key_input</span><span class="p">(</span><span class="n">Passphrase</span><span class="o">=</span><span class="s">&#39;foo&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">key</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">gen_key</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">key</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">sig</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="s">&#39;hello&#39;</span><span class="p">,</span><span class="n">keyid</span><span class="o">=</span><span class="n">key</span><span class="o">.</span><span class="n">fingerprint</span><span class="p">,</span><span class="n">passphrase</span><span class="o">=</span><span class="s">&#39;bar&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="ow">not</span> <span class="n">sig</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">sig</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="s">&#39;hello&#39;</span><span class="p">,</span><span class="n">keyid</span><span class="o">=</span><span class="n">key</span><span class="o">.</span><span class="n">fingerprint</span><span class="p">,</span><span class="n">passphrase</span><span class="o">=</span><span class="s">&#39;foo&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">sig</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">verify</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">sig</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">verify</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="method">
-<dt>
-<tt class="descname">verify_file</tt><big>(</big><em>file</em>, <em>data_filename=None</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.verify_file"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Verify the signature on the contents of a file or file-like
-object. Can handle embedded signatures as well as detached
-signatures. If using detached signatures, the file containing the
-detached signature should be specified as the :param:data_filename.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>file</strong> &#8211; A file descriptor object. Its type will be checked with
-:func:_is_file.</li>
-<li><strong>data_filename</strong> &#8211; A file containing the GPG signature data for
-:param:file. If given, :param:file is verified
-via this detached signature.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt>
-<tt class="descname">import_keys</tt><big>(</big><em>key_data</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.import_keys"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Import the key_data into our keyring.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shutil</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="s">&quot;keys&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">gpg</span> <span class="o">=</span> <span class="n">GPG</span><span class="p">(</span><span class="n">gpghome</span><span class="o">=</span><span class="s">&quot;keys&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">input</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">gen_key_input</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">gen_key</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">print1</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">fingerprint</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">gen_key</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">print2</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">fingerprint</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pubkey1</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">export_keys</span><span class="p">(</span><span class="n">print1</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">seckey1</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">export_keys</span><span class="p">(</span><span class="n">print1</span><span class="p">,</span><span class="n">secret</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">seckeys</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">list_keys</span><span class="p">(</span><span class="n">secret</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pubkeys</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">list_keys</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">print1</span> <span class="ow">in</span> <span class="n">seckeys</span><span class="o">.</span><span class="n">fingerprints</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">print1</span> <span class="ow">in</span> <span class="n">pubkeys</span><span class="o">.</span><span class="n">fingerprints</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">gpg</span><span class="o">.</span><span class="n">delete_keys</span><span class="p">(</span><span class="n">print1</span><span class="p">))</span>
-<span class="go">&#39;Must delete secret key first&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">gpg</span><span class="o">.</span><span class="n">delete_keys</span><span class="p">(</span><span class="n">print1</span><span class="p">,</span><span class="n">secret</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
-<span class="go">&#39;ok&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">gpg</span><span class="o">.</span><span class="n">delete_keys</span><span class="p">(</span><span class="n">print1</span><span class="p">))</span>
-<span class="go">&#39;ok&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">gpg</span><span class="o">.</span><span class="n">delete_keys</span><span class="p">(</span><span class="s">&quot;nosuchkey&quot;</span><span class="p">))</span>
-<span class="go">&#39;No such key&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">seckeys</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">list_keys</span><span class="p">(</span><span class="n">secret</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pubkeys</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">list_keys</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="ow">not</span> <span class="n">print1</span> <span class="ow">in</span> <span class="n">seckeys</span><span class="o">.</span><span class="n">fingerprints</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="ow">not</span> <span class="n">print1</span> <span class="ow">in</span> <span class="n">pubkeys</span><span class="o">.</span><span class="n">fingerprints</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">import_keys</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="ow">not</span> <span class="n">result</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">import_keys</span><span class="p">(</span><span class="n">pubkey1</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pubkeys</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">list_keys</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">seckeys</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">list_keys</span><span class="p">(</span><span class="n">secret</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="ow">not</span> <span class="n">print1</span> <span class="ow">in</span> <span class="n">seckeys</span><span class="o">.</span><span class="n">fingerprints</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">print1</span> <span class="ow">in</span> <span class="n">pubkeys</span><span class="o">.</span><span class="n">fingerprints</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">import_keys</span><span class="p">(</span><span class="n">seckey1</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">result</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">seckeys</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">list_keys</span><span class="p">(</span><span class="n">secret</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pubkeys</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">list_keys</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">print1</span> <span class="ow">in</span> <span class="n">seckeys</span><span class="o">.</span><span class="n">fingerprints</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">print1</span> <span class="ow">in</span> <span class="n">pubkeys</span><span class="o">.</span><span class="n">fingerprints</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">print2</span> <span class="ow">in</span> <span class="n">pubkeys</span><span class="o">.</span><span class="n">fingerprints</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="method">
-<dt>
-<tt class="descname">recv_keys</tt><big>(</big><em>keyserver</em>, <em>*keyids</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.recv_keys"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Import a key from a keyserver</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shutil</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="s">&quot;keys&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">gpg</span> <span class="o">=</span> <span class="n">GPG</span><span class="p">(</span><span class="n">gpghome</span><span class="o">=</span><span class="s">&quot;keys&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">recv_keys</span><span class="p">(</span><span class="s">&#39;pgp.mit.edu&#39;</span><span class="p">,</span> <span class="s">&#39;3FF0DB166A7476EA&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">result</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="method">
-<dt>
-<tt class="descname">delete_keys</tt><big>(</big><em>fingerprints</em>, <em>secret=False</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.delete_keys"><span class="viewcode-link">[source]</span></a></dt>
+<dt id="gnupg.GPGWrapper.find_key_by_keyid">
+<tt class="descname">find_key_by_keyid</tt><big>(</big><em>keyid</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPGWrapper.find_key_by_keyid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPGWrapper.find_key_by_keyid" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt>
-<tt class="descname">export_keys</tt><big>(</big><em>keyids</em>, <em>secret=False</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.export_keys"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>export the indicated keys. &#8216;keyid&#8217; is anything gpg accepts</p>
+<dt id="gnupg.GPGWrapper.encrypt">
+<tt class="descname">encrypt</tt><big>(</big><em>data</em>, <em>recipient</em>, <em>sign=None</em>, <em>always_trust=True</em>, <em>passphrase=None</em>, <em>symmetric=False</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPGWrapper.encrypt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPGWrapper.encrypt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Encrypt data using GPG.</p>
 </dd></dl>
 
 <dl class="method">
-<dt>
-<tt class="descname">list_keys</tt><big>(</big><em>secret=False</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.list_keys"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>List the keys currently in the keyring.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shutil</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="s">&quot;keys&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">gpg</span> <span class="o">=</span> <span class="n">GPG</span><span class="p">(</span><span class="n">gpghome</span><span class="o">=</span><span class="s">&quot;keys&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">input</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">gen_key_input</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">gen_key</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">print1</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">fingerprint</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">gen_key</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">print2</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">fingerprint</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pubkeys</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">list_keys</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">print1</span> <span class="ow">in</span> <span class="n">pubkeys</span><span class="o">.</span><span class="n">fingerprints</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">print2</span> <span class="ow">in</span> <span class="n">pubkeys</span><span class="o">.</span><span class="n">fingerprints</span>
-</pre></div>
+<dt id="gnupg.GPGWrapper.decrypt">
+<tt class="descname">decrypt</tt><big>(</big><em>data</em>, <em>always_trust=True</em>, <em>passphrase=None</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPGWrapper.decrypt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPGWrapper.decrypt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decrypt data using GPG.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gnupg.GPGWrapper.send_keys">
+<tt class="descname">send_keys</tt><big>(</big><em>keyserver</em>, <em>*keyids</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPGWrapper.send_keys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPGWrapper.send_keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send keys to a keyserver</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gnupg.GPGWrapper.encrypt_file">
+<tt class="descname">encrypt_file</tt><big>(</big><em>file</em>, <em>recipients</em>, <em>sign=None</em>, <em>always_trust=False</em>, <em>passphrase=None</em>, <em>armor=True</em>, <em>output=None</em>, <em>symmetric=False</em>, <em>cipher_algo=None</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPGWrapper.encrypt_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPGWrapper.encrypt_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Encrypt the message read from the file-like object &#8216;file&#8217;</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gnupg.GPGWrapper.list_packets">
+<tt class="descname">list_packets</tt><big>(</big><em>raw_data</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPGWrapper.list_packets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPGWrapper.list_packets" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gnupg.GPGWrapper.encrypted_to">
+<tt class="descname">encrypted_to</tt><big>(</big><em>raw_data</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPGWrapper.encrypted_to"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPGWrapper.encrypted_to" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the key to which raw_data is encrypted to.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="gnupg.GPGWrapper.is_encrypted_sym">
+<tt class="descname">is_encrypted_sym</tt><big>(</big><em>raw_data</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPGWrapper.is_encrypted_sym"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPGWrapper.is_encrypted_sym" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gnupg.GPGWrapper.is_encrypted_asym">
+<tt class="descname">is_encrypted_asym</tt><big>(</big><em>raw_data</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPGWrapper.is_encrypted_asym"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPGWrapper.is_encrypted_asym" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="gnupg.GPGWrapper.is_encrypted">
+<tt class="descname">is_encrypted</tt><big>(</big><em>raw_data</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPGWrapper.is_encrypted"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#gnupg.GPGWrapper.is_encrypted" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
-</dd></dl>
-
-<dl class="method">
-<dt>
-<tt class="descname">gen_key</tt><big>(</big><em>input</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.gen_key"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Generate a key; you might use gen_key_input() to create the control
-input.</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">gpg</span> <span class="o">=</span> <span class="n">GPG</span><span class="p">(</span><span class="n">gpghome</span><span class="o">=</span><span class="s">&quot;keys&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">input</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">gen_key_input</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">gen_key</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">result</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">gen_key</span><span class="p">(</span><span class="s">&#39;foo&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="ow">not</span> <span class="n">result</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="method">
-<dt>
-<tt class="descname">gen_key_input</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.gen_key_input"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Generate &#8211;gen-key input per gpg doc/DETAILS</p>
-</dd></dl>
-
-<dl class="method">
-<dt>
-<tt class="descname">encrypt_file</tt><big>(</big><em>file</em>, <em>recipients</em>, <em>sign=None</em>, <em>always_trust=False</em>, <em>passphrase=None</em>, <em>armor=True</em>, <em>output=None</em>, <em>symmetric=False</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.encrypt_file"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Encrypt the message read from the file-like object :param:file .</p>
-</dd></dl>
-
-<dl class="method">
-<dt>
-<tt class="descname">encrypt</tt><big>(</big><em>data</em>, <em>recipients</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.encrypt"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Encrypt the message contained in the string :param:data .</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">shutil</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="s">&quot;keys&quot;</span><span class="p">):</span>
-<span class="gp">... </span>    <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="s">&quot;keys&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">gpg</span> <span class="o">=</span> <span class="n">GPG</span><span class="p">(</span><span class="n">gpghome</span><span class="o">=</span><span class="s">&quot;keys&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">input</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">gen_key_input</span><span class="p">(</span><span class="n">passphrase</span><span class="o">=</span><span class="s">&#39;foo&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">gen_key</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">print1</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">fingerprint</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">input</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">gen_key_input</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">gen_key</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">print2</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">fingerprint</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="s">&quot;hello&quot;</span><span class="p">,</span><span class="n">print2</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">message</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">message</span> <span class="o">!=</span> <span class="s">&#39;hello&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">result</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-<span class="go">&#39;hello&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="s">&quot;hello again&quot;</span><span class="p">,</span><span class="n">print1</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">message</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">message</span><span class="p">,</span><span class="n">passphrase</span><span class="o">=</span><span class="s">&#39;bar&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;decryption failed&#39;</span><span class="p">,</span> <span class="s">&#39;bad passphrase&#39;</span><span class="p">)</span>
-<span class="go">True</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="ow">not</span> <span class="n">result</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">message</span><span class="p">,</span><span class="n">passphrase</span><span class="o">=</span><span class="s">&#39;foo&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s">&#39;decryption ok&#39;</span>
-<span class="go">True</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-<span class="go">&#39;hello again&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">encrypt</span><span class="p">(</span><span class="s">&quot;signed hello&quot;</span><span class="p">,</span><span class="n">print2</span><span class="p">,</span><span class="n">sign</span><span class="o">=</span><span class="n">print1</span><span class="p">,</span><span class="n">passphrase</span><span class="o">=</span><span class="s">&#39;foo&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s">&#39;encryption ok&#39;</span>
-<span class="go">True</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">message</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span> <span class="o">=</span> <span class="n">gpg</span><span class="o">.</span><span class="n">decrypt</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">result</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s">&#39;decryption ok&#39;</span>
-<span class="go">True</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">fingerprint</span> <span class="o">==</span> <span class="n">print1</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="method">
-<dt>
-<tt class="descname">decrypt</tt><big>(</big><em>message</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.decrypt"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Decrypt the contents of a string or file-like object :param:message .</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>message</strong> &#8211; A string or file-like object to decrypt.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt>
-<tt class="descname">decrypt_file</tt><big>(</big><em>file</em>, <em>always_trust=False</em>, <em>passphrase=None</em>, <em>output=None</em><big>)</big><a class="reference internal" href="_modules/gnupg.html#GPG.decrypt_file"><span class="viewcode-link">[source]</span></a></dt>
-<dd><p>Decrypt the contents of a file-like object :param:file .</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>file</strong> &#8211; A file-like object to decrypt.</li>
-<li><strong>always_trust</strong> &#8211; Instruct GnuPG to ignore trust checks.</li>
-<li><strong>passphrase</strong> &#8211; The passphrase for the secret key used for decryption.</li>
-<li><strong>output</strong> &#8211; A file to write the decrypted output to.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 </div>
 
@@ -954,6 +510,8 @@ input.</p>
         «&#160;&#160;<a href="index.html">python-gnupg documentation</a>
         &#160;&#160;::&#160;&#160;
         <a class="uplink" href="index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="parsers.html">parsers Module</a>&#160;&#160;»
         </p>
 
       </div>
