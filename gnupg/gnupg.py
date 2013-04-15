@@ -172,36 +172,13 @@ def _make_binary_stream(s, encoding):
     return rv
 
 def _threaded_copy_data(instream, outstream):
-    wr = threading.Thread(target=_copy_data, args=(instream, outstream))
-    wr.setDaemon(True)
-    logger.debug('_threaded_copy_data(): %r, %r, %r', wr, instream, outstream)
-    wr.start()
-    return wr
+    """Copy data from one stream to another in a separate thread.
 
-def _which(executable, flags=os.X_OK):
-    """Borrowed from Twisted's :mod:twisted.python.proutils .
+    Wraps ``_copy_data()`` in a :class:`threading.Thread`.
 
-    Search PATH for executable files with the given name.
-
-    On newer versions of MS-Windows, the PATHEXT environment variable will be
-    set to the list of file extensions for files considered executable. This
-    will normally include things like ".EXE". This fuction will also find files
-    with the given name ending with any of these extensions.
-
-    On MS-Windows the only flag that has any meaning is os.F_OK. Any other
-    flags will be ignored.
-
-    Note: This function does not help us prevent an attacker who can already
-    manipulate the environment's PATH settings from placing malicious code
-    higher in the PATH. It also does happily follows links.
-
-    :type name: C{str}
-    :param name: The name for which to search.
-    :type flags: C{int}
-    :param flags: Arguments to L{os.access}.
-    :rtype: C{list}
-    :param: A list of the full paths to files found, in the order in which
-            they were found.
+    :type instream: :class:`io.BytesIO` or :class:`io.StringIO`
+    :param instream: A byte stream to read from.
+    :param file outstream: The file descriptor of a tmpfile to write to.
     """
     result = []
     exts = filter(None, os.environ.get('PATHEXT', '').split(os.pathsep))
