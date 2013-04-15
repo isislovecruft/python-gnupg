@@ -1,7 +1,13 @@
+#!/usr/bin/env python
+#-*- coding: utf-8 -*-
+
 from distutils.core import setup
 
-from gnupg.gnupg import __version__ as version
-from gnupg.gnupg import __author__ as author
+__module__ = 'gnupg'
+__version__ = "0.4.0"
+__author__ = "Isis Agora Lovecruft"
+__contact__ = 'isis@leap.se'
+__date__  = "1 April 2013"
 
 setup(name = "python-gnupg",
       description="A wrapper for the Gnu Privacy Guard (GPG or GnuPG)",
@@ -9,14 +15,13 @@ setup(name = "python-gnupg",
 management, encryption and signature functionality from Python programs. \
 It is intended for use with Python 2.6 or greater.",
       license="""Copyright © 2013 Isis Lovecruft, et.al. see LICENSE file.""",
-      version=version,
-      author=author,
-      author_email="isis@leap.se",
-      maintainer="Isis Agora Lovecruft",
-      maintainer_email="isis@leap.se",
+      version=__version__,
+      author=__author__,
+      author_email=__contact__,
+      maintainer=__author__,
+      maintainer_email=__contact__,
       url="https://github.com/isislovecruft/python-gnupg",
-      packages_dir={'': 'gnupg'},
-      packages=[''],
+      packages=['gnupg', 'gnupg.tests'],
       platforms="Linux, BSD, OSX, Windows",
       download_url="https://github.com/isislovecruft/python-gnupg/archive/develop.zip",
       classifiers=[
