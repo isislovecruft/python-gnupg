@@ -43,20 +43,20 @@ class UsageError(Exception):
     """Raised when incorrect usage of the API occurs.."""
 
 
-def _fix_unsafe(input):
+def _fix_unsafe(shell_input):
     """
     Find characters used to escape from a string into a shell, and wrap them
     in quotes if they exist. Regex pilfered from python-3.x shlex module.
 
-    :param input: The input intended for the gnupg process.
+    :param str shell_input: The input intended for the GnuPG process.
     """
     ## xxx do we want to add ';'?
     _unsafe = re.compile(r'[^\w@%+=:,./-]', 256)
     try:
-        if len(_unsafe.findall(input)) == 0:
-            return input
+        if len(_unsafe.findall(shell_input)) == 0:
+            return shell_input.strip()
         else:
-            clean = "'" + input.replace("'", "'\"'\"'") + "'"
+            clean = "'" + shell_input.replace("'", "'\"'\"'") + "'"
             return clean
     except TypeError:
         return None
