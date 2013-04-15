@@ -887,20 +887,15 @@ class Verify(object):
 
     :type gpg: :class:`gnupg.GPG`
     :param gpg: An instance of :class:`gnupg.GPG`.
-    :type valid: :type:`bool`
-    :attr valid: True if the signature or file was verified successfully,
-                 False otherwise.
-    :type fingerprint: :type:`str`
-    :attr fingerprint: The fingerprint of the GnuPG keyID which created the
-                       signature.
-    :type creation_date: :type:`str`
-    :attr creation_date: The date the signature was made.
-    :type timestamp: :type:`str`
-    :attr timestamp: The timestamp used internally in the signature.
-    :type signature_id: :type:`str`
-    :attr signature_id: The uid of the signing GnuPG key.
-    :type status: :type:`str`
-    :attr status: The internal status message from the GnuPG process.
+    :attr bool valid: True if the signature or file was verified successfully,
+                      False otherwise.
+    :attr str fingerprint: The fingerprint of the GnuPG keyID which created the
+                           signature.
+
+    :attr str creation_date: The date the signature was made.
+    :attr str timestamp: The timestamp used internally in the signature.
+    :attr str signature_id: The uid of the signing GnuPG key.
+    :attr str status: The internal status message from the GnuPG process.
     """
     ## xxx finish documentation
 
@@ -932,7 +927,7 @@ class Verify(object):
     def __nonzero__(self):
         """Override the determination for truthfulness evaluation.
 
-        :rtype: :type bool:
+        :rtype: bool
         :returns: True if we have a valid signature, False otherwise.
         """
         return self.valid
@@ -941,7 +936,7 @@ class Verify(object):
     def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
-        :raises: :class:`ValueError` if the status message is unknown.
+        :raises: :exc:`ValueError` if the status message is unknown.
         """
         if key in self.TRUST_LEVELS:
             self.trust_text = key
