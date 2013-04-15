@@ -242,14 +242,7 @@ class GPG(object):
             gpghome = _conf
         self.gpghome = _fix_unsafe(gpghome)
         if self.gpghome:
-            if not os.path.isdir(self.gpghome):
-                message = ("Creating gpg home dir: %s" % gpghome)
-                logger.warn("GPG.__init__(): %s" % message)
-                os.makedirs(self.gpghome, 0x1C0)
-            if not os.path.isabs(self.gpghome):
-                message = ("Got non-abs gpg home dir path: %s" % self.gpghome)
-                logger.warn("GPG.__init__(): %s" % message)
-                self.gpghome = os.path.abspath(self.gpghome)
+            util._create_gpghome(self.gpghome)
         else:
             message = ("Unsuitable gpg home dir: %s" % gpghome)
             logger.debug("GPG.__init__(): %s" % message)
