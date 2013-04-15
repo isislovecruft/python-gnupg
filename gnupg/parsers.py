@@ -672,21 +672,33 @@ class Sign(object):
     """Parse GnuPG status messages for signing operations.
 
     :param gpg: An instance of :class:`gnupg.GPG`.
-    :type sig_type: :type:`str`
-    :attr sig_type: The type of signature created.
-    :type fingerprint: :type:`str`
-    :attr fingerprint: The fingerprint of the signing keyID.
     """
+
+    #: The type of signature created.
+    sig_type = None
+
+    #: The algorithm used to create the signature.
+    sig_algo = None
+
+    #: The hash algorithm used to create the signature.
+    sig_hash_also = None
+
+    #: The fingerprint of the signing keyid.
+    fingerprint = None
+
+    #: The timestamp on the signature.
+    timestamp = None
+
+    #: xxx fill me in
+    what = None
 
     def __init__(self, gpg):
         self.gpg = gpg
-        self.sig_type = None
-        self.fingerprint = None
 
     def __nonzero__(self):
         """Override the determination for truthfulness evaluation.
 
-        :rtype: :type:`bool`
+        :rtype: bool
         :returns: True if we have a valid signature, False otherwise.
         """
         return self.fingerprint is not None
@@ -698,47 +710,108 @@ class Sign(object):
     def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
-        :raises: :class:`ValueError` if the status message is unknown.
+        :raises: :exc:`ValueError` if the status message is unknown.
         """
         if key in ("USERID_HINT", "NEED_PASSPHRASE", "BAD_PASSPHRASE",
                    "GOOD_PASSPHRASE", "BEGIN_SIGNING", "CARDCTRL",
                    "INV_SGNR", "NODATA"):
             pass
         elif key == "SIG_CREATED":
-            (self.sig_type, algo, hashalgo, cls, self.timestamp,
-             self.fingerprint) = value.split()
+            (self.sig_type, self.sig_algo, self.sig_hash_algo,
+             self.what, self.timestamp, self.fingerprint) = value.split()
         else:
             raise ValueError("Unknown status message: %r" % key)
+
+class ListKeys(list):
+    """Handle status messages for --list-keys.
+
+        Handle pub and uid (relating the latter to the former).
+
+        Don't care about (info from src/DETAILS):
+
+        crt = X.509 certificate
+        crs = X.509 certificate and private key available
+        ssb = secret subkey (secondary key)
+        uat = user attribute (same as user id except for field 10).
+        sig = signature
+        rev = revocation signature
+        pkd = public key data (special field format, see below)
+        grp = reserved for gpgsm
+        rvk = revocation key
+    """
+
+    def __init__(self, gpg):
+        super(ListKeys, self).__init__()
+        self.gpg = gpg
+        self.curkey = None
+        self.fingerprints = []
+        self.uids = []
+
+    def key(self, args):
+        vars = ("""
+            type trust length algo keyid date expires dummy ownertrust uid
+        """).split()
+        self.curkey = {}
+        for i in range(len(vars)):
+            self.curkey[vars[i]] = args[i]
+        self.curkey['uids'] = []
+        if self.curkey['uid']:
+            self.curkey['uids'].append(self.curkey['uid'])
+        del self.curkey['uid']
+        self.curkey['subkeys'] = []
+        self.append(self.curkey)
+
+    pub = sec = key
+
+    def fpr(self, args):
+        self.curkey['fingerprint'] = args[9]
+        self.fingerprints.append(args[9])
+
+    def uid(self, args):
+        uid = args[9]
+        uid = ESCAPE_PATTERN.sub(lambda m: chr(int(m.group(1), 16)), uid)
+        self.curkey['uids'].append(uid)
+        self.uids.append(uid)
+
+    def sub(self, args):
+        subkey = [args[4], args[11]]
+        self.curkey['subkeys'].append(subkey)
+
+    def handle_status(self, key, value):
+        pass
+
 
 class ImportResult(object):
     """Parse GnuPG status messages for key import operations.
 
     :type gpg: :class:`gnupg.GPG`
     :param gpg: An instance of :class:`gnupg.GPG`.
-    :type imported: :type:`list`
-    :attr imported: List of all keys imported.
-    :type fingerprints: :type:`list`
-    :attr fingerprints: A list of strings of the GnuPG keyIDs imported.
-    :type results: :type:`list`
-    :attr results: A list containing dictionaries with information gathered
-                   on keys imported.
     """
 
     counts = '''count no_user_id imported imported_rsa unchanged
             n_uids n_subk n_sigs n_revoc sec_read sec_imported
             sec_dups not_imported'''.split()
+
+    #: List of all keys imported.
+    imported = list()
+
+    #: A list of strings containing the fingerprints of the GnuPG keyIDs
+    #: imported.
+    fingerprints = list()
+
+    #: A list containing dictionaries with information gathered on keys
+    #: imported.
+    results = list()
+
     def __init__(self, gpg):
         self.gpg = gpg
-        self.imported = []
-        self.results = []
-        self.fingerprints = []
         for result in self.counts:
             setattr(self, result, None)
 
     def __nonzero__(self):
         """Override the determination for truthfulness evaluation.
 
-        :rtype: :type:`bool`
+        :rtype: bool
         :returns: True if we have immport some keys, False otherwise.
         """
         if self.not_imported: return False
@@ -762,7 +835,7 @@ class ImportResult(object):
     def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
-        :raises: :class:`ValueError` if the status message is unknown.
+        :raises: :exc:`ValueError` if the status message is unknown.
         """
         if key == "IMPORTED":
             # this duplicates info we already see in import_ok & import_problem
