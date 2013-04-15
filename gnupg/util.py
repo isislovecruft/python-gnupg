@@ -164,6 +164,23 @@ def _is_list_or_tuple(instance):
     """
     return isinstance(instance,list) or isinstance(instance,tuple)
 
+def _make_binary_stream(s, encoding):
+    """
+    xxx fill me in
+    """
+    try:
+        if _py3k:
+            if isinstance(s, str):
+                s = s.encode(encoding)
+        else:
+            if type(s) is not str:
+                s = s.encode(encoding)
+        from io import BytesIO
+        rv = BytesIO(s)
+    except ImportError:
+        rv = StringIO(s)
+    return rv
+
 ## xxx unused function?
 def _today():
     """Get the current date.

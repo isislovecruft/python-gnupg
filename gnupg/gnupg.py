@@ -158,20 +158,6 @@ def _copy_data(instream, outstream):
     else:
         logger.debug("closed output, %d bytes sent", sent)
 
-def _make_binary_stream(s, encoding):
-    try:
-        if util._py3k:
-            if isinstance(s, str):
-                s = s.encode(encoding)
-        else:
-            if type(s) is not str:
-                s = s.encode(encoding)
-        from io import BytesIO
-        rv = BytesIO(s)
-    except ImportError:
-        rv = StringIO(s)
-    return rv
-
 def _threaded_copy_data(instream, outstream):
     """Copy data from one stream to another in a separate thread.
 
@@ -431,7 +417,7 @@ class GPG(object):
                 if not util._py3k:
                     message = unicode(message, self.encoding)
                 message = message.encode(self.encoding)
-            f = _make_binary_stream(message, self.encoding)
+            f = util._make_binary_stream(message, self.encoding)
             result = self._sign_file(f, **kwargs)
             f.close()
         else:
@@ -492,7 +478,7 @@ class GPG(object):
         >>> assert verify
 
         """
-        f = _make_binary_stream(data, self.encoding)
+        f = util._make_binary_stream(data, self.encoding)
         result = self.verify_file(f)
         f.close()
         return result
@@ -596,7 +582,7 @@ class GPG(object):
 
         result = self._result_map['import'](self)
         logger.debug('import_keys: %r', key_data[:256])
-        data = _make_binary_stream(key_data, self.encoding)
+        data = util._make_binary_stream(key_data, self.encoding)
         self._handle_io(['--import'], data, result, binary=True)
         logger.debug('import_keys result: %r', result.__dict__)
         data.close()
@@ -615,7 +601,7 @@ class GPG(object):
         safe_keyserver = _fix_unsafe(keyserver)
 
         result = self._result_map['import'](self)
-        data = _make_binary_stream("", self.encoding)
+        data = util._make_binary_stream("", self.encoding)
         args = ['--keyserver', keyserver, '--recv-keys']
 
         if keyids:
@@ -721,7 +707,7 @@ class GPG(object):
         """
         args = ["--gen-key --batch"]
         key = self._result_map['generate'](self)
-        f = _make_binary_stream(input, self.encoding)
+        f = util._make_binary_stream(input, self.encoding)
         self._handle_io(args, f, key, binary=True)
         f.close()
         return key
@@ -879,7 +865,7 @@ class GPG(object):
         >>> assert result.fingerprint == print1
 
         """
-        data = _make_binary_stream(data, self.encoding)
+        data = util._make_binary_stream(data, self.encoding)
         result = self.encrypt_file(data, recipients, **kwargs)
         data.close()
         return result
@@ -890,7 +876,7 @@ class GPG(object):
 
         :param message: A string or file-like object to decrypt.
         """
-        data = _make_binary_stream(message, self.encoding)
+        data = util._make_binary_stream(message, self.encoding)
         result = self.decrypt_file(data, **kwargs)
         data.close()
         return result
@@ -986,7 +972,7 @@ class GPGWrapper(GPG):
         """
         result = self._result_map['list'](self)
         gnupg.logger.debug('send_keys: %r', keyids)
-        data = gnupg._make_binary_stream("", self.encoding)
+        data = gnupg.util._make_binary_stream("", self.encoding)
         args = ['--keyserver', keyserver, '--send-keys']
         args.extend(keyids)
         self._handle_io(args, data, result, binary=True)
@@ -1028,11 +1014,9 @@ class GPGWrapper(GPG):
     def list_packets(self, raw_data):
         args = ["--list-packets"]
         result = self._result_map['list-packets'](self)
-        self._handle_io(
-            args,
-            _make_binary_stream(raw_data, self.encoding),
-            result,
-        )
+        self._handle_io(args,
+                        util._make_binary_stream(raw_data, self.encoding),
+                        result)
         return result
 
     def encrypted_to(self, raw_data):

@@ -26,6 +26,7 @@ else:
 
 import gnupg
 from gnupg import parsers
+from gnupg import util
 
 __author__  = gnupg.__author__
 __date__    = gnupg.__date__
@@ -566,7 +567,7 @@ class GPGTestCase(unittest.TestCase):
                             passphrase='taherelgamal')
         self.assertTrue(sig, "Good passphrase should succeed")
         try:
-            file = gnupg._make_binary_stream(sig.data, self.gpg.encoding)
+            file = util._make_binary_stream(sig.data, self.gpg.encoding)
             verified = self.gpg.verify_file(file)
         except UnicodeDecodeError: #happens in Python 2.6
             verified = self.gpg.verify_file(io.BytesIO(sig.data))
