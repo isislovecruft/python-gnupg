@@ -322,9 +322,10 @@ class GPG(object):
         return cmd
 
     def _open_subprocess(self, args=None, passphrase=False):
-        # Internal method: open a pipe to a GPG subprocess and return
-        # the file objects for communicating with it.
-        cmd = ' '.join(self.make_args(args, passphrase))
+        """Open a pipe to a GPG subprocess and return the file objects for
+        communicating with it.
+        """
+        cmd = ' '.join(self._make_args(args, passphrase))
         if self.verbose:
             print(cmd)
         logger.debug("%s", cmd)
