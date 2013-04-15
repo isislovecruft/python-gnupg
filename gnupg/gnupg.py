@@ -171,11 +171,6 @@ def _make_binary_stream(s, encoding):
         rv = StringIO(s)
     return rv
 
-def _today():
-    """Get the current date as a string in the form %Y-%m-%d."""
-    now_string = datetime.now().__str__()
-    return now_string.split(' ', 1)[0]
-
 def _threaded_copy_data(instream, outstream):
     wr = threading.Thread(target=_copy_data, args=(instream, outstream))
     wr.setDaemon(True)
