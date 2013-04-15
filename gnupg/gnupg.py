@@ -196,7 +196,6 @@ def _write_passphrase(stream, passphrase, encoding):
     logger.debug("_write_passphrase(): Wrote passphrase.")
 
 
- 
 class GPG(object):
     """Encapsulate access to the gpg executable"""
     decode_errors = 'strict'
