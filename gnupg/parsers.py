@@ -80,25 +80,21 @@ def _is_allowed(input):
     options, the latter being a strict subset of the set of all options known
     to GPG.
 
-    :type input: C{str}
-    :param input: An input meant to be parsed as an option or flag to the GnuPG
-                  process. Should be formatted the same as an option or flag
-                  to the commandline gpg, i.e. "--encrypt-files".
+    :param str input: An input meant to be parsed as an option or flag to the
+                      GnuPG process. Should be formatted the same as an option
+                      or flag to the commandline gpg, i.e. "--encrypt-files".
+    :ivar frozenset _possible: All known GPG options and flags.
+    :ivar frozenset _allowed: All allowed GPG options and flags, e.g. all GPG
+                              options and flags which we are willing to
+                              acknowledge and parse. If we want to support a
+                              new option, it will need to have its own parsing
+                              class and its name will need to be added to this
+                              set.
 
-    :type _possible: C{frozenset}
-    :ivar _possible: All known GPG options and flags.
-
-    :type _allowed: C{frozenset}
-    :ivar _allowed: All allowed GPG options and flags, e.g. all GPG options and
-                    flags which we are willing to acknowledge and parse. If we
-                    want to support a new option, it will need to have its own
-                    parsing class and its name will need to be added to this
-                    set.
-
-    :rtype: C{Exception} or C{str}
-    :raise: UsageError if :ivar:_allowed is not a subset of :ivar:_possible.
-            ProtectedOption if :param:input is not in the set :ivar:_allowed.
-    :return: The original parameter :param:input, unmodified and unsanitized,
+    :rtype: Exception or str
+    :raise: :exc:UsageError if ``_allowed`` is not a subset of ``_possible``.
+            ProtectedOption if ``input`` is not in the set ``_allowed``.
+    :return: The original parameter ``input``, unmodified and unsanitized,
              if no errors occur.
     """
 
