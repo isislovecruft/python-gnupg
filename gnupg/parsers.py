@@ -992,3 +992,39 @@ class Verify(object):
             self.status = (('%s %s') % (key[:3], key[3:])).lower()
         else:
             raise ValueError("Unknown status message: %r" % key)
+
+## xxx old style class
+
+class ListPackets():
+    """
+    Handle status messages for --list-packets.
+    """
+
+    def __init__(self, gpg):
+        self.gpg = gpg
+        self.nodata = None
+        self.key = None
+        self.need_passphrase = None
+        self.need_passphrase_sym = None
+        self.userid_hint = None
+
+    def handle_status(self, key, value):
+        """Parse a status code from the attached GnuPG process.
+
+        :raises: :exc:`ValueError` if the status message is unknown.
+        """
+        # TODO: write tests for handle_status
+        if key == 'NODATA':
+            self.nodata = True
+        elif key == 'ENC_TO':
+            # This will only capture keys in our keyring. In the future we
+            # may want to include multiple unknown keys in this list.
+            self.key, _, _ = value.split()
+        elif key == 'NEED_PASSPHRASE':
+            self.need_passphrase = True
+        elif key == 'NEED_PASSPHRASE_SYM':
+            self.need_passphrase_sym = True
+        elif key == 'USERID_HINT':
+            self.userid_hint = value.strip().split()
+        else:
+            raise ValueError("Unknown status message: %r" % key)
