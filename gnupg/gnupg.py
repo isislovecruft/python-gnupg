@@ -423,16 +423,27 @@ class GPG(object):
     # SIGNATURE METHODS
     #
     def sign(self, message, **kwargs):
-        """sign message"""
-        f = _make_binary_stream(message, self.encoding)
-        result = self.sign_file(f, **kwargs)
-        f.close()
+        """Create a signature for a message or file."""
+        if isinstance(message, file):
+            result = self._sign_file(message, **kwargs)
+        elif not util._is_stream(message):
+            if isinstance(message, str):
+                if not util._py3k:
+                    message = unicode(message, self.encoding)
+                message = message.encode(self.encoding)
+            f = _make_binary_stream(message, self.encoding)
+            result = self._sign_file(f, **kwargs)
+            f.close()
+        else:
+            logger.error("Unable to sign message '%s' with type %s"
+                         % (message, type(message)))
+            result = None
         return result
 
-    def sign_file(self, file, keyid=None, passphrase=None, clearsign=True,
-                  detach=False, binary=False):
-        """sign file"""
-        logger.debug("sign_file: %s", file)
+    def _sign_file(self, file, keyid=None, passphrase=None, clearsign=True,
+                   detach=False, binary=False):
+        """Create a signature for a  file."""
+        logger.debug("GPG._sign_file(): %s", file)
         if binary:
             args = ['-s']
         else:
