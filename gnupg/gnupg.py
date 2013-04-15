@@ -256,20 +256,17 @@ class GPG(object):
         pubring = 'pubring.gpg' if pubring is None else _fix_unsafe(pubring)
         self.secring = os.path.join(self.gpghome, secring)
         self.pubring = os.path.join(self.gpghome, pubring)
-        ## XXX should eventually be changed throughout to 'secring', but until
-        ## then let's not break backward compatibility
-        self.keyring = self.pubring
 
-        for ring in [self.secring, self.pubring]:
-            if ring and not os.path.isfile(ring):
-                with open(ring, 'a+') as ringfile:
-                    ringfile.write("")
-                    ringfile.flush()
-            try:
-                assert _has_readwrite(ring), \
-                    ("Need r+w for %s" % ring)
-            except AssertionError as ae:
-                logger.debug(ae.message)
+        #for ring in [self.secring, self.pubring]:
+        #    if ring and not os.path.isfile(ring):
+        #        with open(ring, 'a+') as ringfile:
+        #            ringfile.write("")
+        #            ringfile.flush()
+        #    try:
+        #        assert util._has_readwrite(ring), \
+        #            ("Need r+w for %s" % ring)
+        #    except AssertionError as ae:
+        #        logger.debug(ae.message)
 
         self.options = _sanitise(options) if options else None
 
