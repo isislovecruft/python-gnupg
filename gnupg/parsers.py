@@ -301,7 +301,7 @@ def _is_allowed(input):
             '_allowed is not subset of known options, difference: %s' \
             % _allowed.difference(_possible)
     except AssertionError as ae:
-        logger.debug("gnupg._is_allowed(): %s" % ae.message)
+        logger.debug("_is_allowed(): %s" % ae.message)
         raise UsageError(ae.message)
 
     ## if we got a list of args, join them
