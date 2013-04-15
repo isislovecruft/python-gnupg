@@ -239,7 +239,7 @@ class GPG(object):
         logger.warn("")
 
         if not gpghome:
-            gpghome = os.path.join(os.getcwd(), 'gnupg')
+            gpghome = _conf
         self.gpghome = _fix_unsafe(gpghome)
         if self.gpghome:
             if not os.path.isdir(self.gpghome):
