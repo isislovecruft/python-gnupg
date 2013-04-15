@@ -921,3 +921,145 @@ class GPG(object):
         logger.debug('decrypt result: %r', result.data)
         return result
 
+
+class GPGWrapper(GPG):
+    """
+    This is a temporary class for handling GPG requests, and should be
+    replaced by a more general class used throughout the project.
+    """
+
+    def __init__(self, gpgbinary=None, gnupghome=_conf,
+                 verbose=False, use_agent=False, keyring=None, options=None):
+        super(GPGWrapper, self).__init__(gnupghome=gnupghome,
+                                         gpgbinary=gpgbinary,
+                                         verbose=verbose,
+                                         use_agent=use_agent,
+                                         keyring=keyring,
+                                         options=options)
+        self._result_map['list-packets'] = ListPackets
+
+    def find_key_by_email(self, email, secret=False):
+        """
+        Find user's key based on their email.
+        """
+        for key in self.list_keys(secret=secret):
+            for uid in key['uids']:
+                if re.search(email, uid):
+                    return key
+        raise LookupError("GnuPG public key for email %s not found!" % email)
+
+    def find_key_by_subkey(self, subkey):
+        for key in self.list_keys():
+            for sub in key['subkeys']:
+                if sub[0] == subkey:
+                    return key
+        raise LookupError(
+            "GnuPG public key for subkey %s not found!" % subkey)
+
+    def find_key_by_keyid(self, keyid):
+        for key in self.list_keys():
+            if keyid == key['keyid']:
+                return key
+        raise LookupError(
+            "GnuPG public key for subkey %s not found!" % subkey)
+
+    def encrypt(self, data, recipient, sign=None, always_trust=True,
+                passphrase=None, symmetric=False):
+        """
+        Encrypt data using GPG.
+        """
+        # TODO: devise a way so we don't need to "always trust".
+        return super(GPGWrapper, self).encrypt(data, recipient, sign=sign,
+                                               always_trust=always_trust,
+                                               passphrase=passphrase,
+                                               symmetric=symmetric,
+                                               cipher_algo='AES256')
+
+    def decrypt(self, data, always_trust=True, passphrase=None):
+        """
+        Decrypt data using GPG.
+        """
+        # TODO: devise a way so we don't need to "always trust".
+        return super(GPGWrapper, self).decrypt(data,
+                                               always_trust=always_trust,
+                                               passphrase=passphrase)
+
+    def send_keys(self, keyserver, *keyids):
+        """
+        Send keys to a keyserver
+        """
+        result = self._result_map['list'](self)
+        gnupg.logger.debug('send_keys: %r', keyids)
+        data = gnupg._make_binary_stream("", self.encoding)
+        args = ['--keyserver', keyserver, '--send-keys']
+        args.extend(keyids)
+        self._handle_io(args, data, result, binary=True)
+        gnupg.logger.debug('send_keys result: %r', result.__dict__)
+        data.close()
+        return result
+
+    def encrypt_file(self, file, recipients, sign=None,
+                     always_trust=False, passphrase=None,
+                     armor=True, output=None, symmetric=False,
+                     cipher_algo=None):
+        "Encrypt the message read from the file-like object 'file'"
+        args = ['--encrypt']
+        if symmetric:
+            args = ['--symmetric']
+            if cipher_algo:
+                args.append('--cipher-algo %s' % cipher_algo)
+        else:
+            args = ['--encrypt']
+            if not util._is_list_or_tuple(recipients):
+                recipients = (recipients,)
+            for recipient in recipients:
+                args.append('--recipient "%s"' % recipient)
+        if armor:  # create ascii-armored output - set to False for binary
+            args.append('--armor')
+        if output:  # write the output to a file with the specified name
+            if os.path.exists(output):
+                os.remove(output)  # to avoid overwrite confirmation message
+            args.append('--output "%s"' % output)
+        if sign:
+            args.append('--sign --default-key "%s"' % sign)
+        if always_trust:
+            args.append("--always-trust")
+        result = self._result_map['crypt'](self)
+        self._handle_io(args, file, result, passphrase=passphrase, binary=True)
+        logger.debug('encrypt result: %r', result.data)
+        return result
+
+    def list_packets(self, raw_data):
+        args = ["--list-packets"]
+        result = self._result_map['list-packets'](self)
+        self._handle_io(
+            args,
+            _make_binary_stream(raw_data, self.encoding),
+            result,
+        )
+        return result
+
+    def encrypted_to(self, raw_data):
+        """
+        Return the key to which raw_data is encrypted to.
+        """
+        # TODO: make this support multiple keys.
+        result = self.list_packets(raw_data)
+        if not result.key:
+            raise LookupError(
+                "Content is not encrypted to a GnuPG key!")
+        try:
+            return self.find_key_by_keyid(result.key)
+        except:
+            return self.find_key_by_subkey(result.key)
+
+    def is_encrypted_sym(self, raw_data):
+        result = self.list_packets(raw_data)
+        return bool(result.need_passphrase_sym)
+
+    def is_encrypted_asym(self, raw_data):
+        result = self.list_packets(raw_data)
+        return bool(result.key)
+
+    def is_encrypted(self, raw_data):
+        self.is_encrypted_asym() or self.is_encrypted_sym()
