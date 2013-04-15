@@ -634,7 +634,7 @@ class GPG(object):
         which='key'
         if secret:
             which='secret-key'
-        if _is_sequence(fingerprints):
+        if util._is_list_or_tuple(fingerprints):
             fingerprints = ' '.join(fingerprints)
         args = ['--batch --delete-%s "%s"' % (which, fingerprints)]
         result = self._result_map['delete'](self)
@@ -647,7 +647,7 @@ class GPG(object):
         which=''
         if secret:
             which='-secret-key'
-        if _is_sequence(keyids):
+        if util._is_list_or_tuple(keyids):
             keyids = ' '.join(['"%s"' % k for k in keyids])
         args = ["--armor --export%s %s" % (which, keyids)]
         p = self._open_subprocess(args)
@@ -657,7 +657,7 @@ class GPG(object):
         result = self._result_map['delete'](self) # any result will do
         self._collect_output(p, result, stdin=p.stdin)
         logger.debug('export_keys result: %r', result.data)
-        return result.data.decode(self.encoding, self.decode_errors)
+        return result.data.decode(self.encoding, self._decode_errors)
 
     def list_keys(self, secret=False):
         """List the keys currently in the keyring.
@@ -687,10 +687,10 @@ class GPG(object):
         # ...nope, unless you care about expired sigs or keys (stevegt)
 
         # Get the response information
-        result = self.result_map['list'](self)
+        result = self._result_map['list'](self)
         self._collect_output(p, result, stdin=p.stdin)
         lines = result.data.decode(self.encoding,
-                                   self.decode_errors).splitlines()
+                                   self._decode_errors).splitlines()
         valid_keywords = 'pub uid sec fpr sub'.split()
         for line in lines:
             if self.verbose:
