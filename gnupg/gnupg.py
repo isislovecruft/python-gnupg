@@ -517,7 +517,7 @@ class GPG(object):
         util._is_file(safe_file)
 
         logger.debug('verify_file: %r, %r', safe_file, data_filename)
-        result = self.result_map['verify'](self)
+        result = self._result_map['verify'](self)
         args = ['--verify']
         if data_filename is None:
             self._handle_io(args, safe_file, result, binary=True)
@@ -594,7 +594,7 @@ class GPG(object):
         ## xxx need way to validate that key_data is actually a valid GPG key
         ##     it might be possible to use --list-packets and parse the output
 
-        result = self.result_map['import'](self)
+        result = self._result_map['import'](self)
         logger.debug('import_keys: %r', key_data[:256])
         data = _make_binary_stream(key_data, self.encoding)
         self._handle_io(['--import'], data, result, binary=True)
@@ -614,7 +614,7 @@ class GPG(object):
         """
         safe_keyserver = _fix_unsafe(keyserver)
 
-        result = self.result_map['import'](self)
+        result = self._result_map['import'](self)
         data = _make_binary_stream("", self.encoding)
         args = ['--keyserver', keyserver, '--recv-keys']
 
@@ -637,7 +637,7 @@ class GPG(object):
         if _is_sequence(fingerprints):
             fingerprints = ' '.join(fingerprints)
         args = ['--batch --delete-%s "%s"' % (which, fingerprints)]
-        result = self.result_map['delete'](self)
+        result = self._result_map['delete'](self)
         p = self._open_subprocess(args)
         self._collect_output(p, result, stdin=p.stdin)
         return result
@@ -654,7 +654,7 @@ class GPG(object):
         # gpg --export produces no status-fd output; stdout will be
         # empty in case of failure
         #stdout, stderr = p.communicate()
-        result = self.result_map['delete'](self) # any result will do
+        result = self._result_map['delete'](self) # any result will do
         self._collect_output(p, result, stdin=p.stdin)
         logger.debug('export_keys result: %r', result.data)
         return result.data.decode(self.encoding, self.decode_errors)
