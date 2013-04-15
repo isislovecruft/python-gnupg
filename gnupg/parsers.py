@@ -465,6 +465,98 @@ def _sanitise_list(arg_list):
                 yield safe_arg
 
 
+class Verify(object):
+    """Parser for internal status messages from GnuPG for ``--verify``."""
+
+    TRUST_UNDEFINED = 0
+    TRUST_NEVER = 1
+    TRUST_MARGINAL = 2
+    TRUST_FULLY = 3
+    TRUST_ULTIMATE = 4
+
+    TRUST_LEVELS = {
+        "TRUST_UNDEFINED" : TRUST_UNDEFINED,
+        "TRUST_NEVER" : TRUST_NEVER,
+        "TRUST_MARGINAL" : TRUST_MARGINAL,
+        "TRUST_FULLY" : TRUST_FULLY,
+        "TRUST_ULTIMATE" : TRUST_ULTIMATE,
+    }
+
+    def __init__(self, gpg):
+        self.gpg = gpg
+        self.valid = False
+        self.fingerprint = self.creation_date = self.timestamp = None
+        self.signature_id = self.key_id = None
+        self.username = None
+        self.status = None
+        self.pubkey_fingerprint = None
+        self.expire_timestamp = None
+        self.sig_timestamp = None
+        self.trust_text = None
+        self.trust_level = None
+
+    def __nonzero__(self):
+        return self.valid
+
+    __bool__ = __nonzero__
+
+    def handle_status(self, key, value):
+        if key in self.TRUST_LEVELS:
+            self.trust_text = key
+            self.trust_level = self.TRUST_LEVELS[key]
+        elif key in ("RSA_OR_IDEA", "NODATA", "IMPORT_RES", "PLAINTEXT",
+                   "PLAINTEXT_LENGTH", "POLICY_URL", "DECRYPTION_INFO",
+                   "DECRYPTION_OKAY", "INV_SGNR"):
+            pass
+        elif key == "BADSIG":
+            self.valid = False
+            self.status = 'signature bad'
+            self.key_id, self.username = value.split(None, 1)
+        elif key == "GOODSIG":
+            self.valid = True
+            self.status = 'signature good'
+            self.key_id, self.username = value.split(None, 1)
+        elif key == "VALIDSIG":
+            (self.fingerprint,
+             self.creation_date,
+             self.sig_timestamp,
+             self.expire_timestamp) = value.split()[:4]
+            # may be different if signature is made with a subkey
+            self.pubkey_fingerprint = value.split()[-1]
+            self.status = 'signature valid'
+        elif key == "SIG_ID":
+            (self.signature_id,
+             self.creation_date, self.timestamp) = value.split()
+        elif key == "ERRSIG":
+            self.valid = False
+            (self.key_id,
+             algo, hash_algo,
+             cls,
+             self.timestamp) = value.split()[:5]
+            self.status = 'signature error'
+        elif key == "DECRYPTION_FAILED":
+            self.valid = False
+            self.key_id = value
+            self.status = 'decryption failed'
+        elif key == "NO_PUBKEY":
+            self.valid = False
+            self.key_id = value
+            self.status = 'no public key'
+        elif key in ("KEYEXPIRED", "SIGEXPIRED"):
+            # these are useless in verify, since they are spit out for any
+            # pub/subkeys on the key, not just the one doing the signing.
+            # if we want to check for signatures with expired key,
+            # the relevant flag is EXPKEYSIG.
+            pass
+        elif key in ("EXPKEYSIG", "REVKEYSIG"):
+            # signed with expired or revoked key
+            self.valid = False
+            self.key_id = value.split()[0]
+            self.status = (('%s %s') % (key[:3], key[3:])).lower()
+        else:
+            raise ValueError("Unknown status message: %r" % key)
+
+
 class Crypt(Verify):
     """Handle status messages for --encrypt and --decrypt"""
     def __init__(self, gpg):
