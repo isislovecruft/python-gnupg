@@ -558,12 +558,14 @@ class Verify(object):
 
 
 class Crypt(Verify):
-    """Handle status messages for --encrypt and --decrypt"""
+    """Parser for internal status messages from GnuPG for ``--encrypt`` and
+    ``--decrypt``.
+    """
     def __init__(self, gpg):
-        super(Crypt, self).__init__(self, gpg)
-        self.data = ''
+        super(Crypt, self).__init__(gpg)
+        self.data = str()
         self.ok = False
-        self.status = ''
+        self.status = str()
 
     def __nonzero__(self):
         if self.ok: return True
@@ -577,7 +579,7 @@ class Crypt(Verify):
     def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
-        :raises: :class:`ValueError` if the status message is unknown.
+        :raises: :exc:`ValueError` if the status message is unknown.
         """
         if key in ("ENC_TO", "USERID_HINT", "GOODMDC", "END_DECRYPTION",
                    "BEGIN_SIGNING", "NO_SECKEY", "ERROR", "NODATA",
@@ -631,7 +633,7 @@ class GenKey(object):
     def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
-        :raises: :class:`ValueError` if the status message is unknown.
+        :raises: :exc:`ValueError` if the status message is unknown.
         """
         if key in ("PROGRESS", "GOOD_PASSPHRASE", "NODATA", "KEY_NOT_CREATED"):
             pass
@@ -658,7 +660,7 @@ class DeleteResult(object):
     def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
-        :raises: :class:`ValueError` if the status message is unknown.
+        :raises: :exc:`ValueError` if the status message is unknown.
         """
         if key == "DELETE_PROBLEM":
             self.status = self.problem_reason.get(value, "Unknown error: %r"
