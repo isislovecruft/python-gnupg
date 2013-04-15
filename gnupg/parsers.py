@@ -354,25 +354,23 @@ def _sanitise(*args):
     :returns: ``sanitised``
     """
 
-    def _check_arg_and_value(arg, value):
+    def _check_option(arg, value):
         """
         Check that a single :param:arg is an allowed option. If it is allowed,
         quote out any escape characters in :param:values, and add the pair to
         :ivar:sanitised.
 
-        :type arg: C{str}
-
-        :param arg: The arguments which will be passed to the GnuPG process,
-                    and, optionally their corresponding values.  The values are
-                    any additional arguments following the GnuPG option or
-                    flag. For example, if we wanted to pass "--encrypt
-                    --recipient isis@leap.se" to gpg, then "--encrypt" would be
-                    an arg without a value, and "--recipient" would also be an
-                    arg, with a value of "isis@leap.se".
-        :type checked: C{list}
-        :ivar checked: The sanitised, allowed options and values.
-        :rtype: C{str}
-        :returns: A string of the items in :ivar:`checked` delimited by spaces.
+        :param str arg: The arguments which will be passed to the GnuPG
+                        process, and, optionally their corresponding values.
+                        The values are any additional arguments following the
+                        GnuPG option or flag. For example, if we wanted to pass
+                        "--encrypt --recipient isis@leap.se" to gpg, then
+                        "--encrypt" would be an arg without a value, and
+                        "--recipient" would also be an arg, with a value of
+                        "isis@leap.se".
+        :ivar list checked: The sanitised, allowed options and values.
+        :rtype: str
+        :returns: A string of the items in ``checked`` delimited by spaces.
         """
         safe_values = str()
 
