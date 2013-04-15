@@ -829,10 +829,6 @@ class GPG(object):
                 args.append('--recipient "%s"' % recipient)
         if armor:
             args.append('--armor')
-        if output:  # write the output to a file with the specified name
-            if os.path.exists(output):
-                os.remove(output) # to avoid overwrite confirmation message
-            args.append('--output "%s"' % output)
         if sign:
             args.append('--sign --default-key "%s"' % sign)
         if always_trust:
