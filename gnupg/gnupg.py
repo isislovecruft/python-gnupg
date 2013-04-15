@@ -676,7 +676,7 @@ class GPG(object):
 
         """
 
-        which='keys'
+        which='public-keys'
         if secret:
             which='secret-keys'
         args = "--list-%s --fixed-list-mode --fingerprint --with-colons" % (which,)
