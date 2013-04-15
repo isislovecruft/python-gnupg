@@ -160,7 +160,7 @@ def _copy_data(instream, outstream):
 
 def _make_binary_stream(s, encoding):
     try:
-        if _py3k:
+        if util._py3k:
             if isinstance(s, str):
                 s = s.encode(encoding)
         else:
