@@ -31,6 +31,68 @@ from datetime   import datetime
 import logging
 import os
 
+try:
+    from io import StringIO
+    from io import BytesIO
+except ImportError:
+    from cStringIO import StringIO
+
+try:
+    from logging import NullHandler
+except:
+    class NullHandler(logging.Handler):
+        def handle(self, record):
+            pass
+logger = logging.getLogger('gnupg')
+if not logger.handlers:
+    logger.addHandler(NullHandler())
+
+try:
+    unicode
+    _py3k = False
+except NameError:
+    _py3k = True
+
+## Directory shortcuts:
+_here = os.getcwd()                           ## .../python-gnupg/gnupg
+_repo = _here.rsplit(__module__, 1)[0]        ## .../python-gnupg
+_test = os.path.join(_repo, 'tmp_test')       ## .../python-gnupg/tmp_test
+_user = os.environ.get('HOME')                ## $HOME
+_ugpg = os.path.join(_user, '.gnupg')         ## $HOME/.gnupg
+_conf = os.path.join(os.path.join(_user, '.config'),
+                     'python-gnupg')          ## $HOME/.config/python-gnupg
+
+def _create_gpghome(gpghome):
+    """Create the specified GnuPG home directory, if necessary.
+
+    :param str gpghome: The directory to use.
+    :rtype: bool
+    :returns: True if no errors occurred and the directory was created or
+              existed beforehand, False otherwise.
+    """
+    ## xxx how will this work in a virtualenv?
+    if not os.path.isabs(gpghome):
+        message = ("Got non-abs gpg home dir path: %s" % gpghome)
+        logger.warn("util._create_gpghome(): %s" % message)
+        gpghome = os.path.abspath(gpghome)
+    if not os.path.isdir(gpghome):
+        message = ("Creating gpg home dir: %s" % gpghome)
+        logger.warn("util._create_gpghome(): %s" % message)
+        try:
+            os.makedirs(gpghome, 0x1C0)
+        except OSError as ose:
+            logger.error(ose, exc_info=1)
+            return False
+        else:
+            return True
+    else:
+        return True
+
+def _find_gpgbinary(gpgbinary=None):
+    """Find the absolute path to the GnuPG binary.
+
+    Also run checks that the binary is not a symlink, and check that
+    our process real uid has exec permissions.
 
 class ListPackets():
     """

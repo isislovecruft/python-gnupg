@@ -157,45 +157,6 @@ def _copy_data(instream, outstream):
     else:
         logger.debug("closed output, %d bytes sent", sent)
 
-def _has_readwrite(path):
-    """
-    Determine if the real uid/gid of the executing user has read and write
-    permissions for a directory or a file.
-
-    :type path: C{str}
-    :param path: The path to the directory or file to check permissions for.
-
-    :rtype: C{bool}
-    :param: True if real uid/gid has read+write permissions, False otherwise.
-    """
-    return os.access(path, os.R_OK and os.W_OK)
-
-def _is_file(input):
-    """
-    Check that the size of the thing which is supposed to be a filename has
-    size greater than zero, without following symbolic links or using
-    :func:`os.path.isfile`.
-    """
-    try:
-        assert os.lstat(input).st_size > 0, "not a file: %s" % input
-    except (AssertionError, TypeError) as error:
-        logger.debug(error.message)
-        return False
-    else:
-        return True
-
-def _is_stream(input):
-    """Check that the input is a byte stream.
-
-    :param input: An object provided for reading from or writing to
-    :rtype: C{bool}
-    :returns: True if :param:`input` is a stream, False if otherwise.
-    """
-    return isinstance(input, BytesIO)
-
-def _is_sequence(instance):
-    return isinstance(instance,list) or isinstance(instance,tuple)
-
 def _make_binary_stream(s, encoding):
     try:
         if _py3k:
