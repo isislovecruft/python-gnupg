@@ -145,38 +145,41 @@ class GPGTestCase(unittest.TestCase):
         self.pubring = os.path.join(self.homedir, 'pubring.gpg')
         self.secring = os.path.join(self.homedir, 'secring.gpg')
 
-    def test_environment(self):
-        """
-        Test the environment by ensuring that setup worked.
-        """
+    def test_gpghome_creation(self):
+        """Test the environment by ensuring that setup worked."""
         hd = self.homedir
         self.assertTrue(os.path.exists(hd) and os.path.isdir(hd),
                         "Not an existing directory: %s" % hd)
 
     def test_gpg_binary(self):
-        """
-        Test that 'gpg --version' does not return an error code.
-        """
+        """Test that 'gpg --version' does not return an error code."""
         proc = self.gpg._open_subprocess(['--version'])
         result = io.StringIO()
         self.gpg._collect_output(proc, result, stdin=proc.stdin)
         self.assertEqual(proc.returncode, 0)
 
     def test_gpg_binary_version_str(self):
-        """
-        That that 'gpg --version' returns the expected output.
-        """
+        """That that 'gpg --version' returns the expected output."""
         proc = self.gpg._open_subprocess(['--version'])
         result = proc.stdout.read(1024)
         expected1 = "Supported algorithms:"
         expected2 = "Pubkey:"
         expected3 = "Cipher:"
         expected4 = "Compression:"
-        logger.debug("'gpg --version' returned output:n%s" % result)
+        #logger.debug("'gpg --version' returned output:n%s" % result)
         self.assertGreater(result.find(expected1), 0)
         self.assertGreater(result.find(expected2), 0)
         self.assertGreater(result.find(expected3), 0)
         self.assertGreater(result.find(expected4), 0)
+
+    def test_gpg_binary_not_installed(self):
+        """Test that Gnupg installation can be detected."""
+        env_copy = os.environ
+        path_copy = os.environ.pop('PATH')
+        with self.assertRaises(RuntimeError):
+            gnupg.GPG(gpghome=self.homedir)
+        os.environ = env_copy
+        os.environ.update({'PATH': path_copy})
 
     def test_gpg_binary_not_abs(self):
         """Test that a non-absolute path to gpg results in a full path."""
@@ -186,20 +189,20 @@ class GPGTestCase(unittest.TestCase):
         """Test that unsupported gpg options are dropped."""
         self.gpg.options = ['--tyrannosaurus-rex', '--stegosaurus']
         self.gpg.keyring = self.secring
-        cmd = self.gpg.make_args(None, False)
+        cmd = self.gpg._make_args(None, False)
         expected = ['/usr/bin/gpg',
                     '--status-fd 2 --no-tty',
                     '--homedir "%s"' % os.path.join(os.getcwd(), 'keys'),
-                    '--no-default-keyring --keyring %s --secret-keyring %s'
-                    % (self.pubring, self.secring)]
+                    '--no-default-keyring --keyring %s' % self.pubring,
+                    '--secret-keyring %s' % self.secring]
         self.assertListEqual(cmd, expected)
 
     def test_make_args(self):
         """Test argument line construction."""
         not_allowed = ['--bicycle', '--zeppelin', 'train', 'flying-carpet']
         self.gpg.options = not_allowed[:-2]
-        args = self.gpg.make_args(not_allowed[2:], False)
-        self.assertTrue(len(args) == 4)
+        args = self.gpg._make_args(not_allowed[2:], False)
+        self.assertTrue(len(args) == 5)
         for na in not_allowed:
             self.assertNotIn(na, args)
 
@@ -233,10 +236,8 @@ class GPGTestCase(unittest.TestCase):
         """Generate a GnuPG batch file for key unattended key creation."""
         name = real_name.lower().replace(' ', '')
 
-        ## XXX will GPG just use it's defaults? does it have defaults if
-        ## we've just given it a homedir without a gpg.conf?
         key_type   = 'RSA'if key_type is None else key_type
-        key_length = 4096 if key_length is None else key_length
+        key_length = 1024 if key_length is None else key_length
 
         batch = {'Key-Type': key_type,
                  'Key-Length': key_length,
@@ -258,11 +259,14 @@ class GPGTestCase(unittest.TestCase):
         """Generate a basic key."""
         key_input = self.generate_key_input(real_name, email_domain, **kwargs)
         key = self.gpg.gen_key(key_input)
+        print "\nKEY TYPE: ", key.type
+        print "KEY FINGERPRINT: ", key.fingerprint
+        return key
 
     def test_gen_key_input(self):
         """Test that GnuPG batch file creation is successful."""
         key_input = self.generate_key_input("Francisco Ferrer", "an.ok")
-        self.assertIsNotNone(key_input)
+        self.assertIsInstance(key_input, str)
         self.assertGreater(key_input.find('Francisco Ferrer'), 0)
 
     def test_rsa_key_generation(self):
@@ -270,7 +274,7 @@ class GPGTestCase(unittest.TestCase):
         Test that RSA key generation succeeds.
         """
         key = self.generate_key("Barbara Brown", "beta.com")
-        self.assertIsNotNone(key)
+        self.assertIsNotNone(key.type)
         self.assertIsNotNone(key.fingerprint)
 
     def test_rsa_key_generation_with_unicode(self):
@@ -278,7 +282,7 @@ class GPGTestCase(unittest.TestCase):
         Test that RSA key generation succeeds with unicode characters.
         """
         key = self.generate_key("Anaïs de Flavigny", "êtrerien.fr")
-        self.assertIsNotNone(key)
+        self.assertIsNotNone(key.type)
         self.assertIsNotNone(key.fingerprint)
 
     def test_rsa_key_generation_with_subkey(self):
@@ -287,7 +291,7 @@ class GPGTestCase(unittest.TestCase):
         """
         key = self.generate_key("Need Caffeine", "nowplea.se",
                                 subkey_type='RSA')
-        self.assertIsNotNone(key)
+        self.assertIsNotNone(key.type)
         self.assertIsNotNone(key.fingerprint)
 
     def test_dsa_key_generation(self):
@@ -295,7 +299,7 @@ class GPGTestCase(unittest.TestCase):
         Test that DSA key generation succeeds.
         """
         key = self.generate_key("DSA Signonly", "test.com")
-        self.assertIsNotNone(key)
+        self.assertIsNotNone(key.type)
         self.assertIsNotNone(key.fingerprint)
 
     def test_dsa_key_generation_with_unicode(self):
@@ -303,7 +307,7 @@ class GPGTestCase(unittest.TestCase):
         Test that DSA key generation succeeds with unicode characters.
         """
         key = self.generate_key("破壊合計する", "破壊合計する.日本")
-        self.assertIsNotNone(key)
+        self.assertIsNotNone(key.type)
         self.assertIsNotNone(key.fingerprint)
 
     def test_dsa_key_generation_with_subkey(self):
@@ -329,14 +333,11 @@ class GPGTestCase(unittest.TestCase):
         }
         batch = self.gpg.gen_key_input(**params)
         key = self.gpg.gen_key(batch)
-        self.assertIsInstance(key.data, str)
-        self.assertEquals(key.data, '')
-        self.assertIs(None, key.fingerprint, 'Null fingerprint result')
+        self.assertIsNone(key.type)
+        self.assertIsNone(key.fingerprint)
 
     def test_key_generation_with_colons(self):
-        """
-        Test that key generation handles colons in Name fields.
-        """
+        """Test that key generation handles colons in Name fields."""
         params = {
             'key_type': 'RSA',
             'name_real': 'urn:uuid:731c22c4-830f-422f-80dc-14a9fdae8c19',
@@ -344,14 +345,12 @@ class GPGTestCase(unittest.TestCase):
             'name_email': 'test.name@example.com',
         }
         batch = self.gpg.gen_key_input(**params)
-        key = self.gpg.gen_key(cmd)
-        print "KEY DATA\n", key.data
-        print "KEY FINGERPRINT\n", key.fingerprint
+        key = self.gpg.gen_key(batch)
+        self.assertIsNotNone(key.type)
+        self.assertIsNotNone(key.fingerprint)
 
     def test_key_generation_import_list_with_colons(self):
-        """
-        Test that key generation handles colons in Name fields.
-        """
+        """Test that key generation handles colons in Name fields."""
         params = {
             'key_type': 'RSA',
             'name_real': 'urn:uuid:731c22c4-830f-422f-80dc-14a9fdae8c19',
@@ -359,11 +358,14 @@ class GPGTestCase(unittest.TestCase):
             'name_email': 'test.name@example.com',
         }
         batch = self.gpg.gen_key_input(**params)
-        key = self.gpg.gen_key(cmd)
+        self.assertIsInstance(batch, str)
+        key = self.gpg.gen_key(batch)
         keys = self.gpg.list_keys()
         self.assertIsNotNone(key)
         self.assertEqual(len(keys), 1)
         key = keys[0]
+        self.assertIsNotNone(key.type)
+        self.assertIsNotNone(key.fingerprint)
         uids = key['uids']
         self.assertEqual(len(uids), 1)
         uid = uids[0]
@@ -371,24 +373,20 @@ class GPGTestCase(unittest.TestCase):
                               '(dummy comment) <test.name@example.com>')
 
     def test_key_generation_with_empty_value(self):
-        """
-        Test that key generation handles empty values.
-        """
-        params = {
-            'key_type': 'RSA',
-            'key_length': 1024,
-            'name_comment': ' ', # Not added, so default will appear
-        }
-        cmd = self.gpg.gen_key_input(**params)
-        self.assertTrue('\nName-Comment: Generated by gnupg.py\n' in cmd)
-        params['name_comment'] = 'A'
-        cmd = self.gpg.gen_key_input(**params)
-        self.assertTrue('\nName-Comment: A\n' in cmd)
+        """Test that key generation handles empty values."""
+        params = {'name_comment': ' '}
+        batch = self.gpg.gen_key_input(**params)
+        self.assertTrue('\nName-Comment: Generated by python-gnupg\n' in batch)
+
+    def test_key_generation_override_default_value(self):
+        """Test that overriding a default value in gen_key_input() works."""
+        params = {'name_comment': 'A'}
+        batch = self.gpg.gen_key_input(**params)
+        self.assertFalse('\nName-Comment: Generated by python-gnupg\n' in batch)
+        self.assertTrue('\nName-Comment: A\n' in batch)
 
     def test_list_keys_after_generation(self):
-        """
-	Test that after key generation, the generated key is available.
-	"""
+        """Test that after key generation, the generated key is available."""
         self.test_list_keys_initial()
         self.do_key_generation()
         public_keys = self.gpg.list_keys()
@@ -399,14 +397,12 @@ class GPGTestCase(unittest.TestCase):
                         "1-element list expected")
 
     def test_encryption_and_decryption(self):
-        """
-	Test that encryption and decryption works.
-	"""
+        """Test that encryption and decryption works."""
         logger.debug("test_encryption_and_decryption begins")
-        key = self.generate_key("Andrew", "Able", "alpha.com",
+        key = self.generate_key("Andrew Able", "alpha.com",
                                 passphrase="andy")
         andrew = key.fingerprint
-        key = self.generate_key("Barbara", "Brown", "beta.com")
+        key = self.generate_key("Barbara Brown", "beta.com")
         barbara = key.fingerprint
         gpg = self.gpg
         gpg.encoding = 'latin-1'
@@ -431,28 +427,23 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_encryption_and_decryption ends")
         # Test symmetric encryption
         data = "chippy was here"
-        edata = str(gpg.encrypt(data, None, passphrase='bbrown', symmetric=True))
+        edata = str(gpg.encrypt(data, None, passphrase='bbrown',
+                                symmetric=True))
         ddata = gpg.decrypt(edata, passphrase='bbrown')
         self.assertEqual(data, str(ddata))
 
     def test_public_keyring(self):
-        """
-	Test that the public keyring is found in the gpg home directory.
-	"""
+        """Test that the public keyring is found in the gpg home directory."""
         self.gpg.keyring = self.pubring
         self.assertTrue(os.path.isfile(self.pubring))
 
     def test_secret_keyring(self):
-        """
-	Test that the secret keyring is found in the gpg home directory.
-	"""
+        """Test that the secret keyring is found in the gpg home directory."""
         self.gpg.keyring = self.secring
         self.assertTrue(os.path.isfile(self.secring))
 
     def test_import_and_export(self):
-        """
-	Test that key import and export works.
-	"""
+        """Test that key import and export works."""
         logger.debug("test_import_and_export begins")
         self.test_list_keys_initial()
         gpg = self.gpg
@@ -481,9 +472,7 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_import_and_export ends")
 
     def test_import_only(self):
-	"""
-	Test that key import works.
-	"""
+	"""Test that key import works."""
         logger.debug("test_import_only begins")
         self.test_list_keys_initial()
         self.gpg.import_keys(KEYS_TO_IMPORT)
@@ -504,23 +493,63 @@ class GPGTestCase(unittest.TestCase):
         self.assertEqual(0, match, "Keys must match")
         logger.debug("test_import_only ends")
 
-    def test_signature_verification(self):
-        """
-	Test that signing and verification works.
-	"""
-        logger.debug("test_signature_verification begins")
-        key = self.generate_key("Andrew", "Able", "alpha.com")
-        self.gpg.encoding = 'latin-1'
-        if gnupg._py3k:
-            data = 'Hello, André!'
-        else:
-            data = unicode('Hello, André', self.gpg.encoding)
-        data = data.encode(self.gpg.encoding)
-        sig = self.gpg.sign(data, keyid=key.fingerprint, passphrase='bbrown')
+    def test_signature_string(self):
+        """Test that signing a message string works."""
+        key = self.generate_key("Werner Koch", "gnupg.org")
+        message = "Damn, I really wish GnuPG had ECC support."
+        sig = self.gpg.sign(message, keyid=key.fingerprint,
+                            passphrase='wernerkoch')
+        print "SIGNATURE:\n", sig.data
+        self.assertIsNotNone(sig.data)
+
+    def test_signature_algorithm(self):
+        """Test that determining the signing algorithm works."""
+        key = self.generate_key("Werner Koch", "gnupg.org")
+        message = "Damn, I really wish GnuPG had ECC support."
+        sig = self.gpg.sign(message, keyid=key.fingerprint,
+                            passphrase='wernerkoch')
+        print "ALGORITHM:\n", sig.sig_algo
+        self.assertIsNotNone(sig.sig_algo)
+
+    def test_signature_string_bad_passphrase(self):
+        """Test that signing and verification works."""
+        key = self.generate_key("Ron Rivest", "rsa.com")
+        message = 'Hello, André!'
+        sig = self.gpg.sign(message, keyid=key.fingerprint, passphrase='foo')
         self.assertFalse(sig, "Bad passphrase should fail")
-        sig = self.gpg.sign(data, keyid=key.fingerprint, passphrase='aable')
+
+    def test_signature_string_alternate_encoding(self):
+        key = self.generate_key("Adi Shamir", "rsa.com")
+        self.gpg.encoding = 'latin-1'
+        message = 'Hello, André!'
+        sig = self.gpg.sign(message, keyid=key.fingerprint,
+                            passphrase='adishamir')
+        self.assertTrue(sig)
+
+    def test_signature_file(self):
+        """Test that signing a message file works."""
+        key = self.generate_key("Leonard Adleman", "rsa.com")
+        message = "Someone should add GCM block cipher mode to PyCrypto."
+        message_fn = os.path.join(tempfile.gettempdir(), 'test_signature_file')
+        with open(message_fn, 'w+b') as msg:
+            msg.write(message)
+
+        message_file = buffer(open(message_fn, "rb").read())
+        mf = io.BytesIO(message_file)
+
+        sig = self.gpg.sign(mf, keyid=key.fingerprint,
+                            passphrase='leonardadleman')
+        self.assertTrue(sig, "Good passphrase should succeed")
+
+    def test_signature_string_verification(self):
+        """Test verification of a signature from a message string."""
+        key = self.generate_key("Andrew Able", "alpha.com")
+        message = 'Hello, André!'
+        sig = self.gpg.sign(message, keyid=key.fingerprint,
+                            passphrase='andrewable')
         self.assertTrue(sig, "Good passphrase should succeed")
         verified = self.gpg.verify(sig.data)
+        self.assertIsNotNone(verified.fingerprint)
         if key.fingerprint != verified.fingerprint:
             logger.debug("key: %r", key.fingerprint)
             logger.debug("ver: %r", verified.fingerprint)
@@ -528,15 +557,14 @@ class GPGTestCase(unittest.TestCase):
                          "Fingerprints must match")
         self.assertEqual(verified.trust_level, verified.TRUST_ULTIMATE)
         self.assertEqual(verified.trust_text, 'TRUST_ULTIMATE')
-        if not os.path.exists('random_binary_data'):
-            data_file = open('random_binary_data', 'wb')
-            data_file.write(os.urandom(5120 * 1024))
-            data_file.close()
-        data_file = open('random_binary_data', 'rb')
-        sig = self.gpg.sign_file(data_file, keyid=key.fingerprint,
-                                 passphrase='aable')
-        data_file.close()
-        self.assertTrue(sig, "File signing should succeed")
+
+    def test_signature_file_verification(self):
+        """Test verfication of a signature on a message file."""
+        key = self.generate_key("Taher ElGamal", "cryto.me")
+        message = 'أصحاب المصالح لا يحبون الثوراتز'
+        sig = self.gpg.sign(message, keyid=key.fingerprint,
+                            passphrase='taherelgamal')
+        self.assertTrue(sig, "Good passphrase should succeed")
         try:
             file = gnupg._make_binary_stream(sig.data, self.gpg.encoding)
             verified = self.gpg.verify_file(file)
@@ -548,8 +576,8 @@ class GPGTestCase(unittest.TestCase):
         self.assertEqual(key.fingerprint, verified.fingerprint,
                          "Fingerprints must match")
         data_file = open('random_binary_data', 'rb')
-        sig = self.gpg.sign_file(data_file, keyid=key.fingerprint,
-                                 passphrase='aable', detach=True)
+        sig = self.gpg._sign_file(data_file, keyid=key.fingerprint,
+                                  passphrase='andrewable', detach=True)
         data_file.close()
         self.assertTrue(sig, "File signing should succeed")
         try:
@@ -565,10 +593,7 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_signature_verification ends")
 
     def test_deletion(self):
-        """
-	Test that key deletion works.
-	"""
-        logger.debug("test_deletion begins")
+        """Test that key deletion works."""
         self.gpg.import_keys(KEYS_TO_IMPORT)
         public_keys = self.gpg.list_keys()
         self.assertTrue(is_list_with_len(public_keys, 2),
@@ -580,11 +605,7 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_deletion ends")
 
     def test_file_encryption_and_decryption(self):
-        """
-	Test that encryption/decryption to/from file works.
-	"""
-        logger.debug("test_file_encryption_and_decryption begins")
-
+        """Test that encryption/decryption to/from file works."""
         encfname = _make_tempfile()
         logger.debug('Created tempfile for encrypted content: %s' % encfname)
         decfname = _make_tempfile()
@@ -593,10 +614,10 @@ class GPGTestCase(unittest.TestCase):
         #os.close(encfno)
         #os.close(decfno)
         try:
-            key = self.generate_key("Andrew", "Able", "alpha.com",
+            key = self.generate_key("Andrew Able", "alpha.com",
                                     passphrase="andy")
             andrew = key.fingerprint
-            key = self.generate_key("Barbara", "Brown", "beta.com")
+            key = self.generate_key("Barbara Brown", "beta.com")
             barbara = key.fingerprint
             data = "Hello, world!"
             file = gnupg._make_binary_stream(data, self.gpg.encoding)
@@ -617,10 +638,11 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_file_encryption_and_decryption ends")
 
 
-suites = { 'basic': set(['test_environment',
+suites = { 'basic': set(['test_gpghome_creation',
                          'test_gpg_binary',
                          'test_gpg_binary_not_abs',
                          'test_gpg_binary_version_str',
+                         'test_gpg_binary_not_installed',
                          'test_list_keys_initial_public',
                          'test_list_keys_initial_secret',
                          'test_make_args_drop_protected_options',
@@ -634,8 +656,15 @@ suites = { 'basic': set(['test_environment',
                           'test_dsa_key_generation_with_subkey',
                           'test_key_generation_with_invalid_key_type',
                           'test_key_generation_with_empty_value',
+                          'test_key_generation_override_default_value',
                           'test_key_generation_with_colons']),
-           'sign': set(['test_signature_verification']),
+           'sign': set(['test_signature_file_verification',
+                        'test_signature_file',
+                        'test_signature_string_bad_passphrase',
+                        'test_signature_string_alternate_encoding',
+                        'test_signature_string_verification',
+                        'test_signature_algorithm',
+                        'test_signature_string']),
            'crypt': set(['test_encryption_and_decryption',
                          'test_file_encryption_and_decryption']),
            'listkeys': set(['test_list_keys_after_generation']),
@@ -654,7 +683,6 @@ def _init_logging():
     logging.logThreads = True
     stream_handler = logging.StreamHandler(stream=sys.stdout)
     stream_handler.setLevel(logging.DEBUG)
-    logger = gnupg.logger
     logger.addHandler(stream_handler)
     logger.debug("Starting the logger...")
 
@@ -695,6 +723,10 @@ def main(args):
                    testLoader=loader,
                    verbosity=args.verbose,
                    catchbreak=True)
+
+    ## Finally, remove our testing directory:
+    if os.path.isdir(tempfile.gettempdir()):
+        os.removedirs(tempfile.gettempdir())
 
 if __name__ == "__main__":
 
