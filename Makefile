@@ -11,7 +11,7 @@ cleantest: clean
 	rm gnupg/tests/*.log
 
 test: cleantest
-	python gnupg/tests/test_gnupg.py basic
+	python gnupg/tests/test_gnupg.py basic genkey sign
 
 install: 
 	python setup.py install --record installed-files.txt
