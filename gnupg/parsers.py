@@ -22,6 +22,19 @@ parsers.py
 Classes for parsing GnuPG status messages and sanitising commandline options.
 '''
 
+from gnupg import __author__
+from gnupg import __version__
+__module__ = 'gnupg.parsers'
+
+import logging
+import re
+
+from util import logger
+import util
+
+
+ESCAPE_PATTERN = re.compile(r'\\x([0-9a-f][0-9a-f])', re.I)
+
 
 class ProtectedOption(Exception):
     """Raised when the option passed to GPG is disallowed."""
