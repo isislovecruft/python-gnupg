@@ -720,11 +720,11 @@ class GPG(object):
 
         """
         args = ["--gen-key --batch"]
-        result = self.result_map['generate'](self)
+        key = self._result_map['generate'](self)
         f = _make_binary_stream(input, self.encoding)
-        self._handle_io(args, f, result, binary=True)
+        self._handle_io(args, f, key, binary=True)
         f.close()
-        return result
+        return key
 
     def gen_key_input(self, **kwargs):
         """Generate GnuPG key(s) through batch file key generation.
