@@ -75,10 +75,10 @@ Vinay Sajip's documentation:
 
 """
 
+__author__ = "Isis Agora Lovecruft"
 __module__ = 'gnupg'
 __version__ = "0.4.0"
-__author__ = "Isis Agora Lovecruft"
-__date__  = "12 Febuary 2013"
+
 
 try:
     from io import StringIO
