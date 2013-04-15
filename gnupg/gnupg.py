@@ -270,7 +270,6 @@ class GPG(object):
 
         self.options = _sanitise(options) if options else None
 
-        ## xxx TODO: hack the locale module away so we can use this on android
         self.encoding = locale.getpreferredencoding()
         if self.encoding is None: # This happens on Jython!
             self.encoding = sys.stdin.encoding
