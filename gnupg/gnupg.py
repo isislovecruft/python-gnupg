@@ -332,11 +332,12 @@ class GPG(object):
         return Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
 
     def _read_response(self, stream, result):
-        # Internal method: reads all the stderr output from GPG, taking notice
-        # only of lines that begin with the magic [GNUPG:] prefix.
-        #
-        # Calls methods on the response object for each valid token found,
-        # with the arg being the remainder of the status line.
+        """Reads all the stderr output from GPG, taking notice only of lines
+        that begin with the magic [GNUPG:] prefix.
+
+        Calls methods on the response object for each valid token found, with
+        the arg being the remainder of the status line.
+        """
         lines = []
         while True:
             line = stream.readline()
