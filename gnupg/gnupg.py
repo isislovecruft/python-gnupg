@@ -361,7 +361,7 @@ class GPG(object):
         result.stderr = ''.join(lines)
 
     def _read_data(self, stream, result):
-        # Read the contents of the file from GPG's stdout
+        """Read the contents of the file from GPG's stdout."""
         chunks = []
         while True:
             data = stream.read(1024)
@@ -369,15 +369,14 @@ class GPG(object):
                 break
             logger.debug("chunk: %r" % data[:256])
             chunks.append(data)
-        if _py3k:
+        if util._py3k:
             # Join using b'' or '', as appropriate
             result.data = type(data)().join(chunks)
         else:
             result.data = ''.join(chunks)
 
     def _collect_output(self, process, result, writer=None, stdin=None):
-        """
-        Drain the subprocesses output streams, writing the collected output
+        """Drain the subprocesses output streams, writing the collected output
         to the result. If a writer thread (writing to the subprocess) is given,
         make sure it's joined before returning. If a stdin stream is given,
         close it before returning.
@@ -408,9 +407,7 @@ class GPG(object):
         stdout.close()
 
     def _handle_io(self, args, file, result, passphrase=False, binary=False):
-        """
-        Handle a call to GPG - pass input data, collect output data.
-        """
+        """Handle a call to GPG - pass input data, collect output data."""
         p = self._open_subprocess(args, passphrase)
         if not binary:
             stdin = codecs.getwriter(self.encoding)(p.stdin)
