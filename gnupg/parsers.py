@@ -283,6 +283,7 @@ def _is_allowed(input):
          '--decrypt', '--decrypt-files',
          '--print-mds', '--print-md', 
          '--sign', '--clearsign', '--detach-sign',
+         '--armor', '--armour',
          '--gen-key', '--batch',
          '--decrypt', '--decrypt-files',
          '--import',
