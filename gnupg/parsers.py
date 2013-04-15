@@ -291,7 +291,7 @@ def _is_allowed(input):
          '--verify',
          '--version', '--output',
          '--status-fd', '--no-tty', '--passphrase-fd',
-         '--homedir', '--no-default-keyring',
+         '--homedir', '--no-default-keyring', '--default-key',
          '--keyring', '--secret-keyring', '--primary-keyring',
          '--fingerprint',])
 
