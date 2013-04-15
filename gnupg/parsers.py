@@ -62,18 +62,13 @@ def _fix_unsafe(shell_input):
         return None
 
 def _hyphenate(input, add_prefix=False):
-    """
-    Change underscores to hyphens so that object attributes can be easily
+    """Change underscores to hyphens so that object attributes can be easily
     tranlated to GPG option names.
 
-    :type input: C{str}
-    :param input: The attribute to hyphenate.
-
-    :type add_prefix: C{bool}
-    :param add_prefix: If True, add leading hyphens to the input.
-
-    :rtype: C{str}
-    :return: The :param:input with underscores changed to hyphens.
+    :param str input: The attribute to hyphenate.
+    :param bool add_prefix: If True, add leading hyphens to the input.
+    :rtype: str
+    :return: The ``input`` with underscores changed to hyphens.
     """
     ret  = '--' if add_prefix else ''
     ret += input.replace('_', '-')
