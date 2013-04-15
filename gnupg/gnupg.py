@@ -120,7 +120,8 @@ def _copy_data(instream, outstream):
     sent = 0
 
     try:
-        assert _is_stream(instream), "instream is not a stream"
+        #assert (util._is_stream(instream)
+        #        or isinstance(instream, file)), "instream not stream or file"
         assert isinstance(outstream, file), "outstream is not a file"
     except AssertionError as ae:
         logger.exception(ae)
