@@ -452,9 +452,9 @@ class GPG(object):
         if clearsign:
             args.append("--clearsign")
             if detach:
-                logger.debug(
+                logger.warn(
                     "Cannot use --clearsign and --detach-sign simultaneously.")
-                logger.debug(
+                logger.warn(
                     "Using default GPG behaviour: --clearsign only.")
         elif detach and not clearsign:
             args.append("--detach-sign")
