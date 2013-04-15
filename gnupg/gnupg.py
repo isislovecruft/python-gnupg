@@ -298,11 +298,11 @@ class GPG(object):
                 raise RuntimeError("Error invoking gpg: %s: %s"
                                    % (proc.returncode, result.stderr))
 
-    def make_args(self, args, passphrase=False):
-        """
-        Make a list of command line elements for GPG. The value of ``args``
-        will be appended. The ``passphrase`` argument needs to be True if
-        a passphrase will be sent to GPG, else False.
+    def _make_args(self, args, passphrase=False):
+        """Make a list of command line elements for GPG. The value of ``args``
+        will be appended only if it passes the checks in
+        :func:parsers._sanitise. The ``passphrase`` argument needs to be True
+        if a passphrase will be sent to GPG, else False.
         """
         cmd = [self.gpgbinary, '--status-fd 2 --no-tty']
         if self.gpghome:
