@@ -348,11 +348,10 @@ def _sanitise(*args):
     If you're asking, "Is this *really* necessary?": No. Not really. See:
         https://xkcd.com/1181/
 
-    :type args: C{str}
-    :param args: (optional) The boolean arguments which will be passed to the
-                 GnuPG process.
-    :rtype: C{str}
-    :param: :ivar:sanitised
+    :param str args: (optional) The boolean arguments which will be passed to
+                     the GnuPG process.
+    :rtype: str
+    :returns: ``sanitised``
     """
 
     def _check_arg_and_value(arg, value):
