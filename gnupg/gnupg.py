@@ -198,54 +198,42 @@ def _write_passphrase(stream, passphrase, encoding):
 
 class GPG(object):
     """Encapsulate access to the gpg executable"""
-    decode_errors = 'strict'
+    _decode_errors = 'strict'
 
-    result_map = {'crypt': Crypt,
-                  'delete': DeleteResult,
-                  'generate': GenKey,
-                  'import': ImportResult,
-                  'list': ListKeys,
-                  'sign': Sign,
-                  'verify': Verify,}
+    _result_map = {'crypt': Crypt,
+                   'delete': DeleteResult,
+                   'generate': GenKey,
+                   'import': ImportResult,
+                   'list': ListKeys,
+                   'sign': Sign,
+                   'verify': Verify,}
 
-    def __init__(self, gpgbinary=None, gpghome=None,
-                 verbose=False, use_agent=False,
-                 keyring=None, secring=None, pubring=None,
+    def __init__(self, gpgbinary=None, gpghome=None, verbose=False,
+                 use_agent=False, keyring=None, secring=None, pubring=None,
                  options=None):
-        """
-        Initialize a GnuPG process wrapper.
+        """Initialize a GnuPG process wrapper.
 
-        :type gpgbinary: C{str}
-        :param gpgbinary: Name for GnuPG binary executable. If the absolute
-                            path is not given, the evironment variable $PATH is
-                            searched for the executable and checked that the
-                            real uid/gid of the user has sufficient permissions.
-        :type gpghome: C{str}
-        :param gpghome: Full pathname to directory containing the public and
-                        private keyrings. Default is whatever GnuPG defaults
-                        to.
-
-        :type keyring: C{str}
-        :param keyring: raises C{DeprecationWarning}. Use :param:pubring.
-
-        :type secring: C{str}
-        :param secring: Name of alternative secret keyring file to use. If left
-                        unspecified, this will default to using 'secring.gpg'
-                        in the :param:gpghome directory, and create that file
-                        if it does not exist.
-
-        :type pubring: C{str}
-        :param pubring: Name of alternative public keyring file to use. If left
-                        unspecified, this will default to using 'pubring.gpg'
-                        in the :param:gpghome directory, and create that file
-                        if it does not exist.
-
-        :options: A list of additional options to pass to the GPG binary.
-
-        :rtype: C{Exception} or C{}
-        :raises: RuntimeError with explanation message if there is a problem
-                 invoking gpg.
-        :returns:
+        :param str gpgbinary: Name for GnuPG binary executable. If the absolute
+                              path is not given, the evironment variable $PATH
+                              is searched for the executable and checked that
+                              the real uid/gid of the user has sufficient
+                              permissions.
+        :param str gpghome: Full pathname to directory containing the public
+                            and private keyrings. Default is whatever GnuPG
+                            defaults to.
+        :param str keyring: raises :exc:DeprecationWarning. Use :param:pubring.
+        :param str secring: Name of alternative secret keyring file to use. If
+                            left unspecified, this will default to using
+                            'secring.gpg' in the :param:gpghome directory, and
+                            create that file if it does not exist.
+        :param str pubring: Name of alternative public keyring file to use. If
+                            left unspecified, this will default to using
+                            'pubring.gpg' in the :param:gpghome directory, and
+                            create that file if it does not exist.
+        :param list options: A list of additional options to pass to the GPG
+                             binary.
+        :raises: :exc:`RuntimeError` with explanation message if there is a
+                 problem invoking gpg.
         """
 
         logger.warn("")
