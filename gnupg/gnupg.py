@@ -292,7 +292,7 @@ class GPG(object):
             self.use_agent = use_agent
 
             proc = self._open_subprocess(["--version"])
-            result = self.result_map['list'](self)
+            result = self._result_map['list'](self)
             self._collect_output(proc, result, stdin=proc.stdin)
             if proc.returncode != 0:
                 raise RuntimeError("Error invoking gpg: %s: %s"
@@ -462,7 +462,7 @@ class GPG(object):
         if keyid:
             args.append(str("--default-key %s" % keyid))
 
-        result = self.result_map['sign'](self)
+        result = self._result_map['sign'](self)
         #We could use _handle_io here except for the fact that if the
         #passphrase is bad, gpg bails and you can't write the message.
         p = self._open_subprocess(args, passphrase is not None)
