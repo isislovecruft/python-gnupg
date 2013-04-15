@@ -328,7 +328,7 @@ class GPG(object):
         cmd = ' '.join(self._make_args(args, passphrase))
         if self.verbose:
             print(cmd)
-        logger.debug("%s", cmd)
+        logger.debug("_open_subprocess(): %s", cmd)
         return Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
 
     def _read_response(self, stream, result):
