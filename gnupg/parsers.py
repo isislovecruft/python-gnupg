@@ -449,14 +449,13 @@ def _sanitise(*args):
     return sanitised
 
 def _sanitise_list(arg_list):
-    """
-    A generator for running through a list of gpg options and sanitising them.
+    """A generator for iterating through a list of gpg options and sanitising
+    them.
 
-    :type arg_list: C{list}
-    :param arg_list: A list of options and flags for gpg.
-    :rtype: C{generator}
+    :param list arg_list: A list of options and flags for GnuPG.
+    :rtype: generator
     :return: A generator whose next() method returns each of the items in
-             :param:arg_list after calling :func:_sanitise with that item as a
+             ``arg_list`` after calling ``_sanitise()`` with that item as a
              parameter.
     """
     if isinstance(arg_list, list):
