@@ -111,11 +111,11 @@ import util
 
 
 def _copy_data(instream, outstream):
-    """
-    Copy data from one stream to another.
+    """Copy data from one stream to another.
 
-    :param instream: A file descriptor to read from.
-    :param outstream: The file descriptor of a tmpfile to write to.
+    :type instream: :class:`io.BytesIO` or :class:`io.StringIO` or file
+    :param instream: A byte stream or open file to read from.
+    :param file outstream: The file descriptor of a tmpfile to write to.
     """
     sent = 0
 
