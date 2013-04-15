@@ -281,7 +281,7 @@ def _is_allowed(input):
          '--delete-keys', '--delete-secret-keys',
          '--encrypt', '--encrypt-files',
          '--decrypt', '--decrypt-files',
-         '--print-mds', '--print-md', 
+         '--print-mds', '--print-md',
          '--sign', '--clearsign', '--detach-sign',
          '--armor', '--armour',
          '--gen-key', '--batch',
