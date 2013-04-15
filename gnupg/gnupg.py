@@ -843,7 +843,7 @@ class GPG(object):
         return result
 
     def encrypt(self, data, recipients, **kwargs):
-        """Encrypt the message contained in the string :param:data .
+        """Encrypt the message contained in ``data`` to ``recipients``.
 
         >>> import shutil
         >>> if os.path.exists("keys"):
