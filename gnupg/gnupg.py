@@ -460,7 +460,7 @@ class GPG(object):
             args.append("--detach-sign")
 
         if keyid:
-            args.append('--default-key "%s"' % keyid)
+            args.append(str("--default-key %s" % keyid))
 
         result = self.result_map['sign'](self)
         #We could use _handle_io here except for the fact that if the
