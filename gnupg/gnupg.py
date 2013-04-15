@@ -504,11 +504,11 @@ class GPG(object):
         signatures. If using detached signatures, the file containing the
         detached signature should be specified as the :param:data_filename.
 
-        :param file: A file descriptor object. Its type will be checked with
-                     :func:_is_file.
-        :param data_filename: A file containing the GPG signature data for
-                              :param:file. If given, :param:file is verified
-                              via this detached signature.
+        :param file file: A file descriptor object. Its type will be checked
+                          with :func:util._is_file.
+        :param file data_filename: A file containing the GPG signature data for
+                                   :param:file. If given, :param:file is
+                                   verified via this detached signature.
         """
         ## attempt to wrap any escape characters in quotes:
         safe_file = _fix_unsafe(file)
