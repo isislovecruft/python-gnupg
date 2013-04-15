@@ -307,9 +307,10 @@ class GPG(object):
         cmd = [self.gpgbinary, '--status-fd 2 --no-tty']
         if self.gpghome:
             cmd.append('--homedir "%s"' % self.gpghome)
-        if self.keyring:
-            cmd.append('--no-default-keyring --keyring %s --secret-keyring %s'
-                       % (self.pubring, self.secring))
+        if self.pubring:
+            cmd.append('--no-default-keyring --keyring %s' % self.pubring)
+            if self.secring:
+                cmd.append('--secret-keyring %s' % self.secring)
         if passphrase:
             cmd.append('--batch --passphrase-fd 0')
         if self.use_agent:
