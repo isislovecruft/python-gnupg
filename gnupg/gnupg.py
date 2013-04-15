@@ -478,7 +478,7 @@ class GPG(object):
         return result
 
     def verify(self, data):
-        """Verify the signature on the contents of the string 'data'
+        """Verify the signature on the contents of the string ``data``.
 
         >>> gpg = GPG(gpghome="keys")
         >>> input = gpg.gen_key_input(Passphrase='foo')
