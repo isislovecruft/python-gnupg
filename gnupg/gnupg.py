@@ -445,9 +445,9 @@ class GPG(object):
         """Create a signature for a  file."""
         logger.debug("GPG._sign_file(): %s", file)
         if binary:
-            args = ['-s']
+            args = ['--sign']
         else:
-            args = ['-sa']
+            args = ['--sign --armor']
 
         if clearsign:
             args.append("--clearsign")
