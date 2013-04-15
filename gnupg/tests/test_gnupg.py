@@ -25,6 +25,7 @@ else:
     import unittest
 
 import gnupg
+from gnupg import parsers
 
 __author__  = gnupg.__author__
 __date__    = gnupg.__date__
@@ -42,7 +43,7 @@ def _make_tempfile(*args, **kwargs):
     return tempfile.TemporaryFile(dir=tempfile.gettempdir(),
                                   *args, **kwargs)
 
-logger = logging.getLogger(gnupg.logger.name)
+logger = logging.getLogger('gnupg')
 
 KEYS_TO_IMPORT = """-----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1.4.9 (MingW32)
@@ -104,9 +105,7 @@ def is_list_with_len(o, n):
     return isinstance(o, list) and len(o) == n
 
 def compare_keys(k1, k2):
-    """
-    Compare ASCII keys.
-    """
+    """Compare ASCII keys."""
     k1 = k1.split('\n')
     k2 = k2.split('\n')
     del k1[1] # remove version lines
@@ -123,9 +122,7 @@ class ResultStringIO(io.StringIO):
 
 
 class GPGTestCase(unittest.TestCase):
-    """
-    A group of :class:`unittest.TestCase` unittests for testing python-gnupg.
-    """
+    """:class:`unittest.TestCase <TestCase>`s for python-gnupg."""
 
     @classmethod
     def setUpClass(cls):
@@ -138,9 +135,7 @@ class GPGTestCase(unittest.TestCase):
         pass
 
     def setUp(self):
-        """
-        This method is called once per self.test_* method.
-        """
+        """This method is called once per self.test_* method."""
         hd = HOME_DIR
         if os.path.exists(hd):
             self.assertTrue(os.path.isdir(hd), "Not a directory: %s" % hd)
@@ -317,13 +312,11 @@ class GPGTestCase(unittest.TestCase):
         """
         key = self.generate_key("OMG Moar Coffee", "giveitto.me",
                                 subkey_type='ELG-E')
-        self.assertIsNotNone(key)
+        self.assertIsNotNone(key.type)
         self.assertIsNotNone(key.fingerprint)
 
     def test_key_generation_with_invalid_key_type(self):
-        """
-        Test that key generation handles invalid key type.
-        """
+        """Test that key generation handles invalid key type."""
         params = {
             'Key-Type': 'INVALID',
             'Key-Length': 1024,
