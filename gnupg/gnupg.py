@@ -250,17 +250,10 @@ class GPG(object):
         self.gpgbinary = util._find_gpgbinary(gpgbinary)
 
         if keyring is not None:
-            try:
-                raise DeprecationWarning(
-                    "Option 'keyring' changing to 'secring'")
-            except DeprecationWarning as dw:
-                log.warn(dw.message)
-            finally:
-                pubring = keyring
+            raise DeprecationWarning("Option 'keyring' changing to 'secring'")
 
         secring = 'secring.gpg' if secring is None else _fix_unsafe(secring)
         pubring = 'pubring.gpg' if pubring is None else _fix_unsafe(pubring)
-
         self.secring = os.path.join(self.gpghome, secring)
         self.pubring = os.path.join(self.gpghome, pubring)
         ## XXX should eventually be changed throughout to 'secring', but until
