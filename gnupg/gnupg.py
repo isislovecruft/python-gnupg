@@ -476,50 +476,43 @@ class GPG(object):
         f.close()
         return result
 
-    def verify_file(self, file, data_filename=None):
-        """
-        Verify the signature on the contents of a file or file-like
+    def verify_file(self, file, sig_file=None):
+        """Verify the signature on the contents of a file or file-like
         object. Can handle embedded signatures as well as detached
         signatures. If using detached signatures, the file containing the
-        detached signature should be specified as the :param:data_filename.
+        detached signature should be specified as the ``sig_file``.
 
         :param file file: A file descriptor object. Its type will be checked
-                          with :func:util._is_file.
-        :param file data_filename: A file containing the GPG signature data for
-                                   :param:file. If given, :param:file is
-                                   verified via this detached signature.
+                          with :func:`util._is_file`.
+        :param str sig_file: A file containing the GPG signature data for
+                             ``file``. If given, ``file`` is verified via this
+                             detached signature.
         """
-        ## attempt to wrap any escape characters in quotes:
-        safe_file = _fix_unsafe(file)
 
-        ## check that :param:file is actually a file:
-        util._is_file(safe_file)
-
-        logger.debug('verify_file: %r, %r', safe_file, data_filename)
+        fn = None
         result = self._result_map['verify'](self)
-        args = ['--verify']
-        if data_filename is None:
-            self._handle_io(args, safe_file, result, binary=True)
+
+        if sig_file is None:
+            logger.debug("verify_file(): Handling embedded signature")
+            args = ["--verify"]
+            proc = self._open_subprocess(args)
+            writer = _threaded_copy_data(file, proc.stdin)
+            self._collect_output(proc, result, writer, stdin=proc.stdin)
         else:
-            safe_data_filename = _fix_unsafe(data_filename)
-
-            logger.debug('Handling detached verification')
-            fd, fn = tempfile.mkstemp(prefix='pygpg')
-
-            with open(safe_file) as sf:
-                contents = sf.read()
-                os.write(fd, s)
-                os.close(fd)
-                logger.debug('Wrote to temp file: %r', contents)
-                args.append(fn)
-                args.append('"%s"' % safe_data_filename)
-
-                try:
-                    p = self._open_subprocess(args)
-                    self._collect_output(p, result, stdin=p.stdin)
-                finally:
-                    os.unlink(fn)
-
+            if not util._is_file(sig_file):
+                logger.debug("verify_file(): '%r' is not a file" % sig_file)
+                return result
+            logger.debug('verify_file(): Handling detached verification')
+            sig_fh = None
+            try:
+                sig_fh = open(sig_file)
+                args = ["--verify %s - " % sig_fh.name]
+                proc = self._open_subprocess(args)
+                writer = _threaded_copy_data(file, proc.stdin)
+                self._collect_output(proc, result, stdin=proc.stdin)
+            finally:
+                if sig_fh and not sig_fh.closed:
+                    sig_fh.close()
         return result
 
     #
