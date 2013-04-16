@@ -414,54 +414,76 @@ def _sanitise(*args):
                                          % val)
         return safe_option
 
-    is_flag = lambda x: x.startswith('-')
-    checked = []
+    is_flag = lambda x: x.startswith('--')
+
+    def _make_filo(args_string):
+        filo = arg.split(' ')
+        filo.reverse()
+        logger.debug("_make_filo(): Converted to reverse list: %s" % filo)
+        return filo
+
+    def _make_groups(filo):
+        groups = {}
+        while len(filo) >= 1:
+            last = filo.pop()
+            if is_flag(last):
+                logger.debug("_make_groups(): Got arg: %s" % last)
+                if last == '--verify':
+                    groups[last] = str(filo.pop())
+                    ## accept the read-from-stdin arg:
+                    if len(filo) >= 1 and filo[len(filo)-1] == '-':
+                        groups[last] += str(' - \'\'') ## gross hack
+                else:
+                    groups[last] = str()
+                while len(filo) > 1 and not is_flag(filo[len(filo)-1]):
+                    logger.debug("_make_groups(): Got value: %s"
+                                 % filo[len(filo)-1])
+                    groups[last] += (filo.pop() + " ")
+                else:
+                    if len(filo) == 1 and not is_flag(filo[0]):
+                        logger.debug("_make_groups(): Got value: %s" % filo[0])
+                        groups[last] += filo.pop()
+            else:
+                logger.debug("_make_groups(): Got solitary value: %s" % last)
+                groups["xxx"] = last
+        return groups
+
+    def _check_groups(groups):
+        logger.debug("_check_groups(): Got groups: %s" % groups)
+        checked_groups = []
+        for a,v in groups.items():
+            v = None if len(v) == 0 else v
+            safe = _check_option(a, v)
+            if safe is not None and not safe.strip() == "":
+                logger.debug("_check_groups(): appending option: %s" % safe)
+                checked_groups.append(safe)
+            else:
+                logger.debug("_check_groups(): dropped option '%s %s'" % (a,v))
+        return checked_groups
+
     if args is not None:
+        option_groups = {}
         for arg in args:
+            ## if we're given a string with a bunch of options in it split them
+            ## up and deal with them separately
             if isinstance(arg, str):
                 logger.debug("_sanitise(): Got arg string: %s" % arg)
-                ## if we're given a string with a bunch of options in it split
-                ## them up and deal with them separately
                 if arg.find(' ') > 0:
-                    filo = arg.split()
-                    filo.reverse()
-                    new_arg, new_value = str(), str()
-                    while len(filo) > 0:
-                        if not is_flag(filo[0]):
-                            logger.debug("_sanitise(): Got non-flag arg %s"
-                                         % filo[0])
-                            new_value += (filo.pop() + " ")
-                        else:
-                            logger.debug("_sanitise(): Got arg: %s" % filo[0])
-                            new_arg = filo.pop()
-                            if len(filo) > 0:
-                                while not is_flag(filo[0]):
-                                    logger.debug("_sanitise(): Got value: %s"
-                                                 % filo[0])
-                                    new_value += (filo.pop() + " ")
-                            safe = _check_option(new_arg, new_value)
-                            if safe is not None and not safe.strip() == "":
-                                logger.debug("_sanitise(): appending option: %s"
-                                             % safe)
-                                checked.append(safe)
+                    filo = _make_filo(arg)
+                    option_groups.update(_make_groups(filo))
                 else:
-                    safe = _check_option(arg, None)
-                    if safe is not None:
-                        logger.debug("_sanitise(): appending args: %s" % safe)
-                        checked.append(safe)
-                    else:
-                        logger.debug("_sanitise(): got None for safe")
+                    option_groups.update({ arg: "" })
             elif isinstance(arg, list):
                 logger.debug("_sanitise(): Got arg list: %s" % arg)
-                allow = _one_flag(arg)
-                if allow is not None:
-                    checked.append(allow)
+                arg.reverse()
+                option_groups.update(_make_groups(arg))
             else:
-                logger.debug("_sanitise(): got non string or list arg: %s"
-                             % arg)
-
-    sanitised = ' '.join(x for x in checked)
-    return sanitised
+                logger.debug("_sanitise(): Got non str or list arg: %s" % arg)
+        checked = _check_groups(option_groups)
+        sanitised = ' '.join(x for x in checked)
+        return sanitised
+    else:
+        logger.debug("_sanitise(): Got None for args")
 
 def _sanitise_list(arg_list):
     """A generator for iterating through a list of gpg options and sanitising
