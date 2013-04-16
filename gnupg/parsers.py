@@ -511,30 +511,48 @@ class Verify(object):
     TRUST_FULLY = 3
     TRUST_ULTIMATE = 4
 
-    TRUST_LEVELS = {
-        "TRUST_UNDEFINED" : TRUST_UNDEFINED,
-        "TRUST_NEVER" : TRUST_NEVER,
-        "TRUST_MARGINAL" : TRUST_MARGINAL,
-        "TRUST_FULLY" : TRUST_FULLY,
-        "TRUST_ULTIMATE" : TRUST_ULTIMATE,
-    }
+    TRUST_LEVELS = { "TRUST_UNDEFINED" : TRUST_UNDEFINED,
+                     "TRUST_NEVER" : TRUST_NEVER,
+                     "TRUST_MARGINAL" : TRUST_MARGINAL,
+                     "TRUST_FULLY" : TRUST_FULLY,
+                     "TRUST_ULTIMATE" : TRUST_ULTIMATE, }
+
+    #: True if the signature is valid, False otherwise.
+    valid = False
+    #: A string describing the status of the signature verification.
+    #: Can be one of ``'signature bad'``, ``'signature good'``,
+    #: ``'signature valid'``, ``'signature error'``, ``'decryption failed'``,
+    #: ``'no public key'``, ``'key exp'``, or ``'key rev'``.
+    status = None
+    #: The fingerprint of the signing keyid.
+    fingerprint = None
+    #: The fingerprint of the corresponding public key, which may be different
+    #: if the signature was created with a subkey.
+    pubkey_fingerprint = None
+    #: The keyid of the signing key.
+    key_id = None
+    #: xxx I'm not sure how this is different to key_id.
+    signature_id = None
+    #: The creation date of the signing key.
+    creation_date = None
+    #: The timestamp of the purported signature, if we are unable to parse it.
+    timestamp = None
+    #: The userid of the signing key which was used to create the signature.
+    username = None
+    #: When the signing key is due to expire.
+    expire_timestamp = None
+    #: The timestamp for when the signature was created.
+    sig_timestamp = None
+    #: A number 0-4 describing the trust level of the signature.
+    trust_level = None
+    #: The string corresponding to the ``trust_level`` number.
+    trust_text = None
 
     def __init__(self, gpg):
         self.gpg = gpg
-        self.valid = False
-        self.fingerprint = self.creation_date = self.timestamp = None
-        self.signature_id = self.key_id = None
-        self.username = None
-        self.status = None
-        self.pubkey_fingerprint = None
-        self.expire_timestamp = None
-        self.sig_timestamp = None
-        self.trust_text = None
-        self.trust_level = None
 
     def __nonzero__(self):
         return self.valid
-
     __bool__ = __nonzero__
 
     def handle_status(self, key, value):
@@ -558,7 +576,6 @@ class Verify(object):
              self.creation_date,
              self.sig_timestamp,
              self.expire_timestamp) = value.split()[:4]
-            # may be different if signature is made with a subkey
             self.pubkey_fingerprint = value.split()[-1]
             self.status = 'signature valid'
         elif key == "SIG_ID":
