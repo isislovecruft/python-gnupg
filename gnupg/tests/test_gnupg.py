@@ -541,17 +541,11 @@ class GPGTestCase(unittest.TestCase):
     def test_signature_file(self):
         """Test that signing a message file works."""
         key = self.generate_key("Leonard Adleman", "rsa.com")
-        message = "Someone should add GCM block cipher mode to PyCrypto."
-        message_fn = os.path.join(tempfile.gettempdir(), 'test_signature_file')
-        with open(message_fn, 'w+b') as msg:
-            msg.write(message)
-
-        message_file = buffer(open(message_fn, "rb").read())
-        mf = io.BytesIO(message_file)
-
-        sig = self.gpg.sign(mf, keyid=key.fingerprint,
-                            passphrase='leonardadleman')
-        self.assertTrue(sig, "Good passphrase should succeed")
+        message_file = os.path.join(_files, 'cypherpunk_manifesto')
+        with open(message_file) as msg:
+            sig = self.gpg.sign(msg, keyid=key.fingerprint,
+                                passphrase='leonardadleman')
+            self.assertTrue(sig, "I thought I typed my password correctly...")
 
     def test_signature_string_verification(self):
         """Test verification of a signature from a message string."""
