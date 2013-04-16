@@ -294,51 +294,39 @@ class GPGTestCase(unittest.TestCase):
         self.assertGreater(key_input.find('Francisco Ferrer'), 0)
 
     def test_rsa_key_generation(self):
-        """
-        Test that RSA key generation succeeds.
-        """
-        key = self.generate_key("Barbara Brown", "beta.com")
+        """Test that RSA key generation succeeds."""
+        key = self.generate_key("Ralph Merkle", "xerox.com")
         self.assertIsNotNone(key.type)
         self.assertIsNotNone(key.fingerprint)
 
     def test_rsa_key_generation_with_unicode(self):
-        """
-        Test that RSA key generation succeeds with unicode characters.
-        """
+        """Test that RSA key generation succeeds with unicode characters."""
         key = self.generate_key("Anaïs de Flavigny", "êtrerien.fr")
         self.assertIsNotNone(key.type)
         self.assertIsNotNone(key.fingerprint)
 
     def test_rsa_key_generation_with_subkey(self):
-        """
-        Test that RSA key generation succeeds with additional subkey.
-        """
-        key = self.generate_key("Need Caffeine", "nowplea.se",
+        """Test that RSA key generation succeeds with additional subkey."""
+        key = self.generate_key("John Gilmore", "isapu.nk",
                                 subkey_type='RSA')
         self.assertIsNotNone(key.type)
         self.assertIsNotNone(key.fingerprint)
 
     def test_dsa_key_generation(self):
-        """
-        Test that DSA key generation succeeds.
-        """
-        key = self.generate_key("DSA Signonly", "test.com")
+        """Test that DSA key generation succeeds."""
+        key = self.generate_key("Ross Anderson", "bearli.on")
         self.assertIsNotNone(key.type)
         self.assertIsNotNone(key.fingerprint)
 
     def test_dsa_key_generation_with_unicode(self):
-        """
-        Test that DSA key generation succeeds with unicode characters.
-        """
+        """Test that DSA key generation succeeds with unicode characters."""
         key = self.generate_key("破壊合計する", "破壊合計する.日本")
         self.assertIsNotNone(key.type)
         self.assertIsNotNone(key.fingerprint)
 
     def test_dsa_key_generation_with_subkey(self):
-        """
-        Test that RSA key generation succeeds with additional subkey.
-        """
-        key = self.generate_key("OMG Moar Coffee", "giveitto.me",
+        """Test that RSA key generation succeeds with additional subkey."""
+        key = self.generate_key("Eli Biham", "bearli.on",
                                 subkey_type='ELG-E')
         self.assertIsNotNone(key.type)
         self.assertIsNotNone(key.fingerprint)
@@ -528,26 +516,26 @@ class GPGTestCase(unittest.TestCase):
 
     def test_signature_algorithm(self):
         """Test that determining the signing algorithm works."""
-        key = self.generate_key("Werner Koch", "gnupg.org")
-        message = "Damn, I really wish GnuPG had ECC support."
+        key = self.generate_key("Ron Rivest", "rsa.com")
+        message = "Someone should add GCM block cipher mode to PyCrypto."
         sig = self.gpg.sign(message, keyid=key.fingerprint,
-                            passphrase='wernerkoch')
+                            passphrase='ronrivest')
         print "ALGORITHM:\n", sig.sig_algo
         self.assertIsNotNone(sig.sig_algo)
 
     def test_signature_string_bad_passphrase(self):
         """Test that signing and verification works."""
-        key = self.generate_key("Ron Rivest", "rsa.com")
-        message = 'Hello, André!'
+        key = self.generate_key("Taher ElGamal", "cryto.me")
+        message = 'أصحاب المصالح لا يحبون الثوراتز'
         sig = self.gpg.sign(message, keyid=key.fingerprint, passphrase='foo')
         self.assertFalse(sig, "Bad passphrase should fail")
 
     def test_signature_string_alternate_encoding(self):
-        key = self.generate_key("Adi Shamir", "rsa.com")
+        key = self.generate_key("Nos Oignons", "nos-oignons.net")
         self.gpg.encoding = 'latin-1'
-        message = 'Hello, André!'
+        message = "Mêle-toi de tes oignons"
         sig = self.gpg.sign(message, keyid=key.fingerprint,
-                            passphrase='adishamir')
+                            passphrase='nosoignons')
         self.assertTrue(sig)
 
     def test_signature_file(self):
