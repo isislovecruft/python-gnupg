@@ -412,10 +412,6 @@ class GPG(object):
         if isinstance(message, file):
             result = self._sign_file(message, **kwargs)
         elif not util._is_stream(message):
-            if isinstance(message, str):
-                if not util._py3k:
-                    message = unicode(message, self.encoding)
-                message = message.encode(self.encoding)
             f = util._make_binary_stream(message, self.encoding)
             result = self._sign_file(f, **kwargs)
             f.close()
