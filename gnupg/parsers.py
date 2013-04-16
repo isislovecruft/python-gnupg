@@ -730,19 +730,14 @@ class Sign(object):
 
     #: The type of signature created.
     sig_type = None
-
     #: The algorithm used to create the signature.
     sig_algo = None
-
     #: The hash algorithm used to create the signature.
     sig_hash_also = None
-
     #: The fingerprint of the signing keyid.
     fingerprint = None
-
     #: The timestamp on the signature.
     timestamp = None
-
     #: xxx fill me in
     what = None
 
