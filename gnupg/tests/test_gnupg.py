@@ -46,6 +46,8 @@ def _make_tempfile(*args, **kwargs):
                                   *args, **kwargs)
 
 logger = logging.getLogger('gnupg')
+_here  = os.path.join(os.path.join(util._repo, 'gnupg'), 'tests')
+_files = os.path.join(_here, 'files')
 
 KEYS_TO_IMPORT = """-----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1.4.9 (MingW32)
@@ -146,6 +148,26 @@ class GPGTestCase(unittest.TestCase):
         self.gpg = gnupg.GPG(gpghome=hd, gpgbinary='gpg')
         self.pubring = os.path.join(self.homedir, 'pubring.gpg')
         self.secring = os.path.join(self.homedir, 'secring.gpg')
+
+    def test_parsers_fix_unsafe(self):
+        """Test that unsafe inputs are quoted out and then ignored."""
+        shell_input = "\"&coproc /bin/sh\""
+        fixed = parsers._fix_unsafe(shell_input)
+        print fixed
+        test_file = os.path.join(_files, 'cypherpunk_manifesto')
+        self.assertTrue(os.path.isfile(test_file))
+        has_shell = self.gpg.verify_file(test_file, fixed)
+        self.assertFalse(has_shell.valid)
+
+    def test_parsers_is_hex_valid(self):
+        """Test that valid hexidecimal passes the parsers._is_hex() check"""
+        valid_hex = '0A6A58A14B5946ABDE18E207A3ADB67A2CDB8B35'
+        self.assertTrue(parsers._is_hex(valid_hex))
+
+    def test_parsers_is_hex_invalid(self):
+        """Test that invalid hexidecimal fails the parsers._is_hex() check"""
+        invalid_hex = 'cipherpunks write code'
+        self.assertFalse(parsers._is_hex(invalid_hex))
 
     def test_gpghome_creation(self):
         """Test the environment by ensuring that setup worked."""
@@ -641,7 +663,10 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_file_encryption_and_decryption ends")
 
 
-suites = { 'basic': set(['test_gpghome_creation',
+suites = { 'parsers': set(['test_parsers_fix_unsafe',
+                           'test_parsers_is_hex_valid',
+                           'test_parsers_is_hex_invalid',]),
+           'basic': set(['test_gpghome_creation',
                          'test_gpg_binary',
                          'test_gpg_binary_not_abs',
                          'test_gpg_binary_version_str',
