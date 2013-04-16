@@ -17,6 +17,7 @@ import os
 import shutil
 import sys
 import tempfile
+import time
 
 ## Use unittest2 if we're on Python2.6 or less:
 if sys.version_info.major == 2 and sys.version_info.minor <= 6:
@@ -544,10 +545,12 @@ class GPGTestCase(unittest.TestCase):
 
     def test_signature_string_verification(self):
         """Test verification of a signature from a message string."""
-        key = self.generate_key("Andrew Able", "alpha.com")
-        message = 'Hello, André!'
+        key = self.generate_key("Bruce Schneier", "schneier.com")
+        message  = '...the government uses the general fear of '
+        message += '[hackers in popular culture] to push for more power'
         sig = self.gpg.sign(message, keyid=key.fingerprint,
-                            passphrase='andrewable')
+                            passphrase='bruceschneier')
+        now = time.mktime(time.gmtime())
         self.assertTrue(sig, "Good passphrase should succeed")
         verified = self.gpg.verify(sig.data)
         self.assertIsNotNone(verified.fingerprint)
@@ -556,13 +559,12 @@ class GPGTestCase(unittest.TestCase):
             logger.debug("ver: %r", verified.fingerprint)
         self.assertEqual(key.fingerprint, verified.fingerprint,
                          "Fingerprints must match")
-        self.assertEqual(verified.trust_level, verified.TRUST_ULTIMATE)
-        self.assertEqual(verified.trust_text, 'TRUST_ULTIMATE')
+        self.assertEqual(verified.status, 'signature valid')
+        self.assertAlmostEqual(int(now), int(verified.timestamp), delta=1000)
+        self.assertEqual(
+            verified.username,
+            u'Bruce Schneier (python-gnupg tester) <bruceschneier@schneier.com>')
 
-    def test_signature_file_verification(self):
-        """Test verfication of a signature on a message file."""
-        key = self.generate_key("Taher ElGamal", "cryto.me")
-        message = 'أصحاب المصالح لا يحبون الثوراتز'
         sig = self.gpg.sign(message, keyid=key.fingerprint,
                             passphrase='taherelgamal')
         self.assertTrue(sig, "Good passphrase should succeed")
