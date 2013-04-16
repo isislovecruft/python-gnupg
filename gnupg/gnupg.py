@@ -424,7 +424,7 @@ class GPG(object):
     def _sign_file(self, file, keyid=None, passphrase=None, clearsign=True,
                    detach=False, binary=False):
         """Create a signature for a  file."""
-        logger.debug("GPG._sign_file(): %s", file)
+        logger.debug("_sign_file(): %s", file)
         if binary:
             args = ['--sign']
         else:
@@ -433,10 +433,8 @@ class GPG(object):
         if clearsign:
             args.append("--clearsign")
             if detach:
-                logger.warn(
-                    "Cannot use --clearsign and --detach-sign simultaneously.")
-                logger.warn(
-                    "Using default GPG behaviour: --clearsign only.")
+                logger.warn("Cannot use both --clearsign and --detach-sign.")
+                logger.warn("Using default GPG behaviour: --clearsign only.")
         elif detach and not clearsign:
             args.append("--detach-sign")
 
@@ -444,8 +442,8 @@ class GPG(object):
             args.append(str("--default-key %s" % keyid))
 
         result = self._result_map['sign'](self)
-        #We could use _handle_io here except for the fact that if the
-        #passphrase is bad, gpg bails and you can't write the message.
+        ## We could use _handle_io here except for the fact that if the
+        ## passphrase is bad, gpg bails and you can't write the message.
         p = self._open_subprocess(args, passphrase is not None)
         try:
             stdin = p.stdin
@@ -453,7 +451,7 @@ class GPG(object):
                 _write_passphrase(stdin, passphrase, self.encoding)
             writer = _threaded_copy_data(file, stdin)
         except IOError:
-            logging.exception("error writing message")
+            logger.exception("_sign_file(): Error writing message")
             writer = None
         self._collect_output(p, result, writer, stdin)
         return result
