@@ -137,26 +137,25 @@ def _copy_data(instream, outstream):
         if len(data) == 0:
             break
         sent += len(data)
-        logger.debug("sending chunk (%d): %r", sent, data[:256])
+        logger.debug("_copy_data(): sending chunk (%d):\n%s" % (sent, data[:256]))
         try:
             outstream.write(data)
         except UnicodeError:
             try:
                 outstream.write(data.encode(enc))
             except IOError:
-                logger.exception('Error sending data: Broken pipe')
+                logger.exception('_copy_data(): Error sending data: Broken pipe')
                 break
         except IOError:
-            # Can sometimes get 'broken pipe' errors even when the
-            # data has all been sent
-            logger.exception('Error sending data: Broken pipe')
+            # Can get 'broken pipe' errors even when all data was sent
+            logger.exception('_copy_data(): Error sending data: Broken pipe')
             break
     try:
         outstream.close()
     except IOError:
-        logger.exception('Got IOError while trying to close FD outstream')
+        logger.exception('_copy_data(): Got IOError while closing %s' % outstream)
     else:
-        logger.debug("closed output, %d bytes sent", sent)
+        logger.debug("_copy_data(): Closed output, %d bytes sent." % sent)
 
 def _threaded_copy_data(instream, outstream):
     """Copy data from one stream to another in a separate thread.
