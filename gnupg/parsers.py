@@ -269,12 +269,8 @@ def _is_allowed(input):
     ## assertion will check that GPG will recognise them
     ##
     ## xxx checkout the --store option for creating rfc1991 data packets
-    ## xxx also --multifile use with verify encrypt & decrypt
     ## xxx key fetching/retrieving options: [fetch_keys, merge_only, recv_keys]
     ##
-    ## xxx which ones do we want as defaults?
-    ##     eg, --no-show-photos would mitigate things like
-    ##     https://www-01.ibm.com/support/docview.wss?uid=swg21620982
     _allowed = frozenset(
         ['--list-keys', '--list-key', '--fixed-list-mode',
          '--list-secret-keys', '--list-public-keys',
