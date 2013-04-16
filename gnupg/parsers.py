@@ -34,6 +34,7 @@ import util
 
 
 ESCAPE_PATTERN = re.compile(r'\\x([0-9a-f][0-9a-f])', re.I)
+HEXIDECIMAL    = re.compile('([0-9A-F]{2})+')
 
 
 class ProtectedOption(Exception):
@@ -327,6 +328,17 @@ def _is_allowed(input):
                 return input
     return None
 
+def _is_hex(string):
+    """Check that a string is hexidecimal, with alphabetic characters
+    capitalized and without whitespace.
+
+    :param str string: The string to check.
+    """
+    matched = HEXIDECIMAL.match(string)
+    if matched is not None and len(matched.group()) >= 2:
+        return True
+    return False
+
 def _sanitise(*args):
     """Take an arg or the key portion of a kwarg and check that it is in the
     set of allowed GPG options and flags, and that it has the correct
@@ -392,6 +404,12 @@ def _sanitise(*args):
                                 safe_option += (val + " ")
                             else:
                                 logger.debug("_check_option(): %s not file: %s"
+                                             % (flag, val))
+                        elif flag in ['--default-key']:
+                            if _is_hex(val):
+                                safe_option += (val + " ")
+                            else:
+                                logger.debug("_check_option(): '%s %s' not hex."
                                              % (flag, val))
                         else:
                             safe_option += (val + " ")
