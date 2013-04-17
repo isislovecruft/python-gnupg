@@ -242,16 +242,19 @@ class GPGTestCase(unittest.TestCase):
                         "Empty list expected...got instead: %s"
                         % str(private_keys))
 
-
-    def test_copy_data(self):
-        """
-        XXX implement me
-        XXX add me to a test suite
-
-        Test that _copy_data() is able to duplicate byte streams.
-        """
-        instream = io.BytesIO("This is a string of bytes mapped in memory.")
-        outstream = str("And this one is just a string.")
+    def test_copy_data_bytesio(self):
+        """Test that _copy_data() is able to duplicate byte streams."""
+        message = "This is a BytesIO string string in memory."
+        instream = io.BytesIO(message)
+        self.assertEqual(unicode(message), instream.getvalue())
+        outstream = ResultStringIO(u'result:')
+        copied = outstream
+        util._copy_data(instream, outstream)
+        self.assertTrue(outstream.readable())
+        self.assertTrue(outstream.closed)
+        self.assertFalse(instream.closed)
+        self.assertTrue(copied.closed)
+        #self.assertEqual(instream.getvalue()[6:], outstream.getvalue())
 
     def generate_key_input(self, real_name, email_domain, key_length=None,
                            key_type=None, subkey_type=None, passphrase=None):
@@ -668,7 +671,8 @@ class GPGTestCase(unittest.TestCase):
 
 suites = { 'parsers': set(['test_parsers_fix_unsafe',
                            'test_parsers_is_hex_valid',
-                           'test_parsers_is_hex_invalid',]),
+                           'test_parsers_is_hex_invalid',
+                           'test_copy_data_bytesio',]),
            'basic': set(['test_gpghome_creation',
                          'test_gpg_binary',
                          'test_gpg_binary_not_abs',
