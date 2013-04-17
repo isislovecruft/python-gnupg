@@ -677,6 +677,17 @@ class GPG(object):
                 getattr(result, keyword)(L)
         return result
 
+    def list_sigs(self, *keyids):
+        """xxx implement me
+
+        The GnuPG option '--show-photos', according to the GnuPG manual, "does
+        not work with --with-colons", but since we can't rely on all versions
+        of GnuPG to explicitly handle this correctly, we should probably
+        include it in the args.
+        """
+        ## we will want to include "--no-show-photos" in the args
+        raise NotImplemented("Functionality for '--list-sigs' not implemented.")
+
     def gen_key(self, input):
         """
         Generate a key; you might use gen_key_input() to create the control
