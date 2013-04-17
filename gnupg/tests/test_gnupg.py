@@ -29,24 +29,24 @@ from gnupg import parsers
 from gnupg import util
 
 __author__  = gnupg.__author__
-__date__    = gnupg.__date__
 __version__ = gnupg.__version__
 
-REPO_DIR = os.getcwd()
-HOME_DIR = os.path.join(REPO_DIR, 'keys')
 
-tempfile.tempdir = os.path.join(REPO_DIR, 'tmp_test')
+logger = logging.getLogger('gnupg')
+_here  = os.path.join(os.path.join(util._repo, 'gnupg'), 'tests')
+_files = os.path.join(_here, 'files')
+
+tempfile.tempdir = os.path.join(_here, 'tmp_test')
 if not os.path.isdir(tempfile.gettempdir()):
     os.mkdir(tempfile.gettempdir())
+
+HOME_DIR = tempfile.tempdir
 
 @wraps(tempfile.TemporaryFile)
 def _make_tempfile(*args, **kwargs):
     return tempfile.TemporaryFile(dir=tempfile.gettempdir(),
                                   *args, **kwargs)
 
-logger = logging.getLogger('gnupg')
-_here  = os.path.join(os.path.join(util._repo, 'gnupg'), 'tests')
-_files = os.path.join(_here, 'files')
 
 KEYS_TO_IMPORT = """-----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1.4.9 (MingW32)
@@ -215,7 +215,7 @@ class GPGTestCase(unittest.TestCase):
         cmd = self.gpg._make_args(None, False)
         expected = ['/usr/bin/gpg',
                     '--status-fd 2 --no-tty',
-                    '--homedir "%s"' % os.path.join(os.getcwd(), 'keys'),
+                    '--homedir "%s"' % HOME_DIR,
                     '--no-default-keyring --keyring %s' % self.pubring,
                     '--secret-keyring %s' % self.secring]
         self.assertListEqual(cmd, expected)
