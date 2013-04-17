@@ -645,13 +645,12 @@ class GPG(object):
         >>> pubkeys = gpg.list_keys()
         >>> assert print1 in pubkeys.fingerprints
         >>> assert print2 in pubkeys.fingerprints
-
         """
 
         which='public-keys'
         if secret:
             which='secret-keys'
-        args = "--list-%s --fixed-list-mode --fingerprint --with-colons" % (which,)
+        args = "--list-%s --fixed-list-mode --fingerprint --with-colons --no-show-photos" % (which,)
         args = [args]
         p = self._open_subprocess(args)
 
