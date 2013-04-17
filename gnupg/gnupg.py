@@ -242,17 +242,6 @@ class GPG(object):
         self.secring = os.path.join(self.gpghome, secring)
         self.pubring = os.path.join(self.gpghome, pubring)
 
-        #for ring in [self.secring, self.pubring]:
-        #    if ring and not os.path.isfile(ring):
-        #        with open(ring, 'a+') as ringfile:
-        #            ringfile.write("")
-        #            ringfile.flush()
-        #    try:
-        #        assert util._has_readwrite(ring), \
-        #            ("Need r+w for %s" % ring)
-        #    except AssertionError as ae:
-        #        logger.debug(ae.message)
-
         self.options = _sanitise(options) if options else None
 
         self.encoding = locale.getpreferredencoding()
