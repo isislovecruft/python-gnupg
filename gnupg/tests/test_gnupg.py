@@ -400,8 +400,9 @@ class GPGTestCase(unittest.TestCase):
 
     def test_list_keys_after_generation(self):
         """Test that after key generation, the generated key is available."""
-        self.test_list_keys_initial()
-        self.do_key_generation()
+        self.test_list_keys_initial_public()
+        self.test_list_keys_initial_secret()
+        self.generate_key("Johannes Trithemius", 'iusedcarrierpidgeons@inste.ad')
         public_keys = self.gpg.list_keys()
         self.assertTrue(is_list_with_len(public_keys, 1),
                         "1-element list expected")
