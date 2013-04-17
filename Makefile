@@ -5,13 +5,13 @@ clean:
 	rm -f ./*.pyo
 
 cleantest: clean
-	mkdir -p gnupg/tests/keys
+	mkdir -p gnupg/tests/tmp_test
 	touch gnupg/tests/placeholder.log
-	rm -rf gnupg/tests/keys
+	rm -rf gnupg/tests/tmp_test
 	rm gnupg/tests/*.log
 
 test: cleantest
-	python gnupg/tests/test_gnupg.py parsers basic genkey sign
+	python gnupg/tests/test_gnupg.py parsers basic genkey sign listkeys
 
 install: 
 	python setup.py install --record installed-files.txt
