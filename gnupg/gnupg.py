@@ -107,7 +107,7 @@ from parsers import GenKey, Sign, ListKeys, ListPackets
 from parsers import _fix_unsafe, _sanitise, _is_allowed, _sanitise_list
 from util    import logger, _conf
 
-import util
+import util as _util
 
 
 class GPG(object):
@@ -156,12 +156,12 @@ class GPG(object):
             gpghome = _conf
         self.gpghome = _fix_unsafe(gpghome)
         if self.gpghome:
-            util._create_gpghome(self.gpghome)
+            _util._create_gpghome(self.gpghome)
         else:
             message = ("Unsuitable gpg home dir: %s" % gpghome)
             logger.debug("GPG.__init__(): %s" % message)
 
-        self.gpgbinary = util._find_gpgbinary(gpgbinary)
+        self.gpgbinary = _util._find_gpgbinary(gpgbinary)
 
         if keyring is not None:
             raise DeprecationWarning("Option 'keyring' changing to 'secring'")
@@ -179,7 +179,7 @@ class GPG(object):
 
         try:
             assert self.gpghome is not None, "Got None for self.gpghome"
-            assert util._has_readwrite(self.gpghome), ("Home dir %s needs r+w"
+            assert _util._has_readwrite(self.gpghome), ("Home dir %s needs r+w"
                                                        % self.gpghome)
             assert self.gpgbinary, "Could not find gpgbinary %s" % full
             assert isinstance(verbose, bool), "'verbose' must be boolean"
@@ -272,7 +272,7 @@ class GPG(object):
                 break
             logger.debug("chunk: %r" % data[:256])
             chunks.append(data)
-        if util._py3k:
+        if _util._py3k:
             # Join using b'' or '', as appropriate
             result.data = type(data)().join(chunks)
         else:
@@ -317,8 +317,8 @@ class GPG(object):
         else:
             stdin = p.stdin
         if passphrase:
-            _write_passphrase(stdin, passphrase, self.encoding)
-        writer = _threaded_copy_data(file, stdin)
+            _util._write_passphrase(stdin, passphrase, self.encoding)
+        writer = _util._threaded_copy_data(file, stdin)
         self._collect_output(p, result, writer, stdin)
         return result
 
@@ -329,8 +329,8 @@ class GPG(object):
         """Create a signature for a message or file."""
         if isinstance(message, file):
             result = self._sign_file(message, **kwargs)
-        elif not util._is_stream(message):
-            f = util._make_binary_stream(message, self.encoding)
+        elif not _util._is_stream(message):
+            f = _util._make_binary_stream(message, self.encoding)
             result = self._sign_file(f, **kwargs)
             f.close()
         else:
@@ -366,8 +366,8 @@ class GPG(object):
         try:
             stdin = p.stdin
             if passphrase:
-                _write_passphrase(stdin, passphrase, self.encoding)
-            writer = _threaded_copy_data(file, stdin)
+                _util._write_passphrase(stdin, passphrase, self.encoding)
+            writer = _util._threaded_copy_data(file, stdin)
         except IOError:
             logger.exception("_sign_file(): Error writing message")
             writer = None
@@ -389,7 +389,7 @@ class GPG(object):
         >>> assert verify
 
         """
-        f = util._make_binary_stream(data, self.encoding)
+        f = _util._make_binary_stream(data, self.encoding)
         result = self.verify_file(f)
         f.close()
         return result
@@ -401,7 +401,7 @@ class GPG(object):
         detached signature should be specified as the ``sig_file``.
 
         :param file file: A file descriptor object. Its type will be checked
-                          with :func:`util._is_file`.
+                          with :func:`_util._is_file`.
         :param str sig_file: A file containing the GPG signature data for
                              ``file``. If given, ``file`` is verified via this
                              detached signature.
@@ -414,10 +414,10 @@ class GPG(object):
             logger.debug("verify_file(): Handling embedded signature")
             args = ["--verify"]
             proc = self._open_subprocess(args)
-            writer = _threaded_copy_data(file, proc.stdin)
+            writer = _util._threaded_copy_data(file, proc.stdin)
             self._collect_output(proc, result, writer, stdin=proc.stdin)
         else:
-            if not util._is_file(sig_file):
+            if not _util._is_file(sig_file):
                 logger.debug("verify_file(): '%r' is not a file" % sig_file)
                 return result
             logger.debug('verify_file(): Handling detached verification')
@@ -426,7 +426,7 @@ class GPG(object):
                 sig_fh = open(sig_file)
                 args = ["--verify %s - " % sig_fh.name]
                 proc = self._open_subprocess(args)
-                writer = _threaded_copy_data(file, proc.stdin)
+                writer = _util._threaded_copy_data(file, proc.stdin)
                 self._collect_output(proc, result, stdin=proc.stdin)
             finally:
                 if sig_fh and not sig_fh.closed:
@@ -486,7 +486,7 @@ class GPG(object):
 
         result = self._result_map['import'](self)
         logger.debug('import_keys: %r', key_data[:256])
-        data = util._make_binary_stream(key_data, self.encoding)
+        data = _util._make_binary_stream(key_data, self.encoding)
         self._handle_io(['--import'], data, result, binary=True)
         logger.debug('import_keys result: %r', result.__dict__)
         data.close()
@@ -505,7 +505,7 @@ class GPG(object):
         safe_keyserver = _fix_unsafe(keyserver)
 
         result = self._result_map['import'](self)
-        data = util._make_binary_stream("", self.encoding)
+        data = _util._make_binary_stream("", self.encoding)
         args = ['--keyserver', keyserver, '--recv-keys']
 
         if keyids:
@@ -524,7 +524,7 @@ class GPG(object):
         which='key'
         if secret:
             which='secret-key'
-        if util._is_list_or_tuple(fingerprints):
+        if _util._is_list_or_tuple(fingerprints):
             fingerprints = ' '.join(fingerprints)
         args = ['--batch --delete-%s "%s"' % (which, fingerprints)]
         result = self._result_map['delete'](self)
@@ -537,7 +537,7 @@ class GPG(object):
         which=''
         if secret:
             which='-secret-key'
-        if util._is_list_or_tuple(keyids):
+        if _util._is_list_or_tuple(keyids):
             keyids = ' '.join(['"%s"' % k for k in keyids])
         args = ["--armor --export%s %s" % (which, keyids)]
         p = self._open_subprocess(args)
@@ -624,7 +624,7 @@ class GPG(object):
         """
         args = ["--gen-key --batch"]
         key = self._result_map['generate'](self)
-        f = util._make_binary_stream(input, self.encoding)
+        f = _util._make_binary_stream(input, self.encoding)
         self._handle_io(args, f, key, binary=True)
         f.close()
         return key
@@ -696,7 +696,7 @@ class GPG(object):
         parms.setdefault('Key-Type', 'RSA')
         parms.setdefault('Key-Length', 4096)
         parms.setdefault('Name-Real', "Autogenerated Key")
-        parms.setdefault('Expire-Date', util._next_year())
+        parms.setdefault('Expire-Date', _util._next_year())
         try:
             logname = os.environ['LOGNAME']
         except KeyError:
@@ -754,7 +754,7 @@ class GPG(object):
             args = ['--symmetric']
         else:
             args = ['--encrypt']
-            if not util._is_list_or_tuple(recipients):
+            if not _util._is_list_or_tuple(recipients):
                 recipients = (recipients,)
             for recipient in recipients:
                 args.append('--recipient "%s"' % recipient)
@@ -810,7 +810,7 @@ class GPG(object):
         >>> assert result.fingerprint == print1
 
         """
-        data = util._make_binary_stream(data, self.encoding)
+        data = _util._make_binary_stream(data, self.encoding)
         result = self.encrypt_file(data, recipients, **kwargs)
         data.close()
         return result
@@ -820,7 +820,7 @@ class GPG(object):
 
         :param message: A string or file-like object to decrypt.
         """
-        data = util._make_binary_stream(message, self.encoding)
+        data = _util._make_binary_stream(message, self.encoding)
         result = self.decrypt_file(data, **kwargs)
         data.close()
         return result
@@ -914,7 +914,7 @@ class GPGWrapper(GPG):
         """Send keys to a keyserver."""
         result = self._result_map['list'](self)
         gnupg.logger.debug('send_keys: %r', keyids)
-        data = gnupg.util._make_binary_stream("", self.encoding)
+        data = gnupg._util._make_binary_stream("", self.encoding)
         args = ['--keyserver', keyserver, '--send-keys']
         args.extend(keyids)
         self._handle_io(args, data, result, binary=True)
@@ -934,7 +934,7 @@ class GPGWrapper(GPG):
                 args.append('--cipher-algo %s' % cipher_algo)
         else:
             args = ['--encrypt']
-            if not util._is_list_or_tuple(recipients):
+            if not _util._is_list_or_tuple(recipients):
                 recipients = (recipients,)
             for recipient in recipients:
                 args.append('--recipient "%s"' % recipient)
@@ -957,7 +957,7 @@ class GPGWrapper(GPG):
         args = ["--list-packets"]
         result = self._result_map['list-packets'](self)
         self._handle_io(args,
-                        util._make_binary_stream(raw_data, self.encoding),
+                        _util._make_binary_stream(raw_data, self.encoding),
                         result)
         return result
 
