@@ -856,8 +856,7 @@ class GPG(object):
         return result
 
     def decrypt(self, message, **kwargs):
-        """
-        Decrypt the contents of a string or file-like object :param:message .
+        """Decrypt the contents of a string or file-like object ``message``.
 
         :param message: A string or file-like object to decrypt.
         """
@@ -952,9 +951,7 @@ class GPGWrapper(GPG):
                                                passphrase=passphrase)
 
     def send_keys(self, keyserver, *keyids):
-        """
-        Send keys to a keyserver
-        """
+        """Send keys to a keyserver."""
         result = self._result_map['list'](self)
         gnupg.logger.debug('send_keys: %r', keyids)
         data = gnupg.util._make_binary_stream("", self.encoding)
