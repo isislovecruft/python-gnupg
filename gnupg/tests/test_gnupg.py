@@ -17,6 +17,7 @@ import os
 import shutil
 import sys
 import tempfile
+import time
 
 ## Use unittest2 if we're on Python2.6 or less:
 if sys.version_info.major == 2 and sys.version_info.minor <= 6:
@@ -45,6 +46,8 @@ def _make_tempfile(*args, **kwargs):
                                   *args, **kwargs)
 
 logger = logging.getLogger('gnupg')
+_here  = os.path.join(os.path.join(util._repo, 'gnupg'), 'tests')
+_files = os.path.join(_here, 'files')
 
 KEYS_TO_IMPORT = """-----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1.4.9 (MingW32)
@@ -145,6 +148,26 @@ class GPGTestCase(unittest.TestCase):
         self.gpg = gnupg.GPG(gpghome=hd, gpgbinary='gpg')
         self.pubring = os.path.join(self.homedir, 'pubring.gpg')
         self.secring = os.path.join(self.homedir, 'secring.gpg')
+
+    def test_parsers_fix_unsafe(self):
+        """Test that unsafe inputs are quoted out and then ignored."""
+        shell_input = "\"&coproc /bin/sh\""
+        fixed = parsers._fix_unsafe(shell_input)
+        print fixed
+        test_file = os.path.join(_files, 'cypherpunk_manifesto')
+        self.assertTrue(os.path.isfile(test_file))
+        has_shell = self.gpg.verify_file(test_file, fixed)
+        self.assertFalse(has_shell.valid)
+
+    def test_parsers_is_hex_valid(self):
+        """Test that valid hexidecimal passes the parsers._is_hex() check"""
+        valid_hex = '0A6A58A14B5946ABDE18E207A3ADB67A2CDB8B35'
+        self.assertTrue(parsers._is_hex(valid_hex))
+
+    def test_parsers_is_hex_invalid(self):
+        """Test that invalid hexidecimal fails the parsers._is_hex() check"""
+        invalid_hex = 'cipherpunks write code'
+        self.assertFalse(parsers._is_hex(invalid_hex))
 
     def test_gpghome_creation(self):
         """Test the environment by ensuring that setup worked."""
@@ -271,51 +294,39 @@ class GPGTestCase(unittest.TestCase):
         self.assertGreater(key_input.find('Francisco Ferrer'), 0)
 
     def test_rsa_key_generation(self):
-        """
-        Test that RSA key generation succeeds.
-        """
-        key = self.generate_key("Barbara Brown", "beta.com")
+        """Test that RSA key generation succeeds."""
+        key = self.generate_key("Ralph Merkle", "xerox.com")
         self.assertIsNotNone(key.type)
         self.assertIsNotNone(key.fingerprint)
 
     def test_rsa_key_generation_with_unicode(self):
-        """
-        Test that RSA key generation succeeds with unicode characters.
-        """
+        """Test that RSA key generation succeeds with unicode characters."""
         key = self.generate_key("Anaïs de Flavigny", "êtrerien.fr")
         self.assertIsNotNone(key.type)
         self.assertIsNotNone(key.fingerprint)
 
     def test_rsa_key_generation_with_subkey(self):
-        """
-        Test that RSA key generation succeeds with additional subkey.
-        """
-        key = self.generate_key("Need Caffeine", "nowplea.se",
+        """Test that RSA key generation succeeds with additional subkey."""
+        key = self.generate_key("John Gilmore", "isapu.nk",
                                 subkey_type='RSA')
         self.assertIsNotNone(key.type)
         self.assertIsNotNone(key.fingerprint)
 
     def test_dsa_key_generation(self):
-        """
-        Test that DSA key generation succeeds.
-        """
-        key = self.generate_key("DSA Signonly", "test.com")
+        """Test that DSA key generation succeeds."""
+        key = self.generate_key("Ross Anderson", "bearli.on")
         self.assertIsNotNone(key.type)
         self.assertIsNotNone(key.fingerprint)
 
     def test_dsa_key_generation_with_unicode(self):
-        """
-        Test that DSA key generation succeeds with unicode characters.
-        """
+        """Test that DSA key generation succeeds with unicode characters."""
         key = self.generate_key("破壊合計する", "破壊合計する.日本")
         self.assertIsNotNone(key.type)
         self.assertIsNotNone(key.fingerprint)
 
     def test_dsa_key_generation_with_subkey(self):
-        """
-        Test that RSA key generation succeeds with additional subkey.
-        """
-        key = self.generate_key("OMG Moar Coffee", "giveitto.me",
+        """Test that RSA key generation succeeds with additional subkey."""
+        key = self.generate_key("Eli Biham", "bearli.on",
                                 subkey_type='ELG-E')
         self.assertIsNotNone(key.type)
         self.assertIsNotNone(key.fingerprint)
@@ -505,49 +516,45 @@ class GPGTestCase(unittest.TestCase):
 
     def test_signature_algorithm(self):
         """Test that determining the signing algorithm works."""
-        key = self.generate_key("Werner Koch", "gnupg.org")
-        message = "Damn, I really wish GnuPG had ECC support."
+        key = self.generate_key("Ron Rivest", "rsa.com")
+        message = "Someone should add GCM block cipher mode to PyCrypto."
         sig = self.gpg.sign(message, keyid=key.fingerprint,
-                            passphrase='wernerkoch')
+                            passphrase='ronrivest')
         print "ALGORITHM:\n", sig.sig_algo
         self.assertIsNotNone(sig.sig_algo)
 
     def test_signature_string_bad_passphrase(self):
         """Test that signing and verification works."""
-        key = self.generate_key("Ron Rivest", "rsa.com")
-        message = 'Hello, André!'
+        key = self.generate_key("Taher ElGamal", "cryto.me")
+        message = 'أصحاب المصالح لا يحبون الثوراتز'
         sig = self.gpg.sign(message, keyid=key.fingerprint, passphrase='foo')
         self.assertFalse(sig, "Bad passphrase should fail")
 
     def test_signature_string_alternate_encoding(self):
-        key = self.generate_key("Adi Shamir", "rsa.com")
+        key = self.generate_key("Nos Oignons", "nos-oignons.net")
         self.gpg.encoding = 'latin-1'
-        message = 'Hello, André!'
+        message = "Mêle-toi de tes oignons"
         sig = self.gpg.sign(message, keyid=key.fingerprint,
-                            passphrase='adishamir')
+                            passphrase='nosoignons')
         self.assertTrue(sig)
 
     def test_signature_file(self):
         """Test that signing a message file works."""
         key = self.generate_key("Leonard Adleman", "rsa.com")
-        message = "Someone should add GCM block cipher mode to PyCrypto."
-        message_fn = os.path.join(tempfile.gettempdir(), 'test_signature_file')
-        with open(message_fn, 'w+b') as msg:
-            msg.write(message)
-
-        message_file = buffer(open(message_fn, "rb").read())
-        mf = io.BytesIO(message_file)
-
-        sig = self.gpg.sign(mf, keyid=key.fingerprint,
-                            passphrase='leonardadleman')
-        self.assertTrue(sig, "Good passphrase should succeed")
+        message_file = os.path.join(_files, 'cypherpunk_manifesto')
+        with open(message_file) as msg:
+            sig = self.gpg.sign(msg, keyid=key.fingerprint,
+                                passphrase='leonardadleman')
+            self.assertTrue(sig, "I thought I typed my password correctly...")
 
     def test_signature_string_verification(self):
         """Test verification of a signature from a message string."""
-        key = self.generate_key("Andrew Able", "alpha.com")
-        message = 'Hello, André!'
+        key = self.generate_key("Bruce Schneier", "schneier.com")
+        message  = '...the government uses the general fear of '
+        message += '[hackers in popular culture] to push for more power'
         sig = self.gpg.sign(message, keyid=key.fingerprint,
-                            passphrase='andrewable')
+                            passphrase='bruceschneier')
+        now = time.mktime(time.gmtime())
         self.assertTrue(sig, "Good passphrase should succeed")
         verified = self.gpg.verify(sig.data)
         self.assertIsNotNone(verified.fingerprint)
@@ -556,15 +563,18 @@ class GPGTestCase(unittest.TestCase):
             logger.debug("ver: %r", verified.fingerprint)
         self.assertEqual(key.fingerprint, verified.fingerprint,
                          "Fingerprints must match")
-        self.assertEqual(verified.trust_level, verified.TRUST_ULTIMATE)
-        self.assertEqual(verified.trust_text, 'TRUST_ULTIMATE')
+        self.assertEqual(verified.status, 'signature valid')
+        self.assertAlmostEqual(int(now), int(verified.timestamp), delta=1000)
+        self.assertEqual(
+            verified.username,
+            u'Bruce Schneier (python-gnupg tester) <bruceschneier@schneier.com>')
 
-    def test_signature_file_verification(self):
-        """Test verfication of a signature on a message file."""
-        key = self.generate_key("Taher ElGamal", "cryto.me")
-        message = 'أصحاب المصالح لا يحبون الثوراتز'
+    def test_signature_verification_clearsign(self):
+        """Test verfication of an embedded signature."""
+        key = self.generate_key("Johan Borst", "rijnda.el")
+        message = "You're *still* using AES? Really?"
         sig = self.gpg.sign(message, keyid=key.fingerprint,
-                            passphrase='taherelgamal')
+                            passphrase='johanborst')
         self.assertTrue(sig, "Good passphrase should succeed")
         try:
             file = util._make_binary_stream(sig.data, self.gpg.encoding)
@@ -576,22 +586,41 @@ class GPGTestCase(unittest.TestCase):
             logger.debug("ver: %r", verified.fingerprint)
         self.assertEqual(key.fingerprint, verified.fingerprint,
                          "Fingerprints must match")
-        data_file = open('random_binary_data', 'rb')
-        sig = self.gpg._sign_file(data_file, keyid=key.fingerprint,
-                                  passphrase='andrewable', detach=True)
-        data_file.close()
-        self.assertTrue(sig, "File signing should succeed")
-        try:
-            file = gnupg._make_binary_stream(sig.data, self.gpg.encoding)
-            verified = self.gpg.verify_file(file, 'random_binary_data')
-        except UnicodeDecodeError: #happens in Python 2.6
-            verified = self.gpg.verify_file(io.BytesIO(sig.data))
-        if key.fingerprint != verified.fingerprint:
-            logger.debug("key: %r", key.fingerprint)
-            logger.debug("ver: %r", verified.fingerprint)
-        self.assertEqual(key.fingerprint, verified.fingerprint,
-                         "Fingerprints must match")
-        logger.debug("test_signature_verification ends")
+
+    def test_signature_verification_detached(self):
+        """Test that verification of a detached signature of a file works."""
+        key = self.generate_key("Paulo S.L.M. Barreto", "anub.is")
+        with open(os.path.join(_files, 'cypherpunk_manifesto'),
+                  'rb') as manifesto:
+            sig = self.gpg.sign(manifesto, keyid=key.fingerprint,
+                                passphrase='paulos.l.m.barreto',
+                                detach=True, clearsign=False)
+            self.assertTrue(sig.data, "File signing should succeed")
+            sigfilename = os.path.join(_files, 'cypherpunk_manifesto.sig')
+            with open(sigfilename,'w') as sigfile:
+                sigfile.write(sig.data)
+                sigfile.seek(0)
+
+            verified = self.gpg.verify_file(manifesto, sigfilename)
+
+            if key.fingerprint != verified.fingerprint:
+                logger.debug("key: %r", key.fingerprint)
+                logger.debug("ver: %r", verified.fingerprint)
+
+            self.assertEqual(key.fingerprint, verified.fingerprint,
+                             "Fingerprints must match")
+
+    def test_signature_verification_detached_binary(self):
+        """Test that detached signature verification in binary mode fails."""
+        key = self.generate_key("Adi Shamir", "rsa.com")
+        with open(os.path.join(_files, 'cypherpunk_manifesto'),
+                  'rb') as manifesto:
+            sig = self.gpg.sign(manifesto, keyid=key.fingerprint,
+                                passphrase='adishamir',
+                                detach=True, binary=True, clearsign=False)
+            self.assertTrue(sig.data, "File signing should succeed")
+            with self.assertRaises(UnicodeDecodeError):
+                print "SIG=", sig
 
     def test_deletion(self):
         """Test that key deletion works."""
@@ -639,7 +668,10 @@ class GPGTestCase(unittest.TestCase):
         logger.debug("test_file_encryption_and_decryption ends")
 
 
-suites = { 'basic': set(['test_gpghome_creation',
+suites = { 'parsers': set(['test_parsers_fix_unsafe',
+                           'test_parsers_is_hex_valid',
+                           'test_parsers_is_hex_invalid',]),
+           'basic': set(['test_gpghome_creation',
                          'test_gpg_binary',
                          'test_gpg_binary_not_abs',
                          'test_gpg_binary_version_str',
@@ -659,7 +691,9 @@ suites = { 'basic': set(['test_gpghome_creation',
                           'test_key_generation_with_empty_value',
                           'test_key_generation_override_default_value',
                           'test_key_generation_with_colons']),
-           'sign': set(['test_signature_file_verification',
+           'sign': set(['test_signature_verification_clearsign',
+                        'test_signature_verification_detached',
+                        'test_signature_verification_detached_binary',
                         'test_signature_file',
                         'test_signature_string_bad_passphrase',
                         'test_signature_string_alternate_encoding',

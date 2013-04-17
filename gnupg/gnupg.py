@@ -137,26 +137,25 @@ def _copy_data(instream, outstream):
         if len(data) == 0:
             break
         sent += len(data)
-        logger.debug("sending chunk (%d): %r", sent, data[:256])
+        logger.debug("_copy_data(): sending chunk (%d):\n%s" % (sent, data[:256]))
         try:
             outstream.write(data)
         except UnicodeError:
             try:
                 outstream.write(data.encode(enc))
             except IOError:
-                logger.exception('Error sending data: Broken pipe')
+                logger.exception('_copy_data(): Error sending data: Broken pipe')
                 break
         except IOError:
-            # Can sometimes get 'broken pipe' errors even when the
-            # data has all been sent
-            logger.exception('Error sending data: Broken pipe')
+            # Can get 'broken pipe' errors even when all data was sent
+            logger.exception('_copy_data(): Error sending data: Broken pipe')
             break
     try:
         outstream.close()
     except IOError:
-        logger.exception('Got IOError while trying to close FD outstream')
+        logger.exception('_copy_data(): Got IOError while closing %s' % outstream)
     else:
-        logger.debug("closed output, %d bytes sent", sent)
+        logger.debug("_copy_data(): Closed output, %d bytes sent." % sent)
 
 def _threaded_copy_data(instream, outstream):
     """Copy data from one stream to another in a separate thread.
@@ -413,10 +412,6 @@ class GPG(object):
         if isinstance(message, file):
             result = self._sign_file(message, **kwargs)
         elif not util._is_stream(message):
-            if isinstance(message, str):
-                if not util._py3k:
-                    message = unicode(message, self.encoding)
-                message = message.encode(self.encoding)
             f = util._make_binary_stream(message, self.encoding)
             result = self._sign_file(f, **kwargs)
             f.close()
@@ -429,7 +424,7 @@ class GPG(object):
     def _sign_file(self, file, keyid=None, passphrase=None, clearsign=True,
                    detach=False, binary=False):
         """Create a signature for a  file."""
-        logger.debug("GPG._sign_file(): %s", file)
+        logger.debug("_sign_file(): %s", file)
         if binary:
             args = ['--sign']
         else:
@@ -438,10 +433,8 @@ class GPG(object):
         if clearsign:
             args.append("--clearsign")
             if detach:
-                logger.warn(
-                    "Cannot use --clearsign and --detach-sign simultaneously.")
-                logger.warn(
-                    "Using default GPG behaviour: --clearsign only.")
+                logger.warn("Cannot use both --clearsign and --detach-sign.")
+                logger.warn("Using default GPG behaviour: --clearsign only.")
         elif detach and not clearsign:
             args.append("--detach-sign")
 
@@ -449,8 +442,8 @@ class GPG(object):
             args.append(str("--default-key %s" % keyid))
 
         result = self._result_map['sign'](self)
-        #We could use _handle_io here except for the fact that if the
-        #passphrase is bad, gpg bails and you can't write the message.
+        ## We could use _handle_io here except for the fact that if the
+        ## passphrase is bad, gpg bails and you can't write the message.
         p = self._open_subprocess(args, passphrase is not None)
         try:
             stdin = p.stdin
@@ -458,7 +451,7 @@ class GPG(object):
                 _write_passphrase(stdin, passphrase, self.encoding)
             writer = _threaded_copy_data(file, stdin)
         except IOError:
-            logging.exception("error writing message")
+            logger.exception("_sign_file(): Error writing message")
             writer = None
         self._collect_output(p, result, writer, stdin)
         return result
@@ -483,50 +476,43 @@ class GPG(object):
         f.close()
         return result
 
-    def verify_file(self, file, data_filename=None):
-        """
-        Verify the signature on the contents of a file or file-like
+    def verify_file(self, file, sig_file=None):
+        """Verify the signature on the contents of a file or file-like
         object. Can handle embedded signatures as well as detached
         signatures. If using detached signatures, the file containing the
-        detached signature should be specified as the :param:data_filename.
+        detached signature should be specified as the ``sig_file``.
 
         :param file file: A file descriptor object. Its type will be checked
-                          with :func:util._is_file.
-        :param file data_filename: A file containing the GPG signature data for
-                                   :param:file. If given, :param:file is
-                                   verified via this detached signature.
+                          with :func:`util._is_file`.
+        :param str sig_file: A file containing the GPG signature data for
+                             ``file``. If given, ``file`` is verified via this
+                             detached signature.
         """
-        ## attempt to wrap any escape characters in quotes:
-        safe_file = _fix_unsafe(file)
 
-        ## check that :param:file is actually a file:
-        util._is_file(safe_file)
-
-        logger.debug('verify_file: %r, %r', safe_file, data_filename)
+        fn = None
         result = self._result_map['verify'](self)
-        args = ['--verify']
-        if data_filename is None:
-            self._handle_io(args, safe_file, result, binary=True)
+
+        if sig_file is None:
+            logger.debug("verify_file(): Handling embedded signature")
+            args = ["--verify"]
+            proc = self._open_subprocess(args)
+            writer = _threaded_copy_data(file, proc.stdin)
+            self._collect_output(proc, result, writer, stdin=proc.stdin)
         else:
-            safe_data_filename = _fix_unsafe(data_filename)
-
-            logger.debug('Handling detached verification')
-            fd, fn = tempfile.mkstemp(prefix='pygpg')
-
-            with open(safe_file) as sf:
-                contents = sf.read()
-                os.write(fd, s)
-                os.close(fd)
-                logger.debug('Wrote to temp file: %r', contents)
-                args.append(fn)
-                args.append('"%s"' % safe_data_filename)
-
-                try:
-                    p = self._open_subprocess(args)
-                    self._collect_output(p, result, stdin=p.stdin)
-                finally:
-                    os.unlink(fn)
-
+            if not util._is_file(sig_file):
+                logger.debug("verify_file(): '%r' is not a file" % sig_file)
+                return result
+            logger.debug('verify_file(): Handling detached verification')
+            sig_fh = None
+            try:
+                sig_fh = open(sig_file)
+                args = ["--verify %s - " % sig_fh.name]
+                proc = self._open_subprocess(args)
+                writer = _threaded_copy_data(file, proc.stdin)
+                self._collect_output(proc, result, stdin=proc.stdin)
+            finally:
+                if sig_fh and not sig_fh.closed:
+                    sig_fh.close()
         return result
 
     #
@@ -659,13 +645,12 @@ class GPG(object):
         >>> pubkeys = gpg.list_keys()
         >>> assert print1 in pubkeys.fingerprints
         >>> assert print2 in pubkeys.fingerprints
-
         """
 
         which='public-keys'
         if secret:
             which='secret-keys'
-        args = "--list-%s --fixed-list-mode --fingerprint --with-colons" % (which,)
+        args = "--list-%s --fixed-list-mode --fingerprint --with-colons --no-show-photos" % (which,)
         args = [args]
         p = self._open_subprocess(args)
 
@@ -691,6 +676,17 @@ class GPG(object):
             if keyword in valid_keywords:
                 getattr(result, keyword)(L)
         return result
+
+    def list_sigs(self, *keyids):
+        """xxx implement me
+
+        The GnuPG option '--show-photos', according to the GnuPG manual, "does
+        not work with --with-colons", but since we can't rely on all versions
+        of GnuPG to explicitly handle this correctly, we should probably
+        include it in the args.
+        """
+        ## we will want to include "--no-show-photos" in the args
+        raise NotImplemented("Functionality for '--list-sigs' not implemented.")
 
     def gen_key(self, input):
         """
@@ -871,8 +867,7 @@ class GPG(object):
         return result
 
     def decrypt(self, message, **kwargs):
-        """
-        Decrypt the contents of a string or file-like object :param:message .
+        """Decrypt the contents of a string or file-like object ``message``.
 
         :param message: A string or file-like object to decrypt.
         """
@@ -967,9 +962,7 @@ class GPGWrapper(GPG):
                                                passphrase=passphrase)
 
     def send_keys(self, keyserver, *keyids):
-        """
-        Send keys to a keyserver
-        """
+        """Send keys to a keyserver."""
         result = self._result_map['list'](self)
         gnupg.logger.debug('send_keys: %r', keyids)
         data = gnupg.util._make_binary_stream("", self.encoding)

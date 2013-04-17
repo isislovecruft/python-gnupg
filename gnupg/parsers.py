@@ -34,6 +34,7 @@ import util
 
 
 ESCAPE_PATTERN = re.compile(r'\\x([0-9a-f][0-9a-f])', re.I)
+HEXIDECIMAL    = re.compile('([0-9A-F]{2})+')
 
 
 class ProtectedOption(Exception):
@@ -268,16 +269,13 @@ def _is_allowed(input):
     ## assertion will check that GPG will recognise them
     ##
     ## xxx checkout the --store option for creating rfc1991 data packets
-    ## xxx also --multifile use with verify encrypt & decrypt
     ## xxx key fetching/retrieving options: [fetch_keys, merge_only, recv_keys]
     ##
-    ## xxx which ones do we want as defaults?
-    ##     eg, --no-show-photos would mitigate things like
-    ##     https://www-01.ibm.com/support/docview.wss?uid=swg21620982
     _allowed = frozenset(
         ['--list-keys', '--list-key', '--fixed-list-mode',
          '--list-secret-keys', '--list-public-keys',
          '--list-packets',  '--with-colons',
+         '--no-show-photos',
          '--delete-keys', '--delete-secret-keys',
          '--encrypt', '--encrypt-files',
          '--decrypt', '--decrypt-files',
@@ -326,6 +324,17 @@ def _is_allowed(input):
             else:
                 return input
     return None
+
+def _is_hex(string):
+    """Check that a string is hexidecimal, with alphabetic characters
+    capitalized and without whitespace.
+
+    :param str string: The string to check.
+    """
+    matched = HEXIDECIMAL.match(string)
+    if matched is not None and len(matched.group()) >= 2:
+        return True
+    return False
 
 def _sanitise(*args):
     """Take an arg or the key portion of a kwarg and check that it is in the
@@ -388,10 +397,16 @@ def _sanitise(*args):
                         if flag in ['--encrypt', '--encrypt-files', '--decrypt',
                                     '--decrypt-file', '--import', '--verify']:
                             ## Place checks here:
-                            if _is_file(val):
+                            if util._is_file(val):
                                 safe_option += (val + " ")
                             else:
                                 logger.debug("_check_option(): %s not file: %s"
+                                             % (flag, val))
+                        elif flag in ['--default-key']:
+                            if _is_hex(val):
+                                safe_option += (val + " ")
+                            else:
+                                logger.debug("_check_option(): '%s %s' not hex."
                                              % (flag, val))
                         else:
                             safe_option += (val + " ")
@@ -399,54 +414,76 @@ def _sanitise(*args):
                                          % val)
         return safe_option
 
-    is_flag = lambda x: x.startswith('-')
-    checked = []
+    is_flag = lambda x: x.startswith('--')
+
+    def _make_filo(args_string):
+        filo = arg.split(' ')
+        filo.reverse()
+        logger.debug("_make_filo(): Converted to reverse list: %s" % filo)
+        return filo
+
+    def _make_groups(filo):
+        groups = {}
+        while len(filo) >= 1:
+            last = filo.pop()
+            if is_flag(last):
+                logger.debug("_make_groups(): Got arg: %s" % last)
+                if last == '--verify':
+                    groups[last] = str(filo.pop())
+                    ## accept the read-from-stdin arg:
+                    if len(filo) >= 1 and filo[len(filo)-1] == '-':
+                        groups[last] += str(' - \'\'') ## gross hack
+                else:
+                    groups[last] = str()
+                while len(filo) > 1 and not is_flag(filo[len(filo)-1]):
+                    logger.debug("_make_groups(): Got value: %s"
+                                 % filo[len(filo)-1])
+                    groups[last] += (filo.pop() + " ")
+                else:
+                    if len(filo) == 1 and not is_flag(filo[0]):
+                        logger.debug("_make_groups(): Got value: %s" % filo[0])
+                        groups[last] += filo.pop()
+            else:
+                logger.debug("_make_groups(): Got solitary value: %s" % last)
+                groups["xxx"] = last
+        return groups
+
+    def _check_groups(groups):
+        logger.debug("_check_groups(): Got groups: %s" % groups)
+        checked_groups = []
+        for a,v in groups.items():
+            v = None if len(v) == 0 else v
+            safe = _check_option(a, v)
+            if safe is not None and not safe.strip() == "":
+                logger.debug("_check_groups(): appending option: %s" % safe)
+                checked_groups.append(safe)
+            else:
+                logger.debug("_check_groups(): dropped option '%s %s'" % (a,v))
+        return checked_groups
+
     if args is not None:
+        option_groups = {}
         for arg in args:
+            ## if we're given a string with a bunch of options in it split them
+            ## up and deal with them separately
             if isinstance(arg, str):
                 logger.debug("_sanitise(): Got arg string: %s" % arg)
-                ## if we're given a string with a bunch of options in it split
-                ## them up and deal with them separately
                 if arg.find(' ') > 0:
-                    filo = arg.split()
-                    filo.reverse()
-                    new_arg, new_value = str(), str()
-                    while len(filo) > 0:
-                        if not is_flag(filo[0]):
-                            logger.debug("_sanitise(): Got non-flag arg %s"
-                                         % filo[0])
-                            new_value += (filo.pop() + " ")
-                        else:
-                            logger.debug("_sanitise(): Got arg: %s" % filo[0])
-                            new_arg = filo.pop()
-                            if len(filo) > 0:
-                                while not is_flag(filo[0]):
-                                    logger.debug("_sanitise(): Got value: %s"
-                                                 % filo[0])
-                                    new_value += (filo.pop() + " ")
-                            safe = _check_option(new_arg, new_value)
-                            if safe is not None and not safe.strip() == "":
-                                logger.debug("_sanitise(): appending option: %s"
-                                             % safe)
-                                checked.append(safe)
+                    filo = _make_filo(arg)
+                    option_groups.update(_make_groups(filo))
                 else:
-                    safe = _check_option(arg, None)
-                    if safe is not None:
-                        logger.debug("_sanitise(): appending args: %s" % safe)
-                        checked.append(safe)
-                    else:
-                        logger.debug("_sanitise(): got None for safe")
+                    option_groups.update({ arg: "" })
             elif isinstance(arg, list):
                 logger.debug("_sanitise(): Got arg list: %s" % arg)
-                allow = _one_flag(arg)
-                if allow is not None:
-                    checked.append(allow)
+                arg.reverse()
+                option_groups.update(_make_groups(arg))
             else:
-                logger.debug("_sanitise(): got non string or list arg: %s"
-                             % arg)
-
-    sanitised = ' '.join(x for x in checked)
-    return sanitised
+                logger.debug("_sanitise(): Got non str or list arg: %s" % arg)
+        checked = _check_groups(option_groups)
+        sanitised = ' '.join(x for x in checked)
+        return sanitised
+    else:
+        logger.debug("_sanitise(): Got None for args")
 
 def _sanitise_list(arg_list):
     """A generator for iterating through a list of gpg options and sanitising
@@ -474,30 +511,48 @@ class Verify(object):
     TRUST_FULLY = 3
     TRUST_ULTIMATE = 4
 
-    TRUST_LEVELS = {
-        "TRUST_UNDEFINED" : TRUST_UNDEFINED,
-        "TRUST_NEVER" : TRUST_NEVER,
-        "TRUST_MARGINAL" : TRUST_MARGINAL,
-        "TRUST_FULLY" : TRUST_FULLY,
-        "TRUST_ULTIMATE" : TRUST_ULTIMATE,
-    }
+    TRUST_LEVELS = { "TRUST_UNDEFINED" : TRUST_UNDEFINED,
+                     "TRUST_NEVER" : TRUST_NEVER,
+                     "TRUST_MARGINAL" : TRUST_MARGINAL,
+                     "TRUST_FULLY" : TRUST_FULLY,
+                     "TRUST_ULTIMATE" : TRUST_ULTIMATE, }
+
+    #: True if the signature is valid, False otherwise.
+    valid = False
+    #: A string describing the status of the signature verification.
+    #: Can be one of ``'signature bad'``, ``'signature good'``,
+    #: ``'signature valid'``, ``'signature error'``, ``'decryption failed'``,
+    #: ``'no public key'``, ``'key exp'``, or ``'key rev'``.
+    status = None
+    #: The fingerprint of the signing keyid.
+    fingerprint = None
+    #: The fingerprint of the corresponding public key, which may be different
+    #: if the signature was created with a subkey.
+    pubkey_fingerprint = None
+    #: The keyid of the signing key.
+    key_id = None
+    #: xxx I'm not sure how this is different to key_id.
+    signature_id = None
+    #: The creation date of the signing key.
+    creation_date = None
+    #: The timestamp of the purported signature, if we are unable to parse it.
+    timestamp = None
+    #: The userid of the signing key which was used to create the signature.
+    username = None
+    #: When the signing key is due to expire.
+    expire_timestamp = None
+    #: The timestamp for when the signature was created.
+    sig_timestamp = None
+    #: A number 0-4 describing the trust level of the signature.
+    trust_level = None
+    #: The string corresponding to the ``trust_level`` number.
+    trust_text = None
 
     def __init__(self, gpg):
         self.gpg = gpg
-        self.valid = False
-        self.fingerprint = self.creation_date = self.timestamp = None
-        self.signature_id = self.key_id = None
-        self.username = None
-        self.status = None
-        self.pubkey_fingerprint = None
-        self.expire_timestamp = None
-        self.sig_timestamp = None
-        self.trust_text = None
-        self.trust_level = None
 
     def __nonzero__(self):
         return self.valid
-
     __bool__ = __nonzero__
 
     def handle_status(self, key, value):
@@ -521,7 +576,6 @@ class Verify(object):
              self.creation_date,
              self.sig_timestamp,
              self.expire_timestamp) = value.split()[:4]
-            # may be different if signature is made with a subkey
             self.pubkey_fingerprint = value.split()[-1]
             self.status = 'signature valid'
         elif key == "SIG_ID":
@@ -574,7 +628,7 @@ class Crypt(Verify):
     __bool__ = __nonzero__
 
     def __str__(self):
-        return self.data.decode(self.gpg.encoding, self.gpg.decode_errors)
+        return self.data.decode(self.gpg.encoding, self.gpg._decode_errors)
 
     def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
@@ -676,19 +730,14 @@ class Sign(object):
 
     #: The type of signature created.
     sig_type = None
-
     #: The algorithm used to create the signature.
     sig_algo = None
-
     #: The hash algorithm used to create the signature.
     sig_hash_also = None
-
     #: The fingerprint of the signing keyid.
     fingerprint = None
-
     #: The timestamp on the signature.
     timestamp = None
-
     #: xxx fill me in
     what = None
 
@@ -705,7 +754,7 @@ class Sign(object):
     __bool__ = __nonzero__
 
     def __str__(self):
-        return self.data.decode(self.gpg.encoding, self.gpg.decode_errors)
+        return self.data.decode(self.gpg.encoding, self.gpg._decode_errors)
 
     def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.

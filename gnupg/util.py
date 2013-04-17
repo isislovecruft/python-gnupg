@@ -140,7 +140,7 @@ def _is_file(input):
     """
     try:
         assert os.lstat(input).st_size > 0, "not a file: %s" % input
-    except (AssertionError, TypeError) as error:
+    except (AssertionError, TypeError, IOError, OSError) as error:
         logger.debug(error.message)
         return False
     else:
