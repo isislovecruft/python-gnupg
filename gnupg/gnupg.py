@@ -678,9 +678,8 @@ class GPG(object):
         raise NotImplemented("Functionality for '--list-sigs' not implemented.")
 
     def gen_key(self, input):
-        """
-        Generate a key; you might use gen_key_input() to create the control
-        input.
+        """Generate a GnuPG key through batch file key generation. See
+        :meth:`GPG.gen_key_input()` for creating the control input.
 
         >>> gpg = GPG(gpghome="keys")
         >>> input = gpg.gen_key_input()
@@ -689,6 +688,10 @@ class GPG(object):
         >>> result = gpg.gen_key('foo')
         >>> assert not result
 
+        :param dict input: A dictionary of parameters and values for the new
+                           key.
+        :returns: The result mapping with details of the new key, which is a
+                  :class:`parsers.GenKey <GenKey>` object.
         """
         args = ["--gen-key --batch"]
         key = self._result_map['generate'](self)
