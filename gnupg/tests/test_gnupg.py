@@ -117,11 +117,10 @@ def compare_keys(k1, k2):
 
 
 class ResultStringIO(io.StringIO):
-    def __init__(self):
-        super(self, io.StringIO).__init__()
-
+    def __init__(self, init_string):
+        super(ResultStringIO, self).__init__(init_string)
     def write(self, data):
-        super(self, io.StringIO).write(unicode(data))
+        super(ResultStringIO, self).write(unicode(data))
 
 
 class GPGTestCase(unittest.TestCase):
