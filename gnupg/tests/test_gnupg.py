@@ -569,8 +569,12 @@ class GPGTestCase(unittest.TestCase):
             verified.username,
             u'Bruce Schneier (python-gnupg tester) <bruceschneier@schneier.com>')
 
+    def test_signature_verification_clearsign(self):
+        """Test verfication of an embedded signature."""
+        key = self.generate_key("Johan Borst", "rijnda.el")
+        message = "You're *still* using AES? Really?"
         sig = self.gpg.sign(message, keyid=key.fingerprint,
-                            passphrase='taherelgamal')
+                            passphrase='johanborst')
         self.assertTrue(sig, "Good passphrase should succeed")
         try:
             file = util._make_binary_stream(sig.data, self.gpg.encoding)
