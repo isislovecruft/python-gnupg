@@ -11,7 +11,6 @@ import argparse
 import doctest
 import logging
 from functools import wraps
-import inspect
 import io
 import os
 import shutil
@@ -768,11 +767,6 @@ if __name__ == "__main__":
     suite_names = list()
     for name, methodset in suites.items():
         suite_names.append(name)
-        this_file = inspect.getfile(inspect.currentframe()).split('.', 1)[0]
-        #mod = getattr(this_file, '__dict__', None)
-        #func = getattr(gnupg.__module__, '__setattr__', None)
-        #if func is not None:
-        #    func(name, list(methodset))
         setattr(GPGTestCase, name, list(methodset))
 
     parser = argparse.ArgumentParser(description="Unittests for python-gnupg")
