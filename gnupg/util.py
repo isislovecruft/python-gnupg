@@ -30,6 +30,11 @@ from datetime   import datetime
 
 import logging
 import os
+import time
+import random
+import string
+import sys
+import threading
 
 try:
     from io import StringIO
@@ -61,6 +66,54 @@ _user = os.environ.get('HOME')                ## $HOME
 _ugpg = os.path.join(_user, '.gnupg')         ## $HOME/.gnupg
 _conf = os.path.join(os.path.join(_user, '.config'),
                      'python-gnupg')          ## $HOME/.config/python-gnupg
+
+
+def _copy_data(instream, outstream):
+    """Copy data from one stream to another.
+
+    :type instream: :class:`io.BytesIO` or :class:`io.StringIO` or file
+    :param instream: A byte stream or open file to read from.
+    :param file outstream: The file descriptor of a tmpfile to write to.
+    """
+    sent = 0
+
+    #try:
+    #    #assert (util._is_stream(instream)
+    #    #        or isinstance(instream, file)), "instream not stream or file"
+    #    assert isinstance(outstream, file), "outstream is not a file"
+    #except AssertionError as ae:
+    #    logger.exception(ae)
+    #    return
+
+    if hasattr(sys.stdin, 'encoding'):
+        enc = sys.stdin.encoding
+    else:
+        enc = 'ascii'
+
+    while True:
+        data = instream.read(1024)
+        if len(data) == 0:
+            break
+        sent += len(data)
+        logger.debug("_copy_data(): sending chunk (%d):\n%s" % (sent, data[:256]))
+        try:
+            outstream.write(data)
+        except UnicodeError:
+            try:
+                outstream.write(data.encode(enc))
+            except IOError:
+                logger.exception('_copy_data(): Error sending data: Broken pipe')
+                break
+        except IOError:
+            # Can get 'broken pipe' errors even when all data was sent
+            logger.exception('_copy_data(): Error sending data: Broken pipe')
+            break
+    try:
+        outstream.close()
+    except IOError:
+        logger.exception('_copy_data(): Got IOError while closing %s' % outstream)
+    else:
+        logger.debug("_copy_data(): Closed output, %d bytes sent." % sent)
 
 def _create_gpghome(gpghome):
     """Create the specified GnuPG home directory, if necessary.
@@ -181,15 +234,78 @@ def _make_binary_stream(s, encoding):
         rv = StringIO(s)
     return rv
 
-## xxx unused function?
-def _today():
-    """Get the current date.
+def _make_passphrase(length=None, save=False, file=None):
+    """Create a passphrase and write it to a file that only the user can read.
+
+    This is not very secure, and should not be relied upon for actual key
+    passphrases.
+
+    :param int length: The length in bytes of the string to generate.
+
+    :param file file: The file to save the generated passphrase in. If not
+        given, defaults to 'passphrase-<the real user id>-<seconds since
+        epoch>' in the top-level directory.
+    """
+    if not length:
+        length = 40
+
+    passphrase = _make_random_string(length)
+
+    if save:
+        ruid, euid, suid = os.getresuid()
+        gid = os.getgid()
+        now = time.mktime(time.gmtime())
+
+        if not file:
+            filename = str('passphrase-%s-%s' % uid, now)
+            file = os.path.join(_repo, filename)
+
+        with open(file, 'a') as fh:
+            fh.write(passphrase)
+            fh.flush()
+            fh.close()
+            os.chmod(file, 0600)
+            os.chown(file, ruid, gid)
+
+        logger.warn("Generated passphrase saved to %s" % file)
+    return passphrase
+
+def _make_random_string(length):
+    """Returns a random lowercase, uppercase, alphanumerical string.
+
+    :param int length: The length in bytes of the string to generate.
+    """
+    chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
+    return ''.join(random.choice(chars) for x in range(length))
+
+def _next_year():
+    """Get the date of today plus one year.
 
     :rtype: str
-    :returns: The date, in the format '%Y-%m-%d'.
+    :returns: The date of this day next year, in the format '%Y-%m-%d'.
     """
-    now_string = datetime.now().__str__()
-    return now_string.split(' ', 1)[0]
+    now = datetime.now().__str__()
+    date = now.split(' ', 1)[0]
+    year, month, day = date.split('-', 2)
+    next_year = str(int(year)+1)
+    return '-'.join((next_year, month, day))
+
+def _threaded_copy_data(instream, outstream):
+    """Copy data from one stream to another in a separate thread.
+
+    Wraps ``_copy_data()`` in a :class:`threading.Thread`.
+
+    :type instream: :class:`io.BytesIO` or :class:`io.StringIO`
+    :param instream: A byte stream to read from.
+    :param file outstream: The file descriptor of a tmpfile to write to.
+    """
+    copy_thread = threading.Thread(target=_copy_data,
+                                   args=(instream, outstream))
+    copy_thread.setDaemon(True)
+    logger.debug('_threaded_copy_data(): %r, %r, %r', copy_thread,
+                 instream, outstream)
+    copy_thread.start()
+    return copy_thread
 
 def _which(executable, flags=os.X_OK):
     """Borrowed from Twisted's :mod:twisted.python.proutils .
@@ -228,3 +344,9 @@ def _which(executable, flags=os.X_OK):
             if os.access(pext, flags):
                 result.append(pext)
     return result
+
+def _write_passphrase(stream, passphrase, encoding):
+    passphrase = '%s\n' % passphrase
+    passphrase = passphrase.encode(encoding)
+    stream.write(passphrase)
+    logger.debug("_write_passphrase(): Wrote passphrase.")

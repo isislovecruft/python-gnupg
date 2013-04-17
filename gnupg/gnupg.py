@@ -107,78 +107,7 @@ from parsers import GenKey, Sign, ListKeys, ListPackets
 from parsers import _fix_unsafe, _sanitise, _is_allowed, _sanitise_list
 from util    import logger, _conf
 
-import util
-
-
-def _copy_data(instream, outstream):
-    """Copy data from one stream to another.
-
-    :type instream: :class:`io.BytesIO` or :class:`io.StringIO` or file
-    :param instream: A byte stream or open file to read from.
-    :param file outstream: The file descriptor of a tmpfile to write to.
-    """
-    sent = 0
-
-    try:
-        #assert (util._is_stream(instream)
-        #        or isinstance(instream, file)), "instream not stream or file"
-        assert isinstance(outstream, file), "outstream is not a file"
-    except AssertionError as ae:
-        logger.exception(ae)
-        return
-
-    if hasattr(sys.stdin, 'encoding'):
-        enc = sys.stdin.encoding
-    else:
-        enc = 'ascii'
-
-    while True:
-        data = instream.read(1024)
-        if len(data) == 0:
-            break
-        sent += len(data)
-        logger.debug("_copy_data(): sending chunk (%d):\n%s" % (sent, data[:256]))
-        try:
-            outstream.write(data)
-        except UnicodeError:
-            try:
-                outstream.write(data.encode(enc))
-            except IOError:
-                logger.exception('_copy_data(): Error sending data: Broken pipe')
-                break
-        except IOError:
-            # Can get 'broken pipe' errors even when all data was sent
-            logger.exception('_copy_data(): Error sending data: Broken pipe')
-            break
-    try:
-        outstream.close()
-    except IOError:
-        logger.exception('_copy_data(): Got IOError while closing %s' % outstream)
-    else:
-        logger.debug("_copy_data(): Closed output, %d bytes sent." % sent)
-
-def _threaded_copy_data(instream, outstream):
-    """Copy data from one stream to another in a separate thread.
-
-    Wraps ``_copy_data()`` in a :class:`threading.Thread`.
-
-    :type instream: :class:`io.BytesIO` or :class:`io.StringIO`
-    :param instream: A byte stream to read from.
-    :param file outstream: The file descriptor of a tmpfile to write to.
-    """
-    copy_thread = threading.Thread(target=_copy_data,
-                                   args=(instream, outstream))
-    copy_thread.setDaemon(True)
-    logger.debug('_threaded_copy_data(): %r, %r, %r', copy_thread,
-                 instream, outstream)
-    copy_thread.start()
-    return copy_thread
-
-def _write_passphrase(stream, passphrase, encoding):
-    passphrase = '%s\n' % passphrase
-    passphrase = passphrase.encode(encoding)
-    stream.write(passphrase)
-    logger.debug("_write_passphrase(): Wrote passphrase.")
+import util as _util
 
 
 class GPG(object):
@@ -227,12 +156,12 @@ class GPG(object):
             gpghome = _conf
         self.gpghome = _fix_unsafe(gpghome)
         if self.gpghome:
-            util._create_gpghome(self.gpghome)
+            _util._create_gpghome(self.gpghome)
         else:
             message = ("Unsuitable gpg home dir: %s" % gpghome)
             logger.debug("GPG.__init__(): %s" % message)
 
-        self.gpgbinary = util._find_gpgbinary(gpgbinary)
+        self.gpgbinary = _util._find_gpgbinary(gpgbinary)
 
         if keyring is not None:
             raise DeprecationWarning("Option 'keyring' changing to 'secring'")
@@ -242,17 +171,6 @@ class GPG(object):
         self.secring = os.path.join(self.gpghome, secring)
         self.pubring = os.path.join(self.gpghome, pubring)
 
-        #for ring in [self.secring, self.pubring]:
-        #    if ring and not os.path.isfile(ring):
-        #        with open(ring, 'a+') as ringfile:
-        #            ringfile.write("")
-        #            ringfile.flush()
-        #    try:
-        #        assert util._has_readwrite(ring), \
-        #            ("Need r+w for %s" % ring)
-        #    except AssertionError as ae:
-        #        logger.debug(ae.message)
-
         self.options = _sanitise(options) if options else None
 
         self.encoding = locale.getpreferredencoding()
@@ -261,7 +179,7 @@ class GPG(object):
 
         try:
             assert self.gpghome is not None, "Got None for self.gpghome"
-            assert util._has_readwrite(self.gpghome), ("Home dir %s needs r+w"
+            assert _util._has_readwrite(self.gpghome), ("Home dir %s needs r+w"
                                                        % self.gpghome)
             assert self.gpgbinary, "Could not find gpgbinary %s" % full
             assert isinstance(verbose, bool), "'verbose' must be boolean"
@@ -354,7 +272,7 @@ class GPG(object):
                 break
             logger.debug("chunk: %r" % data[:256])
             chunks.append(data)
-        if util._py3k:
+        if _util._py3k:
             # Join using b'' or '', as appropriate
             result.data = type(data)().join(chunks)
         else:
@@ -399,8 +317,8 @@ class GPG(object):
         else:
             stdin = p.stdin
         if passphrase:
-            _write_passphrase(stdin, passphrase, self.encoding)
-        writer = _threaded_copy_data(file, stdin)
+            _util._write_passphrase(stdin, passphrase, self.encoding)
+        writer = _util._threaded_copy_data(file, stdin)
         self._collect_output(p, result, writer, stdin)
         return result
 
@@ -411,8 +329,8 @@ class GPG(object):
         """Create a signature for a message or file."""
         if isinstance(message, file):
             result = self._sign_file(message, **kwargs)
-        elif not util._is_stream(message):
-            f = util._make_binary_stream(message, self.encoding)
+        elif not _util._is_stream(message):
+            f = _util._make_binary_stream(message, self.encoding)
             result = self._sign_file(f, **kwargs)
             f.close()
         else:
@@ -448,8 +366,8 @@ class GPG(object):
         try:
             stdin = p.stdin
             if passphrase:
-                _write_passphrase(stdin, passphrase, self.encoding)
-            writer = _threaded_copy_data(file, stdin)
+                _util._write_passphrase(stdin, passphrase, self.encoding)
+            writer = _util._threaded_copy_data(file, stdin)
         except IOError:
             logger.exception("_sign_file(): Error writing message")
             writer = None
@@ -471,7 +389,7 @@ class GPG(object):
         >>> assert verify
 
         """
-        f = util._make_binary_stream(data, self.encoding)
+        f = _util._make_binary_stream(data, self.encoding)
         result = self.verify_file(f)
         f.close()
         return result
@@ -483,7 +401,7 @@ class GPG(object):
         detached signature should be specified as the ``sig_file``.
 
         :param file file: A file descriptor object. Its type will be checked
-                          with :func:`util._is_file`.
+                          with :func:`_util._is_file`.
         :param str sig_file: A file containing the GPG signature data for
                              ``file``. If given, ``file`` is verified via this
                              detached signature.
@@ -496,10 +414,10 @@ class GPG(object):
             logger.debug("verify_file(): Handling embedded signature")
             args = ["--verify"]
             proc = self._open_subprocess(args)
-            writer = _threaded_copy_data(file, proc.stdin)
+            writer = _util._threaded_copy_data(file, proc.stdin)
             self._collect_output(proc, result, writer, stdin=proc.stdin)
         else:
-            if not util._is_file(sig_file):
+            if not _util._is_file(sig_file):
                 logger.debug("verify_file(): '%r' is not a file" % sig_file)
                 return result
             logger.debug('verify_file(): Handling detached verification')
@@ -508,7 +426,7 @@ class GPG(object):
                 sig_fh = open(sig_file)
                 args = ["--verify %s - " % sig_fh.name]
                 proc = self._open_subprocess(args)
-                writer = _threaded_copy_data(file, proc.stdin)
+                writer = _util._threaded_copy_data(file, proc.stdin)
                 self._collect_output(proc, result, stdin=proc.stdin)
             finally:
                 if sig_fh and not sig_fh.closed:
@@ -568,7 +486,7 @@ class GPG(object):
 
         result = self._result_map['import'](self)
         logger.debug('import_keys: %r', key_data[:256])
-        data = util._make_binary_stream(key_data, self.encoding)
+        data = _util._make_binary_stream(key_data, self.encoding)
         self._handle_io(['--import'], data, result, binary=True)
         logger.debug('import_keys result: %r', result.__dict__)
         data.close()
@@ -587,7 +505,7 @@ class GPG(object):
         safe_keyserver = _fix_unsafe(keyserver)
 
         result = self._result_map['import'](self)
-        data = util._make_binary_stream("", self.encoding)
+        data = _util._make_binary_stream("", self.encoding)
         args = ['--keyserver', keyserver, '--recv-keys']
 
         if keyids:
@@ -606,7 +524,7 @@ class GPG(object):
         which='key'
         if secret:
             which='secret-key'
-        if util._is_list_or_tuple(fingerprints):
+        if _util._is_list_or_tuple(fingerprints):
             fingerprints = ' '.join(fingerprints)
         args = ['--batch --delete-%s "%s"' % (which, fingerprints)]
         result = self._result_map['delete'](self)
@@ -619,7 +537,7 @@ class GPG(object):
         which=''
         if secret:
             which='-secret-key'
-        if util._is_list_or_tuple(keyids):
+        if _util._is_list_or_tuple(keyids):
             keyids = ' '.join(['"%s"' % k for k in keyids])
         args = ["--armor --export%s %s" % (which, keyids)]
         p = self._open_subprocess(args)
@@ -650,7 +568,8 @@ class GPG(object):
         which='public-keys'
         if secret:
             which='secret-keys'
-        args = "--list-%s --fixed-list-mode --fingerprint --with-colons --no-show-photos" % (which,)
+        args = "--list-%s --fixed-list-mode --fingerprint " % (which,)
+        args += "--with-colons --list-options no-show-photos"
         args = [args]
         p = self._open_subprocess(args)
 
@@ -689,9 +608,8 @@ class GPG(object):
         raise NotImplemented("Functionality for '--list-sigs' not implemented.")
 
     def gen_key(self, input):
-        """
-        Generate a key; you might use gen_key_input() to create the control
-        input.
+        """Generate a GnuPG key through batch file key generation. See
+        :meth:`GPG.gen_key_input()` for creating the control input.
 
         >>> gpg = GPG(gpghome="keys")
         >>> input = gpg.gen_key_input()
@@ -700,24 +618,77 @@ class GPG(object):
         >>> result = gpg.gen_key('foo')
         >>> assert not result
 
+        :param dict input: A dictionary of parameters and values for the new
+                           key.
+        :returns: The result mapping with details of the new key, which is a
+                  :class:`parsers.GenKey <GenKey>` object.
         """
         args = ["--gen-key --batch"]
         key = self._result_map['generate'](self)
-        f = util._make_binary_stream(input, self.encoding)
+        f = _util._make_binary_stream(input, self.encoding)
         self._handle_io(args, f, key, binary=True)
         f.close()
         return key
 
     def gen_key_input(self, **kwargs):
-        """Generate GnuPG key(s) through batch file key generation.
+        """Generate a batch file for input to :meth:`GPG.gen_key()`.
 
         The GnuPG batch file key generation feature allows unattended key
         generation by creating a file with special syntax and then providing it
-        to:      gpg --gen-key --batch <batch file>
+        to: ``gpg --gen-key --batch``:
+
+            Key-Type: RSA
+            Key-Length: 4096
+            Name-Real: Autogenerated Key
+            Name-Email: %s@%s
+            Expire-Date: 2014-04-01
+            %pubring foo.gpg
+            %secring sec.gpg
+            %commit
+
+            Key-Type: DSA
+            Key-Length: 1024
+            Subkey-Type: ELG-E
+            Subkey-Length: 1024
+            Name-Real: Joe Tester
+            Name-Comment: with stupid passphrase
+            Name-Email: joe@foo.bar
+            Expire-Date: 0
+            Passphrase: abc
+            %pubring foo.pub
+            %secring foo.sec
+            %commit
 
         see http://www.gnupg.org/documentation/manuals/gnupg-devel/Unattended-GPG-key-generation.html#Unattended-GPG-key-generation
         for more details.
+
+        >>> gpg = GPG(gpghome="keys")
+        >>> params = {'name_real':'python-gnupg tester', 'name_email':'test@ing'}
+        >>> key_input = gpg.gen_key_input(**params)
+        >>> result = gpg.gen_key(input)
+        >>> assert result
+
+        :param str name_real: The uid name for the generated key.
+        :param str name_email: The uid email for the generated key. (default:
+            $USERNAME@$HOSTNAME)
+        :param str name_comment: The comment in the uid of the generated key.
+        :param str key_type: One of 'RSA', 'DSA', or 'ELG-E'. (default: 'RSA')
+        :param int key_length: The length in bytes of the new key.
+            (default: 4096)
+        :param str subkey_type: If ``key_type`` is 'RSA', an additional subkey
+            can be generated, and it's type must also be 'RSA'. If ``key_type``
+            is 'DSA', then the only subkey type which can be generated is
+            'ELG-E'.
+        :param int subkey_length: The length in bytes of the new subkey.
+        :type expire: int or str
+        :param expire: If an integer, the number of days before the key will
+            expire; if 0, the key will not expire. Otherwise, this can be given
+            as a string in the form <n>w or <n>m or <n>y, i.e. "5m" would mean
+            that the key will expire in five months, "1w" would expire in one
+            week, and "3y" would expire in three years. (default: "1y")
+        :param str passphrase: The passphrase for the new key.
         """
+
         parms = {}
         for key, val in list(kwargs.items()):
             key = key.replace('_','-').title()
@@ -726,7 +697,7 @@ class GPG(object):
         parms.setdefault('Key-Type', 'RSA')
         parms.setdefault('Key-Length', 4096)
         parms.setdefault('Name-Real', "Autogenerated Key")
-        parms.setdefault('Name-Comment', "Generated by python-gnupg")
+        parms.setdefault('Expire-Date', _util._next_year())
         try:
             logname = os.environ['LOGNAME']
         except KeyError:
@@ -734,6 +705,7 @@ class GPG(object):
         hostname = socket.gethostname()
         parms.setdefault('Name-Email', "%s@%s"
                          % (logname.replace(' ', '_'), hostname))
+
         out = "Key-Type: %s\n" % parms.pop('Key-Type')
         for key, val in list(parms.items()):
             out += "%s: %s\n" % (key, val)
@@ -741,28 +713,6 @@ class GPG(object):
         out += "%%secring %s\n" % self.secring
         out += "%commit\n"
         return out
-
-        # Key-Type: RSA
-        # Key-Length: 1024
-        # Name-Real: ISdlink Server on %s
-        # Name-Comment: Created by %s
-        # Name-Email: isdlink@%s
-        # Expire-Date: 0
-        # %commit
-        #
-        #
-        # Key-Type: DSA
-        # Key-Length: 1024
-        # Subkey-Type: ELG-E
-        # Subkey-Length: 1024
-        # Name-Real: Joe Tester
-        # Name-Comment: with stupid passphrase
-        # Name-Email: joe@foo.bar
-        # Expire-Date: 0
-        # Passphrase: abc
-        # %pubring foo.pub
-        # %secring foo.sec
-        # %commit
 
     #
     # ENCRYPTION
@@ -805,7 +755,7 @@ class GPG(object):
             args = ['--symmetric']
         else:
             args = ['--encrypt']
-            if not util._is_list_or_tuple(recipients):
+            if not _util._is_list_or_tuple(recipients):
                 recipients = (recipients,)
             for recipient in recipients:
                 args.append('--recipient "%s"' % recipient)
@@ -861,7 +811,7 @@ class GPG(object):
         >>> assert result.fingerprint == print1
 
         """
-        data = util._make_binary_stream(data, self.encoding)
+        data = _util._make_binary_stream(data, self.encoding)
         result = self.encrypt_file(data, recipients, **kwargs)
         data.close()
         return result
@@ -871,7 +821,7 @@ class GPG(object):
 
         :param message: A string or file-like object to decrypt.
         """
-        data = util._make_binary_stream(message, self.encoding)
+        data = _util._make_binary_stream(message, self.encoding)
         result = self.decrypt_file(data, **kwargs)
         data.close()
         return result
@@ -965,7 +915,7 @@ class GPGWrapper(GPG):
         """Send keys to a keyserver."""
         result = self._result_map['list'](self)
         gnupg.logger.debug('send_keys: %r', keyids)
-        data = gnupg.util._make_binary_stream("", self.encoding)
+        data = gnupg._util._make_binary_stream("", self.encoding)
         args = ['--keyserver', keyserver, '--send-keys']
         args.extend(keyids)
         self._handle_io(args, data, result, binary=True)
@@ -985,7 +935,7 @@ class GPGWrapper(GPG):
                 args.append('--cipher-algo %s' % cipher_algo)
         else:
             args = ['--encrypt']
-            if not util._is_list_or_tuple(recipients):
+            if not _util._is_list_or_tuple(recipients):
                 recipients = (recipients,)
             for recipient in recipients:
                 args.append('--recipient "%s"' % recipient)
@@ -1008,7 +958,7 @@ class GPGWrapper(GPG):
         args = ["--list-packets"]
         result = self._result_map['list-packets'](self)
         self._handle_io(args,
-                        util._make_binary_stream(raw_data, self.encoding),
+                        _util._make_binary_stream(raw_data, self.encoding),
                         result)
         return result
 
