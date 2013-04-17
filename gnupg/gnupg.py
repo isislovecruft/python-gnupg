@@ -568,7 +568,8 @@ class GPG(object):
         which='public-keys'
         if secret:
             which='secret-keys'
-        args = "--list-%s --fixed-list-mode --fingerprint --with-colons --no-show-photos" % (which,)
+        args = "--list-%s --fixed-list-mode --fingerprint " % (which,)
+        args += "--with-colons --list-options no-show-photos"
         args = [args]
         p = self._open_subprocess(args)
 
