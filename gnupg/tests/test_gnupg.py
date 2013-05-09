@@ -420,7 +420,7 @@ class GPGTestCase(unittest.TestCase):
         barbara = key.fingerprint
         gpg = self.gpg
         gpg.encoding = 'latin-1'
-        if gnupg._py3k:
+        if gnupg._util._py3k:
             data = 'Hello, André!'
         else:
             data = unicode('Hello, André', gpg.encoding)
