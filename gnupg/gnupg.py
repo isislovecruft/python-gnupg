@@ -207,7 +207,7 @@ class GPG(object):
         :func:parsers._sanitise. The ``passphrase`` argument needs to be True
         if a passphrase will be sent to GPG, else False.
         """
-        cmd = [self.gpgbinary, '--status-fd 2 --no-tty']
+        cmd = [self.gpgbinary, '--status-fd 2 --no-tty --no-emit-version']
         if self.gpghome:
             cmd.append('--homedir "%s"' % self.gpghome)
         if self.pubring:

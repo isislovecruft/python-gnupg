@@ -49,7 +49,6 @@ def _make_tempfile(*args, **kwargs):
 
 
 KEYS_TO_IMPORT = """-----BEGIN PGP PUBLIC KEY BLOCK-----
-Version: GnuPG v1.4.9 (MingW32)
 
 mQGiBEiH4QERBACm48JJsg2XGzWfL7f/fjp3wtrY+JIz6P07s7smr35kve+wl605
 nqHtgjnIVpUVsbI9+xhIAPIkFIR6ZcQ7gRDhoT0bWKGkfdQ7YzXedVRPlQLdbpmR
@@ -213,7 +212,7 @@ class GPGTestCase(unittest.TestCase):
         self.gpg.keyring = self.secring
         cmd = self.gpg._make_args(None, False)
         expected = ['/usr/bin/gpg',
-                    '--status-fd 2 --no-tty',
+                    '--status-fd 2 --no-tty --no-emit-version',
                     '--homedir "%s"' % HOME_DIR,
                     '--no-default-keyring --keyring %s' % self.pubring,
                     '--secret-keyring %s' % self.secring]

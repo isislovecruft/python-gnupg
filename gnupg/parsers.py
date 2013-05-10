@@ -287,7 +287,7 @@ def _is_allowed(input):
          '--import',
          '--export', '--export-secret-keys', '--export-secret-subkeys',
          '--verify',
-         '--version', '--output',
+         '--version', '--no-emit-version', '--output',
          '--status-fd', '--no-tty', '--passphrase-fd',
          '--homedir', '--no-default-keyring', '--default-key',
          '--keyring', '--secret-keyring', '--primary-keyring',
