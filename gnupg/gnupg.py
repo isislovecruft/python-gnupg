@@ -535,7 +535,8 @@ class GPG(object):
         :param bool secret: If True, delete the corresponding secret key(s)
                             also. (default: False)
         """
-        which='key'
+
+        which='keys'
         if secret:
             which='secret-key'
 
