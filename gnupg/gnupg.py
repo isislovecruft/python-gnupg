@@ -521,9 +521,24 @@ class GPG(object):
         return result
 
     def delete_keys(self, fingerprints, secret=False):
+        """Delete a key, or list of keys, from the current keyring.
+
+        The keys must be refered to by their full fingerprint for GnuPG to
+        delete them. If :param:`secret <secret=True>`, the corresponding secret
+        keyring will be deleted from :attr:`GPG.secring <self.secring>`.
+
+        :type fingerprints: str or list or tuple
+        :param fingerprints: A string representing the fingerprint (or a
+                             list/tuple of fingerprint strings) for the key(s)
+                             to delete.
+
+        :param bool secret: If True, delete the corresponding secret key(s)
+                            also. (default: False)
+        """
         which='key'
         if secret:
             which='secret-key'
+
         if _util._is_list_or_tuple(fingerprints):
             fingerprints = ' '.join(fingerprints)
         args = ['--batch --delete-%s "%s"' % (which, fingerprints)]
