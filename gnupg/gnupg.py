@@ -566,11 +566,14 @@ class GPG(object):
             which='-secret-keys'
 
         if _util._is_list_or_tuple(keyids):
-            keyids = ' '.join(['"%s"' % k for k in keyids])
-        args = ["--armor --export%s %s" % (which, keyids)]
+            keyids = ' '.join(['%s' % k for k in keyids])
+
+        args = ["--armor"]
+        args.append("--export{} {}".format(which, keyids))
+
         p = self._open_subprocess(args)
-        # gpg --export produces no status-fd output; stdout will be
-        # empty in case of failure
+        ## gpg --export produces no status-fd output; stdout will be empty in
+        ## case of failure
         #stdout, stderr = p.communicate()
         result = self._result_map['delete'](self) # any result will do
         self._collect_output(p, result, stdin=p.stdin)
