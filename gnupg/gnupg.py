@@ -551,11 +551,20 @@ class GPG(object):
         self._collect_output(p, result, stdin=p.stdin)
         return result
 
-    def export_keys(self, keyids, secret=False):
-        """export the indicated keys. 'keyid' is anything gpg accepts"""
+    def export_keys(self, keyids, secret=False, subkeys=False):
+        """Export the indicated ``keyids``.
+
+        :param str keyids: A keyid or fingerprint in any format that GnuPG will
+                           accept.
+        :param bool secret: If True, export only the secret key.
+        :param bool subkeys: If True, export the secret subkeys.
+        """
         which=''
-        if secret:
-            which='-secret-key'
+        if subkeys:
+            which='-secret-subkeys'
+        elif secret:
+            which='-secret-keys'
+
         if _util._is_list_or_tuple(keyids):
             keyids = ' '.join(['"%s"' % k for k in keyids])
         args = ["--armor --export%s %s" % (which, keyids)]
