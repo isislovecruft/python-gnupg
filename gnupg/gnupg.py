@@ -542,7 +542,10 @@ class GPG(object):
 
         if _util._is_list_or_tuple(fingerprints):
             fingerprints = ' '.join(fingerprints)
-        args = ['--batch --delete-%s "%s"' % (which, fingerprints)]
+
+        args = ['--batch']
+        args.append("--delete-{} {}".format(which, fingerprints))
+
         result = self._result_map['delete'](self)
         p = self._open_subprocess(args)
         self._collect_output(p, result, stdin=p.stdin)
