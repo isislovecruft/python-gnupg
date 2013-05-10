@@ -635,7 +635,6 @@ class GPG(object):
         of GnuPG to explicitly handle this correctly, we should probably
         include it in the args.
         """
-        ## we will want to include "--no-show-photos" in the args
         raise NotImplemented("Functionality for '--list-sigs' not implemented.")
 
     def gen_key(self, input):
