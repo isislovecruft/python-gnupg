@@ -11,7 +11,7 @@ cleantest: clean
 	rm gnupg/tests/*.log
 
 test: cleantest
-	python gnupg/tests/test_gnupg.py parsers basic genkey sign listkeys
+	python gnupg/tests/test_gnupg.py parsers basic genkey sign listkeys crypt keyrings import
 
 install: 
 	python setup.py install --record installed-files.txt
