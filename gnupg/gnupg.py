@@ -150,8 +150,6 @@ class GPG(object):
                  problem invoking gpg.
         """
 
-        logger.warn("")
-
         if not gpghome:
             gpghome = _conf
         self.gpghome = _fix_unsafe(gpghome)
