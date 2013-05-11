@@ -624,13 +624,13 @@ class GPGTestCase(unittest.TestCase):
         key = self.generate_key("Marten van Dijk", "xorr.ox")
         dijk = key.fingerprint
         gpg = self.gpg
-        message = ("In 2010 Riggio and Sicari presented a practical application"
-                   " of homomorphic encryption to a hybrid wireless sensor/mesh"
-                   " network. The system enables transparent multi-hop wireless"
-                   " backhauls that are able to perform statistical analysis of"
-                   " different kinds of data (temperature, humidity, etc.) "
-                   "coming from a WSN while ensuring both end-to-end encryption"
-                   "and hop-by-hop authentication.")
+        message = """
+In 2010 Riggio and Sicari presented a practical application of homomorphic
+encryption to a hybrid wireless sensor/mesh network. The system enables
+transparent multi-hop wireless backhauls that are able to perform statistical
+analysis of different kinds of data (temperature, humidity, etc.)  coming from
+a WSN while ensuring both end-to-end encryption and hop-by-hop
+authentication."""
         encrypted = str(gpg.encrypt(message, dijk))
         self.assertNotEqual(message, encrypted, "Data must have changed")
 
@@ -659,50 +659,69 @@ class GPGTestCase(unittest.TestCase):
         key = self.generate_key("Marten van Dijk", "xorr.ox")
         dijk = key.fingerprint
         gpg = self.gpg
-        message = ("In 2010 Riggio and Sicari presented a practical application"
-                   " of homomorphic encryption to a hybrid wireless sensor/mesh"
-                   " network. The system enables transparent multi-hop wireless"
-                   " backhauls that are able to perform statistical analysis of"
-                   " different kinds of data (temperature, humidity, etc.) "
-                   "coming from a WSN while ensuring both end-to-end encryption"
-                   "and hop-by-hop authentication.")
+        message = """
+In 2010 Riggio and Sicari presented a practical application of homomorphic
+encryption to a hybrid wireless sensor/mesh network. The system enables
+transparent multi-hop wireless backhauls that are able to perform statistical
+analysis of different kinds of data (temperature, humidity, etc.)  coming from
+a WSN while ensuring both end-to-end encryption and hop-by-hop
+authentication."""
         encrypted2 = str(gpg.encrypt(message, [gentry, dijk]))
         self.assertNotEqual(message, encrypted2, "PT and CT should not match")
 
     def test_decryption(self):
         """Test decryption"""
+        key = self.generate_key("Frey", "fr.ey",
+                                passphrase="craiggentry")
+        frey = key.fingerprint
+        key = self.generate_key("Rück", "rü.ck",
+                                passphrase="ruck")
+        ruck = key.fingerprint
+        gpg = self.gpg
+        message = """
+In 2010 Riggio and Sicari presented a practical application of homomorphic
+encryption to a hybrid wireless sensor/mesh network. The system enables
+transparent multi-hop wireless backhauls that are able to perform statistical
+analysis of different kinds of data (temperature, humidity, etc.)  coming from
+a WSN while ensuring both end-to-end encryption and hop-by-hop
+authentication."""
+        encrypted = str(self.gpg.encrypt(message, ruck))
+        decrypted = self.gpg.decrypt(encrypted, passphrase="ruck")
+        if message != decrypted.data:
+            logger.debug("was: %r", message)
+            logger.debug("new: %r", decrypted.data)
+        self.assertEqual(message, decrypted.data)
+
+    def test_decryption_multi_recipient(self):
+        """Test decryption of an encrypted string for multiple users"""
         key = self.generate_key("Craig Gentry", "xorr.ox",
                                 passphrase="craiggentry")
         gentry = key.fingerprint
         key = self.generate_key("Marten van Dijk", "xorr.ox")
         dijk = key.fingerprint
-        gpg = self.gpg
-        message = ("In 2010 Riggio and Sicari presented a practical application"
-                   " of homomorphic encryption to a hybrid wireless sensor/mesh"
-                   " network. The system enables transparent multi-hop wireless"
-                   " backhauls that are able to perform statistical analysis of"
-                   " different kinds of data (temperature, humidity, etc.) "
-                   "coming from a WSN while ensuring both end-to-end encryption"
-                   "and hop-by-hop authentication.")
-        encrypted = str(gpg.encrypt(message, dijk))
-        decrypted = self.gpg.decrypt(encrypted, passphrase="martenvandijk")
-        if message != decrypted.data:
-            logger.debug("was: %r", message)
-            logger.debug("new: %r", decrypted.data)
-        self.assertEqual(message, decrypted.data, "Round-trip must work")
+        message = """
+In 2010 Riggio and Sicari presented a practical application of homomorphic
+encryption to a hybrid wireless sensor/mesh network. The system enables
+transparent multi-hop wireless backhauls that are able to perform statistical
+analysis of different kinds of data (temperature, humidity, etc.)  coming from
+a WSN while ensuring both end-to-end encryption and hop-by-hop
+authentication."""
+        encrypted = str(self.gpg.encrypt(message, [gentry, dijk]))
+        self.assertNotEqual(message, encrypted, "PT and CT should not match")
+        decrypted1 = self.gpg.decrypt(encrypted, passphrase="craiggentry")
+        self.assertEqual(message, str(decrypted1.data))
+        decrypted2 = self.gpg.decrypt(encrypted, passphrase="martenvandijk")
+        self.assertEqual(message, str(decrypted2.data))
 
-        encrypted2 = str(gpg.encrypt(message, [gentry, dijk]))
-        self.assertNotEqual(message, encrypted2, "PT and CT should not match")
-        decrypted1 = gpg.decrypt(encrypted2, passphrase="craiggentry")
-        self.assertEqual(message, decrypted.data, "Round-trip must work")
-        decrypted2 = gpg.decrypt(encrypted2, passphrase="martenvandijk")
-        self.assertEqual(message, decrypted.data, "Round-trip must work")
-        # Test symmetric encryption
-        data = "chippy was here"
-        edata = str(gpg.encrypt(data, None, passphrase='bbrown',
-                                symmetric=True))
-        decrypted = gpg.decrypt(edata, passphrase='bbrown')
-        self.assertEqual(data, str(decrypted))
+    def test_symmetric_encryption_and_decryption(self):
+        """Test symmetric encryption and decryption"""
+        msg  = """
+If you have something that you don't want anyone to know, maybe you shouldn't
+be doing it in the first place. - Eric Schmidt, CEO of Google"""
+        encrypted = str(self.gpg.encrypt(msg, None, passphrase='quiscustodiet',
+                                         symmetric=True))
+        decrypted = self.gpg.decrypt(encrypted, passphrase='quiscustodiet')
+        self.assertEqual(msg, str(decrypted.data))
 
     def test_file_encryption_and_decryption(self):
         """Test that encryption/decryption to/from file works."""
@@ -777,6 +796,8 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                          'test_encryption_alt_encoding',
                          'test_encryption_multi_recipient',
                          'test_decryption',
+                         'test_decryption_multi_recipient',
+                         'test_symmetric_encryption_and_decryption',
                          'test_file_encryption_and_decryption']),
            'listkeys': set(['test_list_keys_after_generation']),
            'keyrings': set(['test_public_keyring',
