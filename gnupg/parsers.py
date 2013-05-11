@@ -625,7 +625,7 @@ class Crypt(Verify):
     ``--encrypt````--decrypt``, and ``--decrypt-files``.
     """
     def __init__(self, gpg):
-        super(Crypt, self).__init__(gpg)
+        self.gpg = gpg
         self.data = str()
         self.ok = False
         self.status = str()
