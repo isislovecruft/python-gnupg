@@ -421,7 +421,7 @@ class GPGTestCase(unittest.TestCase):
     def test_import_and_export(self):
         """Test that key import and export works."""
         logger.debug("test_import_and_export begins")
-        self.test_list_keys_initial()
+        self.test_list_keys_initial_public()
         gpg = self.gpg
         result = gpg.import_keys(KEYS_TO_IMPORT)
         self.assertEqual(result.summary(), '2 imported')
@@ -450,7 +450,7 @@ class GPGTestCase(unittest.TestCase):
     def test_import_only(self):
 	"""Test that key import works."""
         logger.debug("test_import_only begins")
-        self.test_list_keys_initial()
+        self.test_list_keys_initial_public()
         self.gpg.import_keys(KEYS_TO_IMPORT)
         public_keys = self.gpg.list_keys()
         self.assertTrue(is_list_with_len(public_keys, 2),
