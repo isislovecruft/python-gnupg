@@ -440,8 +440,9 @@ class GPGTestCase(unittest.TestCase):
             logger.debug("was: %r", KEYS_TO_IMPORT)
             logger.debug("now: %r", ascii)
         self.assertEqual(0, match, "Keys must match")
+
         #Generate a key so we can test exporting private keys
-        key = self.do_key_generation()
+        key = self.generate_key('Shai Halevi', 'xorr.ox')
         ascii = gpg.export_keys(key.fingerprint, True)
         self.assertTrue(ascii.find("PGP PRIVATE KEY BLOCK") >= 0,
                         "Exported key should be private")
