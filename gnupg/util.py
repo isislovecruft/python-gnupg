@@ -111,28 +111,29 @@ def _copy_data(instream, outstream):
     try:
         outstream.close()
     except IOError:
-        logger.exception('_copy_data(): Got IOError while closing %s' % outstream)
+        logger.exception('_copy_data(): Got IOError while closing %s'
+                         % outstream)
     else:
         logger.debug("_copy_data(): Closed output, %d bytes sent." % sent)
 
-def _create_gpghome(gpghome):
+def _create_homedir(homedir):
     """Create the specified GnuPG home directory, if necessary.
 
-    :param str gpghome: The directory to use.
+    :param str homedir: The directory to use.
     :rtype: bool
     :returns: True if no errors occurred and the directory was created or
               existed beforehand, False otherwise.
     """
     ## xxx how will this work in a virtualenv?
-    if not os.path.isabs(gpghome):
-        message = ("Got non-abs gpg home dir path: %s" % gpghome)
-        logger.warn("util._create_gpghome(): %s" % message)
-        gpghome = os.path.abspath(gpghome)
-    if not os.path.isdir(gpghome):
-        message = ("Creating gpg home dir: %s" % gpghome)
-        logger.warn("util._create_gpghome(): %s" % message)
+    if not os.path.isabs(homedir):
+        message = ("Got non-abs gpg home dir path: %s" % homedir)
+        logger.warn("util._create_homedir(): %s" % message)
+        homedir = os.path.abspath(homedir)
+    if not os.path.isdir(homedir):
+        message = ("Creating gpg home dir: %s" % homedir)
+        logger.warn("util._create_homedir(): %s" % message)
         try:
-            os.makedirs(gpghome, 0x1C0)
+            os.makedirs(homedir, 0x1C0)
         except OSError as ose:
             logger.error(ose, exc_info=1)
             return False
@@ -141,22 +142,22 @@ def _create_gpghome(gpghome):
     else:
         return True
 
-def _find_gpgbinary(gpgbinary=None):
+def _find_binary(binary=None):
     """Find the absolute path to the GnuPG binary.
 
     Also run checks that the binary is not a symlink, and check that
     our process real uid has exec permissions.
 
-    :param str gpgbinary: The path to the GnuPG binary.
+    :param str binary: The path to the GnuPG binary.
     :raises: :exc:RuntimeError if it appears that GnuPG is not installed.
     :rtype: str
     :returns: The absolute path to the GnuPG binary to use, if no exceptions
               occur.
     """
-    binary = None
-    if gpgbinary is not None:
-        if not os.path.isabs(gpgbinary):
-            try: binary = _which(gpgbinary)[0]
+    gpg_binary = None
+    if binary is not None:
+        if not os.path.isabs(binary):
+            try: binary = _which(binary)[0]
             except IndexError as ie: logger.debug(ie.message)
     if binary is None:
         try: binary = _which('gpg')[0]
@@ -166,7 +167,7 @@ def _find_gpgbinary(gpgbinary=None):
         assert not os.path.islink(binary), "Path to gpg binary is symlink"
         assert os.access(binary, os.X_OK), "Lacking +x perms for gpg binary"
     except (AssertionError, AttributeError) as ae:
-        logger.debug("util._find_gpgbinary(): %s" % ae.message)
+        logger.debug("util._find_binary(): %s" % ae.message)
     else:
         return binary
 

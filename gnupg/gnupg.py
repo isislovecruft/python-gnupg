@@ -122,27 +122,27 @@ class GPG(object):
                    'sign': Sign,
                    'verify': Verify,}
 
-    def __init__(self, gpgbinary=None, gpghome=None, verbose=False,
-                 use_agent=False, keyring=None, secring=None, pubring=None,
-                 options=None):
+    def __init__(self, binary=None, homedir=None, verbose=False,
+                 use_agent=False, keyring=None, secring=None,
+                 default_preference_list=None, options=None):
         """Initialize a GnuPG process wrapper.
 
-        :param str gpgbinary: Name for GnuPG binary executable. If the absolute
+        :param str binary: Name for GnuPG binary executable. If the absolute
                               path is not given, the evironment variable $PATH
                               is searched for the executable and checked that
                               the real uid/gid of the user has sufficient
                               permissions.
-        :param str gpghome: Full pathname to directory containing the public
+        :param str homedir: Full pathname to directory containing the public
                             and private keyrings. Default is whatever GnuPG
                             defaults to.
         :param str keyring: raises :exc:DeprecationWarning. Use :param:pubring.
         :param str secring: Name of alternative secret keyring file to use. If
                             left unspecified, this will default to using
-                            'secring.gpg' in the :param:gpghome directory, and
+                            'secring.gpg' in the :param:homedir directory, and
                             create that file if it does not exist.
         :param str pubring: Name of alternative public keyring file to use. If
                             left unspecified, this will default to using
-                            'pubring.gpg' in the :param:gpghome directory, and
+                            'pubring.gpg' in the :param:homedir directory, and
                             create that file if it does not exist.
         :param list options: A list of additional options to pass to the GPG
                              binary.
@@ -150,24 +150,28 @@ class GPG(object):
                  problem invoking gpg.
         """
 
-        if not gpghome:
-            gpghome = _conf
-        self.gpghome = _fix_unsafe(gpghome)
-        if self.gpghome:
-            _util._create_gpghome(self.gpghome)
+        if not homedir:
+            homedir = _conf
+        self.homedir = _fix_unsafe(homedir)
+        if self.homedir:
+            _util._create_homedir(self.homedir)
         else:
-            message = ("Unsuitable gpg home dir: %s" % gpghome)
+            message = ("Unsuitable gpg home dir: %s" % homedir)
             logger.debug("GPG.__init__(): %s" % message)
 
-        self.gpgbinary = _util._find_gpgbinary(gpgbinary)
+        self.binary = _util._find_binary(binary)
 
-        if keyring is not None:
-            raise DeprecationWarning("Option 'keyring' changing to 'secring'")
+        if default_preference_list is None:
+            prefs = 'SHA512 SHA384 SHA256 AES256 CAMELLIA256 TWOFISH ZLIB ZIP'
+        else:
+            ## xxx implement me, should return None on error
+            prefs = check_preference_list(default_preference_list)
+        self.default_preference_list = prefs
 
         secring = 'secring.gpg' if secring is None else _fix_unsafe(secring)
-        pubring = 'pubring.gpg' if pubring is None else _fix_unsafe(pubring)
-        self.secring = os.path.join(self.gpghome, secring)
-        self.pubring = os.path.join(self.gpghome, pubring)
+        keyring = 'pubring.gpg' if keyring is None else _fix_unsafe(keyring)
+        self.secring = os.path.join(self.homedir, secring)
+        self.keyring = os.path.join(self.homedir, keyring)
 
         self.options = _sanitise(options) if options else None
 
@@ -176,10 +180,10 @@ class GPG(object):
             self.encoding = sys.stdin.encoding
 
         try:
-            assert self.gpghome is not None, "Got None for self.gpghome"
-            assert _util._has_readwrite(self.gpghome), ("Home dir %s needs r+w"
-                                                       % self.gpghome)
-            assert self.gpgbinary, "Could not find gpgbinary %s" % full
+            assert self.homedir is not None, "Got None for self.homedir"
+            assert _util._has_readwrite(self.homedir), ("Home dir %s needs r+w"
+                                                       % self.homedir)
+            assert self.binary, "Could not find binary %s" % full
             assert isinstance(verbose, bool), "'verbose' must be boolean"
             assert isinstance(use_agent, bool), "'use_agent' must be boolean"
             if self.options:
@@ -205,17 +209,19 @@ class GPG(object):
         :func:parsers._sanitise. The ``passphrase`` argument needs to be True
         if a passphrase will be sent to GPG, else False.
         """
-        cmd = [self.gpgbinary, '--status-fd 2 --no-tty --no-emit-version']
-        if self.gpghome:
-            cmd.append('--homedir "%s"' % self.gpghome)
-        if self.pubring:
-            cmd.append('--no-default-keyring --keyring %s' % self.pubring)
+        cmd = [self.binary, '--status-fd 2 --no-tty --no-emit-version']
+        if self.homedir:
+            cmd.append('--homedir "%s"' % self.homedir)
+        if self.keyring:
+            cmd.append('--no-default-keyring --keyring %s' % self.keyring)
             if self.secring:
                 cmd.append('--secret-keyring %s' % self.secring)
         if passphrase:
             cmd.append('--batch --passphrase-fd 0')
         if self.use_agent:
             cmd.append('--use-agent')
+        else:
+            cmd.append('--no-use-agent')
         if self.options:
             [cmd.append(opt) for opt in iter(_sanitise_list(self.options))]
         if args:
@@ -375,7 +381,7 @@ class GPG(object):
     def verify(self, data):
         """Verify the signature on the contents of the string ``data``.
 
-        >>> gpg = GPG(gpghome="keys")
+        >>> gpg = GPG(homedir="keys")
         >>> input = gpg.gen_key_input(Passphrase='foo')
         >>> key = gpg.gen_key(input)
         >>> assert key
@@ -440,7 +446,7 @@ class GPG(object):
 
         >>> import shutil
         >>> shutil.rmtree("keys")
-        >>> gpg = GPG(gpghome="keys")
+        >>> gpg = GPG(homedir="keys")
         >>> input = gpg.gen_key_input()
         >>> result = gpg.gen_key(input)
         >>> print1 = result.fingerprint
@@ -495,7 +501,7 @@ class GPG(object):
 
         >>> import shutil
         >>> shutil.rmtree("keys")
-        >>> gpg = GPG(gpghome="keys")
+        >>> gpg = GPG(homedir="keys")
         >>> result = gpg.recv_keys('pgp.mit.edu', '3FF0DB166A7476EA')
         >>> assert result
 
@@ -583,7 +589,7 @@ class GPG(object):
 
         >>> import shutil
         >>> shutil.rmtree("keys")
-        >>> gpg = GPG(gpghome="keys")
+        >>> gpg = GPG(homedir="keys")
         >>> input = gpg.gen_key_input()
         >>> result = gpg.gen_key(input)
         >>> print1 = result.fingerprint
@@ -639,7 +645,7 @@ class GPG(object):
         """Generate a GnuPG key through batch file key generation. See
         :meth:`GPG.gen_key_input()` for creating the control input.
 
-        >>> gpg = GPG(gpghome="keys")
+        >>> gpg = GPG(homedir="keys")
         >>> input = gpg.gen_key_input()
         >>> result = gpg.gen_key(input)
         >>> assert result
@@ -687,7 +693,7 @@ class GPG(object):
             %secring foo.sec
             %commit
 
-        >>> gpg = GPG(gpghome="keys")
+        >>> gpg = GPG(homedir="keys")
         >>> params = {'name_real':'python-gnupg tester', 'name_email':'test@ing'}
         >>> key_input = gpg.gen_key_input(**params)
         >>> result = gpg.gen_key(input)
@@ -850,7 +856,7 @@ class GPG(object):
         for key, val in list(parms.items()):
             out += "%s: %s\n" % (key, val)
 
-        out += "%%pubring %s\n" % self.pubring
+        out += "%%pubring %s\n" % self.keyring
         out += "%%secring %s\n" % self.secring
 
         if testing:
@@ -922,7 +928,7 @@ class GPG(object):
         >>> import shutil
         >>> if os.path.exists("keys"):
         ...     shutil.rmtree("keys")
-        >>> gpg = GPG(gpghome="keys")
+        >>> gpg = GPG(homedir="keys")
         >>> input = gpg.gen_key_input(passphrase='foo')
         >>> result = gpg.gen_key(input)
         >>> print1 = result.fingerprint
@@ -1001,10 +1007,10 @@ class GPGWrapper(GPG):
     replaced by a more general class used throughout the project.
     """
 
-    def __init__(self, gpgbinary=None, gnupghome=_conf,
+    def __init__(self, binary=None, homedir=_conf,
                  verbose=False, use_agent=False, keyring=None, options=None):
         super(GPGWrapper, self).__init__(gnupghome=gnupghome,
-                                         gpgbinary=gpgbinary,
+                                         binary=binary,
                                          verbose=verbose,
                                          use_agent=use_agent,
                                          keyring=keyring,
@@ -1036,13 +1042,14 @@ class GPGWrapper(GPG):
         raise LookupError(
             "GnuPG public key for subkey %s not found!" % subkey)
 
-    def encrypt(self, data, recipient, sign=None, always_trust=True,
+    def encrypt(self, data, recipient, sign_with=None, always_trust=True,
                 passphrase=None, symmetric=False):
         """
         Encrypt data using GPG.
         """
         # TODO: devise a way so we don't need to "always trust".
-        return super(GPGWrapper, self).encrypt(data, recipient, sign=sign,
+        return super(GPGWrapper, self).encrypt(data, recipient,
+                                               sign_with=sign,
                                                always_trust=always_trust,
                                                passphrase=passphrase,
                                                symmetric=symmetric,

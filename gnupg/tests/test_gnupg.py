@@ -142,8 +142,8 @@ class GPGTestCase(unittest.TestCase):
             self.assertTrue(os.path.isdir(hd), "Not a directory: %s" % hd)
             shutil.rmtree(hd)
         self.homedir = hd
-        self.gpg = gnupg.GPG(gpghome=hd, gpgbinary='gpg')
-        self.pubring = os.path.join(self.homedir, 'pubring.gpg')
+        self.gpg = gnupg.GPG(homedir=hd, binary='gpg')
+        self.keyring = os.path.join(self.homedir, 'keyring.gpg')
         self.secring = os.path.join(self.homedir, 'secring.gpg')
 
     def test_parsers_fix_unsafe(self):
@@ -198,24 +198,24 @@ class GPGTestCase(unittest.TestCase):
         env_copy = os.environ
         path_copy = os.environ.pop('PATH')
         with self.assertRaises(RuntimeError):
-            gnupg.GPG(gpghome=self.homedir)
+            gnupg.GPG(homedir=self.homedir)
         os.environ = env_copy
         os.environ.update({'PATH': path_copy})
 
     def test_gpg_binary_not_abs(self):
         """Test that a non-absolute path to gpg results in a full path."""
-        self.assertTrue(os.path.isabs(self.gpg.gpgbinary))
+        self.assertTrue(os.path.isabs(self.gpg.binary))
 
     def test_make_args_drop_protected_options(self):
         """Test that unsupported gpg options are dropped."""
         self.gpg.options = ['--tyrannosaurus-rex', '--stegosaurus']
-        self.gpg.keyring = self.secring
         cmd = self.gpg._make_args(None, False)
         expected = ['/usr/bin/gpg',
                     '--status-fd 2 --no-tty --no-emit-version',
-                    '--homedir "%s"' % HOME_DIR,
-                    '--no-default-keyring --keyring %s' % self.pubring,
-                    '--secret-keyring %s' % self.secring]
+                    '--homedir "%s"' % self.homedir,
+                    '--no-default-keyring --keyring %s' % self.keyring,
+                    '--secret-keyring %s' % self.secring,
+                    '--no-use-agent',]
         self.assertListEqual(cmd, expected)
 
     def test_make_args(self):
@@ -223,7 +223,7 @@ class GPGTestCase(unittest.TestCase):
         not_allowed = ['--bicycle', '--zeppelin', 'train', 'flying-carpet']
         self.gpg.options = not_allowed[:-2]
         args = self.gpg._make_args(not_allowed[2:], False)
-        self.assertTrue(len(args) == 5)
+        self.assertTrue(len(args) == 6)
         for na in not_allowed:
             self.assertNotIn(na, args)
 
@@ -410,13 +410,15 @@ class GPGTestCase(unittest.TestCase):
 
     def test_public_keyring(self):
         """Test that the public keyring is found in the gpg home directory."""
-        self.gpg.keyring = self.pubring
-        self.assertTrue(os.path.isfile(self.pubring))
+        ## we have to use the keyring for GnuPG to create it:
+        keys = self.gpg.list_keys()
+        self.assertTrue(os.path.isfile(self.gpg.keyring))
 
     def test_secret_keyring(self):
         """Test that the secret keyring is found in the gpg home directory."""
-        self.gpg.keyring = self.secring
-        self.assertTrue(os.path.isfile(self.secring))
+        ## we have to use the secring for GnuPG to create it:
+        keys = self.gpg.list_keys(secret=True)
+        self.assertTrue(os.path.isfile(self.gpg.secring))
 
     def test_import_and_export(self):
         """Test that key import and export works."""
@@ -725,7 +727,8 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                            'test_parsers_is_hex_valid',
                            'test_parsers_is_hex_invalid',
                            'test_copy_data_bytesio',]),
-           'basic': set(['test_gpghome_creation',
+           'basic': set(['test_homedir_creation',
+                         'test_binary_discovery',
                          'test_gpg_binary',
                          'test_gpg_binary_not_abs',
                          'test_gpg_binary_version_str',
