@@ -868,16 +868,18 @@ class GPG(object):
         if testing:
             out += "%no-protection\n"
             out += "%transient-key\n"
-            
+
         out += "%commit\n"
         return out
 
     #
     # ENCRYPTION
     #
-    def encrypt_file(self, file, recipients, sign=None,
-                     always_trust=False, passphrase=None,
-                     armor=True, output=None, symmetric=False):
+    def encrypt_file(self, file, recipients, sign_with=None,
+                     always_trust=False, passphrase=None, armor=True,
+                     output=None, encrypt=True, symmetric=False,
+                     cipher_algo='AES256', digest_algo='SHA512',
+                     compress_algo='ZLIB'):
         """Encrypt the message read from ``file``.
 
         :type file: file or :class:BytesIO
@@ -885,8 +887,8 @@ class GPG(object):
         :type recipients: str or list or tuple
         :param recipients: The recipients to encrypt to. Recipients may be
                            specified by UID or keyID/fingerprint.
-        :param str sign: The keyID to use for signing, i.e.
-                         "gpg --sign --default-key A3ADB67A2CDB8B35 ..."
+        :param str sign_with: The keyID to use for signing, i.e.
+                              "gpg --sign --default-key A3ADB67A2CDB8B35 ..."
         :param bool always_trust: If True, ignore trust warnings on recipient
                                   keys. If False, display trust warnings.
                                   (default: False)
@@ -900,29 +902,48 @@ class GPG(object):
         :param str output: The output file to write to. If not specified, the
                            encrypted output is returned, and thus should be
                            stored as an object in Python. For example:
-
-        >>> gpg = gnupg.GPG(gpghome='./tmp_test')
-
         """
-        if output:  # write the output to a file with the specified name
-            if os.path.exists(output):
-                os.remove(output) # to avoid overwrite confirmation message
-            args.append('--output "%s"' % output)
-        args = ['--encrypt']
+
+        args = list()
+
+        ## both can be used at the same time for an encrypted file which
+        ## is decryptable with a passphrase or secretkey.
+        if encrypt:
+            args.append('--encrypt')
         if symmetric:
-            args = ['--symmetric']
-        else:
-            args = ['--encrypt']
-            if not _util._is_list_or_tuple(recipients):
+            args.append('--symmetric')
+
+        if not _util._is_list_or_tuple(recipients):
+            if isinstance(recipients, str):
+                recipients = [rec for rec in recipients.split(' ')]
+            else:
                 recipients = (recipients,)
-            for recipient in recipients:
-                args.append('--recipient "%s"' % recipient)
+        if len(recipients) > 1:
+            args.append('--multifile')
+        for recipient in recipients:
+            args.append('--recipient %s' % recipient)
+
+        if output is not None:
+            if getattr(output, 'fileno', None) is not None:
+                if os.path.exists(output):
+                    os.remove(output) # to avoid overwrite confirmation message
+            args.append('--output "%s"' % output)
+
         if armor:
             args.append('--armor')
-        if sign:
-            args.append('--sign --default-key "%s"' % sign)
+        if sign_with:
+            args.append('--sign')
+            args.append('--default-key %s' % sign_with)
+            if digest_algo:
+                args.append('--digest-algo %s' % digest_algo)
         if always_trust:
-            args.append("--always-trust")
+            args.append('--always-trust')
+
+        if cipher_algo:
+            args.append('--cipher-algo %s' % cipher_algo)
+        if compress_algo:
+            args.append('--compress-algo %s' % compress_algo)
+
         result = self._result_map['crypt'](self)
         self._handle_io(args, file, result, passphrase=passphrase, binary=True)
         logger.debug('encrypt result: %r', result.data)
