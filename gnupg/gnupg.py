@@ -524,7 +524,7 @@ class GPG(object):
         logger.debug('recv_keys result: %r', result.__dict__)
         return result
 
-    def delete_keys(self, fingerprints, secret=False):
+    def delete_keys(self, fingerprints, secret=False, subkeys=False):
         """Delete a key, or list of keys, from the current keyring.
 
         The keys must be refered to by their full fingerprint for GnuPG to
@@ -538,11 +538,17 @@ class GPG(object):
 
         :param bool secret: If True, delete the corresponding secret key(s)
                             also. (default: False)
+        :param bool subkeys: If True, delete the secret subkey first, then
+                             the public key. Same as
+                            ``gpg --delete-secret-and-public-key 0x12345678``
+                            (default: False)
         """
 
         which='keys'
         if secret:
             which='secret-key'
+        if subkeys:
+            which='secret-and-public-key'
 
         if _util._is_list_or_tuple(fingerprints):
             fingerprints = ' '.join(fingerprints)
