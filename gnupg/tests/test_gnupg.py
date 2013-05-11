@@ -177,11 +177,20 @@ class GPGTestCase(unittest.TestCase):
         invalid_hex = 'cipherpunks write code'
         self.assertFalse(parsers._is_hex(invalid_hex))
 
-    def test_gpghome_creation(self):
-        """Test the environment by ensuring that setup worked."""
-        hd = self.homedir
-        self.assertTrue(os.path.exists(hd) and os.path.isdir(hd),
-                        "Not an existing directory: %s" % hd)
+    def test_homedir_creation(self):
+        """Test that a homedir is created if left unspecified"""
+        gpg = gnupg.GPG(binary='gpg')
+        self.assertTrue(os.path.exists(gpg.homedir),
+                        "Not an existing directory: %s" % gpg.homedir)
+        self.assertTrue(os.path.isdir(gpg.homedir),
+                        "Not a directory: %s" % gpg.homedir)
+
+    def test_binary_discovery(self):
+        """Test that the path to gpg is discovered if unspecified"""
+        gpg = gnupg.GPG()
+        self.assertIsNotNone(gpg.binary)
+        self.assertTrue(os.path.exists(gpg.binary),
+                        "Path does not exist: %s" % gpg.binary)
 
     def test_gpg_binary(self):
         """Test that 'gpg --version' does not return an error code."""
