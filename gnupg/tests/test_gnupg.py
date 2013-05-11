@@ -732,29 +732,25 @@ be doing it in the first place. - Eric Schmidt, CEO of Google"""
         # On Windows, if the handles aren't closed, the files can't be deleted
         #os.close(encfno)
         #os.close(decfno)
-        try:
-            key = self.generate_key("Andrew Able", "alpha.com",
-                                    passphrase="andy")
-            andrew = key.fingerprint
-            key = self.generate_key("Barbara Brown", "beta.com")
-            barbara = key.fingerprint
-            data = "Hello, world!"
-            file = util._make_binary_stream(data, self.gpg.encoding)
-            edata = self.gpg.encrypt_file(file, barbara,
-                                          armor=False, output=encfname)
-            ddata = self.gpg.decrypt_file(efile, passphrase="bbrown",
-                                          output=decfname)
-            encfname.seek(0, 0) # can't use os.SEEK_SET in 2.4
-            edata = encfname.read()
-            ddata = decfname.read()
-            data = data.encode(self.gpg.encoding)
-            if ddata != data:
-                logger.debug("was: %r", data)
-                logger.debug("new: %r", ddata)
-            self.assertEqual(data, ddata, "Round-trip must work")
-        except Exception as exc:
-            logger.warn(exc.message)
-        logger.debug("test_file_encryption_and_decryption ends")
+        key = self.generate_key("Andrew Able", "alpha.com",
+                                passphrase="andy")
+        andrew = key.fingerprint
+        key = self.generate_key("Barbara Brown", "beta.com")
+        barbara = key.fingerprint
+        data = "Hello, world!"
+        file = util._make_binary_stream(data, self.gpg.encoding)
+        edata = self.gpg.encrypt_file(file, barbara,
+                                      armor=False, output=encfname)
+        ddata = self.gpg.decrypt_file(efile, passphrase="bbrown",
+                                      output=decfname)
+        encfname.seek(0, 0) # can't use os.SEEK_SET in 2.4
+        edata = encfname.read()
+        ddata = decfname.read()
+        data = data.encode(self.gpg.encoding)
+        if ddata != data:
+            logger.debug("was: %r", data)
+            logger.debug("new: %r", ddata)
+        self.assertEqual(data, ddata)
 
 
 suites = { 'parsers': set(['test_parsers_fix_unsafe',
