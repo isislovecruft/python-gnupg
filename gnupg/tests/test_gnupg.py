@@ -35,12 +35,11 @@ __version__ = gnupg.__version__
 logger = logging.getLogger('gnupg')
 _here  = os.path.join(os.path.join(util._repo, 'gnupg'), 'tests')
 _files = os.path.join(_here, 'files')
+_tempd = os.path.join(_here, 'tmp')
 
-tempfile.tempdir = os.path.join(_here, 'tmp_test')
+tempfile.tempdir = _tempd
 if not os.path.isdir(tempfile.gettempdir()):
     os.mkdir(tempfile.gettempdir())
-
-HOME_DIR = tempfile.tempdir
 
 @wraps(tempfile.TemporaryFile)
 def _make_tempfile(*args, **kwargs):
@@ -137,7 +136,7 @@ class GPGTestCase(unittest.TestCase):
 
     def setUp(self):
         """This method is called once per self.test_* method."""
-        hd = HOME_DIR
+        hd = tempfile.mkdtemp()
         if os.path.exists(hd):
             self.assertTrue(os.path.isdir(hd), "Not a directory: %s" % hd)
             shutil.rmtree(hd)
@@ -145,6 +144,17 @@ class GPGTestCase(unittest.TestCase):
         self.gpg = gnupg.GPG(homedir=hd, binary='gpg')
         self.keyring = os.path.join(self.homedir, 'keyring.gpg')
         self.secring = os.path.join(self.homedir, 'secring.gpg')
+
+    def tearDown(self):
+        """This is called once per self.test_* method after the test run."""
+        if os.path.exists(self.homedir) and os.path.isdir(self.homedir):
+            try:
+                shutil.rmtree(self.homedir)
+            except OSError as ose:
+                logger.error(ose)
+        else:
+            logger.warn("Can't delete homedir: '%s' not a directory"
+                        % self.homedir)
 
     def test_parsers_fix_unsafe(self):
         """Test that unsafe inputs are quoted out and then ignored."""
@@ -826,8 +836,8 @@ def main(args):
                    catchbreak=True)
 
     ## Finally, remove our testing directory:
-    if os.path.isdir(tempfile.gettempdir()):
-        os.removedirs(tempfile.gettempdir())
+    if os.path.isdir(_tempd):
+        os.unlink(_tempd)
 
 if __name__ == "__main__":
 
