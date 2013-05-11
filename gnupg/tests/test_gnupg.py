@@ -703,7 +703,7 @@ class GPGTestCase(unittest.TestCase):
             key = self.generate_key("Barbara Brown", "beta.com")
             barbara = key.fingerprint
             data = "Hello, world!"
-            file = gnupg._make_binary_stream(data, self.gpg.encoding)
+            file = util._make_binary_stream(data, self.gpg.encoding)
             edata = self.gpg.encrypt_file(file, barbara,
                                           armor=False, output=encfname)
             ddata = self.gpg.decrypt_file(efile, passphrase="bbrown",
