@@ -408,42 +408,6 @@ class GPGTestCase(unittest.TestCase):
         self.assertTrue(is_list_with_len(private_keys, 1),
                         "1-element list expected")
 
-    def test_encryption_and_decryption(self):
-        """Test that encryption and decryption works."""
-        logger.debug("test_encryption_and_decryption begins")
-        key = self.generate_key("Andrew Able", "alpha.com",
-                                passphrase="andy")
-        andrew = key.fingerprint
-        key = self.generate_key("Barbara Brown", "beta.com")
-        barbara = key.fingerprint
-        gpg = self.gpg
-        gpg.encoding = 'latin-1'
-        if gnupg._util._py3k:
-            data = 'Hello, André!'
-        else:
-            data = unicode('Hello, André', gpg.encoding)
-        data = data.encode(gpg.encoding)
-        edata = str(gpg.encrypt(data, barbara))
-        self.assertNotEqual(data, edata, "Data must have changed")
-        ddata = gpg.decrypt(edata, passphrase="bbrown")
-        if data != ddata.data:
-            logger.debug("was: %r", data)
-            logger.debug("new: %r", ddata.data)
-        self.assertEqual(data, ddata.data, "Round-trip must work")
-        edata = str(gpg.encrypt(data, [andrew, barbara]))
-        self.assertNotEqual(data, edata, "Data must have changed")
-        ddata = gpg.decrypt(edata, passphrase="andy")
-        self.assertEqual(data, ddata.data, "Round-trip must work")
-        ddata = gpg.decrypt(edata, passphrase="bbrown")
-        self.assertEqual(data, ddata.data, "Round-trip must work")
-        logger.debug("test_encryption_and_decryption ends")
-        # Test symmetric encryption
-        data = "chippy was here"
-        edata = str(gpg.encrypt(data, None, passphrase='bbrown',
-                                symmetric=True))
-        ddata = gpg.decrypt(edata, passphrase='bbrown')
-        self.assertEqual(data, str(ddata))
-
     def test_public_keyring(self):
         """Test that the public keyring is found in the gpg home directory."""
         self.gpg.keyring = self.pubring
@@ -634,6 +598,94 @@ class GPGTestCase(unittest.TestCase):
                         "1-element list expected, got %d" % len(public_keys))
         logger.debug("test_deletion ends")
 
+    def test_encryption(self):
+        """Test encryption of a message string."""
+        key = self.generate_key("Craig Gentry", "xorr.ox",
+                                passphrase="craiggentry")
+        gentry = key.fingerprint
+        key = self.generate_key("Marten van Dijk", "xorr.ox")
+        dijk = key.fingerprint
+        gpg = self.gpg
+        message = ("In 2010 Riggio and Sicari presented a practical application"
+                   " of homomorphic encryption to a hybrid wireless sensor/mesh"
+                   " network. The system enables transparent multi-hop wireless"
+                   " backhauls that are able to perform statistical analysis of"
+                   " different kinds of data (temperature, humidity, etc.) "
+                   "coming from a WSN while ensuring both end-to-end encryption"
+                   "and hop-by-hop authentication.")
+        encrypted = str(gpg.encrypt(message, dijk))
+        self.assertNotEqual(message, encrypted, "Data must have changed")
+
+    def test_encryption_alt_encoding(self):
+        """Test encryption with latin-1 encoding"""
+        key = self.generate_key("Craig Gentry", "xorr.ox",
+                                passphrase="craiggentry")
+        gentry = key.fingerprint
+        key = self.generate_key("Marten van Dijk", "xorr.ox")
+        dijk = key.fingerprint
+        gpg = self.gpg
+        gpg.encoding = 'latin-1'
+        if util._py3k:
+            data = 'Hello, André!'
+        else:
+            data = unicode('Hello, André', gpg.encoding)
+        data = data.encode(gpg.encoding)
+        encrypted = str(gpg.encrypt(data, gentry))
+        self.assertNotEqual(data, encrypted, "Data must have changed")
+
+    def test_encryption_multi_recipient(self):
+        """Test encrypting a message for multiple recipients"""
+        key = self.generate_key("Craig Gentry", "xorr.ox",
+                                passphrase="craiggentry")
+        gentry = key.fingerprint
+        key = self.generate_key("Marten van Dijk", "xorr.ox")
+        dijk = key.fingerprint
+        gpg = self.gpg
+        message = ("In 2010 Riggio and Sicari presented a practical application"
+                   " of homomorphic encryption to a hybrid wireless sensor/mesh"
+                   " network. The system enables transparent multi-hop wireless"
+                   " backhauls that are able to perform statistical analysis of"
+                   " different kinds of data (temperature, humidity, etc.) "
+                   "coming from a WSN while ensuring both end-to-end encryption"
+                   "and hop-by-hop authentication.")
+        encrypted2 = str(gpg.encrypt(message, [gentry, dijk]))
+        self.assertNotEqual(message, encrypted2, "PT and CT should not match")
+
+    def test_decryption(self):
+        """Test decryption"""
+        key = self.generate_key("Craig Gentry", "xorr.ox",
+                                passphrase="craiggentry")
+        gentry = key.fingerprint
+        key = self.generate_key("Marten van Dijk", "xorr.ox")
+        dijk = key.fingerprint
+        gpg = self.gpg
+        message = ("In 2010 Riggio and Sicari presented a practical application"
+                   " of homomorphic encryption to a hybrid wireless sensor/mesh"
+                   " network. The system enables transparent multi-hop wireless"
+                   " backhauls that are able to perform statistical analysis of"
+                   " different kinds of data (temperature, humidity, etc.) "
+                   "coming from a WSN while ensuring both end-to-end encryption"
+                   "and hop-by-hop authentication.")
+        encrypted = str(gpg.encrypt(message, dijk))
+        decrypted = self.gpg.decrypt(encrypted, passphrase="martenvandijk")
+        if message != decrypted.data:
+            logger.debug("was: %r", message)
+            logger.debug("new: %r", decrypted.data)
+        self.assertEqual(message, decrypted.data, "Round-trip must work")
+
+        encrypted2 = str(gpg.encrypt(message, [gentry, dijk]))
+        self.assertNotEqual(message, encrypted2, "PT and CT should not match")
+        decrypted1 = gpg.decrypt(encrypted2, passphrase="craiggentry")
+        self.assertEqual(message, decrypted.data, "Round-trip must work")
+        decrypted2 = gpg.decrypt(encrypted2, passphrase="martenvandijk")
+        self.assertEqual(message, decrypted.data, "Round-trip must work")
+        # Test symmetric encryption
+        data = "chippy was here"
+        edata = str(gpg.encrypt(data, None, passphrase='bbrown',
+                                symmetric=True))
+        decrypted = gpg.decrypt(edata, passphrase='bbrown')
+        self.assertEqual(data, str(decrypted))
+
     def test_file_encryption_and_decryption(self):
         """Test that encryption/decryption to/from file works."""
         encfname = _make_tempfile()
@@ -701,7 +753,10 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                         'test_signature_string_verification',
                         'test_signature_algorithm',
                         'test_signature_string']),
-           'crypt': set(['test_encryption_and_decryption',
+           'crypt': set(['test_encryption',
+                         'test_encryption_alt_encoding',
+                         'test_encryption_multi_recipient',
+                         'test_decryption',
                          'test_file_encryption_and_decryption']),
            'listkeys': set(['test_list_keys_after_generation']),
            'keyrings': set(['test_public_keyring',
