@@ -95,14 +95,16 @@ def _copy_data(instream, outstream):
         if len(data) == 0:
             break
         sent += len(data)
-        logger.debug("_copy_data(): sending chunk (%d):\n%s" % (sent, data[:256]))
+        logger.debug("_copy_data(): sending chunk (%d):\n%s"
+                     % (sent, data[:256]))
         try:
             outstream.write(data)
         except UnicodeError:
             try:
                 outstream.write(data.encode(enc))
             except IOError:
-                logger.exception('_copy_data(): Error sending data: Broken pipe')
+                logger.exception(
+                    '_copy_data(): Error sending data: Broken pipe')
                 break
         except IOError:
             # Can get 'broken pipe' errors even when all data was sent
@@ -161,7 +163,7 @@ def _find_binary(binary=None):
             except IndexError as ie: logger.debug(ie.message)
     if binary is None:
         try: binary = _which('gpg')[0]
-        except IndexError: raise RuntimeError("gpg is not installed")
+        except IndexError: raise RuntimeError("GnuPG is not installed!")
     try:
         assert os.path.isabs(binary), "Path to gpg binary not absolute"
         assert not os.path.islink(binary), "Path to gpg binary is symlink"
