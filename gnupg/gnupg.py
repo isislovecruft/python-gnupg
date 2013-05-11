@@ -264,7 +264,7 @@ class GPG(object):
                     value = L[1]
                 else:
                     value = ""
-                result.handle_status(keyword, value)
+                result._handle_status(keyword, value)
         result.stderr = ''.join(lines)
 
     def _read_data(self, stream, result):
