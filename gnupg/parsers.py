@@ -705,11 +705,9 @@ class DeleteResult(object):
     def __str__(self):
         return self.status
 
-    problem_reason = {
-        '1': 'No such key',
-        '2': 'Must delete secret key first',
-        '3': 'Ambigious specification',
-        }
+    problem_reason = { '1': 'No such key',
+                       '2': 'Must delete secret key first',
+                       '3': 'Ambigious specification', }
 
     def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
