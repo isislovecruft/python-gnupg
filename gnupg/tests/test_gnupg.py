@@ -124,11 +124,9 @@ class GPGTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        """
-        Setup the :class:`GPGTestCase` and runtime environment for tests.
+        """Setup ``GPGTestCase`` and runtime environment for tests.
 
         This function must be called manually.
-        xxx or is called by TestSuite.
         """
         pass
 
