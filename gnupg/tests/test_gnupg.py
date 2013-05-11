@@ -207,7 +207,6 @@ class GPGTestCase(unittest.TestCase):
         expected2 = "Pubkey:"
         expected3 = "Cipher:"
         expected4 = "Compression:"
-        #logger.debug("'gpg --version' returned output:n%s" % result)
         self.assertGreater(result.find(expected1), 0)
         self.assertGreater(result.find(expected2), 0)
         self.assertGreater(result.find(expected3), 0)
@@ -442,7 +441,6 @@ class GPGTestCase(unittest.TestCase):
 
     def test_import_and_export(self):
         """Test that key import and export works."""
-        logger.debug("test_import_and_export begins")
         self.test_list_keys_initial_public()
         gpg = self.gpg
         result = gpg.import_keys(KEYS_TO_IMPORT)
@@ -468,11 +466,9 @@ class GPGTestCase(unittest.TestCase):
         ascii = gpg.export_keys(key.fingerprint, True)
         self.assertTrue(ascii.find("PGP PRIVATE KEY BLOCK") >= 0,
                         "Exported key should be private")
-        logger.debug("test_import_and_export ends")
 
     def test_import_only(self):
 	"""Test that key import works."""
-        logger.debug("test_import_only begins")
         self.test_list_keys_initial_public()
         self.gpg.import_keys(KEYS_TO_IMPORT)
         public_keys = self.gpg.list_keys()
@@ -490,7 +486,6 @@ class GPGTestCase(unittest.TestCase):
             logger.debug("was: %r", KEYS_TO_IMPORT)
             logger.debug("now: %r", ascii)
         self.assertEqual(0, match, "Keys must match")
-        logger.debug("test_import_only ends")
 
     def test_signature_string(self):
         """Test that signing a message string works."""
@@ -823,7 +818,7 @@ def main(args):
             tests = unittest.TestSuite(list(map(GPGTestCase, load_tests)))
         else:
             tests = prog.testLoader.loadTestsFromTestCase(GPGTestCase)
-            args.run_doctest = True ## xxx can we set options here?
+            args.run_doctest = True
         if args.run_doctest:
             tests.addTest(doctest.DocTestSuite(gnupg))
         logger.debug("Loaded %d tests..." % tests.countTestCases())
