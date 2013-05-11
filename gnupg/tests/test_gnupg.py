@@ -265,7 +265,6 @@ class GPGTestCase(unittest.TestCase):
 
         batch = {'Key-Type': key_type,
                  'Key-Length': key_length,
-                 'Name-Comment': 'python-gnupg tester',
                  'Expire-Date': 1,
                  'Name-Real': '%s' % real_name,
                  'Name-Email': ("%s@%s" % (name, email_domain))}
@@ -276,7 +275,7 @@ class GPGTestCase(unittest.TestCase):
             batch['Subkey-Type'] = subkey_type
             batch['Subkey-Length'] = key_length
 
-        key_input = self.gpg.gen_key_input(**batch)
+        key_input = self.gpg.gen_key_input(testing=True, **batch)
         return key_input
 
     def generate_key(self, real_name, email_domain, **kwargs):
@@ -568,7 +567,7 @@ class GPGTestCase(unittest.TestCase):
         self.assertAlmostEqual(int(now), int(verified.timestamp), delta=1000)
         self.assertEqual(
             verified.username,
-            u'Bruce Schneier (python-gnupg tester) <bruceschneier@schneier.com>')
+            u'Bruce Schneier (insecure!) <bruceschneier@schneier.com>')
 
     def test_signature_verification_clearsign(self):
         """Test verfication of an embedded signature."""
