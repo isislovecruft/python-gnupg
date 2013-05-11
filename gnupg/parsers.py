@@ -44,6 +44,33 @@ class UsageError(Exception):
     """Raised when incorrect usage of the API occurs.."""
 
 
+def _check_preferences(prefs, pref_type=None):
+    cipher   = frozenset(['AES256', 'AES192', 'CAMELLIA256', 'CAMELLIA192',
+                         'TWOFISH',])
+    digest   = frozenset(['SHA512', 'SHA384', 'SHA256', 'SHA224'])
+    compress = frozenset(['ZLIB', 'ZIP', 'Uncompressed'])
+    all      = frozenset([ciphers, hashes, compress])
+
+    if isinstance(prefs, str):
+        prefs = prefs.split(' ')
+    if not pref_type:
+        pref_type = all
+
+    ## xxx we should use set differences
+    if pref_type == 'cipher':
+        for pref in prefs:
+            if not cipher.contains(pref): return
+    if pref_type == 'digest':
+        for pref in prefs:
+            if not digest.contains(pref): return
+    if pref_type == 'compress':
+        for pref in prefs:
+            if not compress.contains(pref): return
+    if pref_type == 'all':
+        for pref in prefs:
+            if not all.contains(pref): return
+    return ' '.join([pref for pref in prefs])
+
 def _fix_unsafe(shell_input):
     """Find characters used to escape from a string into a shell, and wrap them
     in quotes if they exist. Regex pilfered from python-3.x shlex module.
