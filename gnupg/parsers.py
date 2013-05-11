@@ -1079,9 +1079,7 @@ class Verify(object):
         else:
             raise ValueError("Unknown status message: %r" % key)
 
-## xxx old style class
-
-class ListPackets():
+class ListPackets(object):
     """
     Handle status messages for --list-packets.
     """
