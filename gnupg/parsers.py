@@ -34,7 +34,7 @@ import util
 
 
 ESCAPE_PATTERN = re.compile(r'\\x([0-9a-f][0-9a-f])', re.I)
-HEXIDECIMAL    = re.compile('([0-9A-F]{2})+')
+HEXIDECIMAL    = re.compile('([0-9A-Fa-f]{2})+')
 
 
 class ProtectedOption(Exception):

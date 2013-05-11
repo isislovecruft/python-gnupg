@@ -161,6 +161,11 @@ class GPGTestCase(unittest.TestCase):
         valid_hex = '0A6A58A14B5946ABDE18E207A3ADB67A2CDB8B35'
         self.assertTrue(parsers._is_hex(valid_hex))
 
+    def test_parsers_is_hex_lowercase(self):
+        """Test parsers._is_hex() with lowercased hexidecimal"""
+        valid_hex = 'deadbeef15abad1dea'
+        self.assertTrue(parsers._is_hex(valid_hex))
+
     def test_parsers_is_hex_invalid(self):
         """Test that invalid hexidecimal fails the parsers._is_hex() check"""
         invalid_hex = 'cipherpunks write code'
@@ -725,6 +730,7 @@ class GPGTestCase(unittest.TestCase):
 
 suites = { 'parsers': set(['test_parsers_fix_unsafe',
                            'test_parsers_is_hex_valid',
+                           'test_parsers_is_hex_lowercase',
                            'test_parsers_is_hex_invalid',
                            'test_copy_data_bytesio',]),
            'basic': set(['test_homedir_creation',
