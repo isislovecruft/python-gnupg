@@ -109,8 +109,6 @@ def compare_keys(k1, k2):
     """Compare ASCII keys."""
     k1 = k1.split('\n')
     k2 = k2.split('\n')
-    del k1[1] # remove version lines
-    del k2[1]
     return k1 != k2
 
 
