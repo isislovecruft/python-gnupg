@@ -666,6 +666,9 @@ class Crypt(Verify):
     def __str__(self):
         return self.data.decode(self.gpg.encoding, self.gpg._decode_errors)
 
+    def __repr__(self):
+        return str(self)
+
     def _handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
