@@ -45,8 +45,7 @@ class UsageError(Exception):
 
 
 def _fix_unsafe(shell_input):
-    """
-    Find characters used to escape from a string into a shell, and wrap them
+    """Find characters used to escape from a string into a shell, and wrap them
     in quotes if they exist. Regex pilfered from python-3.x shlex module.
 
     :param str shell_input: The input intended for the GnuPG process.
@@ -512,7 +511,8 @@ def _sanitise_list(arg_list):
 
 
 class Verify(object):
-    """Parser for internal status messages from GnuPG for ``--verify``."""
+    """Parser for internal status messages from GnuPG for ``--verify``.
+    """
 
     TRUST_UNDEFINED = 0
     TRUST_NEVER = 1
@@ -540,7 +540,7 @@ class Verify(object):
     pubkey_fingerprint = None
     #: The keyid of the signing key.
     key_id = None
-    #: xxx I'm not sure how this is different to key_id.
+    #: The id of the signature itself.
     signature_id = None
     #: The creation date of the signing key.
     creation_date = None
@@ -569,8 +569,8 @@ class Verify(object):
             self.trust_text = key
             self.trust_level = self.TRUST_LEVELS[key]
         elif key in ("RSA_OR_IDEA", "NODATA", "IMPORT_RES", "PLAINTEXT",
-                   "PLAINTEXT_LENGTH", "POLICY_URL", "DECRYPTION_INFO",
-                   "DECRYPTION_OKAY", "INV_SGNR"):
+                     "PLAINTEXT_LENGTH", "POLICY_URL", "DECRYPTION_INFO",
+                     "DECRYPTION_OKAY", "INV_SGNR"):
             pass
         elif key == "BADSIG":
             self.valid = False
@@ -621,8 +621,8 @@ class Verify(object):
 
 
 class Crypt(Verify):
-    """Parser for internal status messages from GnuPG for ``--encrypt`` and
-    ``--decrypt``.
+    """Parser for internal status messages from GnuPG for
+    ``--encrypt````--decrypt``, and ``--decrypt-files``.
     """
     def __init__(self, gpg):
         super(Crypt, self).__init__(gpg)
