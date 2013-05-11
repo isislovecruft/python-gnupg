@@ -279,11 +279,17 @@ def _is_allowed(input):
          '--delete-keys', '--delete-secret-keys',
          '--encrypt', '--encrypt-files',
          '--decrypt', '--decrypt-files',
+         '--always-trust',
+         '--symmetric',
+         '--use-agent', '--no-use-agent',
          '--print-mds', '--print-md',
          '--sign', '--clearsign', '--detach-sign',
          '--armor', '--armour',
          '--gen-key', '--batch',
-         '--decrypt', '--decrypt-files',
+         '--decrypt', '--decrypt-files', '--multifile', '--output',
+         '--cert-digest-algo', '--digest-algo',
+         '--cipher-algo', '--compress-algo', '--personal-digest-prefs',
+         '--personal-cipher-prefs', '--personal-compress-prefs',
          '--import',
          '--export', '--export-secret-keys', '--export-secret-subkeys',
          '--verify',
@@ -395,14 +401,17 @@ def _sanitise(*args):
                     val = _fix_unsafe(v)
                     if val is not None and val.strip() != "":
                         if flag in ['--encrypt', '--encrypt-files', '--decrypt',
-                                    '--decrypt-file', '--import', '--verify']:
+                                    '--decrypt-files', '--import', '--verify']:
                             ## Place checks here:
                             if util._is_file(val):
                                 safe_option += (val + " ")
                             else:
                                 logger.debug("_check_option(): %s not file: %s"
                                              % (flag, val))
-                        elif flag in ['--default-key']:
+                        elif flag in ['--default-key', '--recipient',
+                                      '--export', '--export-secret-keys',
+                                      '--delete-keys',
+                                      '--export-secret-subkeys',]:
                             if _is_hex(val):
                                 safe_option += (val + " ")
                             else:
