@@ -697,7 +697,7 @@ class GenKey(object):
             raise ValueError("Unknown status message: %r" % key)
 
 class DeleteResult(object):
-    """Handle status messages for --delete-key and --delete-secret-key"""
+    """Handle status messages for --delete-keys and --delete-secret-keys"""
     def __init__(self, gpg):
         self.gpg = gpg
         self.status = 'ok'
