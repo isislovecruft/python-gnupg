@@ -22,9 +22,8 @@ utils.py
 Extra utilities for python-gnupg.
 '''
 
-from gnupg import __author__
-from gnupg import __version__
 __module__ = 'gnupg.util'
+
 
 from datetime   import datetime
 

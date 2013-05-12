@@ -75,11 +75,6 @@ Vinay Sajip's documentation:
 
 """
 
-__author__ = "Isis Agora Lovecruft"
-__module__ = 'gnupg'
-__version__ = "0.4.0"
-
-
 try:
     from io import StringIO
     from io import BytesIO

@@ -22,9 +22,8 @@ parsers.py
 Classes for parsing GnuPG status messages and sanitising commandline options.
 '''
 
-from gnupg import __author__
-from gnupg import __version__
 __module__ = 'gnupg.parsers'
+
 
 import logging
 import re

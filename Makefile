@@ -21,7 +21,7 @@ uninstall:
 	cat installed-files.txt | sudo xargs rm -rf
 
 cleandocs:
-	sphinx-apidoc -F -A "Isis Agora Lovecruft" -H "python-gnupg" -V 0.4.0 -R 0.4.0 -o docs gnupg/ tests/
+	sphinx-apidoc -F -A "Isis Agora Lovecruft" -H "python-gnupg" -V 0.4.0 -R 0.4.0 -o docs src/ tests/
 
 docs:
 	cd docs

@@ -28,12 +28,9 @@ import gnupg
 from gnupg import parsers
 from gnupg import util
 
-__author__  = gnupg.__author__
-__version__ = gnupg.__version__
-
 
 logger = logging.getLogger('gnupg')
-_here  = os.path.join(os.path.join(util._repo, 'gnupg'), 'tests')
+_here  = os.path.join(os.getcwd(), 'tests')
 _files = os.path.join(_here, 'files')
 _tempd = os.path.join(_here, 'tmp')
 
