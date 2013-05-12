@@ -1,17 +1,28 @@
 
-clean:
-	rm -f \#*\#
-	rm -f ./*.pyc
-	rm -f ./*.pyo
+cleanup-src:
+	cd src && \
+		rm -f \#*\# && \
+		rm -f ./*.pyc && \
+		rm -f ./*.pyo
 
-cleantest: clean
-	mkdir -p gnupg/tests/tmp_test
-	touch gnupg/tests/placeholder.log
-	rm -rf gnupg/tests/tmp_test
-	rm gnupg/tests/*.log
+cleanup-tests:
+	cd tests && \
+		rm -f \#*\# && \
+		rm -f ./*.pyc && \
+		rm -f ./*.pyo
+
+cleanup-build:
+	mkdir buildnot
+	rm -rf build*
+
+cleantest: cleanup-src cleanup-tests cleanup-build
+	mkdir -p tests/tmp
+	touch placeholder.log
+	rm -rf tests/tmp
+	rm *.log
 
 test: cleantest
-	python gnupg/tests/test_gnupg.py parsers basic genkey sign listkeys crypt keyrings import
+	python tests/test_gnupg.py parsers basic genkey sign listkeys crypt keyrings import
 
 install: 
 	python setup.py install --record installed-files.txt
