@@ -98,6 +98,7 @@ import threading
 from parsers import Verify, Crypt, DeleteResult, ImportResult
 from parsers import GenKey, Sign, ListKeys, ListPackets
 from parsers import _fix_unsafe, _sanitise, _is_allowed, _sanitise_list
+from parsers import _check_preferences
 from util    import logger, _conf
 
 import util as _util
@@ -157,8 +158,7 @@ class GPG(object):
         if default_preference_list is None:
             prefs = 'SHA512 SHA384 SHA256 AES256 CAMELLIA256 TWOFISH ZLIB ZIP'
         else:
-            ## xxx implement me, should return None on error
-            prefs = check_preference_list(default_preference_list)
+            prefs = _check_preferences(default_preference_list)
         self.default_preference_list = prefs
 
         secring = 'secring.gpg' if secring is None else _fix_unsafe(secring)
