@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- encoding: utf-8 -*-
 #
-# This file is part of python-gnupg, a Python wrapper around GnuPG.
+# This file is part of python-gnupg, a Python interface to GnuPG.
 # Copyright © 2013 Isis Lovecruft
 #           © 2008-2012 Vinay Sajip
 #           © 2005 Steve Traugott
@@ -16,8 +16,7 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-"""
-gnupg.py
+"""gnupg.py
 ========
 A Python interface to GnuPG.
 
@@ -26,9 +25,9 @@ Sajip, which itself is a modification of GPG.py written by Steve Traugott,
 which in turn is a modification of the pycrypto GnuPG interface written by
 A.M. Kuchling.
 
-This version is patched to exclude calls to :class:`subprocess.Popen([...],
-shell=True)`, and it also attempts to provide sanitization of arguments
-presented to gnupg, in order to avoid potential vulnerabilities.
+This version is patched to sanitize untrusted inputs, due to the necessity of
+executing :class:`subprocess.Popen([...], shell=True)` in order to communicate
+with GnuPG.
 
 :Info: see <https://www.github.com/isislovecruft/python-gnupg>
 :Authors: A.M. Kuchling, Steve Traugott, Vinay Sajip, Isis Lovecruft
@@ -72,7 +71,6 @@ Vinay Sajip's documentation:
     A unittest harness (test_gnupg.py) has also been added.
 
     Modifications Copyright (C) 2008-2012 Vinay Sajip. All rights reserved.
-
 """
 
 try:
