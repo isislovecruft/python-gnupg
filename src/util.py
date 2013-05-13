@@ -58,9 +58,10 @@ except NameError:
     _py3k = True
 
 ## Directory shortcuts:
-_here = os.getcwd()                           ## .../python-gnupg/gnupg
+_here = os.getcwd()                           ## .../python-gnupg/src
 _repo = _here.rsplit(__module__, 1)[0]        ## .../python-gnupg
-_test = os.path.join(_repo, 'tmp_test')       ## .../python-gnupg/tmp_test
+_test = os.path.join(os.path.join(_repo, 'tests'),
+                     'tmp')                   ## .../python-gnupg/tests/tmp
 _user = os.environ.get('HOME')                ## $HOME
 _ugpg = os.path.join(_user, '.gnupg')         ## $HOME/.gnupg
 _conf = os.path.join(os.path.join(_user, '.config'),
