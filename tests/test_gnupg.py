@@ -135,7 +135,7 @@ class GPGTestCase(unittest.TestCase):
             shutil.rmtree(hd)
         self.homedir = hd
         self.gpg = gnupg.GPG(homedir=hd, binary='gpg')
-        self.keyring = os.path.join(self.homedir, 'keyring.gpg')
+        self.keyring = os.path.join(self.homedir, 'pubring.gpg')
         self.secring = os.path.join(self.homedir, 'secring.gpg')
 
     def tearDown(self):
