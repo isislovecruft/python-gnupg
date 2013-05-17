@@ -85,7 +85,7 @@ from subprocess import PIPE
 import codecs
 ## For AOS, the locale module will need to point to a wrapper around the
 ## java.util.Locale class.
-## See https://github.com/isislovecruft/android-locale-hack
+## See https://code.patternsinthevoid.net/?p=android-locale-hack.git
 import locale
 import logging
 import os
