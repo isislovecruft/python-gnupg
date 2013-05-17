@@ -44,6 +44,13 @@ class UsageError(Exception):
 
 
 def _check_preferences(prefs, pref_type=None):
+    """Check cipher, digest, and compression preference settings.
+
+    MD5 is not allowed. This is not 1994.[0] SHA1 is allowed grudgingly.[1]
+
+    [0]: http://www.cs.colorado.edu/~jrblack/papers/md5e-full.pdf
+    [1]: http://eprint.iacr.org/2008/469.pdf
+    """
     if prefs is None: return
 
     cipher   = frozenset(['AES256', 'AES192', 'AES128',
