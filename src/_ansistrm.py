@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # This file is part of python-gnupg, a Python wrapper aroung GnuPG, and it was
 # taken from https://gist.github.com/vsajip/758430 on the 14th of May, 2013. It

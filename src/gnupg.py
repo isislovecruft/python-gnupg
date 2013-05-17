@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-#-*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 # This file is part of python-gnupg, a Python interface to GnuPG.
 # Copyright © 2013 Isis Lovecruft

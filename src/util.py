@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # This file is part of python-gnupg, a Python wrapper around GnuPG.
 # Copyright © 2013 Isis Lovecruft, Andrej B.
