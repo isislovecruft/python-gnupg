@@ -56,7 +56,7 @@ except NameError:
 
 ## Directory shortcuts:
 _here = os.getcwd()                           ## .../python-gnupg/src
-_repo = _here.rsplit(__module__, 1)[0]        ## .../python-gnupg
+_repo = _here.rsplit('src', 1)[0]             ## .../python-gnupg
 _test = os.path.join(os.path.join(_repo, 'tests'),
                      'tmp')                   ## .../python-gnupg/tests/tmp
 _user = os.environ.get('HOME')                ## $HOME
