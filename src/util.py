@@ -116,9 +116,9 @@ def _copy_data(instream, outstream):
         log.debug("_copy_data(): Closed output, %d bytes sent." % sent)
 
 def _create_if_necessary(directory):
-    """Create the specified GnuPG home directory, if necessary.
+    """Create the specified directory, if necessary.
 
-    :param str homedir: The directory to use.
+    :param str directory: The directory to use.
     :rtype: bool
     :returns: True if no errors occurred and the directory was created or
               existed beforehand, False otherwise.
