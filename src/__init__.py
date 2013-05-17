@@ -15,5 +15,6 @@ gnupg.__license__ = copyleft.disclaimer
 
 __all__ = ["GPG"]
 
+del gnupg
 del copyleft
 del get_versions
