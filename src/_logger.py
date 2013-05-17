@@ -19,7 +19,6 @@
 ----------
 Logging module for python-gnupg.
 '''
-__name__ = '_logger'
 
 from functools import wraps
 
