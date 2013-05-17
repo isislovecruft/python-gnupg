@@ -312,39 +312,81 @@ def _is_allowed(input):
     ## xxx checkout the --store option for creating rfc1991 data packets
     ## xxx key fetching/retrieving options: [fetch_keys, merge_only, recv_keys]
     ##
-    _allowed = frozenset(
-        ['--list-keys', '--list-key', '--fixed-list-mode',
-         '--list-secret-keys', '--list-public-keys',
-         '--list-packets',  '--with-colons',
-         '--list-options',
-         '--delete-keys', '--delete-secret-keys',
-         '--encrypt', '--encrypt-files',
-         '--decrypt', '--decrypt-files',
-         '--always-trust',
-         '--symmetric',
-         '--use-agent', '--no-use-agent',
-         '--print-mds', '--print-md',
-         '--sign', '--clearsign', '--detach-sign',
-         '--armor', '--armour',
-         '--gen-key', '--batch',
-         '--decrypt', '--decrypt-files', '--multifile', '--output',
-         '--cert-digest-algo', '--digest-algo',
-         '--cipher-algo', '--compress-algo', '--personal-digest-prefs',
-         '--personal-cipher-prefs', '--personal-compress-prefs',
-         '--import',
-         '--export', '--export-secret-keys', '--export-secret-subkeys',
-         '--verify',
-         '--version', '--no-emit-version', '--output',
-         '--status-fd', '--no-tty', '--passphrase-fd',
-         '--homedir', '--no-default-keyring', '--default-key',
-         '--keyring', '--secret-keyring', '--primary-keyring',
-         '--fingerprint',])
+    allowed = frozenset(['--fixed-list-mode',  ## key/packet listing
+                         '--list-key',
+                         '--list-keys',
+                         '--list-options',
+                         '--list-packets',
+                         '--list-public-keys',
+                         '--list-secret-keys',
+                         '--print-md',
+                         '--print-mds',
+                         '--with-colons',
+                         ## deletion
+                         '--delete-keys',
+                         '--delete-secret-keys',
+                         ## en-/de-cryption
+                         '--always-trust',
+                         '--decrypt',
+                         '--decrypt-files',
+                         '--encrypt',
+                         '--encrypt-files',
+                         '--recipient',
+                         '--no-default-recipient',
+                         '--symmetric',
+                         '--use-agent',
+                         '--no-use-agent',
+                         ## signing/certification
+                         '--armor',
+                         '--armour',
+                         '--clearsign',
+                         '--detach-sign',
+                         '--sign',
+                         '--verify',
+                         ## i/o and files
+                         '--batch',
+                         '--debug-all',
+                         '--debug-level',
+                         '--gen-key',
+                         #'--multifile',
+                         '--no-emit-version',
+                         '--no-tty',
+                         '--output',
+                         '--passphrase-fd',
+                         '--status-fd',
+                         '--version',
+                         ## keyring, homedir, & options
+                         '--homedir',
+                         '--keyring',
+                         '--primary-keyring',
+                         '--secret-keyring',
+                         '--no-default-keyring',
+                         '--default-key',
+                         '--no-options',
+                         ## preferences
+                         '--digest-algo',
+                         '--cipher-algo',
+                         '--compress-algo',
+                         '--compression-algo',
+                         '--cert-digest-algo',
+                         '--personal-digest-prefs',
+                         '--personal-digest-preferences',
+                         '--personal-cipher-prefs',
+                         '--personal-cipher-preferences',
+                         '--personal-compress-prefs',
+                         '--personal-compress-preferences',
+                         ## export/import
+                         '--import',
+                         '--export',
+                         '--export-secret-keys',
+                         '--export-secret-subkeys',
+                         '--fingerprint',])
 
-    ## check that _allowed is a subset of _possible
+    ## check that allowed is a subset of possible
     try:
-        assert _allowed.issubset(possible), \
+        assert allowed.issubset(possible), \
             'allowed is not subset of known options, difference: %s' \
-            % _allowed.difference(possible)
+            % allowed.difference(possible)
     except AssertionError as ae:
         logger.debug("_is_allowed(): %s" % ae.message)
         raise UsageError(ae.message)
@@ -362,12 +404,11 @@ def _is_allowed(input):
         else:
             hyphenated = input
             try:
-                assert hyphenated in _allowed
+                assert hyphenated in allowed
             except AssertionError as ae:
-                logger.warn("_is_allowed(): Dropping option '%s'..."
-                            % _fix_unsafe(hyphenated))
-                raise ProtectedOption("Option '%s' not supported."
-                                      % _fix_unsafe(hyphenated))
+                dropped = _fix_unsafe(hyphenated)
+                logger.warn("_is_allowed(): Dropping option '%s'..." % dropped)
+                raise ProtectedOption("Option '%s' not supported." % dropped)
             else:
                 return input
     return None
