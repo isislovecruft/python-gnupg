@@ -140,7 +140,7 @@ def _is_allowed(input):
              if no errors occur.
     """
 
-    _all = ("""
+    three_hundred_eighteen = ("""
 --allow-freeform-uid              --multifile
 --allow-multiple-messages         --no
 --allow-multisig-verification     --no-allow-freeform-uid
@@ -302,7 +302,7 @@ def _is_allowed(input):
 --min-cert-level                  --yes
 """).split()
 
-    _possible = frozenset(_all)
+    possible = frozenset(three_hundred_eighteen)
 
     ## these are the allowed options we will handle so far, all others should
     ## be dropped. this dance is so that when new options are added later, we
@@ -342,9 +342,9 @@ def _is_allowed(input):
 
     ## check that _allowed is a subset of _possible
     try:
-        assert _allowed.issubset(_possible), \
-            '_allowed is not subset of known options, difference: %s' \
-            % _allowed.difference(_possible)
+        assert _allowed.issubset(possible), \
+            'allowed is not subset of known options, difference: %s' \
+            % _allowed.difference(possible)
     except AssertionError as ae:
         logger.debug("_is_allowed(): %s" % ae.message)
         raise UsageError(ae.message)
