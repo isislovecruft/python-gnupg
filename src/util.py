@@ -115,7 +115,7 @@ def _copy_data(instream, outstream):
     else:
         log.debug("_copy_data(): Closed output, %d bytes sent." % sent)
 
-def _create_homedir(homedir):
+def _create_if_necessary(directory):
     """Create the specified GnuPG home directory, if necessary.
 
     :param str homedir: The directory to use.
@@ -123,25 +123,24 @@ def _create_homedir(homedir):
     :returns: True if no errors occurred and the directory was created or
               existed beforehand, False otherwise.
     """
-    if not os.path.isabs(homedir):
-        message = ("Got non-abs gpg home dir path: %s" % homedir)
-        log.debug("util._create_homedir(): %s" % message)
-        homedir = os.path.abspath(homedir)
-    if not os.path.isdir(homedir):
-        message = ("Creating gpg home dir: %s" % homedir)
-        log.debug("util._create_homedir():")
-        log.info("%s" % message)
 
+    if not os.path.isabs(directory):
+        message = ("Got non-absolute path: %s" % directory)
+        log.debug("util._create_if_necessary(): %s" % message)
+        directory = os.path.abspath(directory)
+
+    if not os.path.isdir(directory):
+        message = ("Creating directory: %s" % directory)
+        log.debug("util._create_if_necessary():")
+        log.info("%s" % message)
         try:
-            os.makedirs(homedir, 0x1C0)
+            os.makedirs(directory, 0x1C0)
         except OSError as ose:
             log.error(ose, exc_info=1)
             return False
         else:
-            log.debug("util._create_homedir(): Created directory.")
-            return True
-    else:
-        return True
+            log.debug("util._create_if_necessary(): Created directory.")
+    return True
 
 def _find_binary(binary=None):
     """Find the absolute path to the GnuPG binary.
