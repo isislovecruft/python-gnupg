@@ -20,9 +20,10 @@
 Logging module for python-gnupg.
 '''
 
-from functools import wraps
+from __future__ import print_function
+from datetime   import datetime
+from functools  import wraps
 
-import ctypes
 import logging
 import os
 import sys
