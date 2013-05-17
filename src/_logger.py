@@ -25,8 +25,10 @@ from datetime   import datetime
 from functools  import wraps
 
 import logging
-import os
 import sys
+import os
+
+import _ansistrm
 
 try:
     from logging import NullHandler
