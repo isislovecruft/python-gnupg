@@ -22,9 +22,6 @@ utils.py
 Extra utilities for python-gnupg.
 '''
 
-__module__ = 'gnupg.util'
-
-
 from datetime   import datetime
 
 import logging
