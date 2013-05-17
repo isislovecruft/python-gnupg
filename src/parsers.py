@@ -44,31 +44,40 @@ class UsageError(Exception):
 
 
 def _check_preferences(prefs, pref_type=None):
-    cipher   = frozenset(['AES256', 'AES192', 'CAMELLIA256', 'CAMELLIA192',
-                         'TWOFISH',])
-    digest   = frozenset(['SHA512', 'SHA384', 'SHA256', 'SHA224'])
-    compress = frozenset(['ZLIB', 'ZIP', 'Uncompressed'])
-    all      = frozenset([ciphers, hashes, compress])
+    if prefs is None: return
+
+    cipher   = frozenset(['AES256', 'AES192', 'AES128',
+                          'CAMELLIA256', 'CAMELLIA192',
+                          'TWOFISH', '3DES'])
+    digest   = frozenset(['SHA512', 'SHA384', 'SHA256', 'SHA224', 'RMD160',
+                          'SHA1'])
+    compress = frozenset(['BZIP2', 'ZLIB', 'ZIP', 'Uncompressed'])
+    all      = frozenset([cipher, digest, compress])
 
     if isinstance(prefs, str):
-        prefs = prefs.split(' ')
-    if not pref_type:
-        pref_type = all
+        prefs = set(prefs.split())
+    elif isinstance(prefs, list):
+        prefs = set(prefs)
+    else:
+        msg = "prefs must be a list of strings, or one space-separated string"
+        log.error("parsers._check_preferences(): %s" % message)
+        raise TypeError(message)
 
-    ## xxx we should use set differences
+    if not pref_type:
+        pref_type = 'all'
+
+    allowed = str()
+
     if pref_type == 'cipher':
-        for pref in prefs:
-            if not cipher.contains(pref): return
+        allowed += ' '.join(prefs.intersection(cipher))
     if pref_type == 'digest':
-        for pref in prefs:
-            if not digest.contains(pref): return
+        allowed += ' '.join(prefs.intersection(digest))
     if pref_type == 'compress':
-        for pref in prefs:
-            if not compress.contains(pref): return
+        allowed += ' '.join(prefs.intersection(compress))
     if pref_type == 'all':
-        for pref in prefs:
-            if not all.contains(pref): return
-    return ' '.join([pref for pref in prefs])
+        allowed += ' '.join(prefs.intersection(all))
+
+    return allowed
 
 def _fix_unsafe(shell_input):
     """Find characters used to escape from a string into a shell, and wrap them
