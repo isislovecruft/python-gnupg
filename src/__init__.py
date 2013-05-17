@@ -1,7 +1,5 @@
 
 import gnupg
-from parsers import Crypt, DeleteResult, ListKeys
-from parsers import GenKey, Sign, ImportResult, Verify
 import copyleft
 
 from gnupg import GPG

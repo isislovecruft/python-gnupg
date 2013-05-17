@@ -95,11 +95,10 @@ import sys
 import tempfile
 import threading
 
-from parsers import Verify, Crypt, DeleteResult, ImportResult
-from parsers import GenKey, Sign, ListKeys, ListPackets
-from parsers import _fix_unsafe, _sanitise, _is_allowed, _sanitise_list
-from parsers import _check_preferences
 from util    import logger, _conf
+
+import parsers
+
 
 import util as _util
 
@@ -108,13 +107,14 @@ class GPG(object):
     """Encapsulate access to the gpg executable"""
     _decode_errors = 'strict'
 
-    _result_map = {'crypt': Crypt,
-                   'delete': DeleteResult,
-                   'generate': GenKey,
-                   'import': ImportResult,
-                   'list': ListKeys,
-                   'sign': Sign,
-                   'verify': Verify,}
+    _result_map    = { 'crypt':    parsers.Crypt,
+                       'delete':   parsers.DeleteResult,
+                       'generate': parsers.GenKey,
+                       'import':   parsers.ImportResult,
+                       'list':     parsers.ListKeys,
+                       'sign':     parsers.Sign,
+                       'verify':   parsers.Verify,
+                       'packets':  parsers.ListPackets }
 
     def __init__(self, binary=None, homedir=None, verbose=False,
                  use_agent=False, keyring=None, secring=None,
