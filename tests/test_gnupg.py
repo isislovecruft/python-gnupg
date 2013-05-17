@@ -9,9 +9,9 @@ Copyright © 2008-2013 Vinay Sajip. All rights reserved.
 
 import argparse
 import doctest
-import logging
 from functools import wraps
 import io
+import logging
 import os
 import shutil
 import sys
@@ -27,9 +27,9 @@ else:
 import gnupg
 from gnupg import parsers
 from gnupg import util
+from gnupg import _logger
 
-
-logger = logging.getLogger('gnupg')
+log    = _logger.create_logger(10)
 _here  = os.path.join(os.getcwd(), 'tests')
 _files = os.path.join(_here, 'files')
 _tempd = os.path.join(_here, 'tmp')
@@ -37,6 +37,8 @@ _tempd = os.path.join(_here, 'tmp')
 tempfile.tempdir = _tempd
 if not os.path.isdir(tempfile.gettempdir()):
     os.mkdir(tempfile.gettempdir())
+    log.debug("Creating temporary testing directory: %s"
+              % tempfile.gettempdir())
 
 @wraps(tempfile.TemporaryFile)
 def _make_tempfile(*args, **kwargs):
@@ -129,6 +131,7 @@ class GPGTestCase(unittest.TestCase):
 
     def setUp(self):
         """This method is called once per self.test_* method."""
+        log.warn("\r%s" % str("=" * 78))
         hd = tempfile.mkdtemp()
         if os.path.exists(hd):
             self.assertTrue(os.path.isdir(hd), "Not a directory: %s" % hd)
@@ -144,10 +147,11 @@ class GPGTestCase(unittest.TestCase):
             try:
                 shutil.rmtree(self.homedir)
             except OSError as ose:
-                logger.error(ose)
+                log.error(ose)
         else:
-            logger.warn("Can't delete homedir: '%s' not a directory"
+            log.warn("Can't delete homedir: '%s' not a directory"
                         % self.homedir)
+        log.warn("%s" % str("=" * 78))
 
     def test_parsers_fix_unsafe(self):
         """Test that unsafe inputs are quoted out and then ignored."""
@@ -454,8 +458,8 @@ class GPGTestCase(unittest.TestCase):
         ascii = ascii.replace("\r", "").strip()
         match = compare_keys(ascii, KEYS_TO_IMPORT)
         if match:
-            logger.debug("was: %r", KEYS_TO_IMPORT)
-            logger.debug("now: %r", ascii)
+            log.info("was: %r", KEYS_TO_IMPORT)
+            log.info("now: %r", ascii)
         self.assertEqual(0, match, "Keys must match")
 
         #Generate a key so we can test exporting private keys
@@ -480,8 +484,8 @@ class GPGTestCase(unittest.TestCase):
         ascii = ascii.replace("\r", "").strip()
         match = compare_keys(ascii, KEYS_TO_IMPORT)
         if match:
-            logger.debug("was: %r", KEYS_TO_IMPORT)
-            logger.debug("now: %r", ascii)
+            log.info("was: %r", KEYS_TO_IMPORT)
+            log.info("now: %r", ascii)
         self.assertEqual(0, match, "Keys must match")
 
     def test_signature_string(self):
@@ -538,8 +542,8 @@ class GPGTestCase(unittest.TestCase):
         verified = self.gpg.verify(sig.data)
         self.assertIsNotNone(verified.fingerprint)
         if key.fingerprint != verified.fingerprint:
-            logger.debug("key: %r", key.fingerprint)
-            logger.debug("ver: %r", verified.fingerprint)
+            log.warn("key fingerprint:      %r", key.fingerprint)
+            log.warn("verified fingerprint: %r", verified.fingerprint)
         self.assertEqual(key.fingerprint, verified.fingerprint,
                          "Fingerprints must match")
         self.assertEqual(verified.status, 'signature valid')
@@ -611,7 +615,7 @@ class GPGTestCase(unittest.TestCase):
         public_keys = self.gpg.list_keys()
         self.assertTrue(is_list_with_len(public_keys, 1),
                         "1-element list expected, got %d" % len(public_keys))
-        logger.debug("test_deletion ends")
+        log.debug("test_deletion ends")
 
     def test_encryption(self):
         """Test encryption of a message string."""
@@ -685,8 +689,8 @@ authentication."""
         encrypted = str(self.gpg.encrypt(message, ruck))
         decrypted = self.gpg.decrypt(encrypted, passphrase="ruck")
         if message != decrypted.data:
-            logger.debug("was: %r", message)
-            logger.debug("new: %r", decrypted.data)
+            log.debug("was: %r", message)
+            log.debug("new: %r", decrypted.data)
         self.assertEqual(message, decrypted.data)
 
     def test_decryption_multi_recipient(self):
@@ -723,9 +727,9 @@ be doing it in the first place. - Eric Schmidt, CEO of Google"""
     def test_file_encryption_and_decryption(self):
         """Test that encryption/decryption to/from file works."""
         encfname = _make_tempfile()
-        logger.debug('Created tempfile for encrypted content: %s' % encfname)
+        log.debug('Created tempfile for encrypted content: %s' % encfname)
         decfname = _make_tempfile()
-        logger.debug('Created tempfile for decrypted content: f%s' % decfname)
+        log.debug('Created tempfile for decrypted content: f%s' % decfname)
         # On Windows, if the handles aren't closed, the files can't be deleted
         #os.close(encfno)
         #os.close(decfno)
@@ -745,8 +749,8 @@ be doing it in the first place. - Eric Schmidt, CEO of Google"""
         ddata = decfname.read()
         data = data.encode(self.gpg.encoding)
         if ddata != data:
-            logger.debug("was: %r", data)
-            logger.debug("new: %r", ddata)
+            log.debug("was: %r", data)
+            log.debug("new: %r", ddata)
         self.assertEqual(data, ddata)
 
 
@@ -800,16 +804,11 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
            'import': set(['test_import_only']), }
 
 def _init_logging():
+    now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
     logging.basicConfig(
-        level=logging.DEBUG, filename="test_gnupg.log",
+        filename=os.path.join(_here, "%s_test_gnupg.log" % now),
         filemode="a",
         format="%(asctime)s %(levelname)-5s %(name)-7s %(threadName)-10s %(message)s")
-    logging.captureWarnings(True)
-    logging.logThreads = True
-    stream_handler = logging.StreamHandler(stream=sys.stdout)
-    stream_handler.setLevel(logging.DEBUG)
-    logger.addHandler(stream_handler)
-    logger.debug("Starting the logger...")
 
 def main(args):
     if not args.quiet:
@@ -822,20 +821,20 @@ def main(args):
         if args.test is not None:
             for suite in args.test:
                 if suite in args.suites.keys():
-                    logger.debug("Adding %d items from test suite '%s':"
+                    log.debug("Adding %d items from test suite '%s':"
                                  % (len(args.suites[suite]), suite))
                     for method in args.suites[suite]:
                         load_tests.append(method)
-                        logger.debug("\t%s" % method)
+                        log.debug("\t%s" % method)
                 else:
-                    logger.debug("Ignoring unknown test suite %r" % suite)
+                    log.debug("Ignoring unknown test suite %r" % suite)
             tests = unittest.TestSuite(list(map(GPGTestCase, load_tests)))
         else:
             tests = prog.testLoader.loadTestsFromTestCase(GPGTestCase)
             args.run_doctest = True
         if args.run_doctest:
             tests.addTest(doctest.DocTestSuite(gnupg))
-        logger.debug("Loaded %d tests..." % tests.countTestCases())
+        log.debug("Loaded %d tests..." % tests.countTestCases())
         prog.test = tests
 
     runner = unittest.TextTestRunner(verbosity=args.verbose, stream=sys.stderr)

@@ -24,13 +24,14 @@ Extra utilities for python-gnupg.
 
 from datetime   import datetime
 
-import logging
 import os
 import time
 import random
 import string
 import sys
 import threading
+
+import _logger
 
 try:
     from io import StringIO
@@ -44,9 +45,10 @@ except:
     class NullHandler(logging.Handler):
         def handle(self, record):
             pass
-logger = logging.getLogger('gnupg')
-if not logger.handlers:
-    logger.addHandler(NullHandler())
+log = _logger.create_logger(0)
+if not log.handlers:
+    log.addHandler(NullHandler())
+
 
 try:
     unicode
@@ -79,7 +81,7 @@ def _copy_data(instream, outstream):
     #    #        or isinstance(instream, file)), "instream not stream or file"
     #    assert isinstance(outstream, file), "outstream is not a file"
     #except AssertionError as ae:
-    #    logger.exception(ae)
+    #    log.exception(ae)
     #    return
 
     if hasattr(sys.stdin, 'encoding'):
@@ -92,7 +94,7 @@ def _copy_data(instream, outstream):
         if len(data) == 0:
             break
         sent += len(data)
-        logger.debug("_copy_data(): sending chunk (%d):\n%s"
+        log.debug("_copy_data(): sending chunk (%d):\n%s"
                      % (sent, data[:256]))
         try:
             outstream.write(data)
@@ -100,20 +102,20 @@ def _copy_data(instream, outstream):
             try:
                 outstream.write(data.encode(enc))
             except IOError:
-                logger.exception(
+                log.exception(
                     '_copy_data(): Error sending data: Broken pipe')
                 break
         except IOError:
             # Can get 'broken pipe' errors even when all data was sent
-            logger.exception('_copy_data(): Error sending data: Broken pipe')
+            log.exception('_copy_data(): Error sending data: Broken pipe')
             break
     try:
         outstream.close()
     except IOError:
-        logger.exception('_copy_data(): Got IOError while closing %s'
+        log.exception('_copy_data(): Got IOError while closing %s'
                          % outstream)
     else:
-        logger.debug("_copy_data(): Closed output, %d bytes sent." % sent)
+        log.debug("_copy_data(): Closed output, %d bytes sent." % sent)
 
 def _create_homedir(homedir):
     """Create the specified GnuPG home directory, if necessary.
@@ -123,20 +125,22 @@ def _create_homedir(homedir):
     :returns: True if no errors occurred and the directory was created or
               existed beforehand, False otherwise.
     """
-    ## xxx how will this work in a virtualenv?
     if not os.path.isabs(homedir):
         message = ("Got non-abs gpg home dir path: %s" % homedir)
-        logger.warn("util._create_homedir(): %s" % message)
+        log.debug("util._create_homedir(): %s" % message)
         homedir = os.path.abspath(homedir)
     if not os.path.isdir(homedir):
         message = ("Creating gpg home dir: %s" % homedir)
-        logger.warn("util._create_homedir(): %s" % message)
+        log.debug("util._create_homedir():")
+        log.info("%s" % message)
+
         try:
             os.makedirs(homedir, 0x1C0)
         except OSError as ose:
-            logger.error(ose, exc_info=1)
+            log.error(ose, exc_info=1)
             return False
         else:
+            log.debug("util._create_homedir(): Created directory.")
             return True
     else:
         return True
@@ -157,7 +161,8 @@ def _find_binary(binary=None):
     if binary is not None:
         if not os.path.isabs(binary):
             try: binary = _which(binary)[0]
-            except IndexError as ie: logger.debug(ie.message)
+            except IndexError as ie:
+                log.debug("_find_binary(): %s" % ie.message)
     if binary is None:
         try: binary = _which('gpg')[0]
         except IndexError: raise RuntimeError("GnuPG is not installed!")
@@ -166,7 +171,7 @@ def _find_binary(binary=None):
         assert not os.path.islink(binary), "Path to gpg binary is symlink"
         assert os.access(binary, os.X_OK), "Lacking +x perms for gpg binary"
     except (AssertionError, AttributeError) as ae:
-        logger.debug("util._find_binary(): %s" % ae.message)
+        log.debug("util._find_binary(): %s" % ae.message)
     else:
         return binary
 
@@ -194,7 +199,7 @@ def _is_file(input):
     try:
         assert os.lstat(input).st_size > 0, "not a file: %s" % input
     except (AssertionError, TypeError, IOError, OSError) as error:
-        logger.debug(error.message)
+        log.debug(error.message)
         return False
     else:
         return True
@@ -267,7 +272,7 @@ def _make_passphrase(length=None, save=False, file=None):
             os.chmod(file, 0600)
             os.chown(file, ruid, gid)
 
-        logger.warn("Generated passphrase saved to %s" % file)
+        log.warn("Generated passphrase saved to %s" % file)
     return passphrase
 
 def _make_random_string(length):
@@ -302,7 +307,7 @@ def _threaded_copy_data(instream, outstream):
     copy_thread = threading.Thread(target=_copy_data,
                                    args=(instream, outstream))
     copy_thread.setDaemon(True)
-    logger.debug('_threaded_copy_data(): %r, %r, %r', copy_thread,
+    log.debug('_threaded_copy_data(): %r, %r, %r', copy_thread,
                  instream, outstream)
     copy_thread.start()
     return copy_thread
@@ -349,4 +354,4 @@ def _write_passphrase(stream, passphrase, encoding):
     passphrase = '%s\n' % passphrase
     passphrase = passphrase.encode(encoding)
     stream.write(passphrase)
-    logger.debug("_write_passphrase(): Wrote passphrase.")
+    log.debug("_write_passphrase(): Wrote passphrase.")
