@@ -376,7 +376,8 @@ def _is_allowed(input):
                          '--export',
                          '--export-secret-keys',
                          '--export-secret-subkeys',
-                         '--fingerprint',])
+                         '--fingerprint',
+                     ])
 
     ## check that allowed is a subset of possible
     try:
