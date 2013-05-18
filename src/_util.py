@@ -41,6 +41,12 @@ except ImportError:
 try:
     unicode
     _py3k = False
+    try:
+        isinstance(__name__, basestring)
+    except NameError:
+        msg  = "Sorry, python-gnupg requires a Python version with proper"
+        msg += " unicode support. Please upgrade to Python>=2.3."
+        raise SystemExit(msg)
 except NameError:
     _py3k = True
 
