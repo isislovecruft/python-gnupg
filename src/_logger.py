@@ -37,31 +37,60 @@ except:
         def handle(self, record):
             pass
 
-import gnupg._ansistrm
 
-#log = logging.getLogger('gnupg')
-#if not log.handlers:
-#    log.addHandler(NullHandler())
+GNUPG_STATUS_LEVEL = 9
 
+def status(self, message, *args, **kwargs):
+    """LogRecord for GnuPG internal status messages."""
+    if self.isEnabledFor(GNUPG_STATUS_LEVEL):
+        self._log(GNUPG_STATUS_LEVEL, message, args, **kwargs)
 
 @wraps(logging.Logger)
 def create_logger(level=logging.NOTSET):
-    """Create a logger for python-gnupg at a specific message level."""
+    """Create a logger for python-gnupg at a specific message level.
 
-    log = logging.getLogger('gnupg')
+    :type level: int or str
+    :param level: A string or an integer for the lowest level to log.
+                  Available levels:
+                  int str       description
+                  0   NOTSET    Disable all logging.
+                  9   GNUPG     Log GnuPG's internal status messages.
+                  10  DEBUG     Log module level debuging messages.
+                  20  INFO      Normal user-level messages.
+                  30  WARN      Warning messages.
+                  40  ERROR     Error messages and tracebacks.
+                  50  CRITICAL  Unhandled exceptions and tracebacks.
+    """
+    _test = os.path.join(os.getcwd(), 'tests')
+    _now  = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+    _fn   = os.path.join(_test, "%s_test_gnupg.log" % _now)
+    _fmt  = "%(relativeCreated)-4d L%(lineno)-4d:%(funcName)-18.18s %(levelname)-7.7s %(message)s"
+
+    logging.basicConfig(level=level, filename=_fn, filemode="a", format=_fmt)
+    ## Add the GNUPG_STATUS_LEVEL LogRecord to all Loggers in the module:
+    logging.addLevelName(GNUPG_STATUS_LEVEL, "GNUPG")
+    logging.Logger.status = status
+
 
     if level > logging.NOTSET:
         logging.captureWarnings(True)
         logging.logThreads = True
-        log.setLevel(level)
 
-        colorizer = gnupg._ansistrm.ColorizingStreamHandler(stream=sys.stdout)
-        colorizer.setLevel(level)
-        log.addHandler(colorizer)
+        colouriser = _ansistrm.ColorizingStreamHandler
+        colouriser.level_map[9]  = (None, 'blue', False)
+        colouriser.level_map[10] = (None, 'cyan', False)
+        handler = colouriser(stream=sys.stderr)
+        handler.setLevel(level)
 
-        log.debug("Starting the logger...")
+        formatr = logging.Formatter(_fmt)
+        handler.setFormatter(formatr)
+        print("Starting the logger...")
+    else:
+        handler = NullHandler()
+        print("GnuPG logging disabled...")
 
-    if not log.handlers:
-        log.addHandler(NullHandler())
-
+    log = logging.getLogger('gnupg')
+    log.addHandler(handler)
+    log.setLevel(level)
+    log.info("Log opened: %s UTC" % datetime.ctime(datetime.utcnow()))
     return log
