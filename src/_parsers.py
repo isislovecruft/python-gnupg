@@ -441,8 +441,8 @@ def _sanitise(*args):
     For information on the PGP message format specification, see:
         https://www.ietf.org/rfc/rfc1991.txt
 
-    If you're asking, "Is this *really* necessary?": No. Not really. See:
-        https://xkcd.com/1181/
+    If you're asking, "Is this *really* necessary?": No, not really -- we could
+    just do a check as described here: https://xkcd.com/1181/
 
     :param str args: (optional) The boolean arguments which will be passed to
                      the GnuPG process.
@@ -489,8 +489,7 @@ def _sanitise(*args):
                             if util._is_file(val):
                                 safe_option += (val + " ")
                             else:
-                                log.debug("_check_option(): %s not file: %s"
-                                          % (flag, val))
+                                log.debug("%s not file: %s" % (flag, val))
                         elif flag in ['--default-key', '--recipient',
                                       '--export', '--export-secret-keys',
                                       '--delete-keys',
@@ -498,8 +497,7 @@ def _sanitise(*args):
                             if _is_hex(val):
                                 safe_option += (val + " ")
                             else:
-                                log.debug("_check_option(): '%s %s' not hex."
-                                          % (flag, val))
+                                log.debug("'%s %s' not hex." % (flag, val))
                         else:
                             safe_option += (val + " ")
                             log.debug("_check_option(): No checks for %s"
@@ -519,7 +517,7 @@ def _sanitise(*args):
         while len(filo) >= 1:
             last = filo.pop()
             if is_flag(last):
-                log.debug("_make_groups(): Got arg: %s" % last)
+                log.debug("Got arg: %s" % last)
                 if last == '--verify':
                     groups[last] = str(filo.pop())
                     ## accept the read-from-stdin arg:
@@ -528,12 +526,12 @@ def _sanitise(*args):
                 else:
                     groups[last] = str()
                 while len(filo) > 1 and not is_flag(filo[len(filo)-1]):
-                    log.debug("_make_groups(): Got value: %s"
+                    log.debug("Got value: %s"
                                  % filo[len(filo)-1])
                     groups[last] += (filo.pop() + " ")
                 else:
                     if len(filo) == 1 and not is_flag(filo[0]):
-                        log.debug("_make_groups(): Got value: %s" % filo[0])
+                        log.debug("Got value: %s" % filo[0])
                         groups[last] += filo.pop()
             else:
                 log.warn("_make_groups(): Got solitary value: %s" % last)
@@ -541,16 +539,16 @@ def _sanitise(*args):
         return groups
 
     def _check_groups(groups):
-        log.debug("_check_groups(): Got groups: %s" % groups)
+        log.debug("Got groups: %s" % groups)
         checked_groups = []
         for a,v in groups.items():
             v = None if len(v) == 0 else v
             safe = _check_option(a, v)
             if safe is not None and not safe.strip() == "":
-                log.debug("_check_groups(): appending option: %s" % safe)
+                log.debug("Appending option: %s" % safe)
                 checked_groups.append(safe)
             else:
-                log.warn("_check_groups(): dropped option '%s %s'" % (a,v))
+                log.warn("Dropped option: '%s %s'" % (a,v))
         return checked_groups
 
     if args is not None:
@@ -558,25 +556,26 @@ def _sanitise(*args):
         for arg in args:
             ## if we're given a string with a bunch of options in it split
             ## them up and deal with them separately
-            if isinstance(arg, str):
-                log.debug("_sanitise(): Got arg string: %s" % arg)
+            if (not _util._py3k and isinstance(arg, basestring)) \
+                    or (_util._py3k and isinstance(arg, str)):
+                log.debug("Got arg string: %s" % arg)
                 if arg.find(' ') > 0:
                     filo = _make_filo(arg)
                     option_groups.update(_make_groups(filo))
                 else:
                     option_groups.update({ arg: "" })
             elif isinstance(arg, list):
-                log.debug("_sanitise(): Got arg list: %s" % arg)
+                log.debug("Got arg list: %s" % arg)
                 arg.reverse()
                 option_groups.update(_make_groups(arg))
             else:
-                log.warn("_sanitise(): Got non-str/list arg: '%s', type '%s'"
+                log.warn("Got non-str/list arg: '%s', type '%s'"
                          % (arg, type(arg)))
         checked = _check_groups(option_groups)
         sanitised = ' '.join(x for x in checked)
         return sanitised
     else:
-        log.debug("_sanitise(): Got None for args")
+        log.debug("Got None for args")
 
 def _sanitise_list(arg_list):
     """A generator for iterating through a list of gpg options and sanitising
