@@ -23,8 +23,9 @@ Classes for parsing GnuPG status messages and sanitising commandline options.
 
 import re
 
-import util
-from util import log
+from _util import log
+
+import _util
 
 
 ESCAPE_PATTERN = re.compile(r'\\x([0-9a-f][0-9a-f])', re.I)
