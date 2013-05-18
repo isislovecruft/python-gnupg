@@ -406,57 +406,37 @@ class GPG(GPGBase):
                  problem invoking gpg.
         """
 
-        if not homedir:
-            homedir = _conf
-        self.homedir = _fix_unsafe(homedir)
-        if self.homedir:
-            _util._create_homedir(self.homedir)
-        else:
-            message = ("Unsuitable gpg home dir: %s" % homedir)
-            log.debug("GPG.__init__(): %s" % message)
+        super(GPG, self).__init__(
+            binary=binary,
+            home=homedir,
+            keyring=keyring,
+            secring=secring,
+            default_preference_list=default_preference_list,
+            options=options,
+            verbose=verbose,
+            use_agent=use_agent,)
 
-        self.binary = _util._find_binary(binary)
+        log.info("""
+Initialised settings:
+binary: %s
+homedir: %s
+keyring: %s
+secring: %s
+default_preference_list: %s
+options: %s
+verbose: %s
+use_agent: %s
+        """ % (self.binary, self.homedir, self.keyring, self.secring,
+               self.default_preference_list, self.options, str(self.verbose),
+               str(self.use_agent)))
 
-        if default_preference_list is None:
-            prefs = 'SHA512 SHA384 SHA256 AES256 CAMELLIA256 TWOFISH ZLIB ZIP'
-        else:
-            prefs = _check_preferences(default_preference_list)
-        self.default_preference_list = prefs
-
-        secring = 'secring.gpg' if secring is None else _fix_unsafe(secring)
-        keyring = 'pubring.gpg' if keyring is None else _fix_unsafe(keyring)
-        self.secring = os.path.join(self.homedir, secring)
-        self.keyring = os.path.join(self.homedir, keyring)
-
-        self.options = _sanitise(options) if options else None
-
-        self.encoding = locale.getpreferredencoding()
-        if self.encoding is None: # This happens on Jython!
-            self.encoding = sys.stdin.encoding
-
-        try:
-            assert self.homedir is not None, "Got None for self.homedir"
-            assert _util._has_readwrite(self.homedir), ("Home dir %s needs r+w"
-                                                       % self.homedir)
-            assert self.binary, "Could not find binary %s" % full
-            assert isinstance(verbose, bool), "'verbose' must be boolean"
-            assert isinstance(use_agent, bool), "'use_agent' must be boolean"
-            if self.options:
-                assert isinstance(options, str), ("options not formatted: %s"
-                                                  % options)
-        except (AssertionError, AttributeError) as ae:
-            log.debug("GPG.__init__(): %s" % ae.message)
-            raise RuntimeError(ae.message)
-        else:
-            self.verbose = verbose
-            self.use_agent = use_agent
-
-            proc = self._open_subprocess(["--version"])
-            result = self._result_map['list'](self)
-            self._collect_output(proc, result, stdin=proc.stdin)
-            if proc.returncode != 0:
-                raise RuntimeError("Error invoking gpg: %s: %s"
-                                   % (proc.returncode, result.stderr))
+        ## check that everything runs alright:
+        proc = self._open_subprocess(["--version"])
+        result = self._result_map['list'](self)
+        self._collect_output(proc, result, stdin=proc.stdin)
+        if proc.returncode != 0:
+            raise RuntimeError("Error invoking gpg: %s: %s"
+                               % (proc.returncode, result.stderr))
 
     def _make_args(self, args, passphrase=False):
         """Make a list of command line elements for GPG. The value of ``args``
