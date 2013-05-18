@@ -377,24 +377,31 @@ class GPG(GPGBase):
         """Initialize a GnuPG process wrapper.
 
         :param str binary: Name for GnuPG binary executable. If the absolute
-                              path is not given, the evironment variable $PATH
-                              is searched for the executable and checked that
-                              the real uid/gid of the user has sufficient
-                              permissions.
+                           path is not given, the evironment variable $PATH is
+                           searched for the executable and checked that the
+                           real uid/gid of the user has sufficient permissions.
+
         :param str homedir: Full pathname to directory containing the public
                             and private keyrings. Default is whatever GnuPG
                             defaults to.
-        :param str keyring: raises :exc:DeprecationWarning. Use :param:pubring.
+
+        :param str keyring: Name of keyring file containing public key data, if
+                            unspecified, defaults to 'pubring.gpg' in the
+                            ``homedir`` directory.
+
         :param str secring: Name of alternative secret keyring file to use. If
                             left unspecified, this will default to using
                             'secring.gpg' in the :param:homedir directory, and
                             create that file if it does not exist.
+
         :param str pubring: Name of alternative public keyring file to use. If
                             left unspecified, this will default to using
                             'pubring.gpg' in the :param:homedir directory, and
                             create that file if it does not exist.
+
         :param list options: A list of additional options to pass to the GPG
                              binary.
+
         :raises: :exc:`RuntimeError` with explanation message if there is a
                  problem invoking gpg.
         """
