@@ -96,6 +96,7 @@ import threading
 
 from _parsers import _fix_unsafe, _sanitise, _is_allowed, _sanitise_list
 from _parsers import _check_preferences
+from _util    import InheritableProperty
 from _util    import _conf, _is_list_or_tuple, _is_stream
 from _util    import _make_binary_stream
 from _util    import log
