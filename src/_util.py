@@ -39,21 +39,11 @@ except ImportError:
     from cStringIO import StringIO
 
 try:
-    from logging import NullHandler
-except:
-    class NullHandler(logging.Handler):
-        def handle(self, record):
-            pass
-log = _logger.create_logger(0)
-if not log.handlers:
-    log.addHandler(NullHandler())
-
-
-try:
     unicode
     _py3k = False
 except NameError:
     _py3k = True
+
 
 ## Directory shortcuts:
 _here = os.getcwd()                           ## .../python-gnupg/src
@@ -64,6 +54,9 @@ _user = os.environ.get('HOME')                ## $HOME
 _ugpg = os.path.join(_user, '.gnupg')         ## $HOME/.gnupg
 _conf = os.path.join(os.path.join(_user, '.config'),
                      'python-gnupg')          ## $HOME/.config/python-gnupg
+
+## Logger is disabled by default
+log = _logger.create_logger(0)
 
 
 def _copy_data(instream, outstream):
