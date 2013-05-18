@@ -360,16 +360,16 @@ class GPGBase(object):
 
 class GPG(GPGBase):
     """Encapsulate access to the gpg executable"""
-    _decode_errors = 'strict'
 
-    _result_map    = { 'crypt':    parsers.Crypt,
-                       'delete':   parsers.DeleteResult,
-                       'generate': parsers.GenKey,
-                       'import':   parsers.ImportResult,
-                       'list':     parsers.ListKeys,
-                       'sign':     parsers.Sign,
-                       'verify':   parsers.Verify,
-                       'packets':  parsers.ListPackets }
+    _decode_errors = 'strict'
+    _result_map    = { 'crypt':    _parsers.Crypt,
+                       'delete':   _parsers.DeleteResult,
+                       'generate': _parsers.GenKey,
+                       'import':   _parsers.ImportResult,
+                       'list':     _parsers.ListKeys,
+                       'sign':     _parsers.Sign,
+                       'verify':   _parsers.Verify,
+                       'packets':  _parsers.ListPackets }
 
     def __init__(self, binary=None, homedir=None, verbose=False,
                  use_agent=False, keyring=None, secring=None,
