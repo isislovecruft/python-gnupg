@@ -62,3 +62,6 @@ tickets/*
 # Ignore virtualenv folders, if they are here:
 include/*
 local/*
+
+# Ignore gpg binary symlinks:
+gpg
