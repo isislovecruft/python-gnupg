@@ -342,6 +342,14 @@ def _which(executable, flags=os.X_OK):
     return result
 
 def _write_passphrase(stream, passphrase, encoding):
+    """Write the passphrase from memory to the GnuPG process' stdin.
+
+    :type stream: file, :class:BytesIO, or :class:StringIO
+    :param stream: The input file descriptor to write the password to.
+    :param str passphrase: The passphrase for the secret key material.
+    :param str encoding: The data encoding expected by GnuPG. Usually, this
+                         is ``sys.getfilesystemencoding()``.
+    """
     passphrase = '%s\n' % passphrase
     passphrase = passphrase.encode(encoding)
     stream.write(passphrase)
