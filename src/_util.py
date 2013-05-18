@@ -52,14 +52,12 @@ except NameError:
 
 
 ## Directory shortcuts:
-_here = os.getcwd()                           ## .../python-gnupg/src
-_repo = _here.rsplit('src', 1)[0]             ## .../python-gnupg
-_test = os.path.join(os.path.join(_repo, 'tests'),
-                     'tmp')                   ## .../python-gnupg/tests/tmp
-_user = os.environ.get('HOME')                ## $HOME
-_ugpg = os.path.join(_user, '.gnupg')         ## $HOME/.gnupg
-_conf = os.path.join(os.path.join(_user, '.config'),
-                     'python-gnupg')          ## $HOME/.config/python-gnupg
+_here = os.getcwd()
+_test = os.path.join(os.path.join(_here, 'tests'), 'tmp') ## ./tests/tmp
+_user = os.environ.get('HOME')                            ## $HOME
+_ugpg = os.path.join(_user, '.gnupg')                     ## $HOME/.gnupg
+_conf = os.path.join(os.path.join(_user, '.config'), 'python-gnupg')
+                                     ## $HOME/.config/python-gnupg
 
 ## Logger is disabled by default
 log = _logger.create_logger(0)
