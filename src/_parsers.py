@@ -389,6 +389,8 @@ def _is_allowed(input):
         raise UsageError(ae.message)
 
     ## if we got a list of args, join them
+    ##
+    ## see TODO file, tag :cleanup:
     if not isinstance(input, str):
         input = ' '.join([x for x in input])
 
@@ -447,6 +449,8 @@ def _sanitise(*args):
     :rtype: str
     :returns: ``sanitised``
     """
+
+    ## see TODO file, tag :cleanup:sanitise:
 
     def _check_option(arg, value):
         """
@@ -1151,7 +1155,7 @@ class ListPackets(object):
 
         :raises: :exc:`ValueError` if the status message is unknown.
         """
-        # TODO: write tests for _handle_status
+        # TODO: write tests for handle_status
         if key == 'NODATA':
             self.nodata = True
         elif key == 'ENC_TO':

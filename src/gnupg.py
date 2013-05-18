@@ -457,7 +457,9 @@ class GPG(GPGBase):
         :func:parsers._sanitise. The ``passphrase`` argument needs to be True
         if a passphrase will be sent to GPG, else False.
         """
-        cmd = [self.binary, '--status-fd 2 --no-tty --no-emit-version']
+        ## see TODO file, tag :io:makeargs:
+        cmd = [self.binary, '--no-emit-version --no-tty --status-fd 2']
+
         if self.homedir:
             cmd.append('--homedir "%s"' % self.homedir)
         if self.keyring:
@@ -916,6 +918,7 @@ class GPG(GPGBase):
         :returns: The result mapping with details of the new key, which is a
                   :class:`parsers.GenKey <GenKey>` object.
         """
+        ## see TODO file, tag :gen_key: for todo items
         args = ["--gen-key --batch"]
         key = self._result_map['generate'](self)
         f = _util._make_binary_stream(input, self.encoding)
@@ -1051,8 +1054,6 @@ class GPG(GPGBase):
                                passwordless key to be created, which can then
                                have its passphrase set later with '--edit-key'.
 
-        ## TODO add version detection and add the '%no-protection' flag.
-
         :param str preferences: Set the cipher, hash, and compression
                                 preference values for this key. This expects
                                 the same type of string as the sub-command
@@ -1119,6 +1120,9 @@ class GPG(GPGBase):
         out += "%%secring %s\n" % self.secring
 
         if testing:
+            ## see TODO file, tag :compatibility:gen_key_input:
+            ##
+            ## Add version detection before the '%no-protection' flag.
             out += "%no-protection\n"
             out += "%transient-key\n"
 
