@@ -82,6 +82,7 @@ def _copy_data(instream, outstream):
 
     if hasattr(sys.stdin, 'encoding'):
         enc = sys.stdin.encoding
+        log.debug("Obtained encoding from stdin: %s" % enc)
     else:
         enc = 'ascii'
 
@@ -90,28 +91,26 @@ def _copy_data(instream, outstream):
         if len(data) == 0:
             break
         sent += len(data)
-        log.debug("_copy_data(): sending chunk (%d):\n%s"
-                     % (sent, data[:256]))
+        log.debug("Sending chunk %d bytes:\n%s"
+                  % (sent, data))
         try:
             outstream.write(data)
         except UnicodeError:
             try:
                 outstream.write(data.encode(enc))
             except IOError:
-                log.exception(
-                    '_copy_data(): Error sending data: Broken pipe')
+                log.exception("Error sending data: Broken pipe")
                 break
         except IOError:
             # Can get 'broken pipe' errors even when all data was sent
-            log.exception('_copy_data(): Error sending data: Broken pipe')
+            log.exception('Error sending data: Broken pipe')
             break
     try:
         outstream.close()
-    except IOError:
-        log.exception('_copy_data(): Got IOError while closing %s'
-                         % outstream)
+    except IOError as ioe:
+        log.error("Unable to close outstream %s:\r\t%s" % (outstream, ioe))
     else:
-        log.debug("_copy_data(): Closed output, %d bytes sent." % sent)
+        log.debug("Closed outstream: %d bytes sent." % sent)
 
 def _create_if_necessary(directory):
     """Create the specified directory, if necessary.
@@ -123,13 +122,11 @@ def _create_if_necessary(directory):
     """
 
     if not os.path.isabs(directory):
-        message = ("Got non-absolute path: %s" % directory)
-        log.debug("util._create_if_necessary(): %s" % message)
+        log.debug("Got non-absolute path: %s" % directory)
         directory = os.path.abspath(directory)
 
     if not os.path.isdir(directory):
-        message = ("Creating directory: %s" % directory)
-        log.debug("util._create_if_necessary():")
+        log.debug("Creating directory: %s" % directory)
         log.info("%s" % message)
         try:
             os.makedirs(directory, 0x1C0)
@@ -137,7 +134,7 @@ def _create_if_necessary(directory):
             log.error(ose, exc_info=1)
             return False
         else:
-            log.debug("util._create_if_necessary(): Created directory.")
+            log.debug("Created directory.")
     return True
 
 def _find_binary(binary=None):
@@ -157,7 +154,7 @@ def _find_binary(binary=None):
         if not os.path.isabs(binary):
             try: binary = _which(binary)[0]
             except IndexError as ie:
-                log.debug("_find_binary(): %s" % ie.message)
+                log.error(ie.message)
     if binary is None:
         try: binary = _which('gpg')[0]
         except IndexError: raise RuntimeError("GnuPG is not installed!")
@@ -166,7 +163,7 @@ def _find_binary(binary=None):
         assert not os.path.islink(binary), "Path to gpg binary is symlink"
         assert os.access(binary, os.X_OK), "Lacking +x perms for gpg binary"
     except (AssertionError, AttributeError) as ae:
-        log.debug("util._find_binary(): %s" % ae.message)
+        log.error(ae.message)
     else:
         return binary
 
@@ -193,8 +190,8 @@ def _is_file(input):
     """
     try:
         assert os.lstat(input).st_size > 0, "not a file: %s" % input
-    except (AssertionError, TypeError, IOError, OSError) as error:
-        log.debug(error.message)
+    except (AssertionError, TypeError, IOError, OSError) as err:
+        log.error(err.message, exc_info=1)
         return False
     else:
         return True
@@ -302,8 +299,7 @@ def _threaded_copy_data(instream, outstream):
     copy_thread = threading.Thread(target=_copy_data,
                                    args=(instream, outstream))
     copy_thread.setDaemon(True)
-    log.debug('_threaded_copy_data(): %r, %r, %r', copy_thread,
-                 instream, outstream)
+    log.debug('%r, %r, %r', copy_thread, instream, outstream)
     copy_thread.start()
     return copy_thread
 
@@ -349,4 +345,4 @@ def _write_passphrase(stream, passphrase, encoding):
     passphrase = '%s\n' % passphrase
     passphrase = passphrase.encode(encoding)
     stream.write(passphrase)
-    log.debug("_write_passphrase(): Wrote passphrase.")
+    log.debug("Wrote passphrase on stdin.")
