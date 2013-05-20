@@ -21,6 +21,10 @@
 A test harness and unittests for gnupg.py.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
+from time       import gmtime
+from time       import mktime
 
 from functools import wraps
 
@@ -34,7 +38,6 @@ import os
 import shutil
 import sys
 import tempfile
-import time
 
 ## Use unittest2 if we're on Python2.6 or less:
 if sys.version_info.major == 2 and sys.version_info.minor <= 6:
@@ -42,11 +45,12 @@ if sys.version_info.major == 2 and sys.version_info.minor <= 6:
 else:
     import unittest
 
-import gnupg
-from gnupg import _parsers
-from gnupg import _util
-from gnupg import _logger
 
+## see PEP-328 http://docs.python.org/2.5/whatsnew/pep-328.html
+import .gnupg
+import ._parsers
+import ._util
+import ._logger
 
 log = _util.log
 log.setLevel(9)
@@ -153,7 +157,7 @@ class GPGTestCase(unittest.TestCase):
 
     def setUp(self):
         """This method is called once per self.test_* method."""
-        print "%s%s%s" % (os.linesep, str("=" * 70), os.linesep)
+        print("%s%s%s" % (os.linesep, str("=" * 70), os.linesep))
         hd = tempfile.mkdtemp()
         if os.path.exists(hd):
             if not RETAIN_TEST_DIRS:
@@ -186,7 +190,7 @@ class GPGTestCase(unittest.TestCase):
         """Test that unsafe inputs are quoted out and then ignored."""
         shell_input = "\"&coproc /bin/sh\""
         fixed = _parsers._fix_unsafe(shell_input)
-        print fixed
+        print(fixed)
         test_file = os.path.join(_files, 'cypherpunk_manifesto')
         self.assertTrue(os.path.isfile(test_file))
         has_shell = self.gpg.verify_file(test_file, fixed)
@@ -276,7 +280,7 @@ class GPGTestCase(unittest.TestCase):
 
     def test_gpg_binary_not_abs(self):
         """Test that a non-absolute path to gpg results in a full path."""
-        print self.gpg.binary
+        print(self.gpg.binary)
         self.assertTrue(os.path.isabs(self.gpg.binary))
 
     def test_make_args_drop_protected_options(self):
@@ -355,8 +359,8 @@ class GPGTestCase(unittest.TestCase):
         """Generate a basic key."""
         key_input = self.generate_key_input(real_name, email_domain, **kwargs)
         key = self.gpg.gen_key(key_input)
-        print "\nKEY TYPE: ", key.type
-        print "KEY FINGERPRINT: ", key.fingerprint
+        print("\nKEY TYPE: ", key.type)
+        print("KEY FINGERPRINT: ", key.fingerprint)
         return key
 
     def test_gen_key_input(self):
@@ -547,7 +551,7 @@ class GPGTestCase(unittest.TestCase):
         message = "Damn, I really wish GnuPG had ECC support."
         sig = self.gpg.sign(message, default_key=key.fingerprint,
                             passphrase='wernerkoch')
-        print "SIGNATURE:\n", sig.data
+        print("SIGNATURE:\n", sig.data)
         self.assertIsNotNone(sig.data)
 
     def test_signature_algorithm(self):
@@ -556,7 +560,7 @@ class GPGTestCase(unittest.TestCase):
         message = "Someone should add GCM block cipher mode to PyCrypto."
         sig = self.gpg.sign(message, default_key=key.fingerprint,
                             passphrase='ronrivest')
-        print "ALGORITHM:\n", sig.sig_algo
+        print("ALGORITHM:\n", sig.sig_algo)
         self.assertIsNotNone(sig.sig_algo)
 
     def test_signature_string_bad_passphrase(self):
@@ -591,7 +595,7 @@ class GPGTestCase(unittest.TestCase):
         message += '[hackers in popular culture] to push for more power'
         sig = self.gpg.sign(message, default_key=key.fingerprint,
                             passphrase='bruceschneier')
-        now = time.mktime(time.gmtime())
+        now = mktime(gmtime())
         self.assertTrue(sig, "Good passphrase should succeed")
         verified = self.gpg.verify(sig.data)
         self.assertIsNotNone(verified.fingerprint)
@@ -659,7 +663,7 @@ class GPGTestCase(unittest.TestCase):
                                 detach=True, binary=True, clearsign=False)
             self.assertTrue(sig.data, "File signing should succeed")
             with self.assertRaises(UnicodeDecodeError):
-                print "SIG=", sig
+                print("SIG=%s" % sig)
 
     def test_deletion(self):
         """Test that key deletion works."""
@@ -714,7 +718,7 @@ authentication."""
 
     def test_encryption_multi_recipient(self):
         """Test encrypting a message for multiple recipients"""
-        self.gpg.homedir = _here
+        self.gpg.homedir = _util._here
 
         ian = { 'name_real': 'Ian Goldberg',
                 'name_email': 'gold@stein',
