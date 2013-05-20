@@ -41,6 +41,7 @@ nosetests.xml
 
 # tags
 TAGS
+tags
 
 # notes
 *.org

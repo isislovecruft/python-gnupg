@@ -1,4 +1,10 @@
 
+ctags:
+	ctags -R *.py
+
+etags:
+	find . -name "*.py" -print | xargs etags
+
 cleanup-src:
 	cd src && \
 		rm -f \#*\# && \
