@@ -555,6 +555,19 @@ use_agent: %s
             [cmd.append(opt) for opt in iter(_sanitise_list(self.options))]
         if args:
             [cmd.append(arg) for arg in iter(_sanitise_list(args))]
+
+        if self.verbose:
+            if isinstance(self.verbose, str):
+                if self.verbose in ['basic', 'advanced', 'expert', 'guru']:
+                    cmd.append('--debug-all')
+                    cmd.append('--debug-level %s' % self.verbose)
+            elif isinstance(self.verbose, int) and (0 <= self.verbose <= 9):
+                if self.verbose >= 1:
+                    cmd.append('--debug-all')
+                    cmd.append('--debug-level %s' % self.verbose)
+            elif self.verbose is True:
+                cmd.append('--debug-all')
+
         return cmd
 
     def _open_subprocess(self, args=None, passphrase=False):
