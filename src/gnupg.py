@@ -295,36 +295,6 @@ class GPGBase(object):
                     os.unline(loc)
                     log.debug("Removed binary symlink '%s'" % loc)
 
-    # @property
-    # def keyring(self):
-    #     """Get the public keyring."""
-    #     return self._keyring
-    #
-    # @keyring.setter
-    # def keyring(self, pub):
-    #     """Set the file to use as GnuPG's current (public) keyring.
-    #
-    #     :param str pub: The filename, relative to :attr:``GPG.homedir``, to use
-    #                     for storing public key data.
-    #     """
-    #     ring = _fix_unsafe(pub) if pub else 'pubring.gpg'
-    #     self._keyring = os.path.join(self._homedir, ring)
-    #
-    # @property
-    # def secring(self):
-    #     """Get the secret keyring."""
-    #     return self._secring
-    #
-    # @secring.setter
-    # def secring(self, sec):
-    #     """Set the file to use as GnuPG's current secret keyring.
-    #
-    #     :param str pub: The filename, relative to :attr:``GPG.homedir``, to use
-    #                     for storing secret key data.
-    #     """
-    #     ring = _fix_unsafe(sec) if sec else 'secring.gpg'
-    #     self._secring = os.path.join(self._homedir, ring)
-
     @property
     def default_preference_list(self):
         """Get the default preference list."""
