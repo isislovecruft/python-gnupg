@@ -1059,10 +1059,15 @@ use_agent: %s
     def list_sigs(self, *keyids):
         """Get the signatures for each of the ``keyids``.
 
-        The GnuPG option '--show-photos', according to the GnuPG manual, "does
-        not work with --with-colons", but since we can't rely on all versions
-        of GnuPG to explicitly handle this correctly, we should probably
-        include it in the args.
+        >>> import gnupg
+        >>> gpg = gnupg.GPG(homedir="./tests/doctest")
+        >>> key_input = gpg.gen_key_input()
+        >>> key = gpg.gen_key(key_input)
+        >>> assert key.fingerprint
+
+        :rtype: dict
+        :returns: A dictionary whose keys are the original keyid parameters,
+                  and whose values are lists of signatures.
         """
         raise NotImplemented("Functionality for '--list-sigs' not implemented.")
 
