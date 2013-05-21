@@ -993,7 +993,7 @@ use_agent: %s
         #stdout, stderr = p.communicate()
         result = self._result_map['delete'](self) # any result will do
         self._collect_output(p, result, stdin=p.stdin)
-        log.debug('export_keys result: %r', result.data)
+        log.debug('Exported:%s%r' % (os.linesep, result.data))
         return result.data.decode(self.encoding, self._decode_errors)
 
     def list_keys(self, secret=False):
