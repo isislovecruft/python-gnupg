@@ -1048,6 +1048,14 @@ use_agent: %s
                 getattr(result, keyword)(L)
         return result
 
+    def list_packets(self, raw_data):
+        """List the packet contents of a file."""
+        args = ["--list-packets"]
+        result = self._result_map['packets'](self)
+        self._handle_io(args, _make_binary_stream(raw_data, self.encoding),
+                        result)
+        return result
+
     def list_sigs(self, *keyids):
         """xxx implement me
 
