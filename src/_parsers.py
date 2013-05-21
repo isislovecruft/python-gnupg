@@ -493,7 +493,7 @@ def _sanitise(*args):
                         if flag in ['--encrypt', '--encrypt-files', '--decrypt',
                                     '--decrypt-files', '--import', '--verify']:
                             ## Place checks here:
-                            if util._is_file(val):
+                            if _util._is_file(val):
                                 safe_option += (val + " ")
                             else:
                                 log.debug("%s not file: %s" % (flag, val))
