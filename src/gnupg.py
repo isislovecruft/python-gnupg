@@ -1057,7 +1057,7 @@ use_agent: %s
         return result
 
     def list_sigs(self, *keyids):
-        """xxx implement me
+        """Get the signatures for each of the ``keyids``.
 
         The GnuPG option '--show-photos', according to the GnuPG manual, "does
         not work with --with-colons", but since we can't rely on all versions
