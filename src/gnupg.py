@@ -267,7 +267,12 @@ class GPGBase(object):
                 return new_path
 
             @staticmethod
-            def update_path(env_copy, path_value):
+            def update_path(environment, path):
+                """Add paths to the string at os.environ['PATH'].
+
+                :param str environment: The environment mapping to update.
+                :param list path: A list of strings to update the PATH with.
+                """
                 log.debug("Updating system path...")
                 os.environ = env_copy
                 os.environ.update({'PATH': path_value})
