@@ -723,16 +723,18 @@ use_agent: %s
                          % (data, kwargs[keyid]))
             else:
                 log.warn("No 'sign_with' keyid given! Using default key.")
-            result = self._sign_file(message, **kwargs)
-        elif not _util._is_stream(message):
+            result = self._sign_file(data, **kwargs)
+
+        elif not _is_stream(data):
             if 'keyid' in kwargs.items():
                 log.info("Signing data string '%s' with keyid: %s"
                          % (data, kwargs[keyid]))
             else:
                 log.warn("No 'sign_with' keyid given! Using default key.")
-            f = _util._make_binary_stream(message, self.encoding)
-            result = self._sign_file(f, **kwargs)
-            f.close()
+            stream = _make_binary_stream(data, self.encoding)
+            result = self._sign_file(stream, **kwargs)
+            stream.close()
+
         else:
             log.warn("Unable to sign message '%s' with type %s"
                      % (data, type(data)))
