@@ -687,9 +687,37 @@ use_agent: %s
         self._collect_output(p, result, writer, stdin)
         return result
 
-    def sign(self, message, **kwargs):
-        """Create a signature for a message or file."""
-        if isinstance(message, file):
+    def sign(self, data, **kwargs):
+        """Create a signature for a message string or file.
+
+        Note that this method is not for signing other keys. (In GnuPG's terms,
+        what we all usually call 'keysigning' is actually termed
+        'certification'...) Even though they are cryptographically the same
+        operation, GnuPG differentiates between them, presumedly because these
+        operations are also the same as the decryption operation. If the
+        ``key_usage``s ``C (certification)``, ``S (sign)``, and ``E
+        (encrypt)``, were all the same key, the key would "wear down" through
+        frequent signing usage -- since signing data is usually done often --
+        meaning that the secret portion of the keypair, also used for
+        decryption in this scenario, would have a statistically higher
+        probability of an adversary obtaining an oracle for it (or for a
+        portion of the rounds in the cipher algorithm, depending on the family
+        of cryptanalytic attack used).
+
+        In simpler terms: this function isn't for signing your friends' keys,
+        it's for something like signing an email.
+
+        :type data: str or file
+        :param data: A string or file stream to sign.
+        :param str keyid: The key to sign with.
+        :param str passphrase: The passphrase to pipe to stdin.
+        :param bool clearsign: If True, create a cleartext signature.
+        :param bool detach: If True, create a detached signature.
+        :param bool binary: If True, do not ascii armour the output.
+        """
+        if isinstance(data, file):
+            log.warn("Note: This function is not for signing other keys,")
+            log.warn("      see the docstring for GPG.sign()")
             if 'keyid' in kwargs.items():
                 log.info("Signing file '%r' with keyid: %s"
                          % (data, kwargs[keyid]))
