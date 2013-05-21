@@ -472,6 +472,11 @@ def _sanitise(*args):
         :returns: A string of the items in ``checked`` delimited by spaces.
         """
         safe_option = str()
+
+        if not _util._py3k:
+            if isinstance(arg, unicode):
+                arg = str(arg)
+
         try:
             flag = _is_allowed(arg)
             assert flag is not None, "_check_option(): got None for flag"
