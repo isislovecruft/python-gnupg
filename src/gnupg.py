@@ -209,7 +209,15 @@ class GPGBase(object):
             if hasattr(self, '__remove_path__'):
                 self.__remove_path__('pinentry')
 
-    def __remove_path__(self, prog=None):
+    def __remove_path__(self, prog=None, at_exit=True):
+        """Remove a the directories containing a program from the system's
+        $PATH. If self.gpg.binary is in a directory being removed, it is
+        symlinked to './gpg'
+
+        :param str prog:
+        """
+        self._removed_path_entries = []
+
         log.debug("Attempting to remove %s from system PATH" % str(prog))
         if (prog is None) or (not isinstance(prog, str)): return
 
