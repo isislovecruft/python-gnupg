@@ -591,7 +591,7 @@ use_agent: %s
         ## see http://docs.python.org/2/library/subprocess.html#converting-an\
         ##    -argument-sequence-to-a-string-on-windows
         cmd = ' '.join(self._make_args(args, passphrase))
-        log.debug("_open_subprocess(): %s", cmd)
+        log.debug("Sending command to GnuPG process:%s%s" % (os.linesep, cmd))
         return Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
 
     def _read_response(self, stream, result):
@@ -608,20 +608,24 @@ use_agent: %s
                 break
             lines.append(line)
             line = line.rstrip()
-            if self.verbose:
-                log.info("%s" % line)
-            else:
-                log.debug("%s" % line)
             if line[0:9] == '[GNUPG:] ':
                 # Chop off the prefix
                 line = line[9:]
+                log.status("%s" % line)
                 L = line.split(None, 1)
                 keyword = L[0]
                 if len(L) > 1:
                     value = L[1]
                 else:
                     value = ""
-                result._handle_status(keyword, value)
+                result.handle_status(keyword, value)
+            elif line[0:5] == 'gpg: ':
+                log.warn("%s" % line)
+            else:
+                if self.verbose:
+                    log.info("%s" % line)
+                else:
+                    log.debug("%s" % line)
         result.stderr = ''.join(lines)
 
     def _read_data(self, stream, result):
@@ -631,7 +635,7 @@ use_agent: %s
             data = stream.read(1024)
             if len(data) == 0:
                 break
-            log.debug("GPG._read_data(): read chunk: %r" % data[:256])
+            log.debug("read from stdout: %r" % data[:256])
             chunks.append(data)
         if _util._py3k:
             # Join using b'' or '', as appropriate
@@ -648,13 +652,13 @@ use_agent: %s
         stderr = codecs.getreader(self.encoding)(process.stderr)
         rr = threading.Thread(target=self._read_response, args=(stderr, result))
         rr.setDaemon(True)
-        log.debug('GPG._collect_output(): stderr reader: %r', rr)
+        log.debug('stderr reader: %r', rr)
         rr.start()
 
         stdout = process.stdout
         dr = threading.Thread(target=self._read_data, args=(stdout, result))
         dr.setDaemon(True)
-        log.debug('GPG._collect_output(): stdout reader: %r', dr)
+        log.debug('stdout reader: %r', dr)
         dr.start()
 
         dr.join()
@@ -989,7 +993,7 @@ use_agent: %s
         for line in lines:
             if self.verbose:
                 print(line)
-            log.debug("line: %r", line.rstrip())
+            log.debug("%r", line.rstrip())
             if not line:
                 break
             L = line.strip().split(':')
