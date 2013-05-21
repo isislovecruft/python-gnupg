@@ -245,6 +245,26 @@ class GPGBase(object):
             log.debug("Created a copy of system PATH: %r" % path_copy)
             assert not os.environ.has_key('PATH'), "OS env kept $PATH anyway!"
 
+            @staticmethod
+            def remove_program_from_path(path, prog_base):
+                """Remove all directories which contain a program from PATH.
+
+                :param str path: The contents of the system environment's
+                                 PATH.
+                :param str prog_base: The base (directory only) portion of a
+                                      program's location.
+                """
+                paths = path.split(':')
+                for directory in paths:
+                    if directory == prog_base:
+                        log.debug("Found directory with target program: %s"
+                                  % directory)
+                        path.remove(directory)
+                        self._removed_path_entries.append(directory)
+                log.debug("Deleted all found instance of %s." % directory)
+                log.debug("PATH is now:%s%s" % (os.linesep, path))
+                new_path = ':'.join([p for p in path])
+                return new_path
 
             @staticmethod
             def update_path(env_copy, path_value):
