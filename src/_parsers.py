@@ -365,6 +365,7 @@ def _is_allowed(input):
                          '--compress-algo',
                          '--compression-algo',
                          '--cert-digest-algo',
+                         '--list-config',
                          '--personal-digest-prefs',
                          '--personal-digest-preferences',
                          '--personal-cipher-prefs',

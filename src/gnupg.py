@@ -431,7 +431,7 @@ use_agent: %s
                str(self.use_agent)))
 
         ## check that everything runs alright:
-        proc = self._open_subprocess(["--version"])
+        proc = self._open_subprocess(["--list-config", "--with-colons"])
         result = self._result_map['list'](self)
         self._collect_output(proc, result, stdin=proc.stdin)
         if proc.returncode != 0:
