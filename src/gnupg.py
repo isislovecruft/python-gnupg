@@ -458,6 +458,26 @@ class GPG(GPGBase):
 
         :raises: :exc:`RuntimeError` with explanation message if there is a
                  problem invoking gpg.
+
+        Example:
+
+        >>> import gnupg
+        GnuPG logging disabled...
+        >>> gpg = gnupg.GPG(homedir='./test-homedir')
+        >>> gpg.keyring
+        './test-homedir/pubring.gpg'
+        >>> gpg.secring
+        './test-homedir/secring.gpg'
+        >>> gpg.use_agent
+        False
+        >>> gpg.binary
+        '/usr/bin/gpg'
+        >>> import os
+        >>> import shutil
+        >>> if os.path.exists('./test-homedir'):
+        ...     shutil.rmtree('./test-homedir')
+        ...
+
         """
 
         super(GPG, self).__init__(
