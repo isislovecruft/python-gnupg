@@ -176,12 +176,14 @@ class GPGBase(object):
         sec = _fix_unsafe(secring) if secring else 'secring.gpg'
         self.keyring = os.path.join(self._homedir, pub)
         self.secring = os.path.join(self._homedir, sec)
-        self._prefs  = 'SHA512 SHA384 SHA256 AES256 CAMELLIA256 TWOFISH ZLIB ZIP'
         self.options = _sanitise(options) if options else None
 
-        self.encoding = locale.getpreferredencoding()
-        if self.encoding is None: # This happens on Jython!
-            self.encoding = sys.stdin.encoding
+        if default_preference_list:
+            self._prefs = _check_options(default_preference_list, 'all')
+        else:
+            self._prefs  = 'SHA512 SHA384 SHA256 AES256 CAMELLIA256 TWOFISH'
+            self._prefs += ' AES192 ZLIB ZIP Uncompressed'
+
 
         try:
             assert self.binary, "Could not find binary %s" % binary
