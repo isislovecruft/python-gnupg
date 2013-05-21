@@ -505,6 +505,25 @@ def _sanitise(*args):
                                 safe_option += (val + " ")
                             else:
                                 log.debug("'%s %s' not hex." % (flag, val))
+                        elif flag in ['--cipher-algo',
+                                      '--personal-cipher-prefs',
+                                      '--personal-cipher-preferences']:
+                            legit_algos = _check_preferences(val, 'cipher')
+                            if legit_algos:
+                                safe_option += (legit_algos + " ")
+                            else:
+                                log.debug("'%s' is not cipher"
+                                          % _fix_unsafe(val))
+                        elif flag in ['--compress-algo',
+                                      '--compression-algo',
+                                      '--personal-compress-prefs',
+                                      '--personal-compress-preferences']:
+                            legit_algos = _check_preferences(val, 'compress')
+                            if legit_algos:
+                                safe_option += (legit_algos + " ")
+                            else:
+                                log.debug("'%s' not compress algo"
+                                          % _fix_unsafe(val))
                         else:
                             safe_option += (val + " ")
                             log.debug("_check_option(): No checks for %s"
