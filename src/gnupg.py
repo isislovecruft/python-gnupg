@@ -184,13 +184,17 @@ class GPGBase(object):
             self._prefs  = 'SHA512 SHA384 SHA256 AES256 CAMELLIA256 TWOFISH'
             self._prefs += ' AES192 ZLIB ZIP Uncompressed'
 
+        encoding = locale.getpreferredencoding()
+        if encoding is None: # This happens on Jython!
+            encoding = sys.stdin.encoding
+        self.encoding = encoding.lower().replace('-', '_')
+
 
         try:
             assert self.binary, "Could not find binary %s" % binary
             assert isinstance(verbose, (bool, str, int)), \
                 "'verbose' must be boolean, string, or 0 <= n <= 9"
             assert isinstance(use_agent, bool), "'use_agent' must be boolean"
-
             if self.options is not None:
                 assert isinstance(self.options, str), "options not string"
         except (AssertionError, AttributeError) as ae:
