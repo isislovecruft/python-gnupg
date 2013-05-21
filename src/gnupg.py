@@ -223,7 +223,7 @@ class GPGBase(object):
 
         try:
             program = _util._which(prog)[0]
-        except (OSError, IOerror, IndexError) as err:
+        except (OSError, IOError, IndexError) as err:
             log.err(err.message)
             log.err("Cannot find program '%s', not changing PATH." % prog)
             return
