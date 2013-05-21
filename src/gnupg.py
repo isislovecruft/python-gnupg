@@ -515,24 +515,42 @@ use_agent: %s
     def _make_args(self, args, passphrase=False):
         """Make a list of command line elements for GPG. The value of ``args``
         will be appended only if it passes the checks in
-        :func:parsers._sanitise. The ``passphrase`` argument needs to be True
+        :func:`parsers._sanitise`. The ``passphrase`` argument needs to be True
         if a passphrase will be sent to GPG, else False.
+
+        :param list args: A list of strings of options and flags to pass to
+                          ``GPG.binary``. This is input safe, meaning that
+                          these values go through strict checks (see
+                          ``parsers._sanitise_list``) before being passed to to
+                          the input file descriptor for the GnuPG process.
+                          Each string should be given exactly as it would be on
+                          the commandline interface to GnuPG,
+                          e.g. ["--cipher-algo AES256", "--default-key
+                          A3ADB67A2CDB8B35"].
+
+        :param bool passphrase: If True, the passphrase will be sent to the
+                                stdin file descriptor for the attached GnuPG
+                                process.
         """
         ## see TODO file, tag :io:makeargs:
         cmd = [self.binary, '--no-emit-version --no-tty --status-fd 2']
 
         if self.homedir:
             cmd.append('--homedir "%s"' % self.homedir)
+
         if self.keyring:
             cmd.append('--no-default-keyring --keyring %s' % self.keyring)
             if self.secring:
                 cmd.append('--secret-keyring %s' % self.secring)
+
         if passphrase:
             cmd.append('--batch --passphrase-fd 0')
+
         if self.use_agent:
             cmd.append('--use-agent')
         else:
             cmd.append('--no-use-agent')
+
         if self.options:
             [cmd.append(opt) for opt in iter(_sanitise_list(self.options))]
         if args:
