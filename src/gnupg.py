@@ -573,7 +573,23 @@ use_agent: %s
     def _open_subprocess(self, args=None, passphrase=False):
         """Open a pipe to a GPG subprocess and return the file objects for
         communicating with it.
+
+        :param list args: A list of strings of options and flags to pass to
+                          ``GPG.binary``. This is input safe, meaning that
+                          these values go through strict checks (see
+                          ``parsers._sanitise_list``) before being passed to to
+                          the input file descriptor for the GnuPG process.
+                          Each string should be given exactly as it would be on
+                          the commandline interface to GnuPG,
+                          e.g. ["--cipher-algo AES256", "--default-key
+                          A3ADB67A2CDB8B35"].
+
+        :param bool passphrase: If True, the passphrase will be sent to the
+                                stdin file descriptor for the attached GnuPG
+                                process.
         """
+        ## see http://docs.python.org/2/library/subprocess.html#converting-an\
+        ##    -argument-sequence-to-a-string-on-windows
         cmd = ' '.join(self._make_args(args, passphrase))
         log.debug("_open_subprocess(): %s", cmd)
         return Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
