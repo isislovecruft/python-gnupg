@@ -801,7 +801,7 @@ use_agent: %s
         >>> assert verify
 
         """
-        f = _util._make_binary_stream(data, self.encoding)
+        f = _make_binary_stream(data, self.encoding)
         result = self.verify_file(f)
         f.close()
         return result
@@ -894,10 +894,11 @@ use_agent: %s
         ##     it might be possible to use --list-packets and parse the output
 
         result = self._result_map['import'](self)
-        log.debug('import_keys: %r', key_data[:256])
-        data = _util._make_binary_stream(key_data, self.encoding)
+        log.info('Importing: %r', key_data[:256])
+        data = _make_binary_stream(key_data, self.encoding)
         self._handle_io(['--import'], data, result, binary=True)
-        log.debug('import_keys result: %r', result.__dict__)
+        pretty = pprint(result.__dict__, indent=4, width=76, depth=8)
+        log.debug("Import result:%s%s" % (os.linesep, pretty))
         data.close()
         return result
 
@@ -914,7 +915,7 @@ use_agent: %s
         safe_keyserver = _fix_unsafe(keyserver)
 
         result = self._result_map['import'](self)
-        data = _util._make_binary_stream("", self.encoding)
+        data = _make_binary_stream("", self.encoding)
         args = ['--keyserver', keyserver, '--recv-keys']
 
         if keyids:
@@ -955,7 +956,7 @@ use_agent: %s
         if subkeys:
             which='secret-and-public-key'
 
-        if _util._is_list_or_tuple(fingerprints):
+        if _is_list_or_tuple(fingerprints):
             fingerprints = ' '.join(fingerprints)
 
         args = ['--batch']
@@ -980,7 +981,7 @@ use_agent: %s
         elif secret:
             which='-secret-keys'
 
-        if _util._is_list_or_tuple(keyids):
+        if _is_list_or_tuple(keyids):
             keyids = ' '.join(['%s' % k for k in keyids])
 
         args = ["--armor"]
@@ -1071,7 +1072,7 @@ use_agent: %s
         ## see TODO file, tag :gen_key: for todo items
         args = ["--gen-key --batch"]
         key = self._result_map['generate'](self)
-        f = _util._make_binary_stream(input, self.encoding)
+        f = _make_binary_stream(input, self.encoding)
         self._handle_io(args, f, key, binary=True)
         f.close()
         return key
@@ -1397,9 +1398,9 @@ use_agent: %s
         >>> assert result.fingerprint == print1
 
         """
-        data = _util._make_binary_stream(data, self.encoding)
-        result = self.encrypt_file(data, recipients, **kwargs)
-        data.close()
+        stream = _make_binary_stream(data, self.encoding)
+        result = self.encrypt_file(stream, recipients, **kwargs)
+        stream.close()
         return result
 
     def decrypt(self, message, **kwargs):
@@ -1407,9 +1408,9 @@ use_agent: %s
 
         :param message: A string or file-like object to decrypt.
         """
-        data = _util._make_binary_stream(message, self.encoding)
-        result = self.decrypt_file(data, **kwargs)
-        data.close()
+        stream = _make_binary_stream(data, self.encoding)
+        result = self.decrypt_file(stream, **kwargs)
+        stream.close()
         return result
 
     def decrypt_file(self, file, always_trust=False, passphrase=None,
