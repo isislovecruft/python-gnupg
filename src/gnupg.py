@@ -274,14 +274,26 @@ class GPGBase(object):
                 :param list path: A list of strings to update the PATH with.
                 """
                 log.debug("Updating system path...")
-                os.environ = env_copy
-                os.environ.update({'PATH': path_value})
+                os.environ = environment
+                new_path = ':'.join([p for p in path])
+                old = ''
+                if 'PATH' in os.environ:
+                    new_path = ':'.join([os.environ['PATH'], new_path])
+                os.environ.update({'PATH': new_path})
                 log.debug("System $PATH: %s" % os.environ['PATH'])
 
-            update_path(env_copy, rm_program)
+            modified_path = remove_program_from_path(path_copy, program_base)
+            update_path(env_copy, modified_path)
 
             ## register an _exithandler with the python interpreter:
             atexit.register(update_path, env_copy, path_copy)
+
+            @atexit.register
+            def remove_symlinked_binary():
+                loc = os.path.join(os.getcwd(), 'gpg')
+                if os.path.islink(loc):
+                    os.unline(loc)
+                    log.debug("Removed binary symlink '%s'" % loc)
 
     # @property
     # def keyring(self):
