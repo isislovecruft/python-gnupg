@@ -231,20 +231,20 @@ class GPGBase(object):
         ## __remove_path__ cannot be an @classmethod in GPGMeta, because
         ## the use_agent attribute must be set by the instance.
         if not self.use_agent:
-            program_path = os.path.dirname(program)
+            program_base = os.path.dirname(prog)
+            gnupg_base = os.path.dirname(self.binary)
 
-            ## symlink our gpg binary into the current working directory
-            if os.path.dirname(self.gpg.binary) == program_path:
-                os.symlink(self.gpg.binary, os.path.join(os.getcwd(), 'gpg'))
+            ## symlink our gpg binary into $PWD if the path we are removing is
+            ## the one which contains our gpg executable:
+            if gnupg_base == program_base:
+                os.symlink(self.binary, os.path.join(os.getcwd(), 'gpg'))
 
-            ## copy the original environment so we can put it back later:
-            env_copy = os.environ
+            ## copy the original environment so that we can put it back later:
+            env_copy = os.environ            ## this one should not be touched
             path_copy = os.environ.pop('PATH')
-            assert not os.environ.has_key('PATH')
             log.debug("Created a copy of system PATH: %r" % path_copy)
+            assert not os.environ.has_key('PATH'), "OS env kept $PATH anyway!"
 
-            path_string = '{}:'.format(program_path)
-            rm_program = path_copy.replace(path_string, None)
 
             @staticmethod
             def update_path(env_copy, path_value):
