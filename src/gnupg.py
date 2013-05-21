@@ -999,6 +999,11 @@ use_agent: %s
     def list_keys(self, secret=False):
         """List the keys currently in the keyring.
 
+        The GnuPG option '--show-photos', according to the GnuPG manual, "does
+        not work with --with-colons", but since we can't rely on all versions
+        of GnuPG to explicitly handle this correctly, we should probably
+        include it in the args.
+
         >>> import shutil
         >>> shutil.rmtree("keys")
         >>> gpg = GPG(homedir="keys")
