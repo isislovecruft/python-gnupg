@@ -484,7 +484,8 @@ def _sanitise(*args):
             log.warn("_check_option(): %s" % error.message)
         else:
             safe_option += (flag + " ")
-            if isinstance(value, str):
+            if (not _util._py3k and isinstance(value, basestring)) \
+                    or (_util._py3k and isinstance(value, str)):
                 values = value.split(' ')
                 for v in values:
                     val = _fix_unsafe(v)
