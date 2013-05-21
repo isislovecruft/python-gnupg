@@ -324,7 +324,6 @@ class GPGBase(object):
         """
         self._prefs = 'SHA512 SHA384 SHA256 AES256 CAMELLIA256 TWOFISH ZLIB ZIP'
 
-
     def _homedir_getter(self):
         """Get the directory currently being used as GnuPG's homedir.
 
