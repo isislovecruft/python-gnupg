@@ -151,9 +151,9 @@ class GPGTestCase(unittest.TestCase):
 
         self.gpg = gnupg.GPG(binary='gpg', homedir=hd)
         self.homedir = hd
-        self.gpg = gnupg.GPG(homedir=hd, binary='gpg')
-        self.keyring = os.path.join(self.homedir, 'pubring.gpg')
-        self.secring = os.path.join(self.homedir, 'secring.gpg')
+        self.keyring = self.gpg.keyring
+        self.secring = self.gpg.secring
+        self.insecure_prng = False
 
     def tearDown(self):
         """This is called once per self.test_* method after the test run."""
