@@ -32,7 +32,10 @@ from gnupg import _parsers
 from gnupg import _util
 from gnupg import _logger
 
-log    = _logger.create_logger(10)
+
+log = _util.log
+log.setLevel(9)
+
 _here  = os.path.join(os.getcwd(), 'tests')
 _files = os.path.join(_here, 'files')
 _tempd = os.path.join(_here, 'tmp')
