@@ -10,6 +10,8 @@ Copyright © 2008-2013 Vinay Sajip. All rights reserved.
 from functools import wraps
 
 import argparse
+import codecs
+import encodings
 import doctest
 import io
 import logging
