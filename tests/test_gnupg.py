@@ -164,8 +164,8 @@ class GPGTestCase(unittest.TestCase):
                 log.error(ose)
         else:
             log.warn("Can't delete homedir: '%s' not a directory"
-                        % self.homedir)
-        log.warn("%s" % str("=" * 78))
+                     % self.homedir)
+        log.warn("%s%s%s" % (os.linesep, str("=" * 70), os.linesep))
 
     def test_parsers_fix_unsafe(self):
         """Test that unsafe inputs are quoted out and then ignored."""
