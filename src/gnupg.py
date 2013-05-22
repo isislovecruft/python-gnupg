@@ -1059,12 +1059,11 @@ use_agent: %s
         """Generate a GnuPG key through batch file key generation. See
         :meth:`GPG.gen_key_input()` for creating the control input.
 
-        >>> gpg = GPG(homedir="keys")
-        >>> input = gpg.gen_key_input()
-        >>> result = gpg.gen_key(input)
-        >>> assert result
-        >>> result = gpg.gen_key('foo')
-        >>> assert not result
+        >>> import gnupg
+        >>> gpg = gnupg.GPG(homedir="./tests/doctest")
+        >>> key_input = gpg.gen_key_input()
+        >>> key = gpg.gen_key(key_input)
+        >>> assert key.fingerprint
 
         :param dict input: A dictionary of parameters and values for the new
                            key.
