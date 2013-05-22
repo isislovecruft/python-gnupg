@@ -685,15 +685,16 @@ authentication."""
         gentry = key.fingerprint
         key = self.generate_key("Marten van Dijk", "xorr.ox")
         dijk = key.fingerprint
-        gpg = self.gpg
-        gpg.encoding = 'latin-1'
-        if util._py3k:
+        self.gpg.encoding = 'latin-1'
+        if _util._py3k:
             data = 'Hello, André!'
         else:
-            data = unicode('Hello, André', gpg.encoding)
-        data = data.encode(gpg.encoding)
-        encrypted = str(gpg.encrypt(data, gentry))
-        self.assertNotEqual(data, encrypted, "Data must have changed")
+            data = unicode('Hello, André', self.gpg.encoding)
+        data = data.encode(self.gpg.encoding)
+        encrypted = str(self.gpg.encrypt(data, [gentry]))
+        self.assertNotEqual(data, encrypted)
+        self.assertNotEqual(encrypted, '')
+        self.assertGreater(len(encrypted), 0)
 
     def test_encryption_multi_recipient(self):
         """Test encrypting a message for multiple recipients"""
