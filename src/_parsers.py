@@ -938,21 +938,13 @@ class ImportResult(object):
 
 
 class Verify(object):
-    """Classes for parsing GnuPG status messages for signature verification.
+    """Parser for internal status messages from GnuPG for
+    certification/signature verification, and for parsing portions of status
+    messages from decryption operations.
 
     :type gpg: :class:`gnupg.GPG`
     :param gpg: An instance of :class:`gnupg.GPG`.
-    :attr bool valid: True if the signature or file was verified successfully,
-                      False otherwise.
-    :attr str fingerprint: The fingerprint of the GnuPG keyID which created the
-                           signature.
-
-    :attr str creation_date: The date the signature was made.
-    :attr str timestamp: The timestamp used internally in the signature.
-    :attr str signature_id: The uid of the signing GnuPG key.
-    :attr str status: The internal status message from the GnuPG process.
     """
-    ## xxx finish documentation
 
     TRUST_UNDEFINED = 0
     TRUST_NEVER = 1
