@@ -28,7 +28,7 @@ cleantest: cleanup-src cleanup-tests cleanup-build
 	rm *.log
 
 test: cleantest
-	python tests/test_gnupg.py parsers basic genkey sign listkeys crypt keyrings import
+	python tests/test_gnupg.py parsers basic encodings genkey sign listkeys crypt keyrings import
 
 install: 
 	python setup.py install --record installed-files.txt

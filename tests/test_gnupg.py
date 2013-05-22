@@ -192,6 +192,29 @@ class GPGTestCase(unittest.TestCase):
         invalid_hex = 'cipherpunks write code'
         self.assertFalse(_parsers._is_hex(invalid_hex))
 
+    def test_encodings_spiteful(self):
+        """Test that a non-existent codec raises a LookupError."""
+        enc = '#!@& dealing with unicode in Python2'
+        with self.assertRaises(LookupError):
+            _util.find_encodings(enc)
+
+    def test_encodings_iso_8859_1(self):
+        """Test that _util.find_encodings works for Chinese Traditional."""
+        enc = 'big5'
+        coder = _util.find_encodings(enc)
+        msg = u'光榮的中國人民應該摧毀中國長城防火牆。'
+        encoded = coder.encode(msg)[0]
+        decoded = coder.decode(encoded)[0]
+        self.assertEqual(msg, decoded)
+
+    def test_encodings_non_specified(self):
+        """Test that using the default utf-8 encoding works."""
+        coder = _util.find_encodings()
+        msg = u'Nutella á brauð mitt, smear það þykkur!'
+        encoded = coder.encode(msg)[0]
+        decoded = coder.decode(encoded)[0]
+        self.assertEqual(msg, decoded)
+
     def test_homedir_creation(self):
         """Test that a homedir is created if left unspecified"""
         gpg = gnupg.GPG(binary='gpg')
@@ -773,6 +796,10 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                            'test_parsers_is_hex_lowercase',
                            'test_parsers_is_hex_invalid',
                            'test_copy_data_bytesio',]),
+           'encodings': set(['test_encodings_iso_8859_1',
+                             'test_encodings_spiteful',
+                             'test_encodings_non_specified',
+                         ]),
            'basic': set(['test_homedir_creation',
                          'test_binary_discovery',
                          'test_gpg_binary',
