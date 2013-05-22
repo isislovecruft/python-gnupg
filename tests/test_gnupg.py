@@ -261,6 +261,7 @@ class GPGTestCase(unittest.TestCase):
 
     def test_gpg_binary_not_abs(self):
         """Test that a non-absolute path to gpg results in a full path."""
+        print self.gpg.binary
         self.assertTrue(os.path.isabs(self.gpg.binary))
 
     def test_make_args_drop_protected_options(self):
