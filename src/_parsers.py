@@ -621,6 +621,33 @@ def _sanitise_list(arg_list):
                 yield safe_arg
 
 
+def nodata(status_code):
+    """Translate NODATA status codes from GnuPG to messages."""
+    lookup = {
+        '1': 'No armored data.',
+        '2': 'Expected a packet but did not find one.',
+        '3': 'Invalid packet found, this may indicate a non OpenPGP message.',
+        '4': 'Signature expected but not found.' }
+    for key, value in lookup.items():
+        if str(status_code) == key:
+            return value
+
+def progress(status_code):
+    """Translate PROGRESS status codes from GnuPG to messages."""
+    lookup = {
+        'pk_dsa': 'DSA key generation',
+        'pk_elg': 'Elgamal key generation',
+        'primegen': 'Prime generation',
+        'need_entropy': 'Waiting for new entropy in the RNG',
+        'tick': 'Generic tick without any special meaning - still working.',
+        'starting_agent': 'A gpg-agent was started.',
+        'learncard': 'gpg-agent or gpgsm is learning the smartcard data.',
+        'card_busy': 'A smartcard is still working.' }
+    for key, value in lookup.items():
+        if str(status_code) == key:
+            return value
+
+
 class GenKey(object):
     """Handle status messages for key generation.
 
@@ -633,27 +660,47 @@ class GenKey(object):
         #: 'P':= primary, 'S':= subkey, 'B':= both
         self.type = None
         self.fingerprint = None
+        self.status = None
+        self.subkey_created = False
+        self.primary_created = False
 
     def __nonzero__(self):
         if self.fingerprint: return True
         return False
-
     __bool__ = __nonzero__
 
     def __str__(self):
-        return self.fingerprint or ''
+        if self.fingerprint:
+            return self.fingerprint
+        else:
+            if self.status is not None:
+                return self.status
+            else:
+                return False
 
-    def _handle_status(self, key, value):
+    def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
         :raises: :exc:`ValueError` if the status message is unknown.
         """
-        if key in ("PROGRESS", "GOOD_PASSPHRASE", "NODATA", "KEY_NOT_CREATED"):
+        if key in ("GOOD_PASSPHRASE"):
             pass
+        elif key == "KEY_NOT_CREATED":
+            self.status = 'key not created'
         elif key == "KEY_CREATED":
             (self.type, self.fingerprint) = value.split()
+            self.status = 'key created'
+        elif key == "NODATA":
+            self.status = nodata(value)
+        elif key == "PROGRESS":
+            self.status = progress(value.split(' ', 1)[0])
         else:
             raise ValueError("Unknown status message: %r" % key)
+
+        if self.type in ('B', 'P'):
+            self.primary_key_created = True
+        if self.type in ('B', 'S'):
+            self.subkey_created = True
 
 class DeleteResult(object):
     """Handle status messages for --delete-keys and --delete-secret-keys"""
