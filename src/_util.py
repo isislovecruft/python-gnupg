@@ -23,6 +23,8 @@ Extra utilities for python-gnupg.
 
 from datetime import datetime
 
+import codecs
+import encodings
 import os
 import time
 import threading
@@ -62,6 +64,40 @@ _conf = os.path.join(os.path.join(_user, '.config'), 'python-gnupg')
 ## Logger is disabled by default
 log = _logger.create_logger(0)
 
+
+def find_encodings(enc=None, system=False):
+    """Find functions for encoding translations for a specific codec.
+
+    :param str enc: The codec to find translation functions for. It will be
+                    normalized by converting to lowercase, excluding
+                    everything which is not ascii, and hyphens will be
+                    converted to underscores.
+
+    :param bool system: If True, find encodings based on the system's stdin
+                        encoding, otherwise assume utf-8.
+
+    :raises: :exc:LookupError if the normalized codec, ``enc``, cannot be
+             found in Python's encoding translation map.
+    """
+    if not enc:
+        enc = 'utf-8'
+
+    if system:
+        if getattr(sys.stdin, 'encoding', None) is None:
+            enc = sys.stdin.encoding
+            log.debug("Obtained encoding from stdin: %s" % enc)
+        else:
+            enc = 'ascii'
+
+    ## have to have lowercase to work, see
+    ## http://docs.python.org/dev/library/codecs.html#standard-encodings
+    enc = enc.lower()
+    codec_alias = encodings.normalize_encoding(enc)
+
+    codecs.register(encodings.search_function)
+    coder = codecs.lookup(codec_alias)
+
+    return coder
 
 def _copy_data(instream, outstream):
     """Copy data from one stream to another.
