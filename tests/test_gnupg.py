@@ -698,11 +698,45 @@ authentication."""
 
     def test_encryption_multi_recipient(self):
         """Test encrypting a message for multiple recipients"""
-        key = self.generate_key("Craig Gentry", "xorr.ox",
-                                passphrase="craiggentry")
-        gentry = key.fingerprint
-        key = self.generate_key("Marten van Dijk", "xorr.ox")
-        dijk = key.fingerprint
+        ian = { 'name_real': 'Ian Goldberg',
+                'name_email': 'gold@stein',
+                'key_type': 'RSA',
+                'key_usage': '',
+                'subkey_type': 'RSA',
+                'subkey_usage': 'encrypt,sign',
+                'passphrase': 'victorygin' }
+        kat = { 'name_real': 'Kat Hannah',
+                'name_email': 'kat@pics',
+                'key_type': 'RSA',
+                'key_usage': '',
+                'subkey_type': 'RSA',
+                'subkey_usage': 'encrypt,sign',
+                'passphrase': 'overalls' }
+
+        ian_input = self.gpg.gen_key_input(**ian)
+        kat_input = self.gpg.gen_key_input(**kat)
+
+        ian_key = self.gpg.gen_key(ian_input)
+        kat_key = self.gpg.gen_key(kat_input)
+
+        log.debug("ian_key.status=%s" % ian_key.status)
+        log.debug("kat_key.status=%s" % kat_key.status)
+
+        import pdb
+        pdb.set_trace()
+
+        #self.assertIsNotNone(str(ian_key.fingerprint))
+        #self.assertIsNotNone(str(kat_key.fingerprint))
+
+        #self.assertTrue(ian_key.primary_created)
+        #self.assertTrue(ian_key.subkey_created)
+
+        #self.assertTrue(kat_key.primary_created)
+        #self.assertTrue(kat_key.subkey_created)
+
+        ian_fpr = ian_key.fingerprint
+        kat_fpr = kat_key.fingerprint
+
         gpg = self.gpg
         message = """
 In 2010 Riggio and Sicari presented a practical application of homomorphic
@@ -711,18 +745,23 @@ transparent multi-hop wireless backhauls that are able to perform statistical
 analysis of different kinds of data (temperature, humidity, etc.)  coming from
 a WSN while ensuring both end-to-end encryption and hop-by-hop
 authentication."""
-        encrypted2 = str(gpg.encrypt(message, [gentry, dijk]))
-        self.assertNotEqual(message, encrypted2, "PT and CT should not match")
+        encrypted = gpg.encrypt(message, [ian_fpr, kat_fpr])
+        self.assertNotEqual(message, str(encrypted.data))
+        self.assertNotEqual(str(encrypted.data), '')
+        self.assertGreater(len(str(encrypted.data)), 0)
 
     def test_decryption(self):
         """Test decryption"""
-        key = self.generate_key("Frey", "fr.ey",
-                                passphrase="craiggentry")
-        frey = key.fingerprint
-        key = self.generate_key("Rück", "rü.ck",
-                                passphrase="ruck")
-        ruck = key.fingerprint
-        gpg = self.gpg
+        key = self.generate_key("Frey", "fr.ey", passphrase="frey")
+        frey_fpr = key.fingerprint
+        frey = self.gpg.export_keys(key.fingerprint)
+        self.gpg.import_keys(frey)
+
+        key = self.generate_key("Rück", "rü.ck", passphrase="ruck")
+        ruck_fpr = key.fingerprint
+        ruck = self.gpg.export_keys(key.fingerprint)
+        self.gpg.import_keys(ruck)
+
         message = """
 In 2010 Riggio and Sicari presented a practical application of homomorphic
 encryption to a hybrid wireless sensor/mesh network. The system enables
@@ -730,11 +769,14 @@ transparent multi-hop wireless backhauls that are able to perform statistical
 analysis of different kinds of data (temperature, humidity, etc.)  coming from
 a WSN while ensuring both end-to-end encryption and hop-by-hop
 authentication."""
-        encrypted = str(self.gpg.encrypt(message, ruck))
-        decrypted = self.gpg.decrypt(encrypted, passphrase="ruck")
+
+        encrypted = self.gpg.encrypt(message, [ruck_fpr,])
+        decrypted = self.gpg.decrypt(encrypted.data, passphrase="ruck")
+
         if message != decrypted.data:
             log.debug("was: %r", message)
             log.debug("new: %r", decrypted.data)
+
         self.assertEqual(message, decrypted.data)
 
     def test_decryption_multi_recipient(self):
@@ -742,7 +784,8 @@ authentication."""
         key = self.generate_key("Craig Gentry", "xorr.ox",
                                 passphrase="craiggentry")
         gentry = key.fingerprint
-        key = self.generate_key("Marten van Dijk", "xorr.ox")
+        key = self.generate_key("Marten van Dijk", "xorr.ox",
+                                passphrase="martenvandijk")
         dijk = key.fingerprint
         message = """
 In 2010 Riggio and Sicari presented a practical application of homomorphic
@@ -752,7 +795,7 @@ analysis of different kinds of data (temperature, humidity, etc.)  coming from
 a WSN while ensuring both end-to-end encryption and hop-by-hop
 authentication."""
         encrypted = str(self.gpg.encrypt(message, [gentry, dijk]))
-        self.assertNotEqual(message, encrypted, "PT and CT should not match")
+        self.assertNotEqual(message, encrypted)
         decrypted1 = self.gpg.decrypt(encrypted, passphrase="craiggentry")
         self.assertEqual(message, str(decrypted1.data))
         decrypted2 = self.gpg.decrypt(encrypted, passphrase="martenvandijk")
@@ -760,42 +803,40 @@ authentication."""
 
     def test_symmetric_encryption_and_decryption(self):
         """Test symmetric encryption and decryption"""
-        msg  = """
-If you have something that you don't want anyone to know, maybe you shouldn't
-be doing it in the first place. - Eric Schmidt, CEO of Google"""
+        msg  = """If you have something that you don't want anyone to know,
+ maybe you shouldn't be doing it in the first place. - Eric Schmidt, CEO
+ of Google"""
         encrypted = str(self.gpg.encrypt(msg, None, passphrase='quiscustodiet',
-                                         symmetric=True))
+                                         symmetric=True, encrypt=False))
         decrypted = self.gpg.decrypt(encrypted, passphrase='quiscustodiet')
         self.assertEqual(msg, str(decrypted.data))
 
     def test_file_encryption_and_decryption(self):
         """Test that encryption/decryption to/from file works."""
-        encfname = _make_tempfile()
-        log.debug('Created tempfile for encrypted content: %s' % encfname)
-        decfname = _make_tempfile()
-        log.debug('Created tempfile for decrypted content: f%s' % decfname)
-        # On Windows, if the handles aren't closed, the files can't be deleted
-        #os.close(encfno)
-        #os.close(decfno)
         key = self.generate_key("Andrew Able", "alpha.com",
-                                passphrase="andy")
+                                passphrase="andrewable")
         andrew = key.fingerprint
-        key = self.generate_key("Barbara Brown", "beta.com")
+        key = self.generate_key("Barbara Brown", "beta.com",
+                                passphrase="barbarabrown")
         barbara = key.fingerprint
+        enc_outf = file(os.path.join(self.gpg.homedir, 'to-b.gpg'), 'w+')
+        dec_outf = file(os.path.join(self.gpg.homedir, 'to-b.txt'), 'w+')
         data = "Hello, world!"
-        file = util._make_binary_stream(data, self.gpg.encoding)
-        edata = self.gpg.encrypt_file(file, barbara,
-                                      armor=False, output=encfname)
-        ddata = self.gpg.decrypt_file(efile, passphrase="bbrown",
-                                      output=decfname)
-        encfname.seek(0, 0) # can't use os.SEEK_SET in 2.4
-        edata = encfname.read()
-        ddata = decfname.read()
+        data_file = _util._make_binary_stream(data, self.gpg.encoding)
+        edata = self.gpg.encrypt_file(data_file, barbara,
+                                      armor=False,
+                                      output=enc_outf)
+        ddata = self.gpg.decrypt_file(enc_outf, passphrase="barbarabrown",
+                                      output=dec_outf)
+        enc_outf.seek(0, 0) # can't use os.SEEK_SET in 2.4
+        dec_outf.seek(0, 0)
+        enc_data = enc_outf.read()
+        dec_data = dec_outf.read()
         data = data.encode(self.gpg.encoding)
         if ddata != data:
             log.debug("was: %r", data)
-            log.debug("new: %r", ddata)
-        self.assertEqual(data, ddata)
+            log.debug("new: %r", dec_data)
+        self.assertEqual(data, dec_data)
 
 
 suites = { 'parsers': set(['test_parsers_fix_unsafe',
@@ -851,16 +892,10 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                             'test_deletion']),
            'import': set(['test_import_only']), }
 
-def _init_logging():
-    now = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-    logging.basicConfig(
-        filename=os.path.join(_here, "%s_test_gnupg.log" % now),
-        filemode="a",
-        format="%(asctime)s %(levelname)-5s %(name)-7s %(threadName)-10s %(message)s")
-
 def main(args):
     if not args.quiet:
-        _init_logging()
+        log = _logger.create_logger(9)
+        log.setLevel(9)
 
     loader = unittest.TestLoader()
 
@@ -890,6 +925,8 @@ def main(args):
 
     prog = unittest.TestProgram
     prog.createTests = _createTests
+    import pdb
+    pdb.set_trace()
     program = prog(module=GPGTestCase,
                    testRunner=runner,
                    testLoader=loader,
@@ -897,8 +934,10 @@ def main(args):
                    catchbreak=True)
 
     ## Finally, remove our testing directory:
-    if os.path.isdir(_tempd):
-        os.unlink(_tempd)
+    if not RETAIN_TEST_DIRS:
+        if os.path.isdir(_tempd):
+            shutil.rmtree(_tempd)
+
 
 if __name__ == "__main__":
 
@@ -908,25 +947,16 @@ if __name__ == "__main__":
         setattr(GPGTestCase, name, list(methodset))
 
     parser = argparse.ArgumentParser(description="Unittests for python-gnupg")
-    parser.add_argument('--doctest',
-                        dest='run_doctest',
-                        type=bool,
-                        default=False,
+    parser.add_argument('--doctest', dest='run_doctest',
+                        type=bool, default=False,
                         help='Run example code in docstrings')
-    parser.add_argument('--quiet',
-                        dest='quiet',
-                        type=bool,
-                        default=False,
+    parser.add_argument('--quiet', dest='quiet',
+                        type=bool, default=False,
                         help='Disable logging to stdout')
-    parser.add_argument('--verbose',
-                        dest='verbose',
-                        type=int,
-                        default=4,
+    parser.add_argument('--verbose', dest='verbose',
+                        type=int, default=4,
                         help='Set verbosity level (low=1 high=5) (default: 4)')
-    parser.add_argument('test',
-                        metavar='test',
-                        nargs='+',
-                        type=str,
+    parser.add_argument('test', metavar='test', nargs='+', type=str,
                         help='Select a test suite to run (default: all)')
     parser.epilog = "Available test suites: %s" % " ".join(suite_names)
 
