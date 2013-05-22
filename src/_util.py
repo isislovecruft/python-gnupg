@@ -25,10 +25,10 @@ from datetime import datetime
 
 import os
 import time
+import threading
 import random
 import string
 import sys
-import threading
 
 import _logger
 
