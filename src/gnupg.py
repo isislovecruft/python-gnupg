@@ -78,6 +78,7 @@ try:
 except ImportError:
     from cStringIO import StringIO
 
+from codecs     import open as open
 from pprint     import pprint
 from psutil     import process_iter
 from subprocess import Popen
