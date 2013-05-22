@@ -715,7 +715,7 @@ class DeleteResult(object):
                        '2': 'Must delete secret key first',
                        '3': 'Ambigious specification', }
 
-    def _handle_status(self, key, value):
+    def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
         :raises: :exc:`ValueError` if the status message is unknown.
@@ -760,7 +760,7 @@ class Sign(object):
     def __str__(self):
         return self.data.decode(self.gpg.encoding, self.gpg._decode_errors)
 
-    def _handle_status(self, key, value):
+    def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
         :raises: :exc:`ValueError` if the status message is unknown.
@@ -830,7 +830,7 @@ class ListKeys(list):
         subkey = [args[4], args[11]]
         self.curkey['subkeys'].append(subkey)
 
-    def _handle_status(self, key, value):
+    def handle_status(self, key, value):
         pass
 
 
@@ -885,7 +885,7 @@ class ImportResult(object):
                        '3': 'Certificate Chain too long',
                        '4': 'Error storing certificate', }
 
-    def _handle_status(self, key, value):
+    def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
         :raises: :exc:`ValueError` if the status message is unknown.
@@ -986,7 +986,7 @@ class Verify(object):
         return self.valid
     __bool__ = __nonzero__
 
-    def _handle_status(self, key, value):
+    def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
         :raises: :exc:`ValueError` if the status message is unknown.
@@ -1059,7 +1059,7 @@ class ListPackets(object):
         self.need_passphrase_sym = None
         self.userid_hint = None
 
-    def _handle_status(self, key, value):
+    def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
         :raises: :exc:`ValueError` if the status message is unknown.
