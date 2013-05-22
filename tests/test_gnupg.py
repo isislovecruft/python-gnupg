@@ -7,9 +7,10 @@ Copyright © 2013 Isis Lovecruft.
 Copyright © 2008-2013 Vinay Sajip. All rights reserved.
 """
 
+from functools import wraps
+
 import argparse
 import doctest
-from functools import wraps
 import io
 import logging
 import os
