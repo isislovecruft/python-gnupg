@@ -333,7 +333,7 @@ class GPGTestCase(unittest.TestCase):
             batch['Subkey-Type'] = subkey_type
             batch['Subkey-Length'] = key_length
 
-        key_input = self.gpg.gen_key_input(testing=True, **batch)
+        key_input = self.gpg.gen_key_input(testing=self.insecure_prng, **batch)
         return key_input
 
     def generate_key(self, real_name, email_domain, **kwargs):
@@ -586,9 +586,13 @@ class GPGTestCase(unittest.TestCase):
                          "Fingerprints must match")
         self.assertEqual(verified.status, 'signature valid')
         self.assertAlmostEqual(int(now), int(verified.timestamp), delta=1000)
-        self.assertEqual(
-            verified.username,
-            u'Bruce Schneier (insecure!) <bruceschneier@schneier.com>')
+        if self.insecure_prng:
+            self.assertEqual(
+                verified.username,
+                u'Bruce Schneier (insecure!) <bruceschneier@schneier.com>')
+        else:
+            self.assertEqual(verified.username,
+                             u'Bruce Schneier <bruceschneier@schneier.com>')
 
     def test_signature_verification_clearsign(self):
         """Test verfication of an embedded signature."""
