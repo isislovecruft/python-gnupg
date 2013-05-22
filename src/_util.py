@@ -158,8 +158,7 @@ def _create_if_necessary(directory):
         directory = os.path.abspath(directory)
 
     if not os.path.isdir(directory):
-        log.debug("Creating directory: %s" % directory)
-        log.info("%s" % message)
+        log.info("Creating directory: %s" % directory)
         try:
             os.makedirs(directory, 0x1C0)
         except OSError as ose:
