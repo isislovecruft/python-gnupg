@@ -116,11 +116,7 @@ def _copy_data(instream, outstream):
     #    log.exception(ae)
     #    return
 
-    if hasattr(sys.stdin, 'encoding'):
-        enc = sys.stdin.encoding
-        log.debug("Obtained encoding from stdin: %s" % enc)
-    else:
-        enc = 'ascii'
+    coder = find_encodings()
 
     while True:
         data = instream.read(1024)
@@ -133,7 +129,7 @@ def _copy_data(instream, outstream):
             outstream.write(data)
         except UnicodeError:
             try:
-                outstream.write(data.encode(enc))
+                outstream.write(coder.encode(data))
             except IOError:
                 log.exception("Error sending data: Broken pipe")
                 break
