@@ -28,8 +28,8 @@ else:
     import unittest
 
 import gnupg
-from gnupg import parsers
-from gnupg import util
+from gnupg import _parsers
+from gnupg import _util
 from gnupg import _logger
 
 log    = _logger.create_logger(10)
