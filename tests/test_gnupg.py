@@ -658,11 +658,12 @@ class GPGTestCase(unittest.TestCase):
         log.debug("test_deletion ends")
 
     def test_encryption(self):
-        """Test encryption of a message string."""
+        """Test encryption of a message string"""
         key = self.generate_key("Craig Gentry", "xorr.ox",
                                 passphrase="craiggentry")
         gentry = key.fingerprint
-        key = self.generate_key("Marten van Dijk", "xorr.ox")
+        key = self.generate_key("Marten van Dijk", "xorr.ox",
+                                passphrase="martenvandijk")
         dijk = key.fingerprint
         gpg = self.gpg
         message = """
@@ -672,8 +673,10 @@ transparent multi-hop wireless backhauls that are able to perform statistical
 analysis of different kinds of data (temperature, humidity, etc.)  coming from
 a WSN while ensuring both end-to-end encryption and hop-by-hop
 authentication."""
-        encrypted = str(gpg.encrypt(message, dijk))
-        self.assertNotEqual(message, encrypted, "Data must have changed")
+        encrypted = str(gpg.encrypt(message, [dijk], ))
+        self.assertNotEqual(message, encrypted)
+        self.assertNotEqual(encrypted, '')
+        self.assertGreater(len(encrypted), 0)
 
     def test_encryption_alt_encoding(self):
         """Test encryption with latin-1 encoding"""
