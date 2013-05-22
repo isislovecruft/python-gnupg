@@ -21,7 +21,7 @@ util.py
 Extra utilities for python-gnupg.
 '''
 
-from datetime   import datetime
+from datetime import datetime
 
 import os
 import time
