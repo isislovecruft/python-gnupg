@@ -42,9 +42,9 @@ _tempd = os.path.join(_here, 'tmp')
 
 tempfile.tempdir = _tempd
 if not os.path.isdir(tempfile.gettempdir()):
-    os.mkdir(tempfile.gettempdir())
     log.debug("Creating temporary testing directory: %s"
-              % tempfile.gettempdir())
+                 % tempfile.gettempdir())
+    os.makedirs(tempfile.gettempdir())
 
 @wraps(tempfile.TemporaryFile)
 def _make_tempfile(*args, **kwargs):
