@@ -607,17 +607,15 @@ class GPGTestCase(unittest.TestCase):
         except UnicodeDecodeError: #happens in Python 2.6
             verified = self.gpg.verify_file(io.BytesIO(sig.data))
         if key.fingerprint != verified.fingerprint:
-            logger.debug("key: %r", key.fingerprint)
-            logger.debug("ver: %r", verified.fingerprint)
-        self.assertEqual(key.fingerprint, verified.fingerprint,
-                         "Fingerprints must match")
+            log.warn("key fingerprint:      %r", key.fingerprint)
+            log.warn("verified fingerprint: %r", verified.fingerprint)
+        self.assertEqual(key.fingerprint, verified.fingerprint)
 
     def test_signature_verification_detached(self):
         """Test that verification of a detached signature of a file works."""
         key = self.generate_key("Paulo S.L.M. Barreto", "anub.is")
-        with open(os.path.join(_files, 'cypherpunk_manifesto'),
-                  'rb') as manifesto:
-            sig = self.gpg.sign(manifesto, keyid=key.fingerprint,
+        with open(os.path.join(_files, 'cypherpunk_manifesto'), 'rb') as cm:
+            sig = self.gpg.sign(cm, keyid=key.fingerprint,
                                 passphrase='paulos.l.m.barreto',
                                 detach=True, clearsign=False)
             self.assertTrue(sig.data, "File signing should succeed")
@@ -626,21 +624,21 @@ class GPGTestCase(unittest.TestCase):
                 sigfile.write(sig.data)
                 sigfile.seek(0)
 
-            verified = self.gpg.verify_file(manifesto, sigfilename)
+            verified = self.gpg.verify_file(cm, sigfilename)
 
             if key.fingerprint != verified.fingerprint:
-                logger.debug("key: %r", key.fingerprint)
-                logger.debug("ver: %r", verified.fingerprint)
+                log.warn("key fingerprint:      %r", key.fingerprint)
+                log.warn("verified fingerprint: %r", verified.fingerprint)
+            self.assertEqual(key.fingerprint, verified.fingerprint)
 
-            self.assertEqual(key.fingerprint, verified.fingerprint,
-                             "Fingerprints must match")
+            if os.path.isfile(sigfilename):
+                os.unlink(sigfilename)
 
     def test_signature_verification_detached_binary(self):
         """Test that detached signature verification in binary mode fails."""
         key = self.generate_key("Adi Shamir", "rsa.com")
-        with open(os.path.join(_files, 'cypherpunk_manifesto'),
-                  'rb') as manifesto:
-            sig = self.gpg.sign(manifesto, keyid=key.fingerprint,
+        with open(os.path.join(_files, 'cypherpunk_manifesto'), 'rb') as cm:
+            sig = self.gpg.sign(cm, keyid=key.fingerprint,
                                 passphrase='adishamir',
                                 detach=True, binary=True, clearsign=False)
             self.assertTrue(sig.data, "File signing should succeed")
