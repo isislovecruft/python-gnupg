@@ -1349,7 +1349,7 @@ use_agent: %s
         :param str output: The output file to write to. If not specified, the
                            encrypted output is returned, and thus should be
                            stored as an object in Python. For example:
-
+        """
         args = list()
 
         ## both can be used at the same time for an encrypted file which
@@ -1479,17 +1479,6 @@ class GPGWrapper(GPG):
     This is a temporary class for handling GPG requests, and should be
     replaced by a more general class used throughout the project.
     """
-
-    def __init__(self, binary=None, homedir=_conf,
-                 verbose=False, use_agent=False, keyring=None, options=None):
-        super(GPGWrapper, self).__init__(gnupghome=gnupghome,
-                                         binary=binary,
-                                         verbose=verbose,
-                                         use_agent=use_agent,
-                                         keyring=keyring,
-                                         options=options)
-        self._result_map['list-packets'] = ListPackets
-
     def find_key_by_email(self, email, secret=False):
         """
         Find user's key based on their email.
@@ -1505,13 +1494,6 @@ class GPGWrapper(GPG):
             for sub in key['subkeys']:
                 if sub[0] == subkey:
                     return key
-        raise LookupError(
-            "GnuPG public key for subkey %s not found!" % subkey)
-
-    def find_key_by_keyid(self, keyid):
-        for key in self.list_keys():
-            if keyid == key['keyid']:
-                return key
         raise LookupError(
             "GnuPG public key for subkey %s not found!" % subkey)
 
