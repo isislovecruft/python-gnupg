@@ -958,6 +958,37 @@ class Verify(object):
                     "TRUST_FULLY" : TRUST_FULLY,
                     "TRUST_ULTIMATE" : TRUST_ULTIMATE,}
 
+    #: True if the signature is valid, False otherwise.
+    valid = False
+    #: A string describing the status of the signature verification.
+    #: Can be one of ``'signature bad'``, ``'signature good'``,
+    #: ``'signature valid'``, ``'signature error'``, ``'decryption failed'``,
+    #: ``'no public key'``, ``'key exp'``, or ``'key rev'``.
+    status = None
+    #: The fingerprint of the signing keyid.
+    fingerprint = None
+    #: The fingerprint of the corresponding public key, which may be different
+    #: if the signature was created with a subkey.
+    pubkey_fingerprint = None
+    #: The keyid of the signing key.
+    key_id = None
+    #: The id of the signature itself.
+    signature_id = None
+    #: The creation date of the signing key.
+    creation_date = None
+    #: The timestamp of the purported signature, if we are unable to parse it.
+    timestamp = None
+    #: The userid of the signing key which was used to create the signature.
+    username = None
+    #: When the signing key is due to expire.
+    expire_timestamp = None
+    #: The timestamp for when the signature was created.
+    sig_timestamp = None
+    #: A number 0-4 describing the trust level of the signature.
+    trust_level = None
+    #: The string corresponding to the ``trust_level`` number.
+    trust_text = None
+
     def __init__(self, gpg):
         self.gpg = gpg
         self.valid = False
@@ -1039,6 +1070,73 @@ class Verify(object):
             self.status = (('%s %s') % (key[:3], key[3:])).lower()
         else:
             raise ValueError("Unknown status message: %r" % key)
+
+
+class Crypt(Verify):
+    """Parser for internal status messages from GnuPG for ``--encrypt``,
+    ``--decrypt``, and ``--decrypt-files``.
+    """
+    def __init__(self, gpg):
+        Verify.__init__(self, gpg)
+        self.gpg = gpg
+        self.data = ''
+        self.ok = False
+        self.status = ''
+        self.data_format = None
+        self.data_timestamp = None
+        self.data_filename = None
+
+    def __nonzero__(self):
+        if self.ok: return True
+        return False
+    __bool__ = __nonzero__
+
+    def __str__(self):
+        return self.data.decode(self.gpg.encoding, self.gpg._decode_errors)
+
+    def handle_status(self, key, value):
+        """Parse a status code from the attached GnuPG process.
+
+        :raises: :exc:`ValueError` if the status message is unknown.
+        """
+        if key in ("ENC_TO", "USERID_HINT", "GOODMDC", "END_DECRYPTION",
+                   "BEGIN_SIGNING", "NO_SECKEY", "ERROR", "NODATA",
+                   "CARDCTRL"):
+            # in the case of ERROR, this is because a more specific error
+            # message will have come first
+            pass
+        elif key in ("NEED_PASSPHRASE", "BAD_PASSPHRASE", "GOOD_PASSPHRASE",
+                     "MISSING_PASSPHRASE", "DECRYPTION_FAILED",
+                     "KEY_NOT_CREATED"):
+            self.status = key.replace("_", " ").lower()
+        elif key == "NEED_PASSPHRASE_SYM":
+            self.status = 'need symmetric passphrase'
+        elif key == "BEGIN_DECRYPTION":
+            self.status = 'decryption incomplete'
+        elif key == "BEGIN_ENCRYPTION":
+            self.status = 'encryption incomplete'
+        elif key == "DECRYPTION_OKAY":
+            self.status = 'decryption ok'
+            self.ok = True
+        elif key == "END_ENCRYPTION":
+            self.status = 'encryption ok'
+            self.ok = True
+        elif key == "INV_RECP":
+            self.status = 'invalid recipient'
+        elif key == "KEYEXPIRED":
+            self.status = 'key expired'
+        elif key == "SIG_CREATED":
+            self.status = 'sig created'
+        elif key == "SIGEXPIRED":
+            self.status = 'sig expired'
+        elif key == "PLAINTEXT":
+            fmt, self.data_timestamp, self.data_filename = value.split(' ', 2)
+             ## GnuPG give us a hex byte for an ascii char corresponding to
+             ## the data format of the resulting plaintext,
+             ## i.e. '62'→'b':= binary data
+            self.data_format = chr(int(str(fmt), 16))
+        else:
+            Verify.handle_status(key, value)
 
 class ListPackets(object):
     """
