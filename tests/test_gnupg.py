@@ -170,7 +170,7 @@ class GPGTestCase(unittest.TestCase):
     def test_parsers_fix_unsafe(self):
         """Test that unsafe inputs are quoted out and then ignored."""
         shell_input = "\"&coproc /bin/sh\""
-        fixed = parsers._fix_unsafe(shell_input)
+        fixed = _parsers._fix_unsafe(shell_input)
         print fixed
         test_file = os.path.join(_files, 'cypherpunk_manifesto')
         self.assertTrue(os.path.isfile(test_file))
@@ -180,17 +180,17 @@ class GPGTestCase(unittest.TestCase):
     def test_parsers_is_hex_valid(self):
         """Test that valid hexidecimal passes the parsers._is_hex() check"""
         valid_hex = '0A6A58A14B5946ABDE18E207A3ADB67A2CDB8B35'
-        self.assertTrue(parsers._is_hex(valid_hex))
+        self.assertTrue(_parsers._is_hex(valid_hex))
 
     def test_parsers_is_hex_lowercase(self):
         """Test parsers._is_hex() with lowercased hexidecimal"""
         valid_hex = 'deadbeef15abad1dea'
-        self.assertTrue(parsers._is_hex(valid_hex))
+        self.assertTrue(_parsers._is_hex(valid_hex))
 
     def test_parsers_is_hex_invalid(self):
         """Test that invalid hexidecimal fails the parsers._is_hex() check"""
         invalid_hex = 'cipherpunks write code'
-        self.assertFalse(parsers._is_hex(invalid_hex))
+        self.assertFalse(_parsers._is_hex(invalid_hex))
 
     def test_homedir_creation(self):
         """Test that a homedir is created if left unspecified"""
@@ -282,7 +282,7 @@ class GPGTestCase(unittest.TestCase):
         self.assertEqual(unicode(message), instream.getvalue())
         outstream = ResultStringIO(u'result:')
         copied = outstream
-        util._copy_data(instream, outstream)
+        _util._copy_data(instream, outstream)
         self.assertTrue(outstream.readable())
         self.assertTrue(outstream.closed)
         self.assertFalse(instream.closed)
@@ -574,7 +574,7 @@ class GPGTestCase(unittest.TestCase):
                             passphrase='johanborst')
         self.assertTrue(sig, "Good passphrase should succeed")
         try:
-            file = util._make_binary_stream(sig.data, self.gpg.encoding)
+            file = _util._make_binary_stream(sig.data, self.gpg.encoding)
             verified = self.gpg.verify_file(file)
         except UnicodeDecodeError: #happens in Python 2.6
             verified = self.gpg.verify_file(io.BytesIO(sig.data))
