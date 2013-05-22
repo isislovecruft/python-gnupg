@@ -767,11 +767,13 @@ class Sign(object):
         """
         if key in ("USERID_HINT", "NEED_PASSPHRASE", "BAD_PASSPHRASE",
                    "GOOD_PASSPHRASE", "BEGIN_SIGNING", "CARDCTRL",
-                   "INV_SGNR", "NODATA"):
+                   "INV_SGNR"):
             pass
         elif key == "SIG_CREATED":
             (self.sig_type, self.sig_algo, self.sig_hash_algo,
              self.what, self.timestamp, self.fingerprint) = value.split()
+        elif key == "NODATA":
+            self.status = nodata(value)
         else:
             raise ValueError("Unknown status message: %r" % key)
 
