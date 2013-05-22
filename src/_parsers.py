@@ -337,6 +337,7 @@ def _is_allowed(input):
                          '--armour',
                          '--clearsign',
                          '--detach-sign',
+                         '--list-sigs',
                          '--sign',
                          '--verify',
                          ## i/o and files
@@ -499,7 +500,7 @@ def _sanitise(*args):
                                 log.debug("%s not file: %s" % (flag, val))
                         elif flag in ['--default-key', '--recipient',
                                       '--export', '--export-secret-keys',
-                                      '--delete-keys',
+                                      '--delete-keys', '--list-sigs',
                                       '--export-secret-subkeys',]:
                             if _is_hex(val):
                                 safe_option += (val + " ")

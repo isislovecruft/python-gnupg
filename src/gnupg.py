@@ -1038,7 +1038,21 @@ use_agent: %s
         :returns: A dictionary whose keys are the original keyid parameters,
                   and whose values are lists of signatures.
         """
-        raise NotImplemented("Functionality for '--list-sigs' not implemented.")
+        if len(keyids) > self._batch_limit:
+            raise ValueError(
+                "List signatures is limited to %d keyids simultaneously"
+                % self._batch_limit)
+
+        args = ["--with-colons", "--fixed-list-mode", "--list-sigs"]
+
+        for key in keyids:
+            args.append(key)
+
+        proc = self._open_subprocess(args)
+
+        result = self._result_map['list'](self)
+        self._collect_output(proc, result, stdin=p.stdin)
+        return result
 
     def gen_key(self, input):
         """Generate a GnuPG key through batch file key generation. See
