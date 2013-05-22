@@ -51,6 +51,7 @@ def _make_tempfile(*args, **kwargs):
     return tempfile.TemporaryFile(dir=tempfile.gettempdir(),
                                   *args, **kwargs)
 
+RETAIN_TEST_DIRS = True
 
 KEYS_TO_IMPORT = """-----BEGIN PGP PUBLIC KEY BLOCK-----
 
@@ -137,11 +138,18 @@ class GPGTestCase(unittest.TestCase):
 
     def setUp(self):
         """This method is called once per self.test_* method."""
-        log.warn("\r%s" % str("=" * 78))
+        print "%s%s%s" % (os.linesep, str("=" * 70), os.linesep)
         hd = tempfile.mkdtemp()
         if os.path.exists(hd):
-            self.assertTrue(os.path.isdir(hd), "Not a directory: %s" % hd)
-            shutil.rmtree(hd)
+            if not RETAIN_TEST_DIRS:
+                self.assertTrue(os.path.isdir(hd), "Not a directory: %s" % hd)
+                shutil.rmtree(hd)
+
+        if not os.path.exists(hd):
+            os.makedirs(hd)
+        self.assertTrue(os.path.isdir(hd), "Not a directory: %s" % hd)
+
+        self.gpg = gnupg.GPG(binary='gpg', homedir=hd)
         self.homedir = hd
         self.gpg = gnupg.GPG(homedir=hd, binary='gpg')
         self.keyring = os.path.join(self.homedir, 'pubring.gpg')
