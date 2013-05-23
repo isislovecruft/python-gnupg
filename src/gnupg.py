@@ -1082,7 +1082,7 @@ use_agent: %s
         f.close()
         return key
 
-    def gen_key_input(self, testing=False, **kwargs):
+    def gen_key_input(self, save=False, testing=False, **kwargs):
         """Generate a batch file for input to :meth:`GPG.gen_key()`.
 
         The GnuPG batch file key generation feature allows unattended key
@@ -1150,6 +1150,11 @@ use_agent: %s
                              going to be created and then soon after
                              destroyed, and never for the generation of actual
                              use keys.
+
+        :param bool save: Save a copy of the generated batch file to disk in a
+                          file named <name_real>.batch, where <name_real> is
+                          the ``name_real`` parameter stripped of punctuation,
+                          spaces, and non-ascii characters.
 
         :param str name_real: The name field of the UID in the generated key.
         :param str name_comment: The comment in the UID of the generated key.
