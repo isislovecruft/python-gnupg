@@ -1301,7 +1301,7 @@ use_agent: %s
             ## to set 'cert', 'Key-Usage' must be blank string
             if not key in ('Key-Usage', 'Subkey-Usage'):
                 ## otherwise skip anything else that's empty
-                if str(val).strip():    
+                if str(val).strip():
                     parms[key] = val
 
         ## Key-Type must come first, followed by length
