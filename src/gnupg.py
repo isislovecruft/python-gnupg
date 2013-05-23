@@ -1273,8 +1273,8 @@ use_agent: %s
         :returns: A suitable input string for the ``GPG.gen_key()`` method,
                   the latter of which will create the new keypair.
 
-        see http://www.gnupg.org/documentation/manuals/gnupg-devel/Unatten\
-                ded-GPG-key-generation.html#Unattended-GPG-key-generation
+        see
+        http://www.gnupg.org/documentation/manuals/gnupg-devel/Unattended-GPG-key-generation.html
         for more details.
         """
 
@@ -1288,8 +1288,8 @@ use_agent: %s
         try: logname = os.environ['LOGNAME']
         except KeyError: logname = os.environ['USERNAME']
         hostname = socket.gethostname()
-        parms.setdefault('Name-Email', "%s@%s" 
-                         % (logname.replace(' ', '_'), hostname))
+        uidname = "%s@%s" % (logname.replace(' ', '_'), hostname)
+        parms.setdefault('Name-Email', uidname)
 
         if testing:
             ## This specific comment string is required by (some? all?)
@@ -1322,10 +1322,6 @@ use_agent: %s
         if 'Subkey-Length' in parms.keys():
             out += "Subkey-Length: %s\n" % parms.pop('Subkey-Length')
 
-        if 'Name-Real' in parms.items():
-            ## xxx für die Dateinamen
-            name = real_name.lower().replace(' ', '')
-
         for key, val in list(parms.items()):
             out += "%s: %s\n" % (key, val)
 
@@ -1340,6 +1336,38 @@ use_agent: %s
             out += "%transient-key\n"
 
         out += "%commit\n"
+
+        ## if we've been asked to save a copy of the batch file:
+        if save and parms['Name-Email'] != uidname:
+            asc_uid  = encodings.normalize_encoding(parms['Name-Email'])
+            filename = _fix_unsafe(asc_uid) + _util._now() + '.batch'
+            save_as  = os.path.join(self._batch_dir, filename)
+            readme = os.path.join(self._batch_dir, 'README')
+
+            if not os.path.exists(self._batch_dir):
+                os.makedirs(self._batch_dir)
+
+                ## the following pulls the link to GnuPG's online batchfile
+                ## documentation from this function's docstring and sticks it
+                ## in a README file in the batch directory:
+
+                if getattr(self.gen_key_input, '__doc__', None) is not None:
+                    docs = self.gen_key_input.__doc__
+                else:
+                    docs = str() ## no docstrings if run with "python -OO"
+                links = '\n'.join(x.strip() for x in docs.splitlines()[-2:])
+                explain = """
+This directory was created by python-gnupg, on {}, and
+it contains saved batch files, which can be given to GnuPG to automatically
+generate keys. Please see
+{}""".format(_util.now(), links) ## sometimes python is awesome.
+
+                with open(readme, 'a+') as fh:
+                    [fh.write(line) for line in explain]
+
+            with open(save_as, 'a+') as batch_file:
+                [batch_file.write(line) for line in out]
+
         return out
 
     def encrypt_file(self, filename, recipients, default_key=None,
