@@ -1377,9 +1377,9 @@ use_agent: %s
 
         if armor:
             args.append('--armor')
-        if sign_with:
+        if default_key:
             args.append('--sign')
-            args.append('--default-key %s' % sign_with)
+            args.append('--default-key %s' % default_key)
             if digest_algo:
                 args.append('--digest-algo %s' % digest_algo)
         if always_trust:
@@ -1497,14 +1497,14 @@ class GPGWrapper(GPG):
         raise LookupError(
             "GnuPG public key for subkey %s not found!" % subkey)
 
-    def encrypt(self, data, recipient, sign_with=None, always_trust=True,
+    def encrypt(self, data, recipient, default_key=None, always_trust=True,
                 passphrase=None, symmetric=False):
         """
         Encrypt data using GPG.
         """
         # TODO: devise a way so we don't need to "always trust".
         return super(GPGWrapper, self).encrypt(data, recipient,
-                                               sign_with=sign,
+                                               default_key=default_key,
                                                always_trust=always_trust,
                                                passphrase=passphrase,
                                                symmetric=symmetric,
