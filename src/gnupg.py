@@ -89,6 +89,7 @@ import codecs
 ## For AOS, the locale module will need to point to a wrapper around the
 ## java.util.Locale class.
 ## See https://code.patternsinthevoid.net/?p=android-locale-hack.git
+import encodings
 import locale
 import logging
 import os
@@ -189,7 +190,8 @@ class GPGBase(object):
         if encoding is None: # This happens on Jython!
             encoding = sys.stdin.encoding
         self.encoding = encoding.lower().replace('-', '_')
-
+        self.filesystemencoding = encodings.normalize_encoding(
+            sys.getfilesystemencoding().lower())
 
         try:
             assert self.binary, "Could not find binary %s" % binary
