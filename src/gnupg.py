@@ -1304,13 +1304,23 @@ use_agent: %s
                 if str(val).strip():
                     parms[key] = val
 
+        ## if Key-Type is 'default', make Subkey-Type also be 'default'
+        if parms['Key-Type'] == 'default':
+            subkey_must_be_default = True
+            for field in ('Key-Usage', 'Subkey-Usage',):
+                try: parms.pop(field)  ## usage shouldn't be specified
+                except KeyError: pass
+
         ## Key-Type must come first, followed by length
         out  = "Key-Type: %s\n" % parms.pop('Key-Type')
         out += "Key-Length: %d\n" % parms.pop('Key-Length')
         if 'Subkey-Type' in parms.keys():
             out += "Subkey-Type: %s\n" % parms.pop('Subkey-Type')
-            if 'Subkey-Length' in parms.keys():
-                out += "Subkey-Length: %s\n" % parms.pop('Subkey-Length')
+        else:
+            if subkey_must_be_default:
+                out += "Subkey-Type: default\n"
+        if 'Subkey-Length' in parms.keys():
+            out += "Subkey-Length: %s\n" % parms.pop('Subkey-Length')
 
         if 'Name-Real' in parms.items():
             ## xxx für die Dateinamen
