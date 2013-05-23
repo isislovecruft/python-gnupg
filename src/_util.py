@@ -318,6 +318,10 @@ def _next_year():
     next_year = str(int(year)+1)
     return '-'.join((next_year, month, day))
 
+def _now():
+    """Get a timestamp for right now, formatted according to ISO 8601."""
+    return datetime.isoformat(datetime.now())
+
 def _threaded_copy_data(instream, outstream):
     """Copy data from one stream to another in a separate thread.
 
