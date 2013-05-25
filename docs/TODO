@@ -13,6 +13,13 @@ generated.
 It would be nice to make the file descriptors for communication with the GnuPG
 process configurable, and not the default, hard-coded 0=stdin 1=stdout
 2=stderr.
+** TODO look into RDBMS/ORM for public key storage                :io:db:
+see http://stackoverflow.com/q/1235594 and http://elixir.ematia.de/trac/wiki
+
+memcached and pymemcached were the first ones I looked at, then I discovered
+redis, which seemed better. At some point we should look into using elixer,
+mentioned in the above SO post, so that the backend DB can be chosen freely
+and we´re not restricting users to only memcached/cassandra/redis/sqlite/etc.
 
 * Key editing                                                   :editkey:
 ** TODO add '--edit-key' feature                                :editkey:
