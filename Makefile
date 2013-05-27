@@ -16,12 +16,20 @@ cleanup-tests:
 		rm -f \#*\# && \
 		rm -f ./*.pyc && \
 		rm -f ./*.pyo
+	mkdir -p tests/tmp
+	mkdir -p tests/logs
+	mv tests/*.log tests/logs/
+	rm *.log
+	rm tests/random_seed
+
+cleanup-tests-all: cleanup-tests
+	rm -rf tests/tmp
 
 cleanup-build:
 	mkdir buildnot
 	rm -rf build*
 
-cleantest: cleanup-src cleanup-tests cleanup-build
+cleantest: cleanup-src cleanup-tests
 	mkdir -p tests/tmp
 	touch placeholder.log
 	rm -rf tests/tmp
