@@ -782,14 +782,42 @@ authentication."""
 
         self.assertEqual(message, decrypted)
 
-    def test_decryption_multi_recipient(self):
+    def test_encryption_decryption_multi_recipient(self):
         """Test decryption of an encrypted string for multiple users"""
-        key = self.generate_key("Craig Gentry", "xorr.ox",
-                                passphrase="craiggentry")
-        gentry = key.fingerprint
-        key = self.generate_key("Marten van Dijk", "xorr.ox",
-                                passphrase="martenvandijk")
-        dijk = key.fingerprint
+
+        alice = open(os.path.join(_files, 'test_key_1.pub'))
+        alice_pub = alice.read()
+        alice_public = self.gpg.import_keys(alice_pub)
+        res = alice_public.results[-1:][0]
+        alice_pfpr = str(res['fingerprint'])
+        alice.close()
+
+        alice = open(os.path.join(_files, 'test_key_1.sec'))
+        alice_priv = alice.read()
+        alice_private = self.gpg.import_keys(alice_priv)
+        res = alice_private.results[-1:][0]
+        alice_sfpr = str(res['fingerprint'])
+        alice.close()
+
+        bob = open(os.path.join(_files, 'test_key_2.pub'))
+        bob_pub = bob.read()
+        bob_public = self.gpg.import_keys(bob_pub)
+        res = bob_public.results[-1:][0]
+        bob_pfpr = str(res['fingerprint'])
+        bob.close()
+
+        bob = open(os.path.join(_files, 'test_key_2.sec'))
+        bob_priv = bob.read()
+        bob_private = self.gpg.import_keys(bob_priv)
+        res = bob_public.results[-1:][0]
+        bob_sfpr = str(res['fingerprint'])
+        bob.close()
+
+        log.debug("alice public fpr: %s" % alice_pfpr)
+        log.debug("alice public fpr: %s" % alice_sfpr)
+        log.debug("bob public fpr: %s" % bob_pfpr)
+        log.debug("bob public fpr: %s" % bob_sfpr)
+
         message = """
 In 2010 Riggio and Sicari presented a practical application of homomorphic
 encryption to a hybrid wireless sensor/mesh network. The system enables
@@ -797,12 +825,16 @@ transparent multi-hop wireless backhauls that are able to perform statistical
 analysis of different kinds of data (temperature, humidity, etc.)  coming from
 a WSN while ensuring both end-to-end encryption and hop-by-hop
 authentication."""
-        encrypted = str(self.gpg.encrypt(message, [gentry, dijk]))
+        enc = self.gpg.encrypt(message, alice_pfpr, bob_pfpr)
+        encrypted = str(enc.data)
+        log.debug("encryption_decryption_multi_recipient() Ciphertext = %s"
+                  % encrypted)
+
         self.assertNotEqual(message, encrypted)
-        decrypted1 = self.gpg.decrypt(encrypted, passphrase="craiggentry")
-        self.assertEqual(message, str(decrypted1.data))
-        decrypted2 = self.gpg.decrypt(encrypted, passphrase="martenvandijk")
-        self.assertEqual(message, str(decrypted2.data))
+        dec_alice = self.gpg.decrypt(encrypted, passphrase="test")
+        self.assertEqual(message, str(dec_alice.data))
+        dec_bob = self.gpg.decrypt(encrypted, passphrase="test")
+        self.assertEqual(message, str(dec_bob.data))
 
     def test_symmetric_encryption_and_decryption(self):
         """Test symmetric encryption and decryption"""
