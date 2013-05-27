@@ -699,6 +699,8 @@ authentication."""
 
     def test_encryption_multi_recipient(self):
         """Test encrypting a message for multiple recipients"""
+        self.gpg.homedir = _here
+
         ian = { 'name_real': 'Ian Goldberg',
                 'name_email': 'gold@stein',
                 'key_type': 'RSA',
@@ -724,31 +726,16 @@ authentication."""
                 'subkey_usage': 'encrypt,sign',
                 'passphrase': 'overalls' }
 
-        ian_input = self.gpg.gen_key_input(**ian)
-        kat_input = self.gpg.gen_key_input(**kat)
-
+        ian_input = self.gpg.gen_key_input(separate_keyring=True, **ian)
         ian_key = self.gpg.gen_key(ian_input)
+        log.debug("ian_key status: %s" % ian_key.status)
+        ian_fpr = str(ian_key.fingerprint)
+
+        kat_input = self.gpg.gen_key_input(separate_keyring=True, **kat)
         kat_key = self.gpg.gen_key(kat_input)
+        log.debug("kat_key status: %s" % kat_key.status)
+        kat_fpr = str(kat_key.fingerprint)
 
-        log.debug("ian_key.status=%s" % ian_key.status)
-        log.debug("kat_key.status=%s" % kat_key.status)
-
-        import pdb
-        pdb.set_trace()
-
-        #self.assertIsNotNone(str(ian_key.fingerprint))
-        #self.assertIsNotNone(str(kat_key.fingerprint))
-
-        #self.assertTrue(ian_key.primary_created)
-        #self.assertTrue(ian_key.subkey_created)
-
-        #self.assertTrue(kat_key.primary_created)
-        #self.assertTrue(kat_key.subkey_created)
-
-        ian_fpr = ian_key.fingerprint
-        kat_fpr = kat_key.fingerprint
-
-        gpg = self.gpg
         message = """
 In 2010 Riggio and Sicari presented a practical application of homomorphic
 encryption to a hybrid wireless sensor/mesh network. The system enables
@@ -756,10 +743,15 @@ transparent multi-hop wireless backhauls that are able to perform statistical
 analysis of different kinds of data (temperature, humidity, etc.)  coming from
 a WSN while ensuring both end-to-end encryption and hop-by-hop
 authentication."""
-        encrypted = gpg.encrypt(message, [ian_fpr, kat_fpr])
+
+        log.debug("kat_fpr type: %s" % type(kat_fpr))
+        log.debug("ian_fpr type: %s" % type(ian_fpr))
+
+        encrypted = self.gpg.encrypt(message, (ian_fpr, kat_fpr))
+        log.debug("Plaintext: %s" % message)
+        log.debug("Ciphertext: %s" % str(encrypted.data))
+
         self.assertNotEqual(message, str(encrypted.data))
-        self.assertNotEqual(str(encrypted.data), '')
-        self.assertGreater(len(str(encrypted.data)), 0)
 
     def test_decryption(self):
         """Test decryption"""
