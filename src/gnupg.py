@@ -1560,7 +1560,7 @@ generate keys. Please see
 
         :param message: A string or file-like object to decrypt.
         """
-        stream = _make_binary_stream(data, self.encoding)
+        stream = _make_binary_stream(message, self.encoding)
         result = self.decrypt_file(stream, **kwargs)
         stream.close()
         return result
