@@ -490,46 +490,54 @@ def _sanitise(*args):
                     or (_util._py3k and isinstance(value, str)):
                 values = value.split(' ')
                 for v in values:
+                    try:
+                        assert v is not None
+                        assert v.strip() != ""
+                    except:
+                        log.debug("Dropping %s %s" % (flag, v))
+                        continue
+
+                    ## these can be handled separately, without _fix_unsafe(),
+                    ## because they are only allowed if the pass the regex
+                    if flag in ['--default-key', '--recipient', '--export',
+                                '--export-secret-keys', '--delete-keys',
+                                '--list-sigs', '--export-secret-subkeys',]:
+                        if _is_hex(v):
+                            safe_option += (v + " ")
+                            continue
+                        else: log.debug("'%s %s' not hex." % (flag, v))
+
                     val = _fix_unsafe(v)
-                    if val is not None and val.strip() != "":
-                        if flag in ['--encrypt', '--encrypt-files', '--decrypt',
-                                    '--decrypt-files', '--import', '--verify']:
-                            ## Place checks here:
-                            if _util._is_file(val):
-                                safe_option += (val + " ")
-                            else:
-                                log.debug("%s not file: %s" % (flag, val))
-                        elif flag in ['--default-key', '--recipient',
-                                      '--export', '--export-secret-keys',
-                                      '--delete-keys', '--list-sigs',
-                                      '--export-secret-subkeys',]:
-                            if _is_hex(val):
-                                safe_option += (val + " ")
-                            else:
-                                log.debug("'%s %s' not hex." % (flag, val))
-                        elif flag in ['--cipher-algo',
-                                      '--personal-cipher-prefs',
-                                      '--personal-cipher-preferences']:
-                            legit_algos = _check_preferences(val, 'cipher')
-                            if legit_algos:
-                                safe_option += (legit_algos + " ")
-                            else:
-                                log.debug("'%s' is not cipher"
-                                          % _fix_unsafe(val))
-                        elif flag in ['--compress-algo',
-                                      '--compression-algo',
-                                      '--personal-compress-prefs',
-                                      '--personal-compress-preferences']:
-                            legit_algos = _check_preferences(val, 'compress')
-                            if legit_algos:
-                                safe_option += (legit_algos + " ")
-                            else:
-                                log.debug("'%s' not compress algo"
-                                          % _fix_unsafe(val))
-                        else:
-                            safe_option += (val + " ")
-                            log.debug("_check_option(): No checks for %s"
-                                      % val)
+
+                    try:
+                        assert v is not None
+                        assert v.strip() != ""
+                    except:
+                        log.debug("Dropping %s %s" % (flag, v))
+                        continue
+
+                    if flag in ['--encrypt', '--encrypt-files', '--decrypt',
+                                '--decrypt-files', '--import', '--verify']:
+                        if _util._is_file(val): safe_option += (val + " ")
+                        else: log.debug("%s not file: %s" % (flag, val))
+
+                    elif flag in ['--cipher-algo', '--personal-cipher-prefs',
+                                  '--personal-cipher-preferences']:
+                        legit_algos = _check_preferences(val, 'cipher')
+                        if legit_algos: safe_option += (legit_algos + " ")
+                        else: log.debug("'%s' is not cipher" % val)
+
+                    elif flag in ['--compress-algo', '--compression-algo',
+                                  '--personal-compress-prefs',
+                                  '--personal-compress-preferences']:
+                        legit_algos = _check_preferences(val, 'compress')
+                        if legit_algos: safe_option += (legit_algos + " ")
+                        else: log.debug("'%s' not compress algo" % val)
+
+                    else:
+                        safe_option += (val + " ")
+                        log.debug("_check_option(): No checks for %s" % val)
+
         return safe_option
 
     is_flag = lambda x: x.startswith('--')
