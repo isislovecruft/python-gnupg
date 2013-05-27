@@ -6,7 +6,7 @@ from distutils.core import setup
 import versioneer
 versioneer.versionfile_source = 'src/_version.py'
 versioneer.versionfile_build  = 'gnupg/_version.py'
-versioneer.tag_prefix = 'python-gnupg-'
+versioneer.tag_prefix = ''
 versioneer.parentdir_prefix = 'python-gnupg-'
 
 __author__ = "Isis Agora Lovecruft"
