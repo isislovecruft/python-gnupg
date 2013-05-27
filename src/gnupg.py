@@ -856,8 +856,8 @@ use_agent: %s
         log.info('Importing: %r', key_data[:256])
         data = _make_binary_stream(key_data, self.encoding)
         self._handle_io(['--import'], data, result, binary=True)
-        pretty = pprint(result.__dict__, indent=4, width=76, depth=8)
-        log.debug("Import result:%s%s" % (os.linesep, pretty))
+        #pretty = pprint(result.__dict__, indent=4, width=76, depth=8)
+        #log.debug("Import result:%s%s" % (os.linesep, pretty))
         data.close()
         return result
 
