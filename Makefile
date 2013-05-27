@@ -18,7 +18,9 @@ cleanup-tests:
 		rm -f ./*.pyo
 	mkdir -p tests/tmp
 	mkdir -p tests/logs
+	touch tests/placeholder.log
 	mv tests/*.log tests/logs/
+	rm tests/logs/placeholder.log
 	touch placeholder.log
 	rm *.log
 	rm tests/random_seed
