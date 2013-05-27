@@ -475,7 +475,7 @@ def _sanitise(*args):
         safe_option = str()
 
         if not _util._py3k:
-            if isinstance(arg, unicode):
+            if not isinstance(arg, list) and isinstance(arg, unicode):
                 arg = str(arg)
 
         try:
