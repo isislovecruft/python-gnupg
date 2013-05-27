@@ -269,7 +269,7 @@ class GPGTestCase(unittest.TestCase):
         self.gpg.options = ['--tyrannosaurus-rex', '--stegosaurus']
         cmd = self.gpg._make_args(None, False)
         expected = ['/usr/bin/gpg',
-                    '--no-emit-version --no-tty --status-fd 2',
+                    '--no-options --no-emit-version --no-tty --status-fd 2',
                     '--homedir "%s"' % self.homedir,
                     '--no-default-keyring --keyring %s' % self.keyring,
                     '--secret-keyring %s' % self.secring,
