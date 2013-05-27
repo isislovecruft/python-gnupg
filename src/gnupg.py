@@ -818,15 +818,15 @@ use_agent: %s
         Import the key_data into our keyring.
 
         >>> import shutil
-        >>> shutil.rmtree("keys")
-        >>> gpg = GPG(homedir="keys")
-        >>> input = gpg.gen_key_input()
-        >>> result = gpg.gen_key(input)
-        >>> print1 = result.fingerprint
-        >>> result = gpg.gen_key(input)
-        >>> print2 = result.fingerprint
+        >>> shutil.rmtree("doctests")
+        >>> gpg = gnupg.GPG(homedir="doctests")
+        >>> inpt = gpg.gen_key_input()
+        >>> key1 = gpg.gen_key(inpt)
+        >>> print1 = str(key1.fingerprint)
         >>> pubkey1 = gpg.export_keys(print1)
         >>> seckey1 = gpg.export_keys(print1,secret=True)
+        >>> key2 = gpg.gen_key(inpt)
+        >>> print2 = key2.fingerprint
         >>> seckeys = gpg.list_keys(secret=True)
         >>> pubkeys = gpg.list_keys()
         >>> assert print1 in seckeys.fingerprints
@@ -837,14 +837,8 @@ use_agent: %s
         'ok'
         >>> str(gpg.delete_keys(print1))
         'ok'
-        >>> str(gpg.delete_keys("nosuchkey"))
-        'No such key'
-        >>> seckeys = gpg.list_keys(secret=True)
         >>> pubkeys = gpg.list_keys()
-        >>> assert not print1 in seckeys.fingerprints
         >>> assert not print1 in pubkeys.fingerprints
-        >>> result = gpg.import_keys('foo')
-        >>> assert not result
         >>> result = gpg.import_keys(pubkey1)
         >>> pubkeys = gpg.list_keys()
         >>> seckeys = gpg.list_keys(secret=True)
@@ -853,10 +847,7 @@ use_agent: %s
         >>> result = gpg.import_keys(seckey1)
         >>> assert result
         >>> seckeys = gpg.list_keys(secret=True)
-        >>> pubkeys = gpg.list_keys()
         >>> assert print1 in seckeys.fingerprints
-        >>> assert print1 in pubkeys.fingerprints
-        >>> assert print2 in pubkeys.fingerprints
         """
         ## xxx need way to validate that key_data is actually a valid GPG key
         ##     it might be possible to use --list-packets and parse the output
