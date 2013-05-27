@@ -1565,7 +1565,7 @@ generate keys. Please see
         stream.close()
         return result
 
-    def decrypt_file(self, file, always_trust=False, passphrase=None,
+    def decrypt_file(self, filename, always_trust=False, passphrase=None,
                      output=None):
         """
         Decrypt the contents of a file-like object :param:file .
@@ -1579,11 +1579,11 @@ generate keys. Please see
         if output:  # write the output to a file with the specified name
             if os.path.exists(output):
                 os.remove(output) # to avoid overwrite confirmation message
-            args.append('--output "%s"' % output)
+            args.append('--output %s' % output)
         if always_trust:
             args.append("--always-trust")
         result = self._result_map['crypt'](self)
-        self._handle_io(args, file, result, passphrase, binary=True)
+        self._handle_io(args, filename, result, passphrase, binary=True)
         log.debug('decrypt result: %r', result.data)
         return result
 
