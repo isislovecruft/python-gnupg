@@ -702,15 +702,25 @@ authentication."""
         ian = { 'name_real': 'Ian Goldberg',
                 'name_email': 'gold@stein',
                 'key_type': 'RSA',
+                'key_length': 2048,
                 'key_usage': '',
                 'subkey_type': 'RSA',
+                'subkey_length': 2048,
                 'subkey_usage': 'encrypt,sign',
                 'passphrase': 'victorygin' }
+
+        ## when we don't specify the subkey lengths and the keylength
+        ## gets set automatically in gen_key_input(), gpg complains:
+        ##
+        ##     gpg: keysize invalid; using 1024 bits
+        ##
         kat = { 'name_real': 'Kat Hannah',
                 'name_email': 'kat@pics',
                 'key_type': 'RSA',
+                'key_length': 2048,
                 'key_usage': '',
                 'subkey_type': 'RSA',
+                'subkey_length': 2048,
                 'subkey_usage': 'encrypt,sign',
                 'passphrase': 'overalls' }
 
