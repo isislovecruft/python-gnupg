@@ -887,7 +887,8 @@ class ImportResult(object):
                  '2': 'New user IDs',
                  '4': 'New signatures',
                  '8': 'New subkeys',
-                 '16': 'Contains private key',}
+                 '16': 'Contains private key',
+                 '17': 'Contains private key',}
 
     problem_reason = { '0': 'No specific reason given',
                        '1': 'Invalid Certificate',
