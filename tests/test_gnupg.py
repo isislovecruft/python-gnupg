@@ -692,7 +692,7 @@ authentication."""
         else:
             data = unicode('Hello, André', self.gpg.encoding)
         data = data.encode(self.gpg.encoding)
-        encrypted = str(self.gpg.encrypt(data, [gentry]))
+        encrypted = self.gpg.encrypt(data, gentry)
         self.assertNotEqual(data, encrypted)
         self.assertNotEqual(encrypted, '')
         self.assertGreater(len(encrypted), 0)
