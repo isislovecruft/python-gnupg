@@ -69,3 +69,6 @@ gpg
 
 # Ignore keys generated during tests:
 *generated-keys*
+*.pubring
+*.secring
+*random_seed*
