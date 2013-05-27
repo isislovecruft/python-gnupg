@@ -35,11 +35,13 @@ nosetests.xml
 .pydevproject
 
 # Temp files
+.\#*
 \#*\#
 *~
 
 # tags
 TAGS
+tags
 
 # notes
 *.org
@@ -61,3 +63,12 @@ tickets/*
 # Ignore virtualenv folders, if they are here:
 include/*
 local/*
+
+# Ignore gpg binary symlinks:
+gpg
+
+# Ignore keys generated during tests:
+*generated-keys*
+*.pubring
+*.secring
+*random_seed*

@@ -3,11 +3,14 @@
 
 from distutils.core import setup
 
-__module__ = 'gnupg'
-__version__ = "0.4.0"
+import versioneer
+versioneer.versionfile_source = 'src/_version.py'
+versioneer.versionfile_build  = 'gnupg/_version.py'
+versioneer.tag_prefix = 'python-gnupg-'
+versioneer.parentdir_prefix = 'python-gnupg-'
+
 __author__ = "Isis Agora Lovecruft"
 __contact__ = 'isis@leap.se'
-__date__  = "1 April 2013"
 
 setup(name = "python-gnupg",
       description="A wrapper for the Gnu Privacy Guard (GPG or GnuPG)",
@@ -15,13 +18,15 @@ setup(name = "python-gnupg",
 management, encryption and signature functionality from Python programs. \
 It is intended for use with Python 2.6 or greater.",
       license="""Copyright © 2013 Isis Lovecruft, et.al. see LICENSE file.""",
-      version=__version__,
+      version=versioneer.get_version(),
+      cmdclass=versioneer.get_cmdclass(),
       author=__author__,
       author_email=__contact__,
       maintainer=__author__,
       maintainer_email=__contact__,
       url="https://github.com/isislovecruft/python-gnupg",
-      packages=['gnupg', 'gnupg.tests'],
+      package_dir={'gnupg': 'src'},
+      packages=['gnupg'],
       platforms="Linux, BSD, OSX, Windows",
       download_url="https://github.com/isislovecruft/python-gnupg/archive/develop.zip",
       classifiers=[

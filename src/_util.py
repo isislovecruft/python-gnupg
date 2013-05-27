@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-#-*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 # This file is part of python-gnupg, a Python wrapper around GnuPG.
 # Copyright © 2013 Isis Lovecruft, Andrej B.
@@ -17,24 +16,24 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
 '''
-utils.py
+util.py
 ----------
 Extra utilities for python-gnupg.
 '''
 
-from gnupg import __author__
-from gnupg import __version__
-__module__ = 'gnupg.util'
+from datetime import datetime
+from socket   import gethostname
 
-from datetime   import datetime
-
-import logging
+import codecs
+import encodings
 import os
 import time
+import threading
 import random
 import string
 import sys
-import threading
+
+import _logger
 
 try:
     from io import StringIO
@@ -43,30 +42,63 @@ except ImportError:
     from cStringIO import StringIO
 
 try:
-    from logging import NullHandler
-except:
-    class NullHandler(logging.Handler):
-        def handle(self, record):
-            pass
-logger = logging.getLogger('gnupg')
-if not logger.handlers:
-    logger.addHandler(NullHandler())
-
-try:
     unicode
     _py3k = False
+    try:
+        isinstance(__name__, basestring)
+    except NameError:
+        msg  = "Sorry, python-gnupg requires a Python version with proper"
+        msg += " unicode support. Please upgrade to Python>=2.3."
+        raise SystemExit(msg)
 except NameError:
     _py3k = True
 
-## Directory shortcuts:
-_here = os.getcwd()                           ## .../python-gnupg/gnupg
-_repo = _here.rsplit(__module__, 1)[0]        ## .../python-gnupg
-_test = os.path.join(_repo, 'tmp_test')       ## .../python-gnupg/tmp_test
-_user = os.environ.get('HOME')                ## $HOME
-_ugpg = os.path.join(_user, '.gnupg')         ## $HOME/.gnupg
-_conf = os.path.join(os.path.join(_user, '.config'),
-                     'python-gnupg')          ## $HOME/.config/python-gnupg
 
+## Directory shortcuts:
+_here = os.getcwd()
+_test = os.path.join(os.path.join(_here, 'tests'), 'tmp') ## ./tests/tmp
+_user = os.environ.get('HOME')                            ## $HOME
+_ugpg = os.path.join(_user, '.gnupg')                     ## $HOME/.gnupg
+_conf = os.path.join(os.path.join(_user, '.config'), 'python-gnupg')
+                                     ## $HOME/.config/python-gnupg
+
+## Logger is disabled by default
+log = _logger.create_logger(0)
+
+
+def find_encodings(enc=None, system=False):
+    """Find functions for encoding translations for a specific codec.
+
+    :param str enc: The codec to find translation functions for. It will be
+                    normalized by converting to lowercase, excluding
+                    everything which is not ascii, and hyphens will be
+                    converted to underscores.
+
+    :param bool system: If True, find encodings based on the system's stdin
+                        encoding, otherwise assume utf-8.
+
+    :raises: :exc:LookupError if the normalized codec, ``enc``, cannot be
+             found in Python's encoding translation map.
+    """
+    if not enc:
+        enc = 'utf-8'
+
+    if system:
+        if getattr(sys.stdin, 'encoding', None) is None:
+            enc = sys.stdin.encoding
+            log.debug("Obtained encoding from stdin: %s" % enc)
+        else:
+            enc = 'ascii'
+
+    ## have to have lowercase to work, see
+    ## http://docs.python.org/dev/library/codecs.html#standard-encodings
+    enc = enc.lower()
+    codec_alias = encodings.normalize_encoding(enc)
+
+    codecs.register(encodings.search_function)
+    coder = codecs.lookup(codec_alias)
+
+    return coder
 
 def _copy_data(instream, outstream):
     """Copy data from one stream to another.
@@ -82,91 +114,126 @@ def _copy_data(instream, outstream):
     #    #        or isinstance(instream, file)), "instream not stream or file"
     #    assert isinstance(outstream, file), "outstream is not a file"
     #except AssertionError as ae:
-    #    logger.exception(ae)
+    #    log.exception(ae)
     #    return
 
-    if hasattr(sys.stdin, 'encoding'):
-        enc = sys.stdin.encoding
-    else:
-        enc = 'ascii'
+    coder = find_encodings()
 
     while True:
-        data = instream.read(1024)
+        if ((_py3k and isinstance(instream, str)) or
+            (not _py3k and isinstance(instream, basestring))):
+            data = instream[:1024]
+            instream = instream[1024:]
+        else:
+            data = instream.read(1024)
         if len(data) == 0:
             break
         sent += len(data)
-        logger.debug("_copy_data(): sending chunk (%d):\n%s" % (sent, data[:256]))
+        log.debug("Sending chunk %d bytes:\n%s"
+                  % (sent, data))
         try:
             outstream.write(data)
         except UnicodeError:
             try:
-                outstream.write(data.encode(enc))
+                outstream.write(coder.encode(data))
             except IOError:
-                logger.exception('_copy_data(): Error sending data: Broken pipe')
+                log.exception("Error sending data: Broken pipe")
                 break
         except IOError:
             # Can get 'broken pipe' errors even when all data was sent
-            logger.exception('_copy_data(): Error sending data: Broken pipe')
+            log.exception('Error sending data: Broken pipe')
             break
     try:
         outstream.close()
-    except IOError:
-        logger.exception('_copy_data(): Got IOError while closing %s' % outstream)
+    except IOError as ioe:
+        log.error("Unable to close outstream %s:\r\t%s" % (outstream, ioe))
     else:
-        logger.debug("_copy_data(): Closed output, %d bytes sent." % sent)
+        log.debug("Closed outstream: %d bytes sent." % sent)
 
-def _create_gpghome(gpghome):
-    """Create the specified GnuPG home directory, if necessary.
+def _create_if_necessary(directory):
+    """Create the specified directory, if necessary.
 
-    :param str gpghome: The directory to use.
+    :param str directory: The directory to use.
     :rtype: bool
     :returns: True if no errors occurred and the directory was created or
               existed beforehand, False otherwise.
     """
-    ## xxx how will this work in a virtualenv?
-    if not os.path.isabs(gpghome):
-        message = ("Got non-abs gpg home dir path: %s" % gpghome)
-        logger.warn("util._create_gpghome(): %s" % message)
-        gpghome = os.path.abspath(gpghome)
-    if not os.path.isdir(gpghome):
-        message = ("Creating gpg home dir: %s" % gpghome)
-        logger.warn("util._create_gpghome(): %s" % message)
+
+    if not os.path.isabs(directory):
+        log.debug("Got non-absolute path: %s" % directory)
+        directory = os.path.abspath(directory)
+
+    if not os.path.isdir(directory):
+        log.info("Creating directory: %s" % directory)
         try:
-            os.makedirs(gpghome, 0x1C0)
+            os.makedirs(directory, 0x1C0)
         except OSError as ose:
-            logger.error(ose, exc_info=1)
+            log.error(ose, exc_info=1)
             return False
         else:
-            return True
-    else:
-        return True
+            log.debug("Created directory.")
+    return True
 
-def _find_gpgbinary(gpgbinary=None):
+def create_uid_email(username=None, hostname=None):
+    """Create an email address suitable for a UID on a GnuPG key.
+
+    :param str username: The username portion of an email address.  If None,
+                         defaults to the username of the running Python
+                         process.
+
+    :param str hostname: The FQDN portion of an email address. If None, the
+                         hostname is obtained from gethostname(2).
+
+    :rtype: str
+    :returns: A string formatted as <username>@<hostname>.
+    """
+    if hostname:
+        hostname = hostname.replace(' ', '_')
+    if not username:
+        try: username = os.environ['LOGNAME']
+        except KeyError: username = os.environ['USERNAME']
+
+        if not hostname: hostname = gethostname()
+
+        uid = "%s@%s" % (username.replace(' ', '_'), hostname)
+    else:
+        username = username.replace(' ', '_')
+        if (not hostname) and (username.find('@') == 0):
+            uid = "%s@%s" % (username, gethostname())
+        elif hostname:
+            uid = "%s@%s" % (username, hostname)
+        else:
+            uid = username
+
+    return uid
+
+def _find_binary(binary=None):
     """Find the absolute path to the GnuPG binary.
 
     Also run checks that the binary is not a symlink, and check that
     our process real uid has exec permissions.
 
-    :param str gpgbinary: The path to the GnuPG binary.
+    :param str binary: The path to the GnuPG binary.
     :raises: :exc:RuntimeError if it appears that GnuPG is not installed.
     :rtype: str
     :returns: The absolute path to the GnuPG binary to use, if no exceptions
               occur.
     """
-    binary = None
-    if gpgbinary is not None:
-        if not os.path.isabs(gpgbinary):
-            try: binary = _which(gpgbinary)[0]
-            except IndexError as ie: logger.debug(ie.message)
+    gpg_binary = None
+    if binary is not None:
+        if not os.path.isabs(binary):
+            try: binary = _which(binary)[0]
+            except IndexError as ie:
+                log.error(ie.message)
     if binary is None:
         try: binary = _which('gpg')[0]
-        except IndexError: raise RuntimeError("gpg is not installed")
+        except IndexError: raise RuntimeError("GnuPG is not installed!")
     try:
         assert os.path.isabs(binary), "Path to gpg binary not absolute"
         assert not os.path.islink(binary), "Path to gpg binary is symlink"
         assert os.access(binary, os.X_OK), "Lacking +x perms for gpg binary"
     except (AssertionError, AttributeError) as ae:
-        logger.debug("util._find_gpgbinary(): %s" % ae.message)
+        log.error(ae.message)
     else:
         return binary
 
@@ -180,7 +247,7 @@ def _has_readwrite(path):
     :rtype: bool
     :returns: True if real uid/gid has read+write permissions, False otherwise.
     """
-    return os.access(path, os.R_OK and os.W_OK)
+    return os.access(path, os.R_OK ^ os.W_OK)
 
 def _is_file(input):
     """Check that the size of the thing which is supposed to be a filename has
@@ -193,8 +260,8 @@ def _is_file(input):
     """
     try:
         assert os.lstat(input).st_size > 0, "not a file: %s" % input
-    except (AssertionError, TypeError, IOError, OSError) as error:
-        logger.debug(error.message)
+    except (AssertionError, TypeError, IOError, OSError) as err:
+        log.error(err.message, exc_info=1)
         return False
     else:
         return True
@@ -215,7 +282,7 @@ def _is_list_or_tuple(instance):
     :rtype: bool
     :returns: True if ``instance`` is a list or tuple, False otherwise.
     """
-    return isinstance(instance,list) or isinstance(instance,tuple)
+    return isinstance(instance, (list, tuple,))
 
 def _make_binary_stream(s, encoding):
     """
@@ -267,7 +334,7 @@ def _make_passphrase(length=None, save=False, file=None):
             os.chmod(file, 0600)
             os.chown(file, ruid, gid)
 
-        logger.warn("Generated passphrase saved to %s" % file)
+        log.warn("Generated passphrase saved to %s" % file)
     return passphrase
 
 def _make_random_string(length):
@@ -290,6 +357,10 @@ def _next_year():
     next_year = str(int(year)+1)
     return '-'.join((next_year, month, day))
 
+def _now():
+    """Get a timestamp for right now, formatted according to ISO 8601."""
+    return datetime.isoformat(datetime.now())
+
 def _threaded_copy_data(instream, outstream):
     """Copy data from one stream to another in a separate thread.
 
@@ -302,10 +373,13 @@ def _threaded_copy_data(instream, outstream):
     copy_thread = threading.Thread(target=_copy_data,
                                    args=(instream, outstream))
     copy_thread.setDaemon(True)
-    logger.debug('_threaded_copy_data(): %r, %r, %r', copy_thread,
-                 instream, outstream)
+    log.debug('%r, %r, %r', copy_thread, instream, outstream)
     copy_thread.start()
     return copy_thread
+
+def _utc_epoch():
+    """Get the seconds since epoch for UTC."""
+    return int(time.mktime(time.gmtime()))
 
 def _which(executable, flags=os.X_OK):
     """Borrowed from Twisted's :mod:twisted.python.proutils .
@@ -346,7 +420,51 @@ def _which(executable, flags=os.X_OK):
     return result
 
 def _write_passphrase(stream, passphrase, encoding):
+    """Write the passphrase from memory to the GnuPG process' stdin.
+
+    :type stream: file, :class:BytesIO, or :class:StringIO
+    :param stream: The input file descriptor to write the password to.
+    :param str passphrase: The passphrase for the secret key material.
+    :param str encoding: The data encoding expected by GnuPG. Usually, this
+                         is ``sys.getfilesystemencoding()``.
+    """
     passphrase = '%s\n' % passphrase
     passphrase = passphrase.encode(encoding)
     stream.write(passphrase)
-    logger.debug("_write_passphrase(): Wrote passphrase.")
+    log.debug("Wrote passphrase on stdin.")
+
+
+class InheritableProperty(object):
+  """Based on the emulation of PyProperty_Type() in Objects/descrobject.c"""
+
+  def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+    self.fget = fget
+    self.fset = fset
+    self.fdel = fdel
+    self.__doc__ = doc
+
+  def __get__(self, obj, objtype=None):
+    if obj is None:
+      return self
+    if self.fget is None:
+      raise AttributeError, "unreadable attribute"
+    if self.fget.__name__ == '<lambda>' or not self.fget.__name__:
+      return self.fget(obj)
+    else:
+      return getattr(obj, self.fget.__name__)()
+
+  def __set__(self, obj, value):
+    if self.fset is None:
+      raise AttributeError, "can't set attribute"
+    if self.fset.__name__ == '<lambda>' or not self.fset.__name__:
+      self.fset(obj, value)
+    else:
+      getattr(obj, self.fset.__name__)(value)
+
+  def __delete__(self, obj):
+    if self.fdel is None:
+      raise AttributeError, "can't delete attribute"
+    if self.fdel.__name__ == '<lambda>' or not self.fdel.__name__:
+      self.fdel(obj)
+    else:
+      getattr(obj, self.fdel.__name__)()

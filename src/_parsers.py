@@ -1,8 +1,7 @@
-#!/usr/bin/env python
-#-*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 # This file is part of python-gnupg, a Python wrapper around GnuPG.
-# Copyright © 2013 Isis Lovecruft
+# Copyright © 2013 Isis Lovecruft, Andrej B.
 #           © 2008-2012 Vinay Sajip
 #           © 2005 Steve Traugott
 #           © 2004 A.M. Kuchling
@@ -22,19 +21,15 @@ parsers.py
 Classes for parsing GnuPG status messages and sanitising commandline options.
 '''
 
-from gnupg import __author__
-from gnupg import __version__
-__module__ = 'gnupg.parsers'
-
-import logging
 import re
 
-from util import logger
-import util
+from _util import log
+
+import _util
 
 
 ESCAPE_PATTERN = re.compile(r'\\x([0-9a-f][0-9a-f])', re.I)
-HEXIDECIMAL    = re.compile('([0-9A-F]{2})+')
+HEXIDECIMAL    = re.compile('([0-9A-Fa-f]{2})+')
 
 
 class ProtectedOption(Exception):
@@ -44,9 +39,51 @@ class UsageError(Exception):
     """Raised when incorrect usage of the API occurs.."""
 
 
-def _fix_unsafe(shell_input):
+def _check_preferences(prefs, pref_type=None):
+    """Check cipher, digest, and compression preference settings.
+
+    MD5 is not allowed. This is not 1994.[0] SHA1 is allowed grudgingly.[1]
+
+    [0]: http://www.cs.colorado.edu/~jrblack/papers/md5e-full.pdf
+    [1]: http://eprint.iacr.org/2008/469.pdf
     """
-    Find characters used to escape from a string into a shell, and wrap them
+    if prefs is None: return
+
+    cipher   = frozenset(['AES256', 'AES192', 'AES128',
+                          'CAMELLIA256', 'CAMELLIA192',
+                          'TWOFISH', '3DES'])
+    digest   = frozenset(['SHA512', 'SHA384', 'SHA256', 'SHA224', 'RMD160',
+                          'SHA1'])
+    compress = frozenset(['BZIP2', 'ZLIB', 'ZIP', 'Uncompressed'])
+    all      = frozenset([cipher, digest, compress])
+
+    if isinstance(prefs, str):
+        prefs = set(prefs.split())
+    elif isinstance(prefs, list):
+        prefs = set(prefs)
+    else:
+        msg = "prefs must be a list of strings, or one space-separated string"
+        log.error("parsers._check_preferences(): %s" % message)
+        raise TypeError(message)
+
+    if not pref_type:
+        pref_type = 'all'
+
+    allowed = str()
+
+    if pref_type == 'cipher':
+        allowed += ' '.join(prefs.intersection(cipher))
+    if pref_type == 'digest':
+        allowed += ' '.join(prefs.intersection(digest))
+    if pref_type == 'compress':
+        allowed += ' '.join(prefs.intersection(compress))
+    if pref_type == 'all':
+        allowed += ' '.join(prefs.intersection(all))
+
+    return allowed
+
+def _fix_unsafe(shell_input):
+    """Find characters used to escape from a string into a shell, and wrap them
     in quotes if they exist. Regex pilfered from python-3.x shlex module.
 
     :param str shell_input: The input intended for the GnuPG process.
@@ -99,7 +136,7 @@ def _is_allowed(input):
              if no errors occur.
     """
 
-    _all = ("""
+    three_hundred_eighteen = ("""
 --allow-freeform-uid              --multifile
 --allow-multiple-messages         --no
 --allow-multisig-verification     --no-allow-freeform-uid
@@ -261,7 +298,7 @@ def _is_allowed(input):
 --min-cert-level                  --yes
 """).split()
 
-    _possible = frozenset(_all)
+    possible = frozenset(three_hundred_eighteen)
 
     ## these are the allowed options we will handle so far, all others should
     ## be dropped. this dance is so that when new options are added later, we
@@ -271,38 +308,91 @@ def _is_allowed(input):
     ## xxx checkout the --store option for creating rfc1991 data packets
     ## xxx key fetching/retrieving options: [fetch_keys, merge_only, recv_keys]
     ##
-    _allowed = frozenset(
-        ['--list-keys', '--list-key', '--fixed-list-mode',
-         '--list-secret-keys', '--list-public-keys',
-         '--list-packets',  '--with-colons',
-         '--list-options',
-         '--delete-keys', '--delete-secret-keys',
-         '--encrypt', '--encrypt-files',
-         '--decrypt', '--decrypt-files',
-         '--print-mds', '--print-md',
-         '--sign', '--clearsign', '--detach-sign',
-         '--armor', '--armour',
-         '--gen-key', '--batch',
-         '--decrypt', '--decrypt-files',
-         '--import',
-         '--export', '--export-secret-keys', '--export-secret-subkeys',
-         '--verify',
-         '--version', '--output',
-         '--status-fd', '--no-tty', '--passphrase-fd',
-         '--homedir', '--no-default-keyring', '--default-key',
-         '--keyring', '--secret-keyring', '--primary-keyring',
-         '--fingerprint',])
+    allowed = frozenset(['--fixed-list-mode',  ## key/packet listing
+                         '--list-key',
+                         '--list-keys',
+                         '--list-options',
+                         '--list-packets',
+                         '--list-public-keys',
+                         '--list-secret-keys',
+                         '--print-md',
+                         '--print-mds',
+                         '--with-colons',
+                         ## deletion
+                         '--delete-keys',
+                         '--delete-secret-keys',
+                         ## en-/de-cryption
+                         '--always-trust',
+                         '--decrypt',
+                         '--decrypt-files',
+                         '--encrypt',
+                         '--encrypt-files',
+                         '--recipient',
+                         '--no-default-recipient',
+                         '--symmetric',
+                         '--use-agent',
+                         '--no-use-agent',
+                         ## signing/certification
+                         '--armor',
+                         '--armour',
+                         '--clearsign',
+                         '--detach-sign',
+                         '--list-sigs',
+                         '--sign',
+                         '--verify',
+                         ## i/o and files
+                         '--batch',
+                         '--debug-all',
+                         '--debug-level',
+                         '--gen-key',
+                         #'--multifile',
+                         '--no-emit-version',
+                         '--no-tty',
+                         '--output',
+                         '--passphrase-fd',
+                         '--status-fd',
+                         '--version',
+                         ## keyring, homedir, & options
+                         '--homedir',
+                         '--keyring',
+                         '--primary-keyring',
+                         '--secret-keyring',
+                         '--no-default-keyring',
+                         '--default-key',
+                         '--no-options',
+                         ## preferences
+                         '--digest-algo',
+                         '--cipher-algo',
+                         '--compress-algo',
+                         '--compression-algo',
+                         '--cert-digest-algo',
+                         '--list-config',
+                         '--personal-digest-prefs',
+                         '--personal-digest-preferences',
+                         '--personal-cipher-prefs',
+                         '--personal-cipher-preferences',
+                         '--personal-compress-prefs',
+                         '--personal-compress-preferences',
+                         ## export/import
+                         '--import',
+                         '--export',
+                         '--export-secret-keys',
+                         '--export-secret-subkeys',
+                         '--fingerprint',
+                     ])
 
-    ## check that _allowed is a subset of _possible
+    ## check that allowed is a subset of possible
     try:
-        assert _allowed.issubset(_possible), \
-            '_allowed is not subset of known options, difference: %s' \
-            % _allowed.difference(_possible)
+        assert allowed.issubset(possible), \
+            'allowed is not subset of known options, difference: %s' \
+            % allowed.difference(possible)
     except AssertionError as ae:
-        logger.debug("_is_allowed(): %s" % ae.message)
+        log.error("_is_allowed(): %s" % ae.message)
         raise UsageError(ae.message)
 
     ## if we got a list of args, join them
+    ##
+    ## see TODO file, tag :cleanup:
     if not isinstance(input, str):
         input = ' '.join([x for x in input])
 
@@ -314,13 +404,13 @@ def _is_allowed(input):
                 hyphenated = _hyphenate(input)
         else:
             hyphenated = input
+            ## xxx we probably want to use itertools.dropwhile here
             try:
-                assert hyphenated in _allowed
+                assert hyphenated in allowed
             except AssertionError as ae:
-                logger.warn("_is_allowed(): Dropping option '%s'..."
-                            % _fix_unsafe(hyphenated))
-                raise ProtectedOption("Option '%s' not supported."
-                                      % _fix_unsafe(hyphenated))
+                dropped = _fix_unsafe(hyphenated)
+                log.warn("_is_allowed(): Dropping option '%s'..." % dropped)
+                raise ProtectedOption("Option '%s' not supported." % dropped)
             else:
                 return input
     return None
@@ -354,14 +444,16 @@ def _sanitise(*args):
     For information on the PGP message format specification, see:
         https://www.ietf.org/rfc/rfc1991.txt
 
-    If you're asking, "Is this *really* necessary?": No. Not really. See:
-        https://xkcd.com/1181/
+    If you're asking, "Is this *really* necessary?": No, not really -- we could
+    just do a check as described here: https://xkcd.com/1181/
 
     :param str args: (optional) The boolean arguments which will be passed to
                      the GnuPG process.
     :rtype: str
     :returns: ``sanitised``
     """
+
+    ## see TODO file, tag :cleanup:sanitise:
 
     def _check_option(arg, value):
         """
@@ -382,36 +474,70 @@ def _sanitise(*args):
         :returns: A string of the items in ``checked`` delimited by spaces.
         """
         safe_option = str()
+
+        if not _util._py3k:
+            if not isinstance(arg, list) and isinstance(arg, unicode):
+                arg = str(arg)
+
         try:
             flag = _is_allowed(arg)
             assert flag is not None, "_check_option(): got None for flag"
         except (AssertionError, ProtectedOption) as error:
-            logger.warn("_check_option(): %s" % error.message)
+            log.warn("_check_option(): %s" % error.message)
         else:
             safe_option += (flag + " ")
-            if isinstance(value, str):
+            if (not _util._py3k and isinstance(value, basestring)) \
+                    or (_util._py3k and isinstance(value, str)):
                 values = value.split(' ')
                 for v in values:
+                    try:
+                        assert v is not None
+                        assert v.strip() != ""
+                    except:
+                        log.debug("Dropping %s %s" % (flag, v))
+                        continue
+
+                    ## these can be handled separately, without _fix_unsafe(),
+                    ## because they are only allowed if the pass the regex
+                    if flag in ['--default-key', '--recipient', '--export',
+                                '--export-secret-keys', '--delete-keys',
+                                '--list-sigs', '--export-secret-subkeys',]:
+                        if _is_hex(v):
+                            safe_option += (v + " ")
+                            continue
+                        else: log.debug("'%s %s' not hex." % (flag, v))
+
                     val = _fix_unsafe(v)
-                    if val is not None and val.strip() != "":
-                        if flag in ['--encrypt', '--encrypt-files', '--decrypt',
-                                    '--decrypt-file', '--import', '--verify']:
-                            ## Place checks here:
-                            if util._is_file(val):
-                                safe_option += (val + " ")
-                            else:
-                                logger.debug("_check_option(): %s not file: %s"
-                                             % (flag, val))
-                        elif flag in ['--default-key']:
-                            if _is_hex(val):
-                                safe_option += (val + " ")
-                            else:
-                                logger.debug("_check_option(): '%s %s' not hex."
-                                             % (flag, val))
-                        else:
-                            safe_option += (val + " ")
-                            logger.debug("_check_option(): No checks for %s"
-                                         % val)
+
+                    try:
+                        assert v is not None
+                        assert v.strip() != ""
+                    except:
+                        log.debug("Dropping %s %s" % (flag, v))
+                        continue
+
+                    if flag in ['--encrypt', '--encrypt-files', '--decrypt',
+                                '--decrypt-files', '--import', '--verify']:
+                        if _util._is_file(val): safe_option += (val + " ")
+                        else: log.debug("%s not file: %s" % (flag, val))
+
+                    elif flag in ['--cipher-algo', '--personal-cipher-prefs',
+                                  '--personal-cipher-preferences']:
+                        legit_algos = _check_preferences(val, 'cipher')
+                        if legit_algos: safe_option += (legit_algos + " ")
+                        else: log.debug("'%s' is not cipher" % val)
+
+                    elif flag in ['--compress-algo', '--compression-algo',
+                                  '--personal-compress-prefs',
+                                  '--personal-compress-preferences']:
+                        legit_algos = _check_preferences(val, 'compress')
+                        if legit_algos: safe_option += (legit_algos + " ")
+                        else: log.debug("'%s' not compress algo" % val)
+
+                    else:
+                        safe_option += (val + " ")
+                        log.debug("_check_option(): No checks for %s" % val)
+
         return safe_option
 
     is_flag = lambda x: x.startswith('--')
@@ -419,7 +545,7 @@ def _sanitise(*args):
     def _make_filo(args_string):
         filo = arg.split(' ')
         filo.reverse()
-        logger.debug("_make_filo(): Converted to reverse list: %s" % filo)
+        log.debug("_make_filo(): Converted to reverse list: %s" % filo)
         return filo
 
     def _make_groups(filo):
@@ -427,7 +553,7 @@ def _sanitise(*args):
         while len(filo) >= 1:
             last = filo.pop()
             if is_flag(last):
-                logger.debug("_make_groups(): Got arg: %s" % last)
+                log.debug("Got arg: %s" % last)
                 if last == '--verify':
                     groups[last] = str(filo.pop())
                     ## accept the read-from-stdin arg:
@@ -436,54 +562,55 @@ def _sanitise(*args):
                 else:
                     groups[last] = str()
                 while len(filo) > 1 and not is_flag(filo[len(filo)-1]):
-                    logger.debug("_make_groups(): Got value: %s"
-                                 % filo[len(filo)-1])
+                    log.debug("Got value: %s" % filo[len(filo)-1])
                     groups[last] += (filo.pop() + " ")
                 else:
                     if len(filo) == 1 and not is_flag(filo[0]):
-                        logger.debug("_make_groups(): Got value: %s" % filo[0])
+                        log.debug("Got value: %s" % filo[0])
                         groups[last] += filo.pop()
             else:
-                logger.debug("_make_groups(): Got solitary value: %s" % last)
+                log.warn("_make_groups(): Got solitary value: %s" % last)
                 groups["xxx"] = last
         return groups
 
     def _check_groups(groups):
-        logger.debug("_check_groups(): Got groups: %s" % groups)
+        log.debug("Got groups: %s" % groups)
         checked_groups = []
         for a,v in groups.items():
             v = None if len(v) == 0 else v
             safe = _check_option(a, v)
             if safe is not None and not safe.strip() == "":
-                logger.debug("_check_groups(): appending option: %s" % safe)
+                log.debug("Appending option: %s" % safe)
                 checked_groups.append(safe)
             else:
-                logger.debug("_check_groups(): dropped option '%s %s'" % (a,v))
+                log.warn("Dropped option: '%s %s'" % (a,v))
         return checked_groups
 
     if args is not None:
         option_groups = {}
         for arg in args:
-            ## if we're given a string with a bunch of options in it split them
-            ## up and deal with them separately
-            if isinstance(arg, str):
-                logger.debug("_sanitise(): Got arg string: %s" % arg)
+            ## if we're given a string with a bunch of options in it split
+            ## them up and deal with them separately
+            if (not _util._py3k and isinstance(arg, basestring)) \
+                    or (_util._py3k and isinstance(arg, str)):
+                log.debug("Got arg string: %s" % arg)
                 if arg.find(' ') > 0:
                     filo = _make_filo(arg)
                     option_groups.update(_make_groups(filo))
                 else:
                     option_groups.update({ arg: "" })
             elif isinstance(arg, list):
-                logger.debug("_sanitise(): Got arg list: %s" % arg)
+                log.debug("Got arg list: %s" % arg)
                 arg.reverse()
                 option_groups.update(_make_groups(arg))
             else:
-                logger.debug("_sanitise(): Got non str or list arg: %s" % arg)
+                log.warn("Got non-str/list arg: '%s', type '%s'"
+                         % (arg, type(arg)))
         checked = _check_groups(option_groups)
         sanitised = ' '.join(x for x in checked)
         return sanitised
     else:
-        logger.debug("_sanitise(): Got None for args")
+        log.debug("Got None for args")
 
 def _sanitise_list(arg_list):
     """A generator for iterating through a list of gpg options and sanitising
@@ -502,202 +629,89 @@ def _sanitise_list(arg_list):
                 yield safe_arg
 
 
-class Verify(object):
-    """Parser for internal status messages from GnuPG for ``--verify``."""
+def nodata(status_code):
+    """Translate NODATA status codes from GnuPG to messages."""
+    lookup = {
+        '1': 'No armored data.',
+        '2': 'Expected a packet but did not find one.',
+        '3': 'Invalid packet found, this may indicate a non OpenPGP message.',
+        '4': 'Signature expected but not found.' }
+    for key, value in lookup.items():
+        if str(status_code) == key:
+            return value
 
-    TRUST_UNDEFINED = 0
-    TRUST_NEVER = 1
-    TRUST_MARGINAL = 2
-    TRUST_FULLY = 3
-    TRUST_ULTIMATE = 4
+def progress(status_code):
+    """Translate PROGRESS status codes from GnuPG to messages."""
+    lookup = {
+        'pk_dsa': 'DSA key generation',
+        'pk_elg': 'Elgamal key generation',
+        'primegen': 'Prime generation',
+        'need_entropy': 'Waiting for new entropy in the RNG',
+        'tick': 'Generic tick without any special meaning - still working.',
+        'starting_agent': 'A gpg-agent was started.',
+        'learncard': 'gpg-agent or gpgsm is learning the smartcard data.',
+        'card_busy': 'A smartcard is still working.' }
+    for key, value in lookup.items():
+        if str(status_code) == key:
+            return value
 
-    TRUST_LEVELS = { "TRUST_UNDEFINED" : TRUST_UNDEFINED,
-                     "TRUST_NEVER" : TRUST_NEVER,
-                     "TRUST_MARGINAL" : TRUST_MARGINAL,
-                     "TRUST_FULLY" : TRUST_FULLY,
-                     "TRUST_ULTIMATE" : TRUST_ULTIMATE, }
-
-    #: True if the signature is valid, False otherwise.
-    valid = False
-    #: A string describing the status of the signature verification.
-    #: Can be one of ``'signature bad'``, ``'signature good'``,
-    #: ``'signature valid'``, ``'signature error'``, ``'decryption failed'``,
-    #: ``'no public key'``, ``'key exp'``, or ``'key rev'``.
-    status = None
-    #: The fingerprint of the signing keyid.
-    fingerprint = None
-    #: The fingerprint of the corresponding public key, which may be different
-    #: if the signature was created with a subkey.
-    pubkey_fingerprint = None
-    #: The keyid of the signing key.
-    key_id = None
-    #: xxx I'm not sure how this is different to key_id.
-    signature_id = None
-    #: The creation date of the signing key.
-    creation_date = None
-    #: The timestamp of the purported signature, if we are unable to parse it.
-    timestamp = None
-    #: The userid of the signing key which was used to create the signature.
-    username = None
-    #: When the signing key is due to expire.
-    expire_timestamp = None
-    #: The timestamp for when the signature was created.
-    sig_timestamp = None
-    #: A number 0-4 describing the trust level of the signature.
-    trust_level = None
-    #: The string corresponding to the ``trust_level`` number.
-    trust_text = None
-
-    def __init__(self, gpg):
-        self.gpg = gpg
-
-    def __nonzero__(self):
-        return self.valid
-    __bool__ = __nonzero__
-
-    def handle_status(self, key, value):
-        if key in self.TRUST_LEVELS:
-            self.trust_text = key
-            self.trust_level = self.TRUST_LEVELS[key]
-        elif key in ("RSA_OR_IDEA", "NODATA", "IMPORT_RES", "PLAINTEXT",
-                   "PLAINTEXT_LENGTH", "POLICY_URL", "DECRYPTION_INFO",
-                   "DECRYPTION_OKAY", "INV_SGNR"):
-            pass
-        elif key == "BADSIG":
-            self.valid = False
-            self.status = 'signature bad'
-            self.key_id, self.username = value.split(None, 1)
-        elif key == "GOODSIG":
-            self.valid = True
-            self.status = 'signature good'
-            self.key_id, self.username = value.split(None, 1)
-        elif key == "VALIDSIG":
-            (self.fingerprint,
-             self.creation_date,
-             self.sig_timestamp,
-             self.expire_timestamp) = value.split()[:4]
-            self.pubkey_fingerprint = value.split()[-1]
-            self.status = 'signature valid'
-        elif key == "SIG_ID":
-            (self.signature_id,
-             self.creation_date, self.timestamp) = value.split()
-        elif key == "ERRSIG":
-            self.valid = False
-            (self.key_id,
-             algo, hash_algo,
-             cls,
-             self.timestamp) = value.split()[:5]
-            self.status = 'signature error'
-        elif key == "DECRYPTION_FAILED":
-            self.valid = False
-            self.key_id = value
-            self.status = 'decryption failed'
-        elif key == "NO_PUBKEY":
-            self.valid = False
-            self.key_id = value
-            self.status = 'no public key'
-        elif key in ("KEYEXPIRED", "SIGEXPIRED"):
-            # these are useless in verify, since they are spit out for any
-            # pub/subkeys on the key, not just the one doing the signing.
-            # if we want to check for signatures with expired key,
-            # the relevant flag is EXPKEYSIG.
-            pass
-        elif key in ("EXPKEYSIG", "REVKEYSIG"):
-            # signed with expired or revoked key
-            self.valid = False
-            self.key_id = value.split()[0]
-            self.status = (('%s %s') % (key[:3], key[3:])).lower()
-        else:
-            raise ValueError("Unknown status message: %r" % key)
-
-
-class Crypt(Verify):
-    """Parser for internal status messages from GnuPG for ``--encrypt`` and
-    ``--decrypt``.
-    """
-    def __init__(self, gpg):
-        super(Crypt, self).__init__(gpg)
-        self.data = str()
-        self.ok = False
-        self.status = str()
-
-    def __nonzero__(self):
-        if self.ok: return True
-        return False
-
-    __bool__ = __nonzero__
-
-    def __str__(self):
-        return self.data.decode(self.gpg.encoding, self.gpg._decode_errors)
-
-    def handle_status(self, key, value):
-        """Parse a status code from the attached GnuPG process.
-
-        :raises: :exc:`ValueError` if the status message is unknown.
-        """
-        if key in ("ENC_TO", "USERID_HINT", "GOODMDC", "END_DECRYPTION",
-                   "BEGIN_SIGNING", "NO_SECKEY", "ERROR", "NODATA",
-                   "CARDCTRL"):
-            # in the case of ERROR, this is because a more specific error
-            # message will have come first
-            pass
-        elif key in ("NEED_PASSPHRASE", "BAD_PASSPHRASE", "GOOD_PASSPHRASE",
-                     "MISSING_PASSPHRASE", "DECRYPTION_FAILED",
-                     "KEY_NOT_CREATED"):
-            self.status = key.replace("_", " ").lower()
-        elif key == "NEED_PASSPHRASE_SYM":
-            self.status = 'need symmetric passphrase'
-        elif key == "BEGIN_DECRYPTION":
-            self.status = 'decryption incomplete'
-        elif key == "BEGIN_ENCRYPTION":
-            self.status = 'encryption incomplete'
-        elif key == "DECRYPTION_OKAY":
-            self.status = 'decryption ok'
-            self.ok = True
-        elif key == "END_ENCRYPTION":
-            self.status = 'encryption ok'
-            self.ok = True
-        elif key == "INV_RECP":
-            self.status = 'invalid recipient'
-        elif key == "KEYEXPIRED":
-            self.status = 'key expired'
-        elif key == "SIG_CREATED":
-            self.status = 'sig created'
-        elif key == "SIGEXPIRED":
-            self.status = 'sig expired'
-        else:
-            Verify.handle_status(self, key, value)
 
 class GenKey(object):
-    """Handle status messages for --gen-key"""
+    """Handle status messages for key generation.
+
+    Calling the GenKey.__str__() method of this class will return the
+    generated key's fingerprint, or a status string explaining the results.
+    """
     def __init__(self, gpg):
         self.gpg = gpg
+        ## this should get changed to something more useful, like 'key_type'
+        #: 'P':= primary, 'S':= subkey, 'B':= both
         self.type = None
         self.fingerprint = None
+        self.status = None
+        self.subkey_created = False
+        self.primary_created = False
 
     def __nonzero__(self):
         if self.fingerprint: return True
         return False
-
     __bool__ = __nonzero__
 
     def __str__(self):
-        return self.fingerprint or ''
+        if self.fingerprint:
+            return self.fingerprint
+        else:
+            if self.status is not None:
+                return self.status
+            else:
+                return False
 
     def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
         :raises: :exc:`ValueError` if the status message is unknown.
         """
-        if key in ("PROGRESS", "GOOD_PASSPHRASE", "NODATA", "KEY_NOT_CREATED"):
+        if key in ("GOOD_PASSPHRASE"):
             pass
+        elif key == "KEY_NOT_CREATED":
+            self.status = 'key not created'
         elif key == "KEY_CREATED":
             (self.type, self.fingerprint) = value.split()
+            self.status = 'key created'
+        elif key == "NODATA":
+            self.status = nodata(value)
+        elif key == "PROGRESS":
+            self.status = progress(value.split(' ', 1)[0])
         else:
             raise ValueError("Unknown status message: %r" % key)
 
+        if self.type in ('B', 'P'):
+            self.primary_key_created = True
+        if self.type in ('B', 'S'):
+            self.subkey_created = True
+
 class DeleteResult(object):
-    """Handle status messages for --delete-key and --delete-secret-key"""
+    """Handle status messages for --delete-keys and --delete-secret-keys"""
     def __init__(self, gpg):
         self.gpg = gpg
         self.status = 'ok'
@@ -705,11 +719,9 @@ class DeleteResult(object):
     def __str__(self):
         return self.status
 
-    problem_reason = {
-        '1': 'No such key',
-        '2': 'Must delete secret key first',
-        '3': 'Ambigious specification',
-        }
+    problem_reason = { '1': 'No such key',
+                       '2': 'Must delete secret key first',
+                       '3': 'Ambigious specification', }
 
     def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
@@ -763,11 +775,13 @@ class Sign(object):
         """
         if key in ("USERID_HINT", "NEED_PASSPHRASE", "BAD_PASSPHRASE",
                    "GOOD_PASSPHRASE", "BEGIN_SIGNING", "CARDCTRL",
-                   "INV_SGNR", "NODATA"):
+                   "INV_SGNR"):
             pass
         elif key == "SIG_CREATED":
             (self.sig_type, self.sig_algo, self.sig_hash_algo,
              self.what, self.timestamp, self.fingerprint) = value.split()
+        elif key == "NODATA":
+            self.status = nodata(value)
         else:
             raise ValueError("Unknown status message: %r" % key)
 
@@ -873,7 +887,8 @@ class ImportResult(object):
                  '2': 'New user IDs',
                  '4': 'New signatures',
                  '8': 'New subkeys',
-                 '16': 'Contains private key',}
+                 '16': 'Contains private key',
+                 '17': 'Contains private key',}
 
     problem_reason = { '0': 'No specific reason given',
                        '1': 'Invalid Certificate',
@@ -895,7 +910,7 @@ class ImportResult(object):
         elif key == "IMPORT_OK":
             reason, fingerprint = value.split()
             reasons = []
-            for code, text in list(self.ok_reason.items()):
+            for code, text in self.ok_reason.items():
                 if int(reason) | int(code) == int(reason):
                     reasons.append(text)
             reasontext = '\n'.join(reasons) + "\n"
@@ -932,21 +947,13 @@ class ImportResult(object):
 
 
 class Verify(object):
-    """Classes for parsing GnuPG status messages for signature verification.
+    """Parser for internal status messages from GnuPG for
+    certification/signature verification, and for parsing portions of status
+    messages from decryption operations.
 
     :type gpg: :class:`gnupg.GPG`
     :param gpg: An instance of :class:`gnupg.GPG`.
-    :attr bool valid: True if the signature or file was verified successfully,
-                      False otherwise.
-    :attr str fingerprint: The fingerprint of the GnuPG keyID which created the
-                           signature.
-
-    :attr str creation_date: The date the signature was made.
-    :attr str timestamp: The timestamp used internally in the signature.
-    :attr str signature_id: The uid of the signing GnuPG key.
-    :attr str status: The internal status message from the GnuPG process.
     """
-    ## xxx finish documentation
 
     TRUST_UNDEFINED = 0
     TRUST_NEVER = 1
@@ -959,6 +966,37 @@ class Verify(object):
                     "TRUST_MARGINAL" : TRUST_MARGINAL,
                     "TRUST_FULLY" : TRUST_FULLY,
                     "TRUST_ULTIMATE" : TRUST_ULTIMATE,}
+
+    #: True if the signature is valid, False otherwise.
+    valid = False
+    #: A string describing the status of the signature verification.
+    #: Can be one of ``'signature bad'``, ``'signature good'``,
+    #: ``'signature valid'``, ``'signature error'``, ``'decryption failed'``,
+    #: ``'no public key'``, ``'key exp'``, or ``'key rev'``.
+    status = None
+    #: The fingerprint of the signing keyid.
+    fingerprint = None
+    #: The fingerprint of the corresponding public key, which may be different
+    #: if the signature was created with a subkey.
+    pubkey_fingerprint = None
+    #: The keyid of the signing key.
+    key_id = None
+    #: The id of the signature itself.
+    signature_id = None
+    #: The creation date of the signing key.
+    creation_date = None
+    #: The timestamp of the purported signature, if we are unable to parse it.
+    timestamp = None
+    #: The userid of the signing key which was used to create the signature.
+    username = None
+    #: When the signing key is due to expire.
+    expire_timestamp = None
+    #: The timestamp for when the signature was created.
+    sig_timestamp = None
+    #: A number 0-4 describing the trust level of the signature.
+    trust_level = None
+    #: The string corresponding to the ``trust_level`` number.
+    trust_text = None
 
     def __init__(self, gpg):
         self.gpg = gpg
@@ -1042,9 +1080,78 @@ class Verify(object):
         else:
             raise ValueError("Unknown status message: %r" % key)
 
-## xxx old style class
 
-class ListPackets():
+class Crypt(Verify):
+    """Parser for internal status messages from GnuPG for ``--encrypt``,
+    ``--decrypt``, and ``--decrypt-files``.
+    """
+    def __init__(self, gpg):
+        Verify.__init__(self, gpg)
+        self.gpg = gpg
+        self.data = ''
+        self.ok = False
+        self.status = ''
+        self.data_format = None
+        self.data_timestamp = None
+        self.data_filename = None
+
+    def __nonzero__(self):
+        if self.ok: return True
+        return False
+    __bool__ = __nonzero__
+
+    def __str__(self):
+        return self.data.decode(self.gpg.encoding, self.gpg._decode_errors)
+
+    def handle_status(self, key, value):
+        """Parse a status code from the attached GnuPG process.
+
+        :raises: :exc:`ValueError` if the status message is unknown.
+        """
+        if key in ("ENC_TO", "USERID_HINT", "GOODMDC", "END_DECRYPTION",
+                   "BEGIN_SIGNING", "NO_SECKEY", "ERROR", "NODATA",
+                   "CARDCTRL"):
+            # in the case of ERROR, this is because a more specific error
+            # message will have come first
+            pass
+        elif key in ("NEED_PASSPHRASE", "BAD_PASSPHRASE", "GOOD_PASSPHRASE",
+                     "MISSING_PASSPHRASE", "DECRYPTION_FAILED",
+                     "KEY_NOT_CREATED"):
+            self.status = key.replace("_", " ").lower()
+        elif key == "NEED_PASSPHRASE_SYM":
+            self.status = 'need symmetric passphrase'
+        elif key == "BEGIN_DECRYPTION":
+            self.status = 'decryption incomplete'
+        elif key == "BEGIN_ENCRYPTION":
+            self.status = 'encryption incomplete'
+        elif key == "DECRYPTION_OKAY":
+            self.status = 'decryption ok'
+            self.ok = True
+        elif key == "END_ENCRYPTION":
+            self.status = 'encryption ok'
+            self.ok = True
+        elif key == "INV_RECP":
+            self.status = 'invalid recipient'
+        elif key == "KEYEXPIRED":
+            self.status = 'key expired'
+        elif key == "SIG_CREATED":
+            self.status = 'sig created'
+        elif key == "SIGEXPIRED":
+            self.status = 'sig expired'
+        elif key == "PLAINTEXT":
+            fmt, dts = value.split(' ', 1)
+            if dts.find(' ') > 0:
+                self.data_timestamp, self.data_filename = dts.split(' ', 1)
+            else:
+                self.data_timestamp = dts
+            ## GnuPG give us a hex byte for an ascii char corresponding to
+            ## the data format of the resulting plaintext,
+            ## i.e. '62'→'b':= binary data
+            self.data_format = chr(int(str(fmt), 16))
+        else:
+            super(Crypt, self).handle_status(key, value)
+
+class ListPackets(object):
     """
     Handle status messages for --list-packets.
     """
