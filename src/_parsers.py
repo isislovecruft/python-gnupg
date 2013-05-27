@@ -404,6 +404,7 @@ def _is_allowed(input):
                 hyphenated = _hyphenate(input)
         else:
             hyphenated = input
+            ## xxx we probably want to use itertools.dropwhile here
             try:
                 assert hyphenated in allowed
             except AssertionError as ae:
