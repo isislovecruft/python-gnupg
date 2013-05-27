@@ -19,6 +19,7 @@ cleanup-tests:
 	mkdir -p tests/tmp
 	mkdir -p tests/logs
 	mv tests/*.log tests/logs/
+	touch placeholder.log
 	rm *.log
 	rm tests/random_seed
 
@@ -29,13 +30,7 @@ cleanup-build:
 	mkdir buildnot
 	rm -rf build*
 
-cleantest: cleanup-src cleanup-tests
-	mkdir -p tests/tmp
-	touch placeholder.log
-	rm -rf tests/tmp
-	rm *.log
-
-test: cleantest
+test: cleanup-src cleanup-tests
 	which gpg
 	gpg --version
 	which gpg2
