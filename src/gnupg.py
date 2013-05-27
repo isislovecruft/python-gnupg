@@ -1436,49 +1436,77 @@ generate keys. Please see
                            encrypted output is returned, and thus should be
                            stored as an object in Python. For example:
         """
-        args = list()
+        args = []
 
-        ## both can be used at the same time for an encrypted file which
-        ## is decryptable with a passphrase or secretkey.
-        if encrypt:
-            args.append('--encrypt')
-        if symmetric:
-            args.append('--symmetric')
-
-        if not _util._is_list_or_tuple(recipients):
-            if isinstance(recipients, str):
-                recipients = [rec for rec in recipients.split(' ')]
-            else:
-                recipients = (recipients,)
-        if len(recipients) > 1:
-            args.append('--multifile')
-        for recipient in recipients:
-            args.append('--recipient %s' % recipient)
-
-        if output is not None:
+        if output:
             if getattr(output, 'fileno', None) is not None:
-                if os.path.exists(output):
-                    os.remove(output) # to avoid overwrite confirmation message
-            args.append('--output "%s"' % output)
+                ## avoid overwrite confirmation message
+                if getattr(output, 'name', None) is None:
+                    if os.path.exists(output):
+                        os.remove(output)
+                    args.append('--output %s' % output)
+                else:
+                    if os.path.exists(output.name):
+                        os.remove(output.name)
+                    args.append('--output %s' % output.name)
 
-        if armor:
-            args.append('--armor')
+        if armor: args.append('--armor')
+        if always_trust: args.append('--always-trust')
+        if cipher_algo: args.append('--cipher-algo %s' % cipher_algo)
+        if compress_algo: args.append('--compress-algo %s' % compress_algo)
+
         if default_key:
             args.append('--sign')
             args.append('--default-key %s' % default_key)
             if digest_algo:
                 args.append('--digest-algo %s' % digest_algo)
-        if always_trust:
-            args.append('--always-trust')
 
-        if cipher_algo:
-            args.append('--cipher-algo %s' % cipher_algo)
-        if compress_algo:
-            args.append('--compress-algo %s' % compress_algo)
+        ## both can be used at the same time for an encrypted file which
+        ## is decryptable with a passphrase or secretkey.
+        if symmetric: args.append('--symmetric')
+        if encrypt: args.append('--encrypt')
+
+        if len(recipients) >= 1:
+            log.debug("GPG.encrypt() called for recipients '%s' with type '%s'"
+                      % (recipients, type(recipients)))
+
+            if isinstance(recipients, (list, tuple)):
+                for recp in recipients:
+                    if not _util._py3k:
+                        if isinstance(recp, unicode):
+                            try:
+                                assert _parsers._is_hex(str(recp))
+                            except AssertionError:
+                                log.info("Can't accept recipient string: %s"
+                                         % recp)
+                            else:
+                                args.append('--recipient %s' % str(recp))
+                                continue
+                            ## will give unicode in 2.x as '\uXXXX\uXXXX'
+                            args.append('--recipient %r' % recp)
+                            continue
+                    if isinstance(recp, str):
+                        args.append('--recipient %s' % recp)
+
+            elif (not _util._py3k) and isinstance(recp, basestring):
+                for recp in recipients.split('\x20'):
+                    args.append('--recipient %s' % recp)
+
+            elif _util._py3k and isinstance(recp, str):
+                for recp in recipients.split(' '):
+                    args.append('--recipient %s' % recp)
+                    ## ...and now that we've proven py3k is better...
+
+            else:
+                log.debug("Don't know what to do with recipients: '%s'"
+                          % recipients)
 
         result = self._result_map['crypt'](self)
-        self._handle_io(args, file, result, passphrase=passphrase, binary=True)
-        log.debug('GPG.encrypt(): Result: %r', result.data)
+        log.debug("Got filename '%s' with type '%s'."
+                  % (filename, type(filename)))
+        self._handle_io(args, filename, result,
+                        passphrase=passphrase, binary=True)
+        log.debug('GPG.encrypt_file(): Result: %r', result.data)
         return result
 
     def encrypt(self, data, recipients, **kwargs):
