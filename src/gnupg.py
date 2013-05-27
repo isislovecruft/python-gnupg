@@ -1402,10 +1402,16 @@ generate keys. Please see
 
         return out
 
-    def encrypt_file(self, filename, recipients, default_key=None,
-                     always_trust=True, passphrase=None, armor=True,
-                     output=None, encrypt=True, symmetric=False,
-                     cipher_algo='AES256', digest_algo='SHA512',
+    def encrypt_file(self, filename, recipients,
+                     default_key=None,
+                     passphrase=None,
+                     armor=True,
+                     encrypt=True,
+                     symmetric=False,
+                     always_trust=True,
+                     output=None,
+                     cipher_algo='AES256',
+                     digest_algo='SHA512',
                      compress_algo='ZLIB'):
         """Encrypt the message read from ``file``.
 
