@@ -119,7 +119,12 @@ def _copy_data(instream, outstream):
     coder = find_encodings()
 
     while True:
-        data = instream.read(1024)
+        if ((_py3k and isinstance(instream, str)) or
+            (not _py3k and isinstance(instream, basestring))):
+            data = instream[:1024]
+            instream = instream[1024:]
+        else:
+            data = instream.read(1024)
         if len(data) == 0:
             break
         sent += len(data)
