@@ -910,7 +910,7 @@ class ImportResult(object):
         elif key == "IMPORT_OK":
             reason, fingerprint = value.split()
             reasons = []
-            for code, text in list(self.ok_reason.items()):
+            for code, text in self.ok_reason.items():
                 if int(reason) | int(code) == int(reason):
                     reasons.append(text)
             reasontext = '\n'.join(reasons) + "\n"
