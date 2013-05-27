@@ -773,14 +773,14 @@ analysis of different kinds of data (temperature, humidity, etc.)  coming from
 a WSN while ensuring both end-to-end encryption and hop-by-hop
 authentication."""
 
-        encrypted = self.gpg.encrypt(message, [ruck_fpr,])
-        decrypted = self.gpg.decrypt(encrypted.data, passphrase="ruck")
+        encrypted = str(self.gpg.encrypt(message, ruck_fpr))
+        decrypted = str(self.gpg.decrypt(encrypted, passphrase="ruck"))
 
-        if message != decrypted.data:
-            log.debug("was: %r", message)
-            log.debug("new: %r", decrypted.data)
+        if message != decrypted:
+            log.debug("was: %r" % message)
+            log.debug("new: %r" % decrypted)
 
-        self.assertEqual(message, decrypted.data)
+        self.assertEqual(message, decrypted)
 
     def test_decryption_multi_recipient(self):
         """Test decryption of an encrypted string for multiple users"""
