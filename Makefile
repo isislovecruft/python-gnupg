@@ -36,6 +36,17 @@ cleantest: cleanup-src cleanup-tests
 	rm *.log
 
 test: cleantest
+	which gpg
+	gpg --version
+	which gpg2
+	gpg2 --version
+	which gpg-agent
+	which pinentry
+	which python
+	python --version
+	which pip
+	pip --version
+	pip list
 	python tests/test_gnupg.py parsers basic encodings genkey sign listkeys crypt keyrings import
 
 install: 
