@@ -1509,7 +1509,7 @@ generate keys. Please see
         log.debug('GPG.encrypt_file(): Result: %r', result.data)
         return result
 
-    def encrypt(self, data, recipients, **kwargs):
+    def encrypt(self, data, *recipients, **kwargs):
         """Encrypt the message contained in ``data`` to ``recipients``.
 
         >>> import shutil
