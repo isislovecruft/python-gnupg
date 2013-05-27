@@ -530,7 +530,7 @@ class GPGTestCase(unittest.TestCase):
         """Test that signing a message string works."""
         key = self.generate_key("Werner Koch", "gnupg.org")
         message = "Damn, I really wish GnuPG had ECC support."
-        sig = self.gpg.sign(message, keyid=key.fingerprint,
+        sig = self.gpg.sign(message, default_key=key.fingerprint,
                             passphrase='wernerkoch')
         print "SIGNATURE:\n", sig.data
         self.assertIsNotNone(sig.data)
@@ -539,7 +539,7 @@ class GPGTestCase(unittest.TestCase):
         """Test that determining the signing algorithm works."""
         key = self.generate_key("Ron Rivest", "rsa.com")
         message = "Someone should add GCM block cipher mode to PyCrypto."
-        sig = self.gpg.sign(message, keyid=key.fingerprint,
+        sig = self.gpg.sign(message, default_key=key.fingerprint,
                             passphrase='ronrivest')
         print "ALGORITHM:\n", sig.sig_algo
         self.assertIsNotNone(sig.sig_algo)
@@ -548,14 +548,15 @@ class GPGTestCase(unittest.TestCase):
         """Test that signing and verification works."""
         key = self.generate_key("Taher ElGamal", "cryto.me")
         message = 'أصحاب المصالح لا يحبون الثوراتز'
-        sig = self.gpg.sign(message, keyid=key.fingerprint, passphrase='foo')
+        sig = self.gpg.sign(message, default_key=key.fingerprint,
+                            passphrase='foo')
         self.assertFalse(sig, "Bad passphrase should fail")
 
     def test_signature_string_alternate_encoding(self):
         key = self.generate_key("Nos Oignons", "nos-oignons.net")
         self.gpg.encoding = 'latin-1'
         message = "Mêle-toi de tes oignons"
-        sig = self.gpg.sign(message, keyid=key.fingerprint,
+        sig = self.gpg.sign(message, default_key=key.fingerprint,
                             passphrase='nosoignons')
         self.assertTrue(sig)
 
@@ -564,7 +565,7 @@ class GPGTestCase(unittest.TestCase):
         key = self.generate_key("Leonard Adleman", "rsa.com")
         message_file = os.path.join(_files, 'cypherpunk_manifesto')
         with open(message_file) as msg:
-            sig = self.gpg.sign(msg, keyid=key.fingerprint,
+            sig = self.gpg.sign(msg, default_key=key.fingerprint,
                                 passphrase='leonardadleman')
             self.assertTrue(sig, "I thought I typed my password correctly...")
 
@@ -573,7 +574,7 @@ class GPGTestCase(unittest.TestCase):
         key = self.generate_key("Bruce Schneier", "schneier.com")
         message  = '...the government uses the general fear of '
         message += '[hackers in popular culture] to push for more power'
-        sig = self.gpg.sign(message, keyid=key.fingerprint,
+        sig = self.gpg.sign(message, default_key=key.fingerprint,
                             passphrase='bruceschneier')
         now = time.mktime(time.gmtime())
         self.assertTrue(sig, "Good passphrase should succeed")
@@ -598,7 +599,7 @@ class GPGTestCase(unittest.TestCase):
         """Test verfication of an embedded signature."""
         key = self.generate_key("Johan Borst", "rijnda.el")
         message = "You're *still* using AES? Really?"
-        sig = self.gpg.sign(message, keyid=key.fingerprint,
+        sig = self.gpg.sign(message, default_key=key.fingerprint,
                             passphrase='johanborst')
         self.assertTrue(sig, "Good passphrase should succeed")
         try:
@@ -615,7 +616,7 @@ class GPGTestCase(unittest.TestCase):
         """Test that verification of a detached signature of a file works."""
         key = self.generate_key("Paulo S.L.M. Barreto", "anub.is")
         with open(os.path.join(_files, 'cypherpunk_manifesto'), 'rb') as cm:
-            sig = self.gpg.sign(cm, keyid=key.fingerprint,
+            sig = self.gpg.sign(cm, default_key=key.fingerprint,
                                 passphrase='paulos.l.m.barreto',
                                 detach=True, clearsign=False)
             self.assertTrue(sig.data, "File signing should succeed")
@@ -638,7 +639,7 @@ class GPGTestCase(unittest.TestCase):
         """Test that detached signature verification in binary mode fails."""
         key = self.generate_key("Adi Shamir", "rsa.com")
         with open(os.path.join(_files, 'cypherpunk_manifesto'), 'rb') as cm:
-            sig = self.gpg.sign(cm, keyid=key.fingerprint,
+            sig = self.gpg.sign(cm, default_key=key.fingerprint,
                                 passphrase='adishamir',
                                 detach=True, binary=True, clearsign=False)
             self.assertTrue(sig.data, "File signing should succeed")

@@ -710,8 +710,8 @@ use_agent: %s
             result = None
         return result
 
-    def _sign_file(self, file, keyid=None, passphrase=None, clearsign=True,
-                   detach=False, binary=False):
+    def _sign_file(self, file, default_key=None, passphrase=None,
+                   clearsign=True, detach=False, binary=False):
         """Create a signature for a file.
 
         :param file: The file stream (i.e. it's already been open()'d) to sign.
@@ -737,8 +737,8 @@ use_agent: %s
         elif detach and not clearsign:
             args.append("--detach-sign")
 
-        if keyid:
-            args.append(str("--default-key %s" % keyid))
+        if default_key:
+            args.append(str("--default-key %s" % default_key))
 
         result = self._result_map['sign'](self)
         ## We could use _handle_io here except for the fact that if the
