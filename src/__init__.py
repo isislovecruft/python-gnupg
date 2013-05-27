@@ -18,3 +18,4 @@ __all__ = ["GPG"]
 del gnupg
 del copyleft
 del get_versions
+del _version
