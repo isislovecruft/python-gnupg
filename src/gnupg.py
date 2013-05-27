@@ -740,19 +740,18 @@ use_agent: %s
         if default_key:
             args.append(str("--default-key %s" % default_key))
 
-        result = self._result_map['sign'](self)
         ## We could use _handle_io here except for the fact that if the
         ## passphrase is bad, gpg bails and you can't write the message.
-        p = self._open_subprocess(args, passphrase is not None)
+        result = self._result_map['sign'](self)
+        proc = self._open_subprocess(args, passphrase is not None)
         try:
-            stdin = p.stdin
             if passphrase:
-                _util._write_passphrase(stdin, passphrase, self.encoding)
-            writer = _util._threaded_copy_data(file, stdin)
-        except IOError:
-            log.exception("_sign_file(): Error writing message")
+                _util._write_passphrase(proc.stdin, passphrase, self.encoding)
+            writer = _util._threaded_copy_data(file, proc.stdin)
+        except IOError as ioe:
+            log.exception("Error writing message: %s" % ioe.message)
             writer = None
-        self._collect_output(p, result, writer, stdin)
+        self._collect_output(proc, result, writer, proc.stdin)
         return result
 
     def verify(self, data):
