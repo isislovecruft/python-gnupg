@@ -510,23 +510,20 @@ use_agent: %s
                                 process.
         """
         ## see TODO file, tag :io:makeargs:
-        cmd = [self.binary, '--no-emit-version --no-tty --status-fd 2']
+        cmd = [self.binary,
+               '--no-options --no-emit-version --no-tty --status-fd 2']
 
-        if self.homedir:
-            cmd.append('--homedir "%s"' % self.homedir)
+        if self.homedir: cmd.append('--homedir "%s"' % self.homedir)
 
         if self.keyring:
             cmd.append('--no-default-keyring --keyring %s' % self.keyring)
-            if self.secring:
-                cmd.append('--secret-keyring %s' % self.secring)
+        if self.secring:
+            cmd.append('--secret-keyring %s' % self.secring)
 
-        if passphrase:
-            cmd.append('--batch --passphrase-fd 0')
+        if passphrase: cmd.append('--batch --passphrase-fd 0')
 
-        if self.use_agent:
-            cmd.append('--use-agent')
-        else:
-            cmd.append('--no-use-agent')
+        if self.use_agent: cmd.append('--use-agent')
+        else: cmd.append('--no-use-agent')
 
         if self.options:
             [cmd.append(opt) for opt in iter(_sanitise_list(self.options))]
@@ -534,16 +531,11 @@ use_agent: %s
             [cmd.append(arg) for arg in iter(_sanitise_list(args))]
 
         if self.verbose:
-            if isinstance(self.verbose, str):
-                if self.verbose in ['basic', 'advanced', 'expert', 'guru']:
-                    cmd.append('--debug-all')
-                    cmd.append('--debug-level %s' % self.verbose)
-            elif isinstance(self.verbose, int) and (0 <= self.verbose <= 9):
-                if self.verbose >= 1:
-                    cmd.append('--debug-all')
-                    cmd.append('--debug-level %s' % self.verbose)
-            elif self.verbose is True:
-                cmd.append('--debug-all')
+            cmd.append('--debug-all')
+            if ((isinstance(self.verbose, str) and
+                 self.verbose in ['basic', 'advanced', 'expert', 'guru'])
+                or (isinstance(self.verbose, int) and (1<=self.verbose<=9))):
+                cmd.append('--debug-level %s' % self.verbose)
 
         return cmd
 
