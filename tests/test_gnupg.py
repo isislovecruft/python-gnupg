@@ -674,7 +674,7 @@ transparent multi-hop wireless backhauls that are able to perform statistical
 analysis of different kinds of data (temperature, humidity, etc.)  coming from
 a WSN while ensuring both end-to-end encryption and hop-by-hop
 authentication."""
-        encrypted = str(gpg.encrypt(message, [dijk], ))
+        encrypted = str(gpg.encrypt(message, dijk))
         self.assertNotEqual(message, encrypted)
         self.assertNotEqual(encrypted, '')
         self.assertGreater(len(encrypted), 0)
