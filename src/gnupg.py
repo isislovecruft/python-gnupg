@@ -372,7 +372,6 @@ class GPGBase(object):
             log.debug(ae.message)
             raise RuntimeError(ae.message)
         else:
-            log.debug("GPGBase:")
             log.info("Setting homedir to '%s'" % hd)
             self._homedir = hd
 
