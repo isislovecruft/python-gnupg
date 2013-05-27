@@ -841,7 +841,7 @@ authentication."""
         msg  = """If you have something that you don't want anyone to know,
  maybe you shouldn't be doing it in the first place. - Eric Schmidt, CEO
  of Google"""
-        encrypted = str(self.gpg.encrypt(msg, None, passphrase='quiscustodiet',
+        encrypted = str(self.gpg.encrypt(msg, passphrase='quiscustodiet',
                                          symmetric=True, encrypt=False))
         decrypted = self.gpg.decrypt(encrypted, passphrase='quiscustodiet')
         self.assertEqual(msg, str(decrypted.data))
