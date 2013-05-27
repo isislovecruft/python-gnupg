@@ -1413,24 +1413,25 @@ generate keys. Please see
                      cipher_algo='AES256',
                      digest_algo='SHA512',
                      compress_algo='ZLIB'):
-        """Encrypt the message read from ``file``.
+        """Encrypt the message read from the file-like object ``filename``.
 
         :param str filename: The file or bytestream to encrypt.
-        :type recipients: str or list or tuple
-        :param recipients: The recipients to encrypt to. Recipients may be
-                           specified by UID or keyID/fingerprint.
-        :param str default_key: The keyID to use for signing, i.e.
-                              "gpg --default-key A3ADB67A2CDB8B35 --sign ..."
+        :param str recipients: The recipients to encrypt to. Recipients must
+                               be specified keyID/fingerprint. Care should be
+                               taken in Python2.x to make sure that the given
+                               fingerprint is in fact a string and not a
+                               unicode object.
+        :param str default_key: The keyID/fingerprint of the key to use for
+                                signing. If given, ``filename`` will be
+                                encrypted and signed.
         :param bool always_trust: If True, ignore trust warnings on recipient
                                   keys. If False, display trust warnings.
                                   (default: True)
-        :param bool passphrase: If True, use the stored passphrase for our
-                                secret key.
-
-        :param bool armor: If True, ascii armor the encrypted output; if False,
-                           the encrypted output will be in binary
-                           format. (default: True)
-
+        :param str passphrase: If True, use this passphrase to unlock the
+                                secret portion of the ``default_key`` for
+                                signing.
+        :param bool armor: If True, ascii armor the output; otherwise, the
+                           output will be in binary format. (default: True)
         :param str output: The output file to write to. If not specified, the
                            encrypted output is returned, and thus should be
                            stored as an object in Python. For example:
