@@ -865,8 +865,8 @@ use_agent: %s
         """Import a key from a keyserver
 
         >>> import shutil
-        >>> shutil.rmtree("keys")
-        >>> gpg = GPG(homedir="keys")
+        >>> shutil.rmtree("doctests")
+        >>> gpg = gnupg.GPG(homedir="doctests")
         >>> result = gpg.recv_keys('pgp.mit.edu', '3FF0DB166A7476EA')
         >>> assert result
 
