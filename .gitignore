@@ -66,3 +66,6 @@ local/*
 
 # Ignore gpg binary symlinks:
 gpg
+
+# Ignore keys generated during tests:
+*generated-keys*
