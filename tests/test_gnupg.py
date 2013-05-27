@@ -662,10 +662,10 @@ class GPGTestCase(unittest.TestCase):
         """Test encryption of a message string"""
         key = self.generate_key("Craig Gentry", "xorr.ox",
                                 passphrase="craiggentry")
-        gentry = key.fingerprint
+        gentry = str(key.fingerprint)
         key = self.generate_key("Marten van Dijk", "xorr.ox",
                                 passphrase="martenvandijk")
-        dijk = key.fingerprint
+        dijk = str(key.fingerprint)
         gpg = self.gpg
         message = """
 In 2010 Riggio and Sicari presented a practical application of homomorphic
@@ -683,9 +683,9 @@ authentication."""
         """Test encryption with latin-1 encoding"""
         key = self.generate_key("Craig Gentry", "xorr.ox",
                                 passphrase="craiggentry")
-        gentry = key.fingerprint
+        gentry = str(key.fingerprint)
         key = self.generate_key("Marten van Dijk", "xorr.ox")
-        dijk = key.fingerprint
+        dijk = str(key.fingerprint)
         self.gpg.encoding = 'latin-1'
         if _util._py3k:
             data = 'Hello, André!'
