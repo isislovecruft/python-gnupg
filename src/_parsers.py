@@ -1139,10 +1139,14 @@ class Crypt(Verify):
         elif key == "SIGEXPIRED":
             self.status = 'sig expired'
         elif key == "PLAINTEXT":
-            fmt, self.data_timestamp, self.data_filename = value.split(' ', 2)
-             ## GnuPG give us a hex byte for an ascii char corresponding to
-             ## the data format of the resulting plaintext,
-             ## i.e. '62'→'b':= binary data
+            fmt, dts = value.split(' ', 1)
+            if dts.find(' ') > 0:
+                self.data_timestamp, self.data_filename = dts.split(' ', 1)
+            else:
+                self.data_timestamp = dts
+            ## GnuPG give us a hex byte for an ascii char corresponding to
+            ## the data format of the resulting plaintext,
+            ## i.e. '62'→'b':= binary data
             self.data_format = chr(int(str(fmt), 16))
         else:
             Verify.handle_status(key, value)
