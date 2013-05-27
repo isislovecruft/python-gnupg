@@ -1149,7 +1149,7 @@ class Crypt(Verify):
             ## i.e. '62'→'b':= binary data
             self.data_format = chr(int(str(fmt), 16))
         else:
-            Verify.handle_status(key, value)
+            super(Crypt, self).handle_status(key, value)
 
 class ListPackets(object):
     """
