@@ -66,13 +66,14 @@ def create_logger(level=logging.NOTSET):
     _fn   = os.path.join(_test, "%s_test_gnupg.log" % _now)
     _fmt  = "%(relativeCreated)-4d L%(lineno)-4d:%(funcName)-18.18s %(levelname)-7.7s %(message)s"
 
-    logging.basicConfig(level=level, filename=_fn, filemode="a", format=_fmt)
     ## Add the GNUPG_STATUS_LEVEL LogRecord to all Loggers in the module:
     logging.addLevelName(GNUPG_STATUS_LEVEL, "GNUPG")
     logging.Logger.status = status
 
 
     if level > logging.NOTSET:
+        logging.basicConfig(level=level, filename=_fn,
+                            filemode="a", format=_fmt)
         logging.captureWarnings(True)
         logging.logThreads = True
 
