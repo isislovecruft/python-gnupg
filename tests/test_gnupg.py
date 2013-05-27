@@ -848,30 +848,32 @@ authentication."""
 
     def test_file_encryption_and_decryption(self):
         """Test that encryption/decryption to/from file works."""
-        key = self.generate_key("Andrew Able", "alpha.com",
-                                passphrase="andrewable")
-        andrew = key.fingerprint
-        key = self.generate_key("Barbara Brown", "beta.com",
-                                passphrase="barbarabrown")
-        barbara = key.fingerprint
-        enc_outf = file(os.path.join(self.gpg.homedir, 'to-b.gpg'), 'w+')
-        dec_outf = file(os.path.join(self.gpg.homedir, 'to-b.txt'), 'w+')
-        data = "Hello, world!"
-        data_file = _util._make_binary_stream(data, self.gpg.encoding)
-        edata = self.gpg.encrypt_file(data_file, barbara,
-                                      armor=False,
-                                      output=enc_outf)
-        ddata = self.gpg.decrypt_file(enc_outf, passphrase="barbarabrown",
-                                      output=dec_outf)
-        enc_outf.seek(0, 0) # can't use os.SEEK_SET in 2.4
-        dec_outf.seek(0, 0)
-        enc_data = enc_outf.read()
-        dec_data = dec_outf.read()
-        data = data.encode(self.gpg.encoding)
-        if ddata != data:
-            log.debug("was: %r", data)
-            log.debug("new: %r", dec_data)
-        self.assertEqual(data, dec_data)
+        with open(os.path.join(_files, 'kat.sec')) as katsec:
+            self.gpg.import_keys(katsec.read())
+
+        kat = self.gpg.list_keys('kat')[0]['fingerprint']
+
+        enc_outf = os.path.join(self.gpg.homedir, 'to-b.gpg')
+        dec_outf = os.path.join(self.gpg.homedir, 'to-b.txt')
+
+        message_file = os.path.join(_files, 'cypherpunk_manifesto')
+        with open(message_file) as msg:
+            data = msg.read()
+            ## GnuPG seems to ignore the output directive...
+            edata = self.gpg.encrypt(data, kat, output=enc_outf)
+            with open(enc_outf, 'w+') as enc:
+                enc.write(str(edata))
+
+            with open(enc_outf) as enc2:
+                fdata = enc2.read()
+                ddata = str(self.gpg.decrypt(fdata, passphrase="overalls"))
+
+                data = data.encode(self.gpg.encoding)
+                if ddata != data:
+                    log.debug("data was: %r" % data)
+                    log.debug("new (from filehandle): %r" % fdata)
+                    log.debug("new (from decryption): %r" % ddata)
+                    self.assertEqual(data, ddata)
 
 
 suites = { 'parsers': set(['test_parsers_fix_unsafe',
