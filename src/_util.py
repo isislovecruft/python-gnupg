@@ -377,6 +377,10 @@ def _threaded_copy_data(instream, outstream):
     copy_thread.start()
     return copy_thread
 
+def _utc_epoch():
+    """Get the seconds since epoch for UTC."""
+    return int(time.mktime(time.gmtime()))
+
 def _which(executable, flags=os.X_OK):
     """Borrowed from Twisted's :mod:twisted.python.proutils .
 
