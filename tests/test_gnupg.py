@@ -962,8 +962,6 @@ def main(args):
 
     prog = unittest.TestProgram
     prog.createTests = _createTests
-    import pdb
-    pdb.set_trace()
     program = prog(module=GPGTestCase,
                    testRunner=runner,
                    testLoader=loader,
