@@ -1,0 +1,60 @@
+-*- mode: org -*-
+
+* Keyring separation                                      :keyseparation:
+** TODO in GPG.gen_key()                           :keyseparation:gen_key:
+It would be nice to have an option for gen_key() [[gnupg.py:927]] to
+automatically switch before key generation to a new tempfile.mkdtemp()
+directory, with a new keyring and secring, and then to rename either the
+directory or the keyrings with the long keyid of the key which was freshly
+generated.
+
+* I/O                                                                :io:
+** TODO in GPG.__make_args()                                 :io:makeargs:
+It would be nice to make the file descriptors for communication with the GnuPG
+process configurable, and not the default, hard-coded 0=stdin 1=stdout
+2=stderr.
+
+* Key editing                                                   :editkey:
+** TODO add '--edit-key' feature                                :editkey:
+see :compatibility:gen__key_input:
+
+* Compatibility between GnuPG versions                    :compatibility:
+** TODO GnuPG>=2.1.0 won't allow key generation with preset passphrase
+*** TODO in GPG.gen__key_input()             :compatibility:gen_key_input:
+In the docstring of GPG.gen__key_input() [[gnupg.py:1068]], for the parameter
+'passphrase', it is explained that:
+
+        :param str passphrase: The passphrase for the new key. The default is
+                               to not use any passphrase. Note that
+                               GnuPG>=2.1.x will not allow you to specify a
+                               passphrase for batch key generation -- GnuPG
+                               will ignore the ``passphrase`` parameter, stop,
+                               and ask the user for the new passphrase.
+                               However, we can put the command '%no-protection'
+                               into the batch key generation file to allow a
+                               passwordless key to be created, which can then
+                               have its passphrase set later with '--edit-key'.
+
+If we add a GnuPG version detection feature (the version string is already
+obtained in GPG.___init___() [[gnupg.py:407]]), then we can automatically chain
+GPG.gen__key_input() to another new feature for '--edit-key'. This chaining
+would likely need to happen here [[gnupg.py:1146]].
+
+*** TODO add '--edit-key' feature                               :editkey:
+This would be necessary for adding a passphrase to the key after passwordless
+generation in GnuPG>=2.1.0.
+
+* Code cleanup                                                  :cleanup:
+** TODO in parsers.__sanitise()                         :cleanup:sanitise:
+Ughh...this is the ugliest code I think I've ever written. It works, but I
+worry that it is fragile, not to mention *I* have trouble reading it, and I
+fucking wrote the damn thing. There's probably not much that could be done to
+make it more Pythonic, because type checks and input validation are pretty much
+intrinsically non-Pythonic. But did i mention that it's ugly? I'm sure these
+functions would be pretty glad to get a shower, shave, and haircut.
+
+** TODO in parsers.__is_allowed()                     :cleanup:is_allowed:
+There is a lot of madness dealing with stupid things like hyphens
+vs. underscores, and lists of options vs. strings. This can *definitely* be
+cleaned up.
+
