@@ -693,9 +693,9 @@ authentication."""
             data = unicode('Hello, André', self.gpg.encoding)
         data = data.encode(self.gpg.encoding)
         encrypted = self.gpg.encrypt(data, gentry)
-        self.assertNotEqual(data, encrypted)
-        self.assertNotEqual(encrypted, '')
-        self.assertGreater(len(encrypted), 0)
+        edata = str(encrypted.data)
+        self.assertNotEqual(data, edata)
+        self.assertGreater(len(edata), 0)
 
     def test_encryption_multi_recipient(self):
         """Test encrypting a message for multiple recipients"""
