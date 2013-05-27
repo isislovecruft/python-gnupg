@@ -282,7 +282,7 @@ def _is_list_or_tuple(instance):
     :rtype: bool
     :returns: True if ``instance`` is a list or tuple, False otherwise.
     """
-    return isinstance(instance,list) or isinstance(instance,tuple)
+    return isinstance(instance, (list, tuple,))
 
 def _make_binary_stream(s, encoding):
     """
