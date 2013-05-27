@@ -22,6 +22,7 @@ Extra utilities for python-gnupg.
 '''
 
 from datetime import datetime
+from socket   import gethostname
 
 import codecs
 import encodings
@@ -172,6 +173,39 @@ def _create_if_necessary(directory):
         else:
             log.debug("Created directory.")
     return True
+
+def create_uid_email(username=None, hostname=None):
+    """Create an email address suitable for a UID on a GnuPG key.
+
+    :param str username: The username portion of an email address.  If None,
+                         defaults to the username of the running Python
+                         process.
+
+    :param str hostname: The FQDN portion of an email address. If None, the
+                         hostname is obtained from gethostname(2).
+
+    :rtype: str
+    :returns: A string formatted as <username>@<hostname>.
+    """
+    if hostname:
+        hostname = hostname.replace(' ', '_')
+    if not username:
+        try: username = os.environ['LOGNAME']
+        except KeyError: username = os.environ['USERNAME']
+
+        if not hostname: hostname = gethostname()
+
+        uid = "%s@%s" % (username.replace(' ', '_'), hostname)
+    else:
+        username = username.replace(' ', '_')
+        if (not hostname) and (username.find('@') == 0):
+            uid = "%s@%s" % (username, gethostname())
+        elif hostname:
+            uid = "%s@%s" % (username, hostname)
+        else:
+            uid = username
+
+    return uid
 
 def _find_binary(binary=None):
     """Find the absolute path to the GnuPG binary.
