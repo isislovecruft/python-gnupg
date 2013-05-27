@@ -562,8 +562,7 @@ def _sanitise(*args):
                 else:
                     groups[last] = str()
                 while len(filo) > 1 and not is_flag(filo[len(filo)-1]):
-                    log.debug("Got value: %s"
-                                 % filo[len(filo)-1])
+                    log.debug("Got value: %s" % filo[len(filo)-1])
                     groups[last] += (filo.pop() + " ")
                 else:
                     if len(filo) == 1 and not is_flag(filo[0]):
