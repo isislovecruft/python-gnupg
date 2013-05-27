@@ -474,7 +474,12 @@ use_agent: %s
                str(self.use_agent)))
 
         self._batch_dir = os.path.join(self.homedir, 'batch-files')
-        self._keys_dir  = os.path.join(self.homedir, 'generated-keys')
+        self._key_dir  = os.path.join(self.homedir, 'generated-keys')
+
+        #: The keyring used in the most recently created batch file
+        self.temp_keyring = None
+        #: The secring used in the most recently created batch file
+        self.temp_secring = None
 
         ## check that everything runs alright:
         proc = self._open_subprocess(["--list-config", "--with-colons"])
