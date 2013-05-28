@@ -103,7 +103,7 @@ class GPGBase(object):
         encoding = locale.getpreferredencoding()
         if encoding is None: # This happens on Jython!
             encoding = sys.stdin.encoding
-        self.encoding = encoding.lower().replace('-', '_')
+        self._encoding = encoding.lower().replace('-', '_')
         self.filesystemencoding = encodings.normalize_encoding(
             sys.getfilesystemencoding().lower())
 

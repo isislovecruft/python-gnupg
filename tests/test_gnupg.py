@@ -554,7 +554,7 @@ class GPGTestCase(unittest.TestCase):
 
     def test_signature_string_alternate_encoding(self):
         key = self.generate_key("Nos Oignons", "nos-oignons.net")
-        self.gpg.encoding = 'latin-1'
+        self.gpg._encoding = 'latin-1'
         message = "Mêle-toi de tes oignons"
         sig = self.gpg.sign(message, default_key=key.fingerprint,
                             passphrase='nosoignons')
@@ -603,7 +603,7 @@ class GPGTestCase(unittest.TestCase):
                             passphrase='johanborst')
         self.assertTrue(sig, "Good passphrase should succeed")
         try:
-            file = _util._make_binary_stream(sig.data, self.gpg.encoding)
+            file = _util._make_binary_stream(sig.data, self.gpg._encoding)
             verified = self.gpg.verify_file(file)
         except UnicodeDecodeError: #happens in Python 2.6
             verified = self.gpg.verify_file(io.BytesIO(sig.data))
@@ -686,12 +686,12 @@ authentication."""
         gentry = str(key.fingerprint)
         key = self.generate_key("Marten van Dijk", "xorr.ox")
         dijk = str(key.fingerprint)
-        self.gpg.encoding = 'latin-1'
+        self.gpg._encoding = 'latin-1'
         if _util._py3k:
             data = 'Hello, André!'
         else:
-            data = unicode('Hello, André', self.gpg.encoding)
-        data = data.encode(self.gpg.encoding)
+            data = unicode('Hello, André', self.gpg._encoding)
+        data = data.encode(self.gpg._encoding)
         encrypted = self.gpg.encrypt(data, gentry)
         edata = str(encrypted.data)
         self.assertNotEqual(data, edata)
@@ -868,7 +868,7 @@ authentication."""
                 fdata = enc2.read()
                 ddata = str(self.gpg.decrypt(fdata, passphrase="overalls"))
 
-                data = data.encode(self.gpg.encoding)
+                data = data.encode(self.gpg._encoding)
                 if ddata != data:
                     log.debug("data was: %r" % data)
                     log.debug("new (from filehandle): %r" % fdata)

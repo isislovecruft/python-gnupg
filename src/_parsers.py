@@ -766,7 +766,7 @@ class Sign(object):
     __bool__ = __nonzero__
 
     def __str__(self):
-        return self.data.decode(self.gpg.encoding, self.gpg._decode_errors)
+        return self.data.decode(self.gpg._encoding, self.gpg._decode_errors)
 
     def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
@@ -1101,7 +1101,7 @@ class Crypt(Verify):
     __bool__ = __nonzero__
 
     def __str__(self):
-        return self.data.decode(self.gpg.encoding, self.gpg._decode_errors)
+        return self.data.decode(self.gpg._encoding, self.gpg._decode_errors)
 
     def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.

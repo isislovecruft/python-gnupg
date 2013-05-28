@@ -339,7 +339,7 @@ use_agent: %s
         make sure it's joined before returning. If a stdin stream is given,
         close it before returning.
         """
-        stderr = codecs.getreader(self.encoding)(process.stderr)
+        stderr = codecs.getreader(self._encoding)(process.stderr)
         rr = threading.Thread(target=self._read_response, args=(stderr, result))
         rr.setDaemon(True)
         log.debug('stderr reader: %r', rr)
@@ -368,11 +368,11 @@ use_agent: %s
         """Handle a call to GPG - pass input data, collect output data."""
         p = self._open_subprocess(args, passphrase)
         if not binary:
-            stdin = codecs.getwriter(self.encoding)(p.stdin)
+            stdin = codecs.getwriter(self._encoding)(p.stdin)
         else:
             stdin = p.stdin
         if passphrase:
-            _util._write_passphrase(stdin, passphrase, self.encoding)
+            _util._write_passphrase(stdin, passphrase, self._encoding)
         writer = _util._threaded_copy_data(file, stdin)
         self._collect_output(p, result, writer, stdin)
         return result
@@ -421,7 +421,7 @@ use_agent: %s
                          % (data, kwargs[keyid]))
             else:
                 log.warn("No 'sign_with' keyid given! Using default key.")
-            stream = _make_binary_stream(data, self.encoding)
+            stream = _make_binary_stream(data, self._encoding)
             result = self._sign_file(stream, **kwargs)
             stream.close()
 
@@ -467,7 +467,7 @@ use_agent: %s
         proc = self._open_subprocess(args, passphrase is not None)
         try:
             if passphrase:
-                _util._write_passphrase(proc.stdin, passphrase, self.encoding)
+                _util._write_passphrase(proc.stdin, passphrase, self._encoding)
             writer = _util._threaded_copy_data(file, proc.stdin)
         except IOError as ioe:
             log.exception("Error writing message: %s" % ioe.message)
@@ -490,7 +490,7 @@ use_agent: %s
         >>> assert verify
 
         """
-        f = _make_binary_stream(data, self.encoding)
+        f = _make_binary_stream(data, self._encoding)
         result = self.verify_file(f)
         f.close()
         return result
@@ -575,7 +575,7 @@ use_agent: %s
 
         result = self._result_map['import'](self)
         log.info('Importing: %r', key_data[:256])
-        data = _make_binary_stream(key_data, self.encoding)
+        data = _make_binary_stream(key_data, self._encoding)
         self._handle_io(['--import'], data, result, binary=True)
         data.close()
         return result
@@ -593,7 +593,7 @@ use_agent: %s
         safe_keyserver = _fix_unsafe(keyserver)
 
         result = self._result_map['import'](self)
-        data = _make_binary_stream("", self.encoding)
+        data = _make_binary_stream("", self._encoding)
         args = ['--keyserver', keyserver, '--recv-keys']
 
         if keyids:
@@ -672,7 +672,7 @@ use_agent: %s
         result = self._result_map['delete'](self) # any result will do
         self._collect_output(p, result, stdin=p.stdin)
         log.debug('Exported:%s%r' % (os.linesep, result.data))
-        return result.data.decode(self.encoding, self._decode_errors)
+        return result.data.decode(self._encoding, self._decode_errors)
 
     def list_keys(self, secret=False):
         """List the keys currently in the keyring.
@@ -709,7 +709,7 @@ use_agent: %s
         # Get the response information
         result = self._result_map['list'](self)
         self._collect_output(p, result, stdin=p.stdin)
-        lines = result.data.decode(self.encoding,
+        lines = result.data.decode(self._encoding,
                                    self._decode_errors).splitlines()
         valid_keywords = 'pub uid sec fpr sub'.split()
         for line in lines:
@@ -730,7 +730,7 @@ use_agent: %s
         """List the packet contents of a file."""
         args = ["--list-packets"]
         result = self._result_map['packets'](self)
-        self._handle_io(args, _make_binary_stream(raw_data, self.encoding),
+        self._handle_io(args, _make_binary_stream(raw_data, self._encoding),
                         result)
         return result
 
@@ -781,7 +781,7 @@ use_agent: %s
         ## see TODO file, tag :gen_key: for todo items
         args = ["--gen-key --batch"]
         key = self._result_map['generate'](self)
-        f = _make_binary_stream(input, self.encoding)
+        f = _make_binary_stream(input, self._encoding)
         self._handle_io(args, f, key, binary=True)
         f.close()
 
@@ -1269,7 +1269,7 @@ generate keys. Please see
         >>> assert result.fingerprint == print1
 
         """
-        stream = _make_binary_stream(data, self.encoding)
+        stream = _make_binary_stream(data, self._encoding)
         result = self.encrypt_file(stream, recipients, **kwargs)
         stream.close()
         return result
@@ -1279,7 +1279,7 @@ generate keys. Please see
 
         :param message: A string or file-like object to decrypt.
         """
-        stream = _make_binary_stream(message, self.encoding)
+        stream = _make_binary_stream(message, self._encoding)
         result = self.decrypt_file(stream, **kwargs)
         stream.close()
         return result
@@ -1349,7 +1349,7 @@ class GPGWrapper(GPG):
         """Send keys to a keyserver."""
         result = self._result_map['list'](self)
         log.debug('send_keys: %r', keyids)
-        data = _util._make_binary_stream("", self.encoding)
+        data = _util._make_binary_stream("", self._encoding)
         args = ['--keyserver', keyserver, '--send-keys']
         args.extend(keyids)
         self._handle_io(args, data, result, binary=True)
