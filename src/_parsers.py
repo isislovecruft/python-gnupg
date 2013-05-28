@@ -706,7 +706,7 @@ class GenKey(object):
             raise ValueError("Unknown status message: %r" % key)
 
         if self.type in ('B', 'P'):
-            self.primary_key_created = True
+            self.primary_created = True
         if self.type in ('B', 'S'):
             self.subkey_created = True
 
