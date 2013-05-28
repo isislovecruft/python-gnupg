@@ -63,6 +63,7 @@ installed-files.txt
 # and git-tickets and tickets:
 .tickets/*
 tickets/*
+TICKET-*
 
 # Ignore virtualenv folders, if they are here:
 include/*
