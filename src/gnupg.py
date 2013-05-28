@@ -79,25 +79,16 @@ except ImportError:
     from cStringIO import StringIO
 
 from codecs     import open as open
-from psutil     import process_iter
 from subprocess import Popen
 from subprocess import PIPE
 
-import atexit
 import codecs
-## For AOS, the locale module will need to point to a wrapper around the
-## java.util.Locale class.
-## See https://code.patternsinthevoid.net/?p=android-locale-hack.git
 import encodings
-import locale
 import os
-import sys
 import threading
 
-from _parsers import _fix_unsafe, _sanitise, _is_allowed, _sanitise_list
-from _parsers import _check_preferences
-from _util    import _conf, _is_list_or_tuple, _is_stream
-from _util    import _make_binary_stream
+from _parsers import _fix_unsafe, _sanitise_list
+from _util    import _is_list_or_tuple, _is_stream
 from _util    import log
 
 import _util
