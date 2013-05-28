@@ -266,7 +266,7 @@ class GPGBase(object):
     def _homedir_getter(self):
         """Get the directory currently being used as GnuPG's homedir.
 
-        If unspecified, use $HOME/.config/python-gnupg/
+        If unspecified, use :file:`~/.config/python-gnupg/`
 
         :rtype: str
         :returns: The absolute path to the current GnuPG homedir.
