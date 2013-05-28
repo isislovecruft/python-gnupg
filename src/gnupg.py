@@ -308,7 +308,7 @@ use_agent: %s
                     value = L[1]
                 else:
                     value = ""
-                result.handle_status(keyword, value)
+                result._handle_status(keyword, value)
             elif line[0:5] == 'gpg: ':
                 log.warn("%s" % line)
             else:
