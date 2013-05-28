@@ -87,13 +87,16 @@ import encodings
 import os
 import threading
 
-from _parsers import _fix_unsafe, _sanitise_list
-from _util    import _is_list_or_tuple, _is_stream
-from _util    import log
-
-import _util
 import _parsers
+import _util
 
+from _meta    import GPGBase
+from _parsers import _fix_unsafe
+from _parsers import _sanitise_list
+from _util    import _is_list_or_tuple
+from _util    import _is_stream
+from _util    import _make_binary_stream
+from _util    import log
 
 
 class GPG(GPGBase):
