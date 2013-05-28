@@ -738,7 +738,7 @@ use_agent: %s
         """Get the signatures for each of the ``keyids``.
 
         >>> import gnupg
-        >>> gpg = gnupg.GPG(homedir="./tests/doctest")
+        >>> gpg = gnupg.GPG(homedir="./tests/doctests")
         >>> key_input = gpg.gen_key_input()
         >>> key = gpg.gen_key(key_input)
         >>> assert key.fingerprint
@@ -768,7 +768,7 @@ use_agent: %s
         :meth:`GPG.gen_key_input()` for creating the control input.
 
         >>> import gnupg
-        >>> gpg = gnupg.GPG(homedir="./tests/doctest")
+        >>> gpg = gnupg.GPG(homedir="./tests/doctests")
         >>> key_input = gpg.gen_key_input()
         >>> key = gpg.gen_key(key_input)
         >>> assert key.fingerprint
@@ -839,7 +839,7 @@ use_agent: %s
         >>> import gnupg
         GnuPG logging disabled...
         >>> from __future__ import print_function
-        >>> gpg = gnupg.GPG(homedir='./tests/doctest')
+        >>> gpg = gnupg.GPG(homedir='./tests/doctests')
         >>> alice = { 'name_real': 'Alice',
         ...     'name_email': 'alice@inter.net',
         ...     'expire_date': '2014-04-01',
@@ -861,8 +861,8 @@ use_agent: %s
         Name-Email: alice@inter.net
         Key-Length: 4096
         Subkey-Length: 4096
-        %pubring ./tests/doctest/pubring.gpg
-        %secring ./tests/doctest/secring.gpg
+        %pubring ./tests/doctests/pubring.gpg
+        %secring ./tests/doctests/secring.gpg
         %commit
         <BLANKLINE>
         >>> alice_key = gpg.gen_key(alice_input)
