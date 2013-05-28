@@ -231,7 +231,7 @@ class GPGBase(object):
             def remove_symlinked_binary():
                 loc = os.path.join(os.getcwd(), 'gpg')
                 if os.path.islink(loc):
-                    os.unline(loc)
+                    os.unlink(loc)
                     log.debug("Removed binary symlink '%s'" % loc)
 
     @property
