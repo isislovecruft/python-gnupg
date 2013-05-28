@@ -73,3 +73,6 @@ gpg
 
 # Ignore quilt patch directory:
 .pc/*
+
+# setuptools/distribute files:
+PKG-INFO
