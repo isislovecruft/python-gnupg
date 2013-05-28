@@ -112,7 +112,7 @@ class GPG(GPGBase):
                        'verify':   _parsers.Verify,
                        'packets':  _parsers.ListPackets }
     #: The number of simultaneous keyids we should list operations like
-    #  '--list-sigs' to:
+    #: '--list-sigs' to:
     _batch_limit    = 25
 
     def __init__(self, binary=None, homedir=None, verbose=False,
