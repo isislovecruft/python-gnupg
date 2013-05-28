@@ -142,11 +142,16 @@ class GPGBase(object):
 
     def __remove_path__(self, prog=None, at_exit=True):
         """Remove a the directories containing a program from the system's
-        $PATH. If self.gpg.binary is in a directory being removed, it is
-        symlinked to './gpg'
+        ``$PATH``. If :attr:`GPG.binary` is in a directory being removed, it
+        is symlinked to './gpg'
 
-        :param str prog:
+        :param str prog: The program to remove from ``$PATH``.
+
+        :param bool at_exit: Add the program back into the ``$PATH`` when the
+                             Python interpreter exits, and delete any symlinks
+                             to :attr:`GPG.binary` which were created.
         """
+        #: A list of ``$PATH`` entries which were removed to disable pinentry.
         self._removed_path_entries = []
 
         log.debug("Attempting to remove %s from system PATH" % str(prog))
@@ -181,9 +186,12 @@ class GPGBase(object):
                 """Remove all directories which contain a program from PATH.
 
                 :param str path: The contents of the system environment's
-                                 PATH.
-                :param str prog_base: The base (directory only) portion of a
-                                      program's location.
+                                 ``$PATH``.
+
+                :param str prog_base: The directory portion of a program's
+                                      location, without the trailing slash,
+                                      and without the program name. For
+                                      example, ``prog_base='/usr/bin'``.
                 """
                 paths = path.split(':')
                 for directory in paths:
