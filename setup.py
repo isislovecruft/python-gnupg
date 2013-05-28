@@ -25,8 +25,18 @@
 # both Python>=2.4 and Python3.x.
 #
 
-from distutils.core import setup
+from __future__ import absolute_import
+from __future__ import print_function
 
+import inspect
+import os
+
+## Upgrade setuptools to a version which supports Python 2 and 3
+#os.system('python ./distribute_setup.py')
+## Upgrade pip to a version with proper SSL support
+#os.system('python ./get-pip.py')
+
+import setuptools
 import versioneer
 versioneer.versionfile_source = 'src/_version.py'
 versioneer.versionfile_build  = 'gnupg/_version.py'
@@ -35,39 +45,78 @@ versioneer.parentdir_prefix = 'python-gnupg-'
 
 __author__ = "Isis Agora Lovecruft"
 __contact__ = 'isis@leap.se'
+__url__ = 'https://github.com/isislovecruft/python-gnupg \
+https://python-gnupg.readthedocs.org'
 
-setup(name = "python-gnupg",
-      description="A wrapper for the Gnu Privacy Guard (GPG or GnuPG)",
-      long_description = "This module allows easy access to GnuPG's key \
+def get_current_dir():
+    """Current dir of this file, regardless of where we're called from."""
+    here = inspect.getabsfile(inspect.currentframe()).rsplit(os.path.sep, 1)[0]
+    return here
+
+def get_deps_reqs():
+    """Get dependencies from the pip requirements.txt file."""
+    requirements_file = os.path.join(get_current_dir(), 'requirements.txt')
+    dependency_links = []
+    install_requires = []
+    with open(requirements_file) as pipfile:
+        for line in pipfile.readlines():
+            line = line.strip()
+            if not line.startswith('#'):
+                if line.startswith('https'):
+                    dependency_links.append(line)
+                    continue
+                else:
+                    install_requires.append(line)
+    return dependency_links, install_requires
+deps, reqs = get_deps_reqs()
+print('%s' % deps)
+print('%s' % reqs)
+
+
+def run_distribute_setup_script():
+    """Run the setuptools/distribute setup script."""
+    script = os.path.join(get_current_dir(), 'distribute_setup.py')
+    os.system(script)
+
+setuptools.setup(
+    name = "python-gnupg",
+    description="A Python wrapper for GnuPG",
+    long_description = "This module allows easy access to GnuPG's key \
 management, encryption and signature functionality from Python programs. \
 It is intended for use with Python 2.6 or greater.",
-      license="""Copyright © 2013 Isis Lovecruft, et.al. see LICENSE file.""",
-      version=versioneer.get_version(),
-      cmdclass=versioneer.get_cmdclass(),
-      author=__author__,
-      author_email=__contact__,
-      maintainer=__author__,
-      maintainer_email=__contact__,
-      url="https://github.com/isislovecruft/python-gnupg",
-      package_dir={'gnupg': 'src'},
-      packages=['gnupg'],
-      include_package_data=True,
-      platforms="Linux, BSD, OSX, Windows",
-      download_url="https://github.com/isislovecruft/python-gnupg/archive/develop.zip",
-      classifiers=[
-          'Development Status :: 4 - Alpha',
-          "Intended Audience :: Developers",
-          'Classifier:: License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',
-          "Programming Language :: Python",
-          "Programming Language :: Python :: 2",
-          "Programming Language :: Python :: 3",
-          "Programming Language :: Python :: 2.6",
-          "Programming Language :: Python :: 2.7",
-          "Programming Language :: Python :: 3.0",
-          "Programming Language :: Python :: 3.1",
-          "Programming Language :: Python :: 3.2",
-          "Topic :: Software Development :: Libraries :: Python Modules",
-          'Classifier:: Topic :: Security :: Cryptography',
-          'Classifier:: Topic :: Software Development :: Libraries :: Python Modules',
-          'Classifier:: Topic :: Utilities',]
-  )
+    license="""Copyright © 2013 Isis Lovecruft, et.al. see LICENSE file.""",
+
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
+
+    author=__author__,
+    author_email=__contact__,
+    maintainer=__author__,
+    maintainer_email=__contact__,
+    url=__url__,
+
+    packages=setuptools.find_packages(),
+
+    install_requires=reqs,
+    dependency_links=deps,
+    extras_require={'docs': ["Sphinx>=1.1"]},
+
+    platforms="Linux, BSD, OSX, Windows",
+    download_url="https://github.com/isislovecruft/python-gnupg/archive/master.zip",
+    classifiers=[
+        'Development Status :: 4 - Alpha',
+        "Intended Audience :: Developers",
+        'Classifier:: License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 2.6",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.0",
+        "Programming Language :: Python :: 3.1",
+        "Programming Language :: Python :: 3.2",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+        'Classifier:: Topic :: Security :: Cryptography',
+        'Classifier:: Topic :: Software Development :: Libraries :: Python Modules',
+        'Classifier:: Topic :: Utilities',]
+)
