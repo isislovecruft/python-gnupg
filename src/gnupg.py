@@ -1345,15 +1345,6 @@ class GPGWrapper(GPG):
                                                symmetric=symmetric,
                                                cipher_algo='AES256')
 
-    def decrypt(self, data, always_trust=True, passphrase=None):
-        """
-        Decrypt data using GPG.
-        """
-        # TODO: devise a way so we don't need to "always trust".
-        return super(GPGWrapper, self).decrypt(data,
-                                               always_trust=always_trust,
-                                               passphrase=passphrase)
-
     def send_keys(self, keyserver, *keyids):
         """Send keys to a keyserver."""
         result = self._result_map['list'](self)
@@ -1364,45 +1355,6 @@ class GPGWrapper(GPG):
         self._handle_io(args, data, result, binary=True)
         log.debug('send_keys result: %r', result.__dict__)
         data.close()
-        return result
-
-    def encrypt_file(self, file, recipients, sign=None,
-                     always_trust=False, passphrase=None,
-                     armor=True, output=None, symmetric=False,
-                     cipher_algo=None):
-        "Encrypt the message read from the file-like object 'file'"
-        args = ['--encrypt']
-        if symmetric:
-            args = ['--symmetric']
-            if cipher_algo:
-                args.append('--cipher-algo %s' % cipher_algo)
-        else:
-            args = ['--encrypt']
-            if not _util._is_list_or_tuple(recipients):
-                recipients = (recipients,)
-            for recipient in recipients:
-                args.append('--recipient "%s"' % recipient)
-        if armor:  # create ascii-armored output - set to False for binary
-            args.append('--armor')
-        if output:  # write the output to a file with the specified name
-            if os.path.exists(output):
-                os.remove(output)  # to avoid overwrite confirmation message
-            args.append('--output "%s"' % output)
-        if sign:
-            args.append('--sign --default-key "%s"' % sign)
-        if always_trust:
-            args.append("--always-trust")
-        result = self._result_map['crypt'](self)
-        self._handle_io(args, file, result, passphrase=passphrase, binary=True)
-        log.debug('encrypt result: %r', result.data)
-        return result
-
-    def list_packets(self, raw_data):
-        args = ["--list-packets"]
-        result = self._result_map['list-packets'](self)
-        self._handle_io(args,
-                        _util._make_binary_stream(raw_data, self.encoding),
-                        result)
         return result
 
     def encrypted_to(self, raw_data):
