@@ -224,26 +224,18 @@ use_agent: %s
         :param bool detach: If True, create a detached signature.
         :param bool binary: If True, do not ascii armour the output.
         """
-        if isinstance(data, file):
-            log.warn("Note: This function is not for signing other keys,")
-            log.warn("      see the docstring for GPG.sign()")
-            if 'keyid' in kwargs.items():
-                log.info("Signing file '%r' with keyid: %s"
-                         % (data, kwargs[keyid]))
-            else:
-                log.warn("No 'sign_with' keyid given! Using default key.")
-            result = self._sign_file(data, **kwargs)
+        if 'default_key' in kwargs.items():
+            log.info("Signing message '%r' with keyid: %s"
+                     % (data, kwargs['default_key']))
+        else:
+            log.warn("No 'default_key' given! Using first key on secring.")
 
+        if isinstance(data, file):
+            result = self._sign_file(data, **kwargs)
         elif not _is_stream(data):
-            if 'keyid' in kwargs.items():
-                log.info("Signing data string '%s' with keyid: %s"
-                         % (data, kwargs[keyid]))
-            else:
-                log.warn("No 'sign_with' keyid given! Using default key.")
             stream = _make_binary_stream(data, self._encoding)
             result = self._sign_file(stream, **kwargs)
             stream.close()
-
         else:
             log.warn("Unable to sign message '%s' with type %s"
                      % (data, type(data)))
