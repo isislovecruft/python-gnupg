@@ -27,6 +27,7 @@ It is intended for use with Python 2.6 or greater.",
       url="https://github.com/isislovecruft/python-gnupg",
       package_dir={'gnupg': 'src'},
       packages=['gnupg'],
+      include_package_data=True,
       platforms="Linux, BSD, OSX, Windows",
       download_url="https://github.com/isislovecruft/python-gnupg/archive/develop.zip",
       classifiers=[
@@ -45,4 +46,4 @@ It is intended for use with Python 2.6 or greater.",
           'Classifier:: Topic :: Security :: Cryptography',
           'Classifier:: Topic :: Software Development :: Libraries :: Python Modules',
           'Classifier:: Topic :: Utilities',]
-      )
+  )
