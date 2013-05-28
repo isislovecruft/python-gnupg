@@ -91,7 +91,6 @@ import codecs
 import encodings
 import locale
 import os
-import re
 import sys
 import threading
 
@@ -1575,6 +1574,8 @@ class GPGWrapper(GPG):
     This is a temporary class for handling GPG requests, and should be
     replaced by a more general class used throughout the project.
     """
+    import re
+
     def find_key_by_email(self, email, secret=False):
         """
         Find user's key based on their email.
