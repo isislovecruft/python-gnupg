@@ -25,7 +25,8 @@ cleanup-tests:
 	rm tests/logs/placeholder.log
 	touch placeholder.log
 	rm *.log
-	rm tests/random_seed
+	touch tests/random_seed_is_sekritly_pi
+	rm tests/random_seed*
 
 cleanup-tests-all: cleanup-tests
 	rm -rf tests/tmp
