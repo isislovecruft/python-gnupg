@@ -16,10 +16,10 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
 """gnupg.py
-========
+===========
 A Python interface to GnuPG.
 
-This is a modified version of python-gnupg-0.3.0, which was created by Vinay
+This is a modified version of python-gnupg-0.3.2, which was created by Vinay
 Sajip, which itself is a modification of GPG.py written by Steve Traugott,
 which in turn is a modification of the pycrypto GnuPG interface written by
 A.M. Kuchling.
