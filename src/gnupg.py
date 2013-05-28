@@ -90,11 +90,9 @@ import codecs
 ## See https://code.patternsinthevoid.net/?p=android-locale-hack.git
 import encodings
 import locale
-import logging
 import os
 import re
 import sys
-import tempfile
 import threading
 
 from _parsers import _fix_unsafe, _sanitise, _is_allowed, _sanitise_list
