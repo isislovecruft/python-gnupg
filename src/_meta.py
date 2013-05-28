@@ -62,9 +62,9 @@ class GPGMeta(type):
     def _find_agent(cls):
         """Discover if a gpg-agent process for the current euid is running.
 
-        If there is a matching gpg-agent process, set a :class:psutil.Process
+        If there is a matching gpg-agent process, set a :class:`psutil.Process`
         instance containing the gpg-agent process' information to
-        :attr:cls._agent_proc.
+        :attr:`GPG._agent_proc`.
 
         :returns: True if there exists a gpg-agent process running under the
                   same effective user ID as that of this program. Otherwise,
