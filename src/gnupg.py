@@ -147,19 +147,6 @@ class GPGMeta(type):
                     setattr(cls, '_agent_proc', proc)
                     return True
 
-    ## xxx we might not need this, try setting:
-    ## attrs['remove_path'] = __remove_path__
-
-    # @classmethod
-    # def _init_decorator(cls):
-    #     """Wraps the :meth:__init__ function in a partial of itself."""
-    #     log.debug("_init_decorator called for %s" % cls.__init__.__repr__())
-    #     def _init_wrapper(*args, **kwargs):
-    #         wraps(cls.__init__, *args, **kwargs)
-    #         if getattr(cls, '_agent_proc', None) is not None:
-    #             cls.__remove_path__(prog='pinentry')
-    #     return _init_wrapper
-
 
 class GPGBase(object):
     """Base class to control process initialisation and for property storage."""
