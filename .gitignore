@@ -47,7 +47,11 @@ tags
 *.org
 
 # Ignore log files and directories from tests:
-keys/*
+*keys/*
+*generated-keys*
+*.pubring
+*.secring
+*random_seed*
 *.log
 
 # Ignore distutils record of installed files:
@@ -67,8 +71,5 @@ local/*
 # Ignore gpg binary symlinks:
 gpg
 
-# Ignore keys generated during tests:
-*generated-keys*
-*.pubring
-*.secring
-*random_seed*
+# Ignore quilt patch directory:
+.pc/*
