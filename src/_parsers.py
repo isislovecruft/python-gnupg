@@ -663,7 +663,7 @@ class GenKey(object):
     generated key's fingerprint, or a status string explaining the results.
     """
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
         ## this should get changed to something more useful, like 'key_type'
         #: 'P':= primary, 'S':= subkey, 'B':= both
         self.type = None
@@ -713,7 +713,7 @@ class GenKey(object):
 class DeleteResult(object):
     """Handle status messages for --delete-keys and --delete-secret-keys"""
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
         self.status = 'ok'
 
     def __str__(self):
@@ -754,7 +754,7 @@ class Sign(object):
     what = None
 
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
 
     def __nonzero__(self):
         """Override the determination for truthfulness evaluation.
@@ -766,7 +766,7 @@ class Sign(object):
     __bool__ = __nonzero__
 
     def __str__(self):
-        return self.data.decode(self.gpg._encoding, self.gpg._decode_errors)
+        return self.data.decode(self._gpg._encoding, self._gpg._decode_errors)
 
     def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
@@ -805,7 +805,7 @@ class ListKeys(list):
 
     def __init__(self, gpg):
         super(ListKeys, self).__init__()
-        self.gpg = gpg
+        self._gpg = gpg
         self.curkey = None
         self.fingerprints = []
         self.uids = []
@@ -867,7 +867,7 @@ class ImportResult(object):
     results = list()
 
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
         for result in self.counts:
             setattr(self, result, None)
 
@@ -999,7 +999,7 @@ class Verify(object):
     trust_text = None
 
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
         self.valid = False
         self.fingerprint = self.creation_date = self.timestamp = None
         self.signature_id = self.key_id = None
@@ -1087,7 +1087,7 @@ class Crypt(Verify):
     """
     def __init__(self, gpg):
         Verify.__init__(self, gpg)
-        self.gpg = gpg
+        self._gpg = gpg
         self.data = ''
         self.ok = False
         self.status = ''
@@ -1101,7 +1101,7 @@ class Crypt(Verify):
     __bool__ = __nonzero__
 
     def __str__(self):
-        return self.data.decode(self.gpg._encoding, self.gpg._decode_errors)
+        return self.data.decode(self._gpg._encoding, self._gpg._decode_errors)
 
     def handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
@@ -1157,7 +1157,7 @@ class ListPackets(object):
     """
 
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
         self.nodata = None
         self.key = None
         self.need_passphrase = None
