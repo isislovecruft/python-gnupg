@@ -104,7 +104,7 @@ class GPGBase(object):
         if encoding is None: # This happens on Jython!
             encoding = sys.stdin.encoding
         self._encoding = encoding.lower().replace('-', '_')
-        self.filesystemencoding = encodings.normalize_encoding(
+        self._filesystemencoding = encodings.normalize_encoding(
             sys.getfilesystemencoding().lower())
 
         try:
