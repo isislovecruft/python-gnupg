@@ -53,6 +53,7 @@ tags
 *.secring
 *random_seed*
 *.log
+tests/doctests/*
 
 # Ignore distutils record of installed files:
 installed-files.txt
