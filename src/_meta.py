@@ -17,9 +17,13 @@
 # GNU Affero General Public License for more details.
 
 
-from psutil import process_iter
+from psutil     import process_iter
+from subprocess import Popen
+from subprocess import PIPE
+from threading  import Thread
 
 import atexit
+import codecs
 import encodings
 ## For AOS, the locale module will need to point to a wrapper around the
 ## java.util.Locale class.
@@ -28,11 +32,11 @@ import locale
 import os
 import sys
 
+import _parsers
 import _util
 
 from _parsers import _check_preferences
-from _parsers import _fix_unsafe
-from _parsers import _sanitise
+from _parsers import _sanitise_list
 from _util    import log
 from _util    import _conf
 
@@ -49,8 +53,8 @@ class GPGMeta(type):
         """Construct the initialiser for GPG"""
         log.debug("Metaclass __new__ constructor called for %r" % cls)
         if cls._find_agent():
-            ## call the normal GPG.__init__() initialisor:
-            attrs['init'] = cls.__init__ ## nothing changed for now
+            ## call the normal GPG.__init__() initialiser:
+            attrs['init'] = cls.__init__
             attrs['_remove_agent'] = True
         return super(GPGMeta, cls).__new__(cls, name, bases, attrs)
 
@@ -78,9 +82,19 @@ class GPGMeta(type):
 
 
 class GPGBase(object):
-    """Base class to control process initialisation and for property storage."""
+    """Base class for property storage and controlling process initialisation."""
 
     __metaclass__  = GPGMeta
+
+    _decode_errors = 'strict'
+    _result_map    = { 'crypt':    _parsers.Crypt,
+                       'delete':   _parsers.DeleteResult,
+                       'generate': _parsers.GenKey,
+                       'import':   _parsers.ImportResult,
+                       'list':     _parsers.ListKeys,
+                       'sign':     _parsers.Sign,
+                       'verify':   _parsers.Verify,
+                       'packets':  _parsers.ListPackets }
 
     def __init__(self, binary=None, home=None, keyring=None, secring=None,
                  use_agent=False, default_preference_list=None,
@@ -88,11 +102,11 @@ class GPGBase(object):
 
         self.binary  = _util._find_binary(binary)
         self.homedir = home if home else _conf
-        pub = _fix_unsafe(keyring) if keyring else 'pubring.gpg'
-        sec = _fix_unsafe(secring) if secring else 'secring.gpg'
+        pub = _parsers._fix_unsafe(keyring) if keyring else 'pubring.gpg'
+        sec = _parsers._fix_unsafe(secring) if secring else 'secring.gpg'
         self.keyring = os.path.join(self._homedir, pub)
         self.secring = os.path.join(self._homedir, sec)
-        self.options = _sanitise(options) if options else None
+        self.options = _parsers._sanitise(options) if options else None
 
         if default_preference_list:
             self._prefs = _check_preferences(default_preference_list, 'all')
@@ -271,7 +285,7 @@ class GPGBase(object):
                          % _conf)
             directory = _conf
 
-        hd = _fix_unsafe(directory)
+        hd = _parsers._fix_unsafe(directory)
         log.debug("GPGBase._homedir_setter(): got directory '%s'" % hd)
 
         if hd:
@@ -292,3 +306,177 @@ class GPGBase(object):
             self._homedir = hd
 
     homedir = _util.InheritableProperty(_homedir_getter, _homedir_setter)
+
+    def _make_args(self, args, passphrase=False):
+        """Make a list of command line elements for GPG. The value of ``args``
+        will be appended only if it passes the checks in
+        :func:`parsers._sanitise`. The ``passphrase`` argument needs to be True
+        if a passphrase will be sent to GPG, else False.
+
+        :param list args: A list of strings of options and flags to pass to
+                          ``GPG.binary``. This is input safe, meaning that
+                          these values go through strict checks (see
+                          ``parsers._sanitise_list``) before being passed to to
+                          the input file descriptor for the GnuPG process.
+                          Each string should be given exactly as it would be on
+                          the commandline interface to GnuPG,
+                          e.g. ["--cipher-algo AES256", "--default-key
+                          A3ADB67A2CDB8B35"].
+
+        :param bool passphrase: If True, the passphrase will be sent to the
+                                stdin file descriptor for the attached GnuPG
+                                process.
+        """
+        ## see TODO file, tag :io:makeargs:
+        cmd = [self.binary,
+               '--no-options --no-emit-version --no-tty --status-fd 2']
+
+        if self.homedir: cmd.append('--homedir "%s"' % self.homedir)
+
+        if self.keyring:
+            cmd.append('--no-default-keyring --keyring %s' % self.keyring)
+        if self.secring:
+            cmd.append('--secret-keyring %s' % self.secring)
+
+        if passphrase: cmd.append('--batch --passphrase-fd 0')
+
+        if self.use_agent: cmd.append('--use-agent')
+        else: cmd.append('--no-use-agent')
+
+        if self.options:
+            [cmd.append(opt) for opt in iter(_sanitise_list(self.options))]
+        if args:
+            [cmd.append(arg) for arg in iter(_sanitise_list(args))]
+
+        if self.verbose:
+            cmd.append('--debug-all')
+            if ((isinstance(self.verbose, str) and
+                 self.verbose in ['basic', 'advanced', 'expert', 'guru'])
+                or (isinstance(self.verbose, int) and (1<=self.verbose<=9))):
+                cmd.append('--debug-level %s' % self.verbose)
+
+        return cmd
+
+    def _open_subprocess(self, args=None, passphrase=False):
+        """Open a pipe to a GPG subprocess and return the file objects for
+        communicating with it.
+
+        :param list args: A list of strings of options and flags to pass to
+                          ``GPG.binary``. This is input safe, meaning that
+                          these values go through strict checks (see
+                          ``parsers._sanitise_list``) before being passed to to
+                          the input file descriptor for the GnuPG process.
+                          Each string should be given exactly as it would be on
+                          the commandline interface to GnuPG,
+                          e.g. ["--cipher-algo AES256", "--default-key
+                          A3ADB67A2CDB8B35"].
+
+        :param bool passphrase: If True, the passphrase will be sent to the
+                                stdin file descriptor for the attached GnuPG
+                                process.
+        """
+        ## see http://docs.python.org/2/library/subprocess.html#converting-an\
+        ##    -argument-sequence-to-a-string-on-windows
+        cmd = ' '.join(self._make_args(args, passphrase))
+        log.debug("Sending command to GnuPG process:%s%s" % (os.linesep, cmd))
+        return Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+
+    def _read_response(self, stream, result):
+        """Reads all the stderr output from GPG, taking notice only of lines
+        that begin with the magic [GNUPG:] prefix.
+
+        Calls methods on the response object for each valid token found, with
+        the arg being the remainder of the status line.
+
+        :param stream: A byte-stream, file handle, or :class:`subprocess.PIPE`
+                       to parse the for status codes from the GnuPG process.
+
+        :param result: The result parser class from :mod:`_parsers` with which
+                       to call ``handle_status`` and parse the output of
+                       ``stream``.
+        """
+        lines = []
+        while True:
+            line = stream.readline()
+            if len(line) == 0:
+                break
+            lines.append(line)
+            line = line.rstrip()
+            if line[0:9] == '[GNUPG:] ':
+                # Chop off the prefix
+                line = line[9:]
+                log.status("%s" % line)
+                L = line.split(None, 1)
+                keyword = L[0]
+                if len(L) > 1:
+                    value = L[1]
+                else:
+                    value = ""
+                result._handle_status(keyword, value)
+            elif line[0:5] == 'gpg: ':
+                log.warn("%s" % line)
+            else:
+                if self.verbose:
+                    log.info("%s" % line)
+                else:
+                    log.debug("%s" % line)
+        result.stderr = ''.join(lines)
+
+    def _read_data(self, stream, result):
+        """Read the contents of the file from GPG's stdout."""
+        chunks = []
+        while True:
+            data = stream.read(1024)
+            if len(data) == 0:
+                break
+            log.debug("read from stdout: %r" % data[:256])
+            chunks.append(data)
+        if _util._py3k:
+            # Join using b'' or '', as appropriate
+            result.data = type(data)().join(chunks)
+        else:
+            result.data = ''.join(chunks)
+
+    def _collect_output(self, process, result, writer=None, stdin=None):
+        """Drain the subprocesses output streams, writing the collected output
+        to the result. If a writer thread (writing to the subprocess) is given,
+        make sure it's joined before returning. If a stdin stream is given,
+        close it before returning.
+        """
+        stderr = codecs.getreader(self._encoding)(process.stderr)
+        rr = Thread(target=self._read_response, args=(stderr, result))
+        rr.setDaemon(True)
+        log.debug('stderr reader: %r', rr)
+        rr.start()
+
+        stdout = process.stdout
+        dr = Thread(target=self._read_data, args=(stdout, result))
+        dr.setDaemon(True)
+        log.debug('stdout reader: %r', dr)
+        dr.start()
+
+        dr.join()
+        rr.join()
+        if writer is not None:
+            writer.join()
+        process.wait()
+        if stdin is not None:
+            try:
+                stdin.close()
+            except IOError:
+                pass
+        stderr.close()
+        stdout.close()
+
+    def _handle_io(self, args, file, result, passphrase=False, binary=False):
+        """Handle a call to GPG - pass input data, collect output data."""
+        p = self._open_subprocess(args, passphrase)
+        if not binary:
+            stdin = codecs.getwriter(self._encoding)(p.stdin)
+        else:
+            stdin = p.stdin
+        if passphrase:
+            _util._write_passphrase(stdin, passphrase, self._encoding)
+        writer = _util._threaded_copy_data(file, stdin)
+        self._collect_output(p, result, writer, stdin)
+        return result
