@@ -1,3 +1,5 @@
+.PHONY=all
+all: uninstall install test
 
 ctags:
 	ctags -R *.py
