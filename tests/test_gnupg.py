@@ -23,13 +23,14 @@ A test harness and unittests for gnupg.py.
 
 from __future__ import absolute_import
 from __future__ import print_function
+from argparse   import ArgumentParser
+from codecs     import open as open
+from functools  import wraps
+from inspect    import getabsfile
+from inspect    import currentframe
 from time       import gmtime
 from time       import mktime
 
-from functools import wraps
-
-import argparse
-import codecs
 import encodings
 import doctest
 import io
@@ -1000,7 +1001,7 @@ if __name__ == "__main__":
         suite_names.append(name)
         setattr(GPGTestCase, name, list(methodset))
 
-    parser = argparse.ArgumentParser(description="Unittests for python-gnupg")
+    parser = ArgumentParser(description="Unittests for python-gnupg")
     parser.add_argument('--doctest', dest='run_doctest',
                         type=bool, default=False,
                         help='Run example code in docstrings')
