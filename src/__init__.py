@@ -17,19 +17,23 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
 
-import gnupg
-import copyleft
+from __future__ import absolute_import
 
-from gnupg import GPG
-
+from .         import gnupg
+from .         import copyleft
+from .         import _ansistrm
+from .         import _logger
+from .         import _meta
+from .         import _parsers
+from .         import _util
+from .gnupg    import GPG
 from ._version import get_versions
-__version__ = get_versions()['version']
 
-gnupg.__version__ = __version__
 gnupg.__author__  = 'Isis Agora Lovecruft'
 gnupg.__contact__ = 'isis@leap.se'
 gnupg.__url__     = 'https://github.com/isislovecruft/python-gnupg'
 gnupg.__license__ = copyleft.disclaimer
+__version__  = get_versions()['version']
 
 __all__ = ["GPG"]
 
