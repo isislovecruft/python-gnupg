@@ -29,11 +29,10 @@ from .         import _util
 from .gnupg    import GPG
 from ._version import get_versions
 
-gnupg.__author__  = 'Isis Agora Lovecruft'
-gnupg.__contact__ = 'isis@leap.se'
-gnupg.__url__     = 'https://github.com/isislovecruft/python-gnupg'
-gnupg.__license__ = copyleft.disclaimer
 __version__  = get_versions()['version']
+__authors__  = copyleft.authors
+__license__  = copyleft.full_text
+__copyleft__ = copyleft.copyright
 
 __all__ = ["GPG"]
 
