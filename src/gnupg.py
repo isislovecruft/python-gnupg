@@ -986,42 +986,21 @@ generate keys. Please see
         """Encrypt the message contained in ``data`` to ``recipients``.
 
         >>> import shutil
-        >>> if os.path.exists("keys"):
-        ...     shutil.rmtree("keys")
-        >>> gpg = GPG(homedir="keys")
-        >>> input = gpg.gen_key_input(passphrase='foo')
-        >>> result = gpg.gen_key(input)
-        >>> print1 = result.fingerprint
-        >>> input = gpg.gen_key_input()
-        >>> result = gpg.gen_key(input)
-        >>> print2 = result.fingerprint
-        >>> result = gpg.encrypt("hello",print2)
-        >>> message = str(result)
-        >>> assert message != 'hello'
-        >>> result = gpg.decrypt(message)
-        >>> assert result
-        >>> str(result)
-        'hello'
-        >>> result = gpg.encrypt("hello again",print1)
-        >>> message = str(result)
-        >>> result = gpg.decrypt(message,passphrase='bar')
-        >>> result.status in ('decryption failed', 'bad passphrase')
-        True
-        >>> assert not result
-        >>> result = gpg.decrypt(message,passphrase='foo')
-        >>> result.status == 'decryption ok'
-        True
-        >>> str(result)
-        'hello again'
-        >>> result = gpg.encrypt("signed hello",print2,sign=print1,passphrase='foo')
-        >>> result.status == 'encryption ok'
-        True
-        >>> message = str(result)
-        >>> result = gpg.decrypt(message)
-        >>> result.status == 'decryption ok'
-        True
-        >>> assert result.fingerprint == print1
-
+        >>> if os.path.exists("doctests"):
+        ...     shutil.rmtree("doctests")
+        >>> gpg = GPG(homedir="doctests")
+        >>> key_settings = gpg.gen_key_input(key_type='RSA',
+        ...                                  key_length=1024,
+        ...                                  key_usage='ESCA',
+        ...                                  passphrase='foo')
+        >>> key = gpg.gen_key(key_settings)
+        >>> encrypted = gpg.encrypt("sekrit", key.printprint)
+        >>> message = str(encrypted)
+        >>> assert message != 'sekrit'
+        >>> decrypted = gpg.decrypt(message)
+        >>> assert decrypted
+        >>> str(decrypted)
+        'sekrit'
         """
         stream = _make_binary_stream(data, self._encoding)
         result = self.encrypt_file(stream, recipients, **kwargs)
