@@ -98,21 +98,15 @@ class GPG(GPGBase):
 
         >>> import gnupg
         GnuPG logging disabled...
-        >>> gpg = gnupg.GPG(homedir='./test-homedir')
+        >>> gpg = gnupg.GPG(homedir='doctests')
         >>> gpg.keyring
-        './test-homedir/pubring.gpg'
+        './doctests/pubring.gpg'
         >>> gpg.secring
-        './test-homedir/secring.gpg'
+        './doctests/secring.gpg'
         >>> gpg.use_agent
         False
         >>> gpg.binary
         '/usr/bin/gpg'
-        >>> import os
-        >>> import shutil
-        >>> if os.path.exists('./test-homedir'):
-        ...     shutil.rmtree('./test-homedir')
-        ...
-
         """
 
         super(GPG, self).__init__(
