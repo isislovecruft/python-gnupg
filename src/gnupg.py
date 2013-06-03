@@ -615,8 +615,8 @@ class GPG(GPGBase):
         Name-Email: alice@inter.net
         Key-Length: 4096
         Subkey-Length: 4096
-        %pubring ./tests/doctests/pubring.gpg
-        %secring ./tests/doctests/secring.gpg
+        %pubring ./doctests/alice.pubring.gpg
+        %secring ./doctests/alice.secring.gpg
         %commit
         <BLANKLINE>
         >>> alice_key = gpg.gen_key(alice_input)
