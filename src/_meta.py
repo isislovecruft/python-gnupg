@@ -17,6 +17,7 @@
 # GNU Affero General Public License for more details.
 
 
+from __future__ import absolute_import
 from psutil     import process_iter
 from subprocess import Popen
 from subprocess import PIPE
@@ -32,13 +33,13 @@ import locale
 import os
 import sys
 
-import _parsers
-import _util
+from . import _parsers
+from . import _util
 
-from _parsers import _check_preferences
-from _parsers import _sanitise_list
-from _util    import log
-from _util    import _conf
+from ._parsers import _check_preferences
+from ._parsers import _sanitise_list
+from ._util    import log
+from ._util    import _conf
 
 
 class GPGMeta(type):
