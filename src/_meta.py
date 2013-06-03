@@ -255,7 +255,7 @@ class GPGBase(object):
             self._prefs = prefs
 
     @default_preference_list.deleter
-    def default_preference_list(self, prefs):
+    def default_preference_list(self):
         """Reset the default preference list to its original state.
 
         Note that "original state" does not mean the default preference
