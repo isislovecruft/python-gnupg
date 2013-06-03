@@ -1101,3 +1101,7 @@ class GPGWrapper(GPG):
 
     def is_encrypted(self, raw_data):
         self.is_encrypted_asym() or self.is_encrypted_sym()
+
+if __name__ == "__main__":
+    from .test import test_gnupg
+    test_gnupg.main()
