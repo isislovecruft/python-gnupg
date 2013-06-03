@@ -122,6 +122,8 @@ class GPGBase(object):
         self._filesystemencoding = encodings.normalize_encoding(
             sys.getfilesystemencoding().lower())
 
+        self._keyserver = 'hkp://subkeys.pgp.net'
+
         try:
             assert self.binary, "Could not find binary %s" % binary
             assert isinstance(verbose, (bool, str, int)), \
@@ -263,6 +265,31 @@ class GPGBase(object):
         of GnuPG>=2.0.0.
         """
         self._prefs = 'SHA512 SHA384 SHA256 AES256 CAMELLIA256 TWOFISH ZLIB ZIP'
+
+    @property
+    def keyserver(self):
+        """Get the current keyserver setting."""
+        return self._keyserver
+
+    @keyserver.setter
+    def keyserver(self, location):
+        """Set the default keyserver to use for sending and receiving keys.
+
+        The ``location`` is sent to :func:`_parsers._check_keyserver` when
+        option are parsed in :meth:`gnupg.GPG._make_options`.
+
+        :param str location: A string containing the default keyserver. This
+                             should contain the desired keyserver protocol
+                             which is supported by the keyserver, for example,
+                             ``'hkps://keys.mayfirst.org'``. The default
+                             keyserver is ``'hkp://subkeys.pgp.net'``.
+        """
+        self._keyserver = location
+
+    @keyserver.deleter
+    def keyserver(self):
+        """Reset the keyserver to the default setting."""
+        self._keyserver = 'hkp://subkeys.pgp.net'
 
     def _homedir_getter(self):
         """Get the directory currently being used as GnuPG's homedir.
