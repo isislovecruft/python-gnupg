@@ -212,6 +212,12 @@ class GPGTestCase(unittest.TestCase):
         has_shell = self.gpg.verify_file(test_file, fixed)
         self.assertFalse(has_shell.valid)
 
+    def test_parsers_fix_unsafe_semicolon(self):
+        """Test that we can't escape into the Python interpreter."""
+        shell_input = "; import antigravity ;"
+        fixed = _parsers._fix_unsafe(shell_input)
+        print(fixed)
+
     def test_parsers_is_hex_valid(self):
         """Test that valid hexidecimal passes the parsers._is_hex() check"""
         valid_hex = '0A6A58A14B5946ABDE18E207A3ADB67A2CDB8B35'
@@ -912,14 +918,14 @@ authentication."""
 
 
 suites = { 'parsers': set(['test_parsers_fix_unsafe',
+                           'test_parsers_fix_unsafe_semicolon',
                            'test_parsers_is_hex_valid',
                            'test_parsers_is_hex_lowercase',
                            'test_parsers_is_hex_invalid',
                            'test_copy_data_bytesio',]),
            'encodings': set(['test_encodings_iso_8859_1',
                              'test_encodings_spiteful',
-                             'test_encodings_non_specified',
-                         ]),
+                             'test_encodings_non_specified',]),
            'basic': set(['test_homedir_creation',
                          'test_binary_discovery',
                          'test_gpg_binary',
