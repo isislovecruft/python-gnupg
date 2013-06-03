@@ -515,14 +515,14 @@ def _sanitise(*args):
         except (AssertionError, ProtectedOption) as error:
             log.warn("_check_option(): %s" % error.message)
         else:
-            safe_option += (flag + " ")
+            safe_option += (flag + ' ')
             if (not _util._py3k and isinstance(value, basestring)) \
                     or (_util._py3k and isinstance(value, str)):
                 values = value.split(' ')
                 for v in values:
                     try:
                         assert v is not None
-                        assert v.strip() != ""
+                        assert not v.isspace()
                     except:
                         log.debug("Dropping %s %s" % (flag, v))
                         continue
@@ -549,7 +549,7 @@ def _sanitise(*args):
 
                     try:
                         assert v is not None
-                        assert v.strip() != ""
+                        assert not v.isspace()
                     except:
                         log.debug("Dropping %s %s" % (flag, v))
                         continue
