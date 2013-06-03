@@ -195,50 +195,6 @@ class GPG(GPGBase):
             result = None
         return result
 
-    def _sign_file(self, file, default_key=None, passphrase=None,
-                   clearsign=True, detach=False, binary=False):
-        """Create a signature for a file.
-
-        :param file: The file stream (i.e. it's already been open()'d) to sign.
-        :param str keyid: The key to sign with.
-        :param str passphrase: The passphrase to pipe to stdin.
-        :param bool clearsign: If True, create a cleartext signature.
-        :param bool detach: If True, create a detached signature.
-        :param bool binary: If True, do not ascii armour the output.
-        """
-        log.debug("_sign_file():")
-        if binary:
-            log.info("Creating binary signature for file %s" % file)
-            args = ['--sign']
-        else:
-            log.info("Creating ascii-armoured signature for file %s" % file)
-            args = ['--sign --armor']
-
-        if clearsign:
-            args.append("--clearsign")
-            if detach:
-                log.warn("Cannot use both --clearsign and --detach-sign.")
-                log.warn("Using default GPG behaviour: --clearsign only.")
-        elif detach and not clearsign:
-            args.append("--detach-sign")
-
-        if default_key:
-            args.append(str("--default-key %s" % default_key))
-
-        ## We could use _handle_io here except for the fact that if the
-        ## passphrase is bad, gpg bails and you can't write the message.
-        result = self._result_map['sign'](self)
-        proc = self._open_subprocess(args, passphrase is not None)
-        try:
-            if passphrase:
-                _util._write_passphrase(proc.stdin, passphrase, self._encoding)
-            writer = _util._threaded_copy_data(file, proc.stdin)
-        except IOError as ioe:
-            log.exception("Error writing message: %s" % ioe.message)
-            writer = None
-        self._collect_output(proc, result, writer, proc.stdin)
-        return result
-
     def verify(self, data):
         """Verify the signature on the contents of the string ``data``.
 
