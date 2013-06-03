@@ -23,6 +23,7 @@ Classes for parsing GnuPG status messages and sanitising commandline options.
 from __future__ import absolute_import
 from __future__ import print_function
 
+import collections
 import re
 
 from .      import _util
@@ -888,13 +889,25 @@ class ImportResult(object):
     :type gpg: :class:`gnupg.GPG`
     :param gpg: An instance of :class:`gnupg.GPG`.
     """
+    _ok_reason = {'0': 'Not actually changed',
+                  '1': 'Entirely new key',
+                  '2': 'New user IDs',
+                  '4': 'New signatures',
+                  '8': 'New subkeys',
+                  '16': 'Contains private key',
+                  '17': 'Contains private key',}
 
-    counts = '''count no_user_id imported imported_rsa unchanged
-            n_uids n_subk n_sigs n_revoc sec_read sec_imported
-            sec_dups not_imported'''.split()
+    _problem_reason = { '0': 'No specific reason given',
+                        '1': 'Invalid Certificate',
+                        '2': 'Issuer Certificate missing',
+                        '3': 'Certificate Chain too long',
+                        '4': 'Error storing certificate', }
 
-    #: List of all keys imported.
-    imported = list()
+    _fields = '''count no_user_id imported imported_rsa unchanged
+    n_uids n_subk n_sigs n_revoc sec_read sec_imported sec_dups
+    not_imported'''.split()
+    _counts = collections.OrderedDict(
+        zip(_fields, [int(0) for x in xrange(len(_fields))]) )
 
     #: A list of strings containing the fingerprints of the GnuPG keyIDs
     #: imported.
@@ -906,8 +919,7 @@ class ImportResult(object):
 
     def __init__(self, gpg):
         self._gpg = gpg
-        for result in self.counts:
-            setattr(self, result, None)
+        self.counts = self._counts
 
     def __nonzero__(self):
         """Override the determination for truthfulness evaluation.
@@ -915,24 +927,10 @@ class ImportResult(object):
         :rtype: bool
         :returns: True if we have immport some keys, False otherwise.
         """
-        if self.not_imported: return False
-        if not self.fingerprints: return False
+        if self.counts.not_imported > 0: return False
+        if len(self.fingerprints) == 0: return False
         return True
     __bool__ = __nonzero__
-
-    ok_reason = {'0': 'Not actually changed',
-                 '1': 'Entirely new key',
-                 '2': 'New user IDs',
-                 '4': 'New signatures',
-                 '8': 'New subkeys',
-                 '16': 'Contains private key',
-                 '17': 'Contains private key',}
-
-    problem_reason = { '0': 'No specific reason given',
-                       '1': 'Invalid Certificate',
-                       '2': 'Issuer Certificate missing',
-                       '3': 'Certificate Chain too long',
-                       '4': 'Error storing certificate', }
 
     def _handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
@@ -944,16 +942,16 @@ class ImportResult(object):
             pass
         elif key == "NODATA":
             self.results.append({'fingerprint': None,
-                'problem': '0', 'text': 'No valid data found'})
+                                 'status': 'No valid data found'})
         elif key == "IMPORT_OK":
             reason, fingerprint = value.split()
             reasons = []
-            for code, text in self.ok_reason.items():
-                if int(reason) | int(code) == int(reason):
+            for code, text in self._ok_reason.items():
+                if int(reason) == int(code):
                     reasons.append(text)
             reasontext = '\n'.join(reasons) + "\n"
             self.results.append({'fingerprint': fingerprint,
-                'ok': reason, 'text': reasontext})
+                                 'status': reasontext})
             self.fingerprints.append(fingerprint)
         elif key == "IMPORT_PROBLEM":
             try:
@@ -962,25 +960,29 @@ class ImportResult(object):
                 reason = value
                 fingerprint = '<unknown>'
             self.results.append({'fingerprint': fingerprint,
-                'problem': reason, 'text': self.problem_reason[reason]})
+                                 'status': self._problem_reason[reason]})
         elif key == "IMPORT_RES":
             import_res = value.split()
-            for i in range(len(self.counts)):
-                setattr(self, self.counts[i], int(import_res[i]))
+            for x in range(len(self.counts)):
+                self.counts[self.counts.keys()[x]] = int(import_res[x])
         elif key == "KEYEXPIRED":
-            self.results.append({'fingerprint': None,
-                'problem': '0', 'text': 'Key expired'})
+            res = {'fingerprint': None,
+                   'status': 'Key expired'}
+            self.results.append(res)
+        ## Accoring to docs/DETAILS L859, SIGEXPIRED is obsolete:
+        ## "Removed on 2011-02-04. This is deprecated in favor of KEYEXPIRED."
         elif key == "SIGEXPIRED":
-            self.results.append({'fingerprint': None,
-                'problem': '0', 'text': 'Signature expired'})
+            res = {'fingerprint': None,
+                   'status': 'Signature expired'}
+            self.results.append(res)
         else:
             raise ValueError("Unknown status message: %r" % key)
 
     def summary(self):
         l = []
-        l.append('%d imported' % self.imported)
-        if self.not_imported:
-            l.append('%d not imported' % self.not_imported)
+        l.append('%d imported' % self.counts['imported'])
+        if self.counts['not_imported']:
+            l.append('%d not imported' % self.counts['not_imported'])
         return ', '.join(l)
 
 
