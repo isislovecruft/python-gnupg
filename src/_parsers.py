@@ -40,6 +40,34 @@ class UsageError(Exception):
     """Raised when incorrect usage of the API occurs.."""
 
 
+def _check_keyserver(location):
+    """Check that a given keyserver is a known protocol and does not contain
+    shell escape characters.
+
+    :param str location: A string containing the default keyserver. This
+                         should contain the desired keyserver protocol which
+                         is supported by the keyserver, for example, the
+                         default is ``'hkp://subkeys.pgp.net'``.
+    :rtype: str or None
+    :returns: A string specifying the protocol and keyserver hostname, if the
+              checks passed. If not, returns None.
+    """
+    protocols = ['hkp://', 'hkps://', 'http://', 'https://', 'ldap://',
+                 'mailto:'] ## xxx feels like i´m forgetting one...
+    for proto in protocols:
+        if location.startswith(proto):
+            url = location.replace(proto, str())
+            host, slash, extra = url.partition('/')
+            if extra: log.warn("URI text for %s: '%s'" % (host, extra))
+            log.debug("Got host string for keyserver setting: '%s'" % host)
+
+            host = _fix_unsafe(host)
+            if host:
+                log.debug("Cleaned host string: '%s'" % host)
+                keyserver = proto + host
+                return keyserver
+            return None
+
 def _check_preferences(prefs, pref_type=None):
     """Check cipher, digest, and compression preference settings.
 
