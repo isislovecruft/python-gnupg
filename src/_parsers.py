@@ -987,12 +987,35 @@ class ImportResult(object):
 
 
 class Verify(object):
-    """Parser for internal status messages from GnuPG for
-    certification/signature verification, and for parsing portions of status
-    messages from decryption operations.
+    """Parser for status messages from GnuPG for certifications and signature
+    verifications.
 
-    :type gpg: :class:`gnupg.GPG`
-    :param gpg: An instance of :class:`gnupg.GPG`.
+    People often mix these up, or think that they are the same thing. While it
+    is true that certifications and signatures *are* the same cryptographic
+    operation -- and also true that both are the same as the decryption
+    operation -- a distinction is made for important reasons.
+
+    A certification:
+        * is made on a key,
+        * can help to validate or invalidate the key owner's identity,
+        * can assign trust levels to the key (or to uids and/or subkeys that
+          the key contains),
+        * and can be used in absense of in-person fingerprint checking to try
+          to build a path (through keys whose fingerprints have been checked)
+          to the key, so that the identity of the key's owner can be more
+          reliable without having to actually physically meet in person.
+
+    A signature:
+        * is created for a file or other piece of data,
+        * can help to prove that the data hasn't been altered,
+        * and can help to prove that the data was sent by the person(s) in
+          possession of the private key that created the signature, and for
+          parsing portions of status messages from decryption operations.
+
+    There are probably other things unique to each that have been
+    scatterbrainedly omitted due to the programmer sitting still and staring
+    at GnuPG debugging logs for too long without snacks, but that is the gist
+    of it.
     """
 
     TRUST_UNDEFINED = 0
@@ -1007,49 +1030,44 @@ class Verify(object):
                     "TRUST_FULLY" : TRUST_FULLY,
                     "TRUST_ULTIMATE" : TRUST_ULTIMATE,}
 
-    #: True if the signature is valid, False otherwise.
-    valid = False
-    #: A string describing the status of the signature verification.
-    #: Can be one of ``'signature bad'``, ``'signature good'``,
-    #: ``'signature valid'``, ``'signature error'``, ``'decryption failed'``,
-    #: ``'no public key'``, ``'key exp'``, or ``'key rev'``.
-    status = None
-    #: The fingerprint of the signing keyid.
-    fingerprint = None
-    #: The fingerprint of the corresponding public key, which may be different
-    #: if the signature was created with a subkey.
-    pubkey_fingerprint = None
-    #: The keyid of the signing key.
-    key_id = None
-    #: The id of the signature itself.
-    signature_id = None
-    #: The creation date of the signing key.
-    creation_date = None
-    #: The timestamp of the purported signature, if we are unable to parse it.
-    timestamp = None
-    #: The userid of the signing key which was used to create the signature.
-    username = None
-    #: When the signing key is due to expire.
-    expire_timestamp = None
-    #: The timestamp for when the signature was created.
-    sig_timestamp = None
-    #: A number 0-4 describing the trust level of the signature.
-    trust_level = None
-    #: The string corresponding to the ``trust_level`` number.
-    trust_text = None
-
     def __init__(self, gpg):
+        """Create a parser for verification and certification commands.
+
+        :param gpg: An instance of :class:`gnupg.GPG`.
+        """
         self._gpg = gpg
+        #: True if the signature is valid, False otherwise.
         self.valid = False
-        self.fingerprint = self.creation_date = self.timestamp = None
-        self.signature_id = self.key_id = None
-        self.username = None
+        #: A string describing the status of the signature verification.
+        #: Can be one of ``signature bad``, ``signature good``,
+        #: ``signature valid``, ``signature error``, ``decryption failed``,
+        #: ``no public key``, ``key exp``, or ``key rev``.
         self.status = None
+        #: The fingerprint of the signing keyid.
+        self.fingerprint = None
+        #: The fingerprint of the corresponding public key, which may be
+        #: different if the signature was created with a subkey.
         self.pubkey_fingerprint = None
-        self.expire_timestamp = None
+        #: The keyid of the signing key.
+        self.key_id = None
+        #: The id of the signature itself.
+        self.signature_id = None
+        #: The creation date of the signing key.
+        self.creation_date = None
+        #: The timestamp of the purported signature, if we are unable to parse
+        #: and/or validate it.
+        self.timestamp = None
+        #: The timestamp for when the valid signature was created.
         self.sig_timestamp = None
-        self.trust_text = None
+        #: The userid of the signing key which was used to create the
+        #: signature.
+        self.username = None
+        #: When the signing key is due to expire.
+        self.expire_timestamp = None
+        #: An integer 0-4 describing the trust level of the signature.
         self.trust_level = None
+        #: The string corresponding to the ``trust_level`` number.
+        self.trust_text = None
 
     def __nonzero__(self):
         """Override the determination for truthfulness evaluation.
@@ -1130,7 +1148,7 @@ class Crypt(Verify):
         self._gpg = gpg
         self.data = ''
         self.ok = False
-        self.status = ''
+        self.status = None
         self.data_format = None
         self.data_timestamp = None
         self.data_filename = None
