@@ -15,17 +15,18 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-'''
-parsers.py
-----------
+'''parsers.py
+-------------
 Classes for parsing GnuPG status messages and sanitising commandline options.
 '''
 
+from __future__ import absolute_import
+from __future__ import print_function
+
 import re
 
-from _util import log
-
-import _util
+from .      import _util
+from ._util import log
 
 
 ESCAPE_PATTERN = re.compile(r'\\x([0-9a-f][0-9a-f])', re.I)
