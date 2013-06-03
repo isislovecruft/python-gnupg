@@ -877,21 +877,31 @@ authentication."""
         log.debug("encryption_decryption_multi_recipient() Ciphertext = %s"
                   % encrypted)
 
-        self.assertNotEqual(message, encrypted)
+        self.assertNotEquals(message, encrypted)
         dec_alice = self.gpg.decrypt(encrypted, passphrase="test")
-        self.assertEqual(message, str(dec_alice.data))
+        self.assertEquals(message, str(dec_alice.data))
         dec_bob = self.gpg.decrypt(encrypted, passphrase="test")
-        self.assertEqual(message, str(dec_bob.data))
+        self.assertEquals(message, str(dec_bob.data))
 
     def test_symmetric_encryption_and_decryption(self):
         """Test symmetric encryption and decryption"""
-        msg  = """If you have something that you don't want anyone to know,
- maybe you shouldn't be doing it in the first place. - Eric Schmidt, CEO
- of Google"""
+        msg  = """If you have something that you don't want anyone to
+know, maybe you shouldn't be doing it in the first place.
+-- Eric Schmidt, CEO of Google"""
         encrypted = str(self.gpg.encrypt(msg, passphrase='quiscustodiet',
                                          symmetric=True, encrypt=False))
-        decrypted = self.gpg.decrypt(encrypted, passphrase='quiscustodiet')
-        self.assertEqual(msg, str(decrypted.data))
+        decrypt = self.gpg.decrypt(encrypted, passphrase='quiscustodiet')
+        decrypted = str(decrypt.data)
+
+        log.info("Symmetrically encrypted data:\n%s" % encrypted)
+        log.info("Symmetrically decrypted data:\n%s" % decrypted)
+
+        self.assertIsNotNone(encrypted)
+        self.assertNotEquals(encrypted, "")
+        self.assertNotEquals(encrypted, msg)
+        self.assertIsNotNone(decrypted)
+        self.assertNotEquals(decrypted, "")
+        self.assertEqual(decrypted, msg)
 
     def test_file_encryption_and_decryption(self):
         """Test that encryption/decryption to/from file works."""
