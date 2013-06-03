@@ -59,10 +59,11 @@ except NameError:
 
 
 ## Directory shortcuts:
-_here = os.getcwd()
-_test = os.path.join(os.path.join(_here, 'tests'), 'tmp') ## ./tests/tmp
-_user = os.environ.get('HOME')                            ## $HOME
-_ugpg = os.path.join(_user, '.gnupg')                     ## $HOME/.gnupg
+#_here = os.getcwd()
+_here = getabsfile(currentframe()).rsplit(os.path.sep, 1)[0] ## current dir
+_test = os.path.join(os.path.join(_here, 'test'), 'tmp')     ## ./tests/tmp
+_user = os.environ.get('HOME')                               ## $HOME
+_ugpg = os.path.join(_user, '.gnupg')                        ## $HOME/.gnupg
 _conf = os.path.join(os.path.join(_user, '.config'), 'python-gnupg')
                                      ## $HOME/.config/python-gnupg
 
