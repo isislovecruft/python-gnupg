@@ -67,7 +67,7 @@ class GPG(GPGBase):
 
     def __init__(self, binary=None, homedir=None, verbose=False,
                  use_agent=False, keyring=None, secring=None,
-                 default_preference_list=None, options=None):
+                 options=None):
         """Initialize a GnuPG process wrapper.
 
         :param str binary: Name for GnuPG binary executable. If the absolute
