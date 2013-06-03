@@ -40,25 +40,41 @@ import shutil
 import sys
 import tempfile
 
+## This is less applicable now that we're using distribute with a bootstrap
+## script for newer versions of distribute, and pip>=1.3.1, since both of
+## these dependencies require Python>=2.6 in order to have proper SSL support.
+##
 ## Use unittest2 if we're on Python2.6 or less:
 if sys.version_info.major == 2 and sys.version_info.minor <= 6:
     unittest = __import__(unittest2)
 else:
     import unittest
 
+import gnupg
 
-## see PEP-328 http://docs.python.org/2.5/whatsnew/pep-328.html
-import .gnupg
-import ._parsers
-import ._util
-import ._logger
+## see PEP-366 http://www.python.org/dev/peps/pep-0366/
+print("NAME: %r" % __name__)
+print("PACKAGE: %r" % __package__)
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "gnupg.test"
+    print("NAME: %r" % __name__)
+    print("PACKAGE: %r" % __package__)
+    try:
+        from .. import _util
+        from .. import _parsers
+        from .. import _logger
+    except (ImportError, ValueError) as ierr:
+        print(ierr.message)
+
 
 log = _util.log
 log.setLevel(9)
 
-_here  = os.path.join(os.getcwd(), 'tests')
-_files = os.path.join(_here, 'files')
-_tempd = os.path.join(_here, 'tmp')
+print("Current directory: %s" % _util._here)
+print("Current os directory: %s" % os.getcwd())
+_tests = os.path.join(os.path.join(os.getcwd(), 'gnupg'), 'test')
+_files = os.path.join(_tests, 'files')
+_tempd = os.path.join(_tests, 'tmp')
 
 tempfile.tempdir = _tempd
 if not os.path.isdir(tempfile.gettempdir()):
