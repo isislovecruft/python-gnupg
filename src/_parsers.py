@@ -1210,14 +1210,14 @@ class Crypt(Verify):
             super(Crypt, self)._handle_status(key, value)
 
 class ListPackets(object):
-    """
-    Handle status messages for --list-packets.
-    """
+    """Handle status messages for --list-packets."""
 
     def __init__(self, gpg):
         self._gpg = gpg
-        self.nodata = None
-        self.key = None
+        #: A string describing the current processing status, or error, if one
+        #: has occurred.
+        self.status = None
+        self.key_id = None
         self.need_passphrase = None
         self.need_passphrase_sym = None
         self.userid_hint = None
@@ -1228,7 +1228,7 @@ class ListPackets(object):
         :raises: :exc:`ValueError` if the status message is unknown.
         """
         if key == 'NODATA':
-            self.nodata = True
+            self.status = nodata(value)
         elif key == 'ENC_TO':
             # This will only capture keys in our keyring. In the future we
             # may want to include multiple unknown keys in this list.
