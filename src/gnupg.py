@@ -242,7 +242,7 @@ class GPG(GPGBase):
     def verify(self, data):
         """Verify the signature on the contents of the string ``data``.
 
-        >>> gpg = GPG(homedir="keys")
+        >>> gpg = GPG(homedir="doctests")
         >>> input = gpg.gen_key_input(Passphrase='foo')
         >>> key = gpg.gen_key(input)
         >>> assert key
@@ -447,8 +447,8 @@ class GPG(GPGBase):
         include it in the args.
 
         >>> import shutil
-        >>> shutil.rmtree("keys")
-        >>> gpg = GPG(homedir="keys")
+        >>> shutil.rmtree("doctests")
+        >>> gpg = GPG(homedir="doctests")
         >>> input = gpg.gen_key_input()
         >>> result = gpg.gen_key(input)
         >>> print1 = result.fingerprint
@@ -502,7 +502,7 @@ class GPG(GPGBase):
         """Get the signatures for each of the ``keyids``.
 
         >>> import gnupg
-        >>> gpg = gnupg.GPG(homedir="./tests/doctests")
+        >>> gpg = gnupg.GPG(homedir="doctests")
         >>> key_input = gpg.gen_key_input()
         >>> key = gpg.gen_key(key_input)
         >>> assert key.fingerprint
@@ -532,7 +532,7 @@ class GPG(GPGBase):
         :meth:`GPG.gen_key_input()` for creating the control input.
 
         >>> import gnupg
-        >>> gpg = gnupg.GPG(homedir="./tests/doctests")
+        >>> gpg = gnupg.GPG(homedir="doctests")
         >>> key_input = gpg.gen_key_input()
         >>> key = gpg.gen_key(key_input)
         >>> assert key.fingerprint
@@ -603,7 +603,7 @@ class GPG(GPGBase):
         >>> import gnupg
         GnuPG logging disabled...
         >>> from __future__ import print_function
-        >>> gpg = gnupg.GPG(homedir='./tests/doctests')
+        >>> gpg = gnupg.GPG(homedir='doctests')
         >>> alice = { 'name_real': 'Alice',
         ...     'name_email': 'alice@inter.net',
         ...     'expire_date': '2014-04-01',
