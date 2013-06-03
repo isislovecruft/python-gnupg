@@ -344,33 +344,23 @@ class GPG(GPGBase):
         data.close()
         return result
 
-    def recv_keys(self, keyserver, *keyids):
-        """Import a key from a keyserver
+    def recv_keys(self, *keyids, **kwargs):
+        """Import keys from a keyserver.
 
-        >>> import shutil
-        >>> shutil.rmtree("doctests")
+        :param str keyids: Each ``keyids`` argument should be a string
+                           containing a keyid to request.
+        :param str keyserver: The keyserver to request the ``keyids`` from;
+                              defaults to :property:`gnupg.GPG.keyserver`.
+
         >>> gpg = gnupg.GPG(homedir="doctests")
-        >>> result = gpg.recv_keys('pgp.mit.edu', '3FF0DB166A7476EA')
-        >>> assert result
-
+        >>> key = gpg.recv_keys('hkp://pgp.mit.edu', '3FF0DB166A7476EA')
+        >>> assert key
         """
-        safe_keyserver = _fix_unsafe(keyserver)
-
-        result = self._result_map['import'](self)
-        data = _make_binary_stream("", self._encoding)
-        args = ['--keyserver', keyserver, '--recv-keys']
-
         if keyids:
-            if keyids is not None:
-                safe_keyids = ' '.join(
-                    [(lambda: _fix_unsafe(k))() for k in keyids])
-                log.debug('recv_keys: %r', safe_keyids)
-                args.extend(safe_keyids)
-
-        self._handle_io(args, data, result, binary=True)
-        data.close()
-        log.debug('recv_keys result: %r', result.__dict__)
-        return result
+            keys = ' '.join([key for key in keyids])
+            return self._recv_keys(keys, **kwargs)
+        else:
+            log.error("No keyids requested for --recv-keys!")
 
     def delete_keys(self, fingerprints, secret=False, subkeys=False):
         """Delete a key, or list of keys, from the current keyring.
