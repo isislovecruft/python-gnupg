@@ -1,3 +1,8 @@
+SHELL=/bin/sh
+TESTDIR=./gnupg/test
+TESTHANDLE=$(TESTDIR)/test_gnupg.py
+FILES=$(SHELL find ./gnupg/ -name "*.py" -printf "%p,")
+
 .PHONY=all
 all: uninstall install test
 
@@ -27,19 +32,22 @@ cleanup-build:
 	mkdir buildnot
 	rm -rf build*
 
-test: cleanup-src cleanup-tests
-	which gpg
-	gpg --version
-	which gpg2
-	gpg2 --version
+test-before: cleanup-src cleanup-tests
+	which gpg && gpg --version
+	which gpg2 && gpg2 --version
 	which gpg-agent
 	which pinentry
-	which python
-	python --version
-	which pip
-	pip --version
-	pip list
-	python tests/test_gnupg.py parsers basic encodings genkey sign listkeys crypt keyrings import
+	which python && python --version
+	which pip && pip --version && pip list
+
+test: test-before
+	python $(TESTHANDLE) basic encodings parsers keyrings listkeys genkey \
+		sign crypt
+	touch gnupg/test/placeholder.log
+	mv gnupg/test/*.log gnupg/test/logs/
+	rm gnupg/test/logs/placeholder.log
+	touch gnupg/test/random_seed_is_sekritly_pi
+	rm gnupg/test/random_seed*
 
 install: 
 	python setup.py install --record installed-files.txt
