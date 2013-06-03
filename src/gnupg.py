@@ -35,7 +35,12 @@ interaction.
 :info:    see <https://www.github.com/isislovecruft/python-gnupg>
 """
 
+from __future__ import absolute_import
+from codecs     import open as open
 
+import encodings
+import os
+import textwrap
 
 try:
     from io import StringIO
@@ -43,20 +48,15 @@ try:
 except ImportError:
     from cStringIO import StringIO
 
-from codecs import open as open
-
-import encodings
-import os
-
-import _parsers
-import _util
-
-from _meta    import GPGBase
-from _parsers import _fix_unsafe
-from _util    import _is_list_or_tuple
-from _util    import _is_stream
-from _util    import _make_binary_stream
-from _util    import log
+## see PEP-328 http://docs.python.org/2.5/whatsnew/pep-328.html
+from .         import _parsers
+from .         import _util
+from ._meta    import GPGBase
+from ._parsers import _fix_unsafe
+from ._util    import _is_list_or_tuple
+from ._util    import _is_stream
+from ._util    import _make_binary_stream
+from ._util    import log
 
 
 class GPG(GPGBase):
