@@ -7,26 +7,18 @@ ctags:
 etags:
 	find . -name "*.py" -print | xargs etags
 
-cleanup-src:
-	cd src && \
-		rm -f \#*\# && \
-		rm -f ./*.pyc && \
-		rm -f ./*.pyo
+# Sanitation targets -- clean leaves libraries, executables and tags
+# files, which clobber removes as well
+pycremoval:
+    find . -name '*.py[co]' -exec rm -f {} ';'
 
-cleanup-tests:
-	cd tests && \
-		rm -f \#*\# && \
-		rm -f ./*.pyc && \
-		rm -f ./*.pyo
-	mkdir -p tests/tmp
-	mkdir -p tests/logs
-	touch tests/placeholder.log
-	mv tests/*.log tests/logs/
-	rm tests/logs/placeholder.log
-	touch placeholder.log
-	rm *.log
-	touch tests/random_seed_is_sekritly_pi
-	rm tests/random_seed*
+cleanup-src: pycremoval
+	cd gnupg && rm -f \#*\#
+
+cleanup-tests: cleanup-src
+	cd $(TESTDIR) && rm -f \#*\#
+	mkdir -p gnupg/test/tmp
+	mkdir -p gnupg/test/logs
 
 cleanup-tests-all: cleanup-tests
 	rm -rf tests/tmp
