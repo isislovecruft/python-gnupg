@@ -20,6 +20,7 @@
 Logging module for python-gnupg.
 '''
 
+from __future__ import absolute_import
 from __future__ import print_function
 from datetime   import datetime
 from functools  import wraps
@@ -28,8 +29,6 @@ import logging
 import sys
 import os
 
-import _ansistrm
-
 try:
     from logging import NullHandler
 except:
@@ -37,6 +36,7 @@ except:
         def handle(self, record):
             pass
 
+from . import _ansistrm
 
 GNUPG_STATUS_LEVEL = 9
 
