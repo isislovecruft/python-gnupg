@@ -413,14 +413,12 @@ def _is_allowed(input):
                          '--fingerprint',
                      ])
 
-    ## check that allowed is a subset of possible
     try:
-        assert allowed.issubset(possible), \
-            'allowed is not subset of known options, difference: %s' \
-            % allowed.difference(possible)
-    except AssertionError as ae:
-        log.error("_is_allowed(): %s" % ae.message)
-        raise UsageError(ae.message)
+        ## check that allowed is a subset of possible
+        assert allowed.issubset(possible)
+    except AssertionError:
+        raise UsageError("'allowed' isn't a subset of known options, diff: %s"
+                         % allowed.difference(possible))
 
     ## if we got a list of args, join them
     ##
