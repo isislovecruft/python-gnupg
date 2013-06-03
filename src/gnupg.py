@@ -44,7 +44,6 @@ import textwrap
 
 try:
     from io import StringIO
-    from io import BytesIO
 except ImportError:
     from cStringIO import StringIO
 
