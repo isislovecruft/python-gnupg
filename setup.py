@@ -84,7 +84,7 @@ setuptools.setup(
     long_description = "This module allows easy access to GnuPG's key \
 management, encryption and signature functionality from Python programs. \
 It is intended for use with Python 2.6 or greater.",
-    license="""Copyright © 2013 Isis Lovecruft, et.al. see LICENSE file.""",
+    license="AGPLv3",
 
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
