@@ -1065,19 +1065,6 @@ class GPGWrapper(GPG):
         raise LookupError(
             "GnuPG public key for subkey %s not found!" % subkey)
 
-    def encrypt(self, data, recipient, default_key=None, always_trust=True,
-                passphrase=None, symmetric=False):
-        """
-        Encrypt data using GPG.
-        """
-        # TODO: devise a way so we don't need to "always trust".
-        return super(GPGWrapper, self).encrypt(data, recipient,
-                                               default_key=default_key,
-                                               always_trust=always_trust,
-                                               passphrase=passphrase,
-                                               symmetric=symmetric,
-                                               cipher_algo='AES256')
-
     def send_keys(self, keyserver, *keyids):
         """Send keys to a keyserver."""
         result = self._result_map['list'](self)
