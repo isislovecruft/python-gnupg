@@ -389,6 +389,9 @@ def _is_allowed(input):
                          '--no-default-keyring',
                          '--default-key',
                          '--no-options',
+                         '--keyserver',
+                         '--recv-keys',
+                         '--send-keys',
                          ## preferences
                          '--digest-algo',
                          '--cipher-algo',
@@ -530,11 +533,19 @@ def _sanitise(*args):
                     ## because they are only allowed if the pass the regex
                     if flag in ['--default-key', '--recipient', '--export',
                                 '--export-secret-keys', '--delete-keys',
-                                '--list-sigs', '--export-secret-subkeys',]:
-                        if _is_hex(v):
-                            safe_option += (v + " ")
-                            continue
+                                '--list-sigs', '--export-secret-subkeys',
+                                '--recv-keys']:
+                        if _is_hex(v): safe_option += (v + " ")
                         else: log.debug("'%s %s' not hex." % (flag, v))
+                        continue
+
+                    elif flag in ['--keyserver']:
+                        host = _check_keyserver(v)
+                        if host:
+                            log.debug("Setting keyserver: %s" % host)
+                            safe_option += (v + " ")
+                        else: log.debug("Dropping keyserver: %s" % v)
+                        continue
 
                     val = _fix_unsafe(v)
 
