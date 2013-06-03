@@ -83,7 +83,7 @@ class GPGMeta(type):
 
 
 class GPGBase(object):
-    """Base class for property storage and controlling process initialisation."""
+    """Base class for property storage and to control process initialisation."""
 
     __metaclass__  = GPGMeta
 
