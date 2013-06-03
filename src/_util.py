@@ -15,31 +15,35 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-'''
-util.py
+'''util.py
 ----------
 Extra utilities for python-gnupg.
 '''
 
-from datetime import datetime
-from socket   import gethostname
+from __future__ import absolute_import
+from datetime   import datetime
+from inspect    import currentframe
+from inspect    import getabsfile
+from socket     import gethostname
+from time       import gmtime
+from time       import mktime
 
 import codecs
 import encodings
 import os
-import time
 import threading
 import random
 import string
 import sys
-
-import _logger
 
 try:
     from io import StringIO
     from io import BytesIO
 except ImportError:
     from cStringIO import StringIO
+
+from . import _logger
+
 
 try:
     unicode
@@ -321,7 +325,7 @@ def _make_passphrase(length=None, save=False, file=None):
     if save:
         ruid, euid, suid = os.getresuid()
         gid = os.getgid()
-        now = time.mktime(time.gmtime())
+        now = mktime(gmtime())
 
         if not file:
             filename = str('passphrase-%s-%s' % uid, now)
@@ -379,7 +383,7 @@ def _threaded_copy_data(instream, outstream):
 
 def _utc_epoch():
     """Get the seconds since epoch for UTC."""
-    return int(time.mktime(time.gmtime()))
+    return int(mktime(gmtime()))
 
 def _which(executable, flags=os.X_OK):
     """Borrowed from Twisted's :mod:twisted.python.proutils .
