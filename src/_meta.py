@@ -175,8 +175,10 @@ class GPGBase(object):
 
             ## symlink our gpg binary into $PWD if the path we are removing is
             ## the one which contains our gpg executable:
+            new_gpg_location = os.path.join(os.getcwd(), 'gpg')
             if gnupg_base == program_base:
-                os.symlink(self.binary, os.path.join(os.getcwd(), 'gpg'))
+                os.symlink(self.binary, new_gpg_location)
+                self.binary = new_gpg_location
 
             ## copy the original environment so that we can put it back later:
             env_copy = os.environ            ## this one should not be touched
@@ -230,12 +232,11 @@ class GPGBase(object):
             ## register an _exithandler with the python interpreter:
             atexit.register(update_path, env_copy, path_copy)
 
-            @atexit.register
-            def remove_symlinked_binary():
-                loc = os.path.join(os.getcwd(), 'gpg')
-                if os.path.islink(loc):
-                    os.unlink(loc)
-                    log.debug("Removed binary symlink '%s'" % loc)
+            def remove_symlinked_binary(symlink):
+                if os.path.islink(symlink):
+                    os.unlink(symlink)
+                    log.debug("Removed binary symlink '%s'" % symlink)
+            atexit.register(remove_symlinked_binary, new_gpg_location)
 
     @property
     def default_preference_list(self):
