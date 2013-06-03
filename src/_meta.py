@@ -517,3 +517,24 @@ class GPGBase(object):
         writer = _util._threaded_copy_data(file, stdin)
         self._collect_output(p, result, writer, stdin)
         return result
+
+    def _recv_keys(self, keyids, keyserver=None):
+        """Import keys from a keyserver.
+
+        :param str keyids: A space-delimited string containing the keyids to
+                           request.
+        :param str keyserver: The keyserver to request the ``keyids`` from;
+                              defaults to :property:`gnupg.GPG.keyserver`.
+        """
+        if not keyserver:
+            keyserver = self.keyserver
+
+        args = ['--keyserver {}'.format(keyserver),
+                '--recv-keys {}'.format(keyids)]
+        log.info('Requesting keys from %s: %s' % (keyserver, keyids))
+
+        result = self._result_map['import'](self)
+        proc = self._open_subprocess(args)
+        self._collect_output(proc, result)
+        log.debug('recv_keys result: %r', result.__dict__)
+        return result
