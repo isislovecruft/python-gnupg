@@ -114,24 +114,24 @@ class GPG(GPGBase):
             home=homedir,
             keyring=keyring,
             secring=secring,
-            default_preference_list=default_preference_list,
             options=options,
             verbose=verbose,
             use_agent=use_agent,)
 
-        log.info("""
-Initialised settings:
-binary: %s
-homedir: %s
-keyring: %s
-secring: %s
-default_preference_list: %s
-options: %s
-verbose: %s
-use_agent: %s
+        log.info(textwrap.dedent("""
+        Initialised settings:
+        binary: %s
+        homedir: %s
+        keyring: %s
+        secring: %s
+        default_preference_list: %s
+        keyserver: %s
+        options: %s
+        verbose: %s
+        use_agent: %s
         """ % (self.binary, self.homedir, self.keyring, self.secring,
-               self.default_preference_list, self.options, str(self.verbose),
-               str(self.use_agent)))
+               self.default_preference_list, self.keyserver, self.options,
+               str(self.verbose), str(self.use_agent))))
 
         self._batch_dir = os.path.join(self.homedir, 'batch-files')
         self._key_dir  = os.path.join(self.homedir, 'generated-keys')
