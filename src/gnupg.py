@@ -88,11 +88,6 @@ class GPG(GPGBase):
                             'secring.gpg' in the :param:homedir directory, and
                             create that file if it does not exist.
 
-        :param str pubring: Name of alternative public keyring file to use. If
-                            left unspecified, this will default to using
-                            'pubring.gpg' in the :param:homedir directory, and
-                            create that file if it does not exist.
-
         :param list options: A list of additional options to pass to the GPG
                              binary.
 
