@@ -15,7 +15,7 @@ etags:
 # Sanitation targets -- clean leaves libraries, executables and tags
 # files, which clobber removes as well
 pycremoval:
-    find . -name '*.py[co]' -exec rm -f {} ';'
+	find . -name '*.py[co]' -exec rm -f {} ';'
 
 cleanup-src: pycremoval
 	cd gnupg && rm -f \#*\#
