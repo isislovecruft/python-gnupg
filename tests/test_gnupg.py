@@ -519,6 +519,12 @@ class GPGTestCase(unittest.TestCase):
         keys = self.gpg.list_keys(secret=True)
         self.assertTrue(os.path.isfile(self.gpg.secring))
 
+    def test_recv_keys_default(self):
+        """Testing receiving keys from a keyserver."""
+        key = self.gpg.recv_keys('a3adb67a2cdb8b35')
+        self.assertIsNotNone(key)
+
+
     def test_import_and_export(self):
         """Test that key import and export works."""
         self.test_list_keys_initial_public()
@@ -967,8 +973,9 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
            'keyrings': set(['test_public_keyring',
                             'test_secret_keyring',
                             'test_import_and_export',
-                            'test_deletion']),
-           'import': set(['test_import_only']), }
+                            'test_deletion',
+                            'test_import_only',
+                            'test_recv_keys_default',]), }
 
 def main(args):
     if not args.quiet:
