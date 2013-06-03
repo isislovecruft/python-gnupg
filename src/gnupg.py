@@ -30,6 +30,9 @@ with GnuPG. Several speed improvements were also made based on code profiling,
 and the API has been cleaned up to support an easier, more Pythonic,
 interaction.
 
+:authors: see ``gnupg.__authors__``
+:license: see ``gnupg.__license__``
+:info:    see <https://www.github.com/isislovecruft/python-gnupg>
 """
 
 
