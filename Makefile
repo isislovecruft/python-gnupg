@@ -59,12 +59,10 @@ uninstall:
 reinstall: uninstall install
 
 cleandocs:
-	sphinx-apidoc -F -A "Isis Agora Lovecruft" -H "python-gnupg" -V 0.4.0 -R 0.4.0 -o docs src/ tests/
+	sphinx-apidoc -F -A "Isis Agora Lovecruft" -H "python-gnupg" \
+		-o docs gnupg/ tests/
 
 docs:
-	cd docs
-	make clean
-	make html
-
-venv:
-	-source /usr/shared/python/ns/virtualenvwrapper.sh && mkvirtualenv -a "$PWD" --no-site-packages --unzip-setuptools --distribute python-gnupg
+	cd docs && \
+		make clean && \
+		make html
