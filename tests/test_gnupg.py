@@ -612,10 +612,13 @@ class GPGTestCase(unittest.TestCase):
 
     def test_signature_string_bad_passphrase(self):
         """Test that signing and verification works."""
-        key = self.generate_key("Taher ElGamal", "cryto.me")
+        keyfile = os.path.join(_files, 'test_key_1.sec')
+        key = open(keyfile).read()
+        self.gpg.import_keys(key)
+        key = self.gpg.list_keys()[0]
+        fpr = key['fingerprint']
         message = 'أصحاب المصالح لا يحبون الثوراتز'
-        sig = self.gpg.sign(message, default_key=key.fingerprint,
-                            passphrase='foo')
+        sig = self.gpg.sign(message, default_key=fpr, passphrase='foo')
         self.assertFalse(sig, "Bad passphrase should fail")
 
     def test_signature_file(self):
