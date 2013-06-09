@@ -22,8 +22,6 @@ Extra utilities for python-gnupg.
 
 from __future__ import absolute_import
 from datetime   import datetime
-from inspect    import currentframe
-from inspect    import getabsfile
 from socket     import gethostname
 from time       import gmtime
 from time       import mktime
@@ -52,15 +50,16 @@ try:
         isinstance(__name__, basestring)
     except NameError:
         msg  = "Sorry, python-gnupg requires a Python version with proper"
-        msg += " unicode support. Please upgrade to Python>=2.3."
+        msg += " unicode support. Please upgrade to Python>=2.6."
         raise SystemExit(msg)
 except NameError:
     _py3k = True
 
 
 ## Directory shortcuts:
-#_here = os.getcwd()
-_here = getabsfile(currentframe()).rsplit(os.path.sep, 1)[0] ## current dir
+## we don't want to use this one because it writes to the install dir:
+#_here = getabsfile(currentframe()).rsplit(os.path.sep, 1)[0]
+_here = os.path.join(os.getcwd(), 'gnupg')                   ## current dir
 _test = os.path.join(os.path.join(_here, 'test'), 'tmp')     ## ./tests/tmp
 _user = os.environ.get('HOME')                               ## $HOME
 _ugpg = os.path.join(_user, '.gnupg')                        ## $HOME/.gnupg
