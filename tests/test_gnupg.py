@@ -724,7 +724,7 @@ authentication."""
         encrypted = str(gpg.encrypt(message, dijk))
         log.debug("Plaintext: %s" % message)
         log.debug("Encrypted: %s" % encrypted)
-        self.assertNotEqual(message, encrypted)
+        self.assertNotEquals(message, encrypted)
 
     def test_encryption_alt_encoding(self):
         """Test encryption with latin-1 encoding"""
