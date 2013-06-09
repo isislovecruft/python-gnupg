@@ -240,7 +240,7 @@ class GPGTestCase(unittest.TestCase):
         with self.assertRaises(LookupError):
             _util.find_encodings(enc)
 
-    def test_encodings_iso_8859_1(self):
+    def test_encodings_big5(self):
         """Test that _util.find_encodings works for Chinese Traditional."""
         enc = 'big5'
         coder = _util.find_encodings(enc)
@@ -943,7 +943,7 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                            'test_parsers_is_hex_lowercase',
                            'test_parsers_is_hex_invalid',
                            'test_copy_data_bytesio',]),
-           'encodings': set(['test_encodings_iso_8859_1',
+           'encodings': set(['test_encodings_big5',
                              'test_encodings_spiteful',
                              'test_encodings_non_specified',]),
            'basic': set(['test_homedir_creation',
