@@ -18,10 +18,6 @@
 
 
 from __future__ import absolute_import
-from psutil     import process_iter
-from subprocess import Popen
-from subprocess import PIPE
-from threading  import Thread
 
 import atexit
 import codecs
@@ -31,7 +27,10 @@ import encodings
 ## See https://code.patternsinthevoid.net/?p=android-locale-hack.git
 import locale
 import os
+import psutil
+import subprocess
 import sys
+import threading
 
 from . import _parsers
 from . import _util
@@ -39,7 +38,6 @@ from . import _util
 from ._parsers import _check_preferences
 from ._parsers import _sanitise_list
 from ._util    import log
-from ._util    import _conf
 
 
 class GPGMeta(type):
@@ -72,7 +70,7 @@ class GPGMeta(type):
                   returns None.
         """
         identity = os.getresuid()
-        for proc in process_iter():
+        for proc in psutil.process_iter():
             if (proc.name == "gpg-agent") and proc.is_running:
                 log.debug("Found gpg-agent process with pid %d" % proc.pid)
                 if proc.uids == identity:
@@ -102,7 +100,7 @@ class GPGBase(object):
                  verbose=False, options=None):
 
         self.binary  = _util._find_binary(binary)
-        self.homedir = home if home else _conf
+        self.homedir = home if home else _util._conf
         pub = _parsers._fix_unsafe(keyring) if keyring else 'pubring.gpg'
         sec = _parsers._fix_unsafe(secring) if secring else 'secring.gpg'
         self.keyring = os.path.join(self._homedir, pub)
@@ -319,8 +317,8 @@ class GPGBase(object):
         """
         if not directory:
             log.debug("GPGBase._homedir_setter(): Using default homedir: '%s'"
-                         % _conf)
-            directory = _conf
+                      % _util._conf)
+            directory = _util._conf
 
         hd = _parsers._fix_unsafe(directory)
         log.debug("GPGBase._homedir_setter(): got directory '%s'" % hd)
@@ -416,7 +414,8 @@ class GPGBase(object):
         ##    -argument-sequence-to-a-string-on-windows
         cmd = ' '.join(self._make_args(args, passphrase))
         log.debug("Sending command to GnuPG process:%s%s" % (os.linesep, cmd))
-        return Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        return subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     def _read_response(self, stream, result):
         """Reads all the stderr output from GPG, taking notice only of lines
@@ -481,13 +480,14 @@ class GPGBase(object):
         close it before returning.
         """
         stderr = codecs.getreader(self._encoding)(process.stderr)
-        rr = Thread(target=self._read_response, args=(stderr, result))
+        rr = threading.Thread(target=self._read_response,
+                              args=(stderr, result))
         rr.setDaemon(True)
         log.debug('stderr reader: %r', rr)
         rr.start()
 
         stdout = process.stdout
-        dr = Thread(target=self._read_data, args=(stdout, result))
+        dr = threading.Thread(target=self._read_data, args=(stdout, result))
         dr.setDaemon(True)
         log.debug('stdout reader: %r', dr)
         dr.start()
