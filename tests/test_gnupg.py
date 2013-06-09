@@ -774,14 +774,15 @@ authentication."""
                 'passphrase': 'overalls' }
 
         ian_input = self.gpg.gen_key_input(separate_keyring=True, **ian)
+        log.info("Key stored in separate keyring: %s" % self.gpg.temp_keyring)
         ian_key = self.gpg.gen_key(ian_input)
-        log.debug("ian_key status: %s" % ian_key.status)
         ian_fpr = str(ian_key.fingerprint)
 
         kat_input = self.gpg.gen_key_input(separate_keyring=True, **kat)
+        log.info("Key stored in separate keyring: %s" % self.gpg.temp_keyring)
         kat_key = self.gpg.gen_key(kat_input)
-        log.debug("kat_key status: %s" % kat_key.status)
         kat_fpr = str(kat_key.fingerprint)
+        self.gpg.import_keys(kat_key.data)
 
         message = """
 In 2010 Riggio and Sicari presented a practical application of homomorphic
@@ -794,11 +795,13 @@ authentication."""
         log.debug("kat_fpr type: %s" % type(kat_fpr))
         log.debug("ian_fpr type: %s" % type(ian_fpr))
 
-        encrypted = self.gpg.encrypt(message, (ian_fpr, kat_fpr))
+        encrypted = str(self.gpg.encrypt(message, ian_fpr, kat_fpr))
         log.debug("Plaintext: %s" % message)
-        log.debug("Ciphertext: %s" % str(encrypted.data))
+        log.debug("Ciphertext: %s" % encrypted)
 
-        self.assertNotEqual(message, str(encrypted.data))
+        self.assertNotEquals(message, encrypted)
+        self.assertIsNotNone(encrypted)
+        self.assertGreater(len(encrypted), 0)
 
     def test_decryption(self):
         """Test decryption"""
