@@ -580,7 +580,7 @@ class GPGTestCase(unittest.TestCase):
             log.info("now: %r", ascii)
         self.assertEqual(0, match, "Keys must match")
 
-    def test_signature_string(self):
+    def test_signature_string_algorithm_encoding(self):
         """Test that signing a message string works."""
         key = self.generate_key("Werner Koch", "gnupg.org")
         message = "Damn, I really wish GnuPG had ECC support."
@@ -588,15 +588,27 @@ class GPGTestCase(unittest.TestCase):
                             passphrase='wernerkoch')
         print("SIGNATURE:\n", sig.data)
         self.assertIsNotNone(sig.data)
-
-    def test_signature_algorithm(self):
-        """Test that determining the signing algorithm works."""
-        key = self.generate_key("Ron Rivest", "rsa.com")
-        message = "Someone should add GCM block cipher mode to PyCrypto."
-        sig = self.gpg.sign(message, default_key=key.fingerprint,
-                            passphrase='ronrivest')
         print("ALGORITHM:\n", sig.sig_algo)
         self.assertIsNotNone(sig.sig_algo)
+
+        log.info("Testing signature strings with alternate encodings.")
+        self.gpg._encoding = 'latin-1'
+        message = "Mêle-toi de tes oignons"
+        sig = self.gpg.sign(message, default_key=key.fingerprint,
+                            passphrase='wernerkoch')
+        self.assertTrue(sig)
+        print("SIGNATURE:\n", sig.data)
+        self.assertIsNotNone(sig.data)
+        print("ALGORITHM:\n", sig.sig_algo)
+        self.assertIsNotNone(sig.sig_algo)
+
+        fpr = str(key.fingerprint)
+        seckey = self.gpg.export_keys(fpr, secret=True, subkeys=True)
+        keyfile = os.path.join(_files, 'test_key_4.sec')
+        log.info("Writing generated key to %s" % keyfile)
+        with open(keyfile, 'w') as fh:
+            fh.write(seckey)
+        self.assertTrue(os.path.isfile(keyfile))
 
     def test_signature_string_bad_passphrase(self):
         """Test that signing and verification works."""
@@ -605,14 +617,6 @@ class GPGTestCase(unittest.TestCase):
         sig = self.gpg.sign(message, default_key=key.fingerprint,
                             passphrase='foo')
         self.assertFalse(sig, "Bad passphrase should fail")
-
-    def test_signature_string_alternate_encoding(self):
-        key = self.generate_key("Nos Oignons", "nos-oignons.net")
-        self.gpg._encoding = 'latin-1'
-        message = "Mêle-toi de tes oignons"
-        sig = self.gpg.sign(message, default_key=key.fingerprint,
-                            passphrase='nosoignons')
-        self.assertTrue(sig)
 
     def test_signature_file(self):
         """Test that signing a message file works."""
