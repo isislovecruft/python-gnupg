@@ -522,9 +522,15 @@ class GPGTestCase(unittest.TestCase):
 
     def test_recv_keys_default(self):
         """Testing receiving keys from a keyserver."""
-        key = self.gpg.recv_keys('a3adb67a2cdb8b35')
+        fpr = '0A6A58A14B5946ABDE18E207A3ADB67A2CDB8B35'
+        key = self.gpg.recv_keys(fpr)
         self.assertIsNotNone(key)
-
+        self.assertNotEquals(key, "")
+        self.assertGreater(len(str(key)), 0)
+        keyfile = os.path.join(self.gpg._keys_dir, 'test_key_3.pub')
+        with open(keyfile, 'w') as fh:
+            fh.write(key)
+        self.assertTrue(os.path.isfile(keyfile))
 
     def test_import_and_export(self):
         """Test that key import and export works."""
