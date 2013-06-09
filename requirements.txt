@@ -33,7 +33,7 @@
 # Also, note that SSL package delivery is *not* entirely fixed yet. See
 # https://github.com/TheTorProject/ooni-backend/pull/1#discussion_r4084881
 #
-pip>=1.3.1
+#pip>=1.3.1
 #
 # NOTE: setuptools is currently (as of 27 May 2013) being merged back into its
 # parent project, distribute. By using the included distribute_setup.py
@@ -45,7 +45,7 @@ pip>=1.3.1
 # back into its parent project, distribute. Also, the only way to package for
 # both Python 2 and 3 is to use distribute.
 #
-distribute>=0.6.45
+#distribute>=0.6.45
 #
 # Sphinx is only necessary for building documentation, so it is added in
 # setup.py under extras_require['docs'].
