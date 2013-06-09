@@ -44,7 +44,7 @@ if test "$okay" -eq 0 ; then
     fi
     printf "Using '$name' as our project's name..."
     printf "Creating virtualenv..."
-    mkvirtualenv -a "$PWD" --no-site-packages \
+    mkvirtualenv -a "$PWD" --no-site-packages --unzip-setuptools \
         --distribute --prompt="(gnupg)" "$name"
     exit $?
 else
