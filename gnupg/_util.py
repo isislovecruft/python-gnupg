@@ -123,14 +123,6 @@ def _copy_data(instream, outstream):
     """
     sent = 0
 
-    #try:
-    #    #assert (util._is_stream(instream)
-    #    #        or isinstance(instream, file)), "instream not stream or file"
-    #    assert isinstance(outstream, file), "outstream is not a file"
-    #except AssertionError as ae:
-    #    log.exception(ae)
-    #    return
-
     coder = find_encodings()
 
     while True:
