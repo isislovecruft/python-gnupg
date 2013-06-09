@@ -36,8 +36,8 @@ test -r "$WRPR" && . $WRPR
 okay=$?
 
 if test "$okay" -eq 0 ; then
-    printf "Using %s as WORKON_HOME for the new virtualenv...\n" "$PWD"
-    printf"What should the name of the new virtualenv be? (default: '%s')\n" "$project"
+    printf "Using %s as WORKON_HOME for the new virtualenv...\n" $PWD
+    printf "What should the name of the new virtualenv be? (default: '%s')\n" $project
     read -p"Name for this virtualenv?: " name
     if test -z "$name"; then
         name="$project"
