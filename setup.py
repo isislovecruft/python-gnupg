@@ -95,7 +95,8 @@ It is intended for use with Python 2.6 or greater.",
     maintainer_email=__contact__,
     url=__url__,
 
-    packages=setuptools.find_packages(),
+    package_dir={'gnupg': 'gnupg'},
+    packages=['gnupg'],
 
     install_requires=reqs,
     dependency_links=deps,
