@@ -468,9 +468,8 @@ class GPG(GPGBase):
             args.append(key)
 
         proc = self._open_subprocess(args)
-
         result = self._result_map['list'](self)
-        self._collect_output(proc, result, stdin=p.stdin)
+        self._collect_output(proc, result, stdin=proc.stdin)
         return result
 
     def gen_key(self, input):
