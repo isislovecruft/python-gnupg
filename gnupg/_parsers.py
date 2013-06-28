@@ -430,9 +430,9 @@ def _sanitise_list(arg_list):
 
     :param list arg_list: A list of options and flags for GnuPG.
     :rtype: generator
-    :return: A generator whose next() method returns each of the items in
-             ``arg_list`` after calling ``_sanitise()`` with that item as a
-             parameter.
+    :returns: A generator whose next() method returns each of the items in
+              ``arg_list`` after calling ``_sanitise()`` with that item as a
+              parameter.
     """
     if isinstance(arg_list, list):
         for arg in arg_list:
