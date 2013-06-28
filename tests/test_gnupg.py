@@ -191,6 +191,7 @@ class GPGTestCase(unittest.TestCase):
         self.keyring = self.gpg.keyring
         self.secring = self.gpg.secring
         self.insecure_prng = False
+        self.gpg._keys_dir = os.path.join(_files, 'generated-keys')
 
     def tearDown(self):
         """This is called once per self.test_* method after the test run."""
