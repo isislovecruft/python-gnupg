@@ -104,7 +104,7 @@ greater.""",
 
     install_requires=reqs,
     dependency_links=deps,
-    extras_require={'docs': ["Sphinx>=1.1"]},
+    extras_require={'docs': ["Sphinx>=1.1", "repoze.sphinx"]},
 
     platforms="Linux, BSD, OSX, Windows",
     download_url="https://github.com/isislovecruft/python-gnupg/archive/master.zip",
