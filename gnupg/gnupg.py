@@ -505,15 +505,18 @@ class GPG(GPGBase):
                 if os.path.isfile(self.temp_keyring):
                     try: os.rename(self.temp_keyring, prefix+".pubring")
                     except OSError as ose: log.error(ose.message)
-                    else: self.temp_keyring = None
 
             if self.temp_secring:
                 if os.path.isfile(self.temp_secring):
                     try: os.rename(self.temp_secring, prefix+".secring")
                     except OSError as ose: log.error(ose.message)
-                    else: self.temp_secring = None
 
         log.info("Key created. Fingerprint: %s" % fpr)
+        key.keyring = self.temp_keyring
+        key.secring = self.temp_secring
+        self.temp_keyring = None
+        self.temp_secring = None
+
         return key
 
     def gen_key_input(self, separate_keyring=False, save_batchfile=False,
