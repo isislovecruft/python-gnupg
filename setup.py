@@ -41,7 +41,7 @@ import versioneer
 versioneer.versionfile_source = 'src/_version.py'
 versioneer.versionfile_build  = 'gnupg/_version.py'
 versioneer.tag_prefix = ''
-versioneer.parentdir_prefix = 'python-gnupg-'
+versioneer.parentdir_prefix = 'gnupg-'
 
 __author__ = "Isis Agora Lovecruft"
 __contact__ = 'isis@leap.se'
@@ -79,11 +79,15 @@ def run_distribute_setup_script():
     os.system(script)
 
 setuptools.setup(
-    name = "python-gnupg",
+    name = "gnupg",
     description="A Python wrapper for GnuPG",
-    long_description = "This module allows easy access to GnuPG's key \
-management, encryption and signature functionality from Python programs. \
-It is intended for use with Python 2.6 or greater.",
+    long_description = """\
+This module allows easy access to GnuPG's key management, encryption and \
+signature functionality from Python programs, by interacting with GnuPG \
+through file descriptors. Input arguments are strictly checked and sanitised, \
+and therefore this module should be safe to use in networked applications \
+requiring direct user input. It is intended for use with Python 2.6 or \
+greater.""",
     license="AGPLv3",
 
     version=versioneer.get_version(),
