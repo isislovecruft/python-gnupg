@@ -145,9 +145,12 @@ def _copy_data(instream, outstream):
             except IOError:
                 log.exception("Error sending data: Broken pipe")
                 break
-        except IOError:
+        except IOError as ioe:
             # Can get 'broken pipe' errors even when all data was sent
-            log.exception('Error sending data: Broken pipe')
+            if 'Broken pipe' in ioe.message:
+                log.error('Error sending data: Broken pipe')
+            else:
+                log.exception(ioe)
             break
     try:
         outstream.close()
