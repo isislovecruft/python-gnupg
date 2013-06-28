@@ -142,21 +142,22 @@ def _hyphenate(input, add_prefix=False):
     return ret
 
 def _is_allowed(input):
-    """
-    Check that an option or argument given to GPG is in the set of allowed
+    """Check that an option or argument given to GPG is in the set of allowed
     options, the latter being a strict subset of the set of all options known
     to GPG.
 
     :param str input: An input meant to be parsed as an option or flag to the
                       GnuPG process. Should be formatted the same as an option
                       or flag to the commandline gpg, i.e. "--encrypt-files".
-    :ivar frozenset _possible: All known GPG options and flags.
-    :ivar frozenset _allowed: All allowed GPG options and flags, e.g. all GPG
-                              options and flags which we are willing to
-                              acknowledge and parse. If we want to support a
-                              new option, it will need to have its own parsing
-                              class and its name will need to be added to this
-                              set.
+
+    :ivar frozenset gnupg_options: All known GPG options and flags.
+
+    :ivar frozenset allowed: All allowed GPG options and flags, e.g. all GPG
+                             options and flags which we are willing to
+                             acknowledge and parse. If we want to support a
+                             new option, it will need to have its own parsing
+                             class and its name will need to be added to this
+                             set.
 
     :rtype: Exception or str
     :raise: :exc:UsageError if ``_allowed`` is not a subset of ``_possible``.
