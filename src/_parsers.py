@@ -784,6 +784,10 @@ class Sign(object):
             self.status = "skipped signing key, key expired"
             if (value is not None) and (len(value) > 0):
                  self.status += " on {}".format(str(value))
+		elif key == "KEYREVOKED":
+            self.status = "skipped signing key, key revoked"
+            if (value is not None) and (len(value) > 0):
+                 self.status += " on {}".format(str(value))
         elif key == "NODATA":
             self.status = nodata(value)
         else:
@@ -936,6 +940,9 @@ class ImportResult(object):
         elif key == "KEYEXPIRED":
             self.results.append({'fingerprint': None,
                 'problem': '0', 'text': 'Key expired'})
+		elif key == "KEYREVOKED":
+            self.results.append({'fingerprint': None,
+                'problem': '0', 'text': 'Key revoked'})
         elif key == "SIGEXPIRED":
             self.results.append({'fingerprint': None,
                 'problem': '0', 'text': 'Signature expired'})
@@ -1070,7 +1077,7 @@ class Verify(object):
             self.valid = False
             self.key_id = value
             self.status = 'no public key'
-        elif key in ("KEYEXPIRED", "SIGEXPIRED"):
+        elif key in ("KEYEXPIRED", "SIGEXPIRED", "KEYREVOKED"):
             # these are useless in verify, since they are spit out for any
             # pub/subkeys on the key, not just the one doing the signing.
             # if we want to check for signatures with expired key,
@@ -1138,6 +1145,8 @@ class Crypt(Verify):
             self.status = 'invalid recipient'
         elif key == "KEYEXPIRED":
             self.status = 'key expired'
+		elif key == "KEYREVOKED":
+            self.status = 'key revoked'
         elif key == "SIG_CREATED":
             self.status = 'sig created'
         elif key == "SIGEXPIRED":
