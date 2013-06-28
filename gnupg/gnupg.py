@@ -497,9 +497,9 @@ class GPG(GPGBase):
         fpr = str(key.fingerprint)
         if len(fpr) == 20:
             if self.temp_keyring or self.temp_secring:
-                if not os.path.exists(self._key_dir):
-                    os.makedirs(self._key_dir)
-                prefix = os.path.join(self._key_dir, fpr)
+                if not os.path.exists(self._keys_dir):
+                    os.makedirs(self._keys_dir)
+                prefix = os.path.join(self._keys_dir, fpr)
 
             if self.temp_keyring:
                 if os.path.isfile(self.temp_keyring):
