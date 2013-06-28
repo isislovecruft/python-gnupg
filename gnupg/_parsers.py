@@ -900,11 +900,15 @@ class Sign(object):
         """
         if key in ("USERID_HINT", "NEED_PASSPHRASE", "BAD_PASSPHRASE",
                    "GOOD_PASSPHRASE", "BEGIN_SIGNING", "CARDCTRL",
-                   "INV_SGNR"):
+                   "INV_SGNR", "SIGEXPIRED"):
             pass
         elif key == "SIG_CREATED":
             (self.sig_type, self.sig_algo, self.sig_hash_algo,
              self.what, self.timestamp, self.fingerprint) = value.split()
+        elif key == "KEYEXPIRED":
+            self.status = "skipped signing key, key expired"
+            if (value is not None) and (len(value) > 0):
+                 self.status += " on {}".format(str(value))
         elif key == "NODATA":
             self.status = nodata(value)
         else:
