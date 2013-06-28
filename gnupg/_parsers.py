@@ -790,6 +790,12 @@ class GenKey(object):
         self.status = None
         self.subkey_created = False
         self.primary_created = False
+        #: This will store the filename of the key's public keyring if
+        #: :meth:`GPG.gen_key_input` was called with ``separate_keyring=True``
+        self.keyring = None
+        #: This will store the filename of the key's secret keyring if
+        #: :meth:`GPG.gen_key_input` was called with ``separate_keyring=True``
+        self.secring = None
 
     def __nonzero__(self):
         if self.fingerprint: return True
