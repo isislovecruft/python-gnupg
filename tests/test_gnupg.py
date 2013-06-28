@@ -788,10 +788,14 @@ authentication."""
                 'subkey_usage': 'encrypt,sign',
                 'passphrase': 'overalls' }
 
+        extra_keyrings = []
+
         ian_input = self.gpg.gen_key_input(separate_keyring=True, **ian)
         log.info("Key stored in separate keyring: %s" % self.gpg.temp_keyring)
         ian_key = self.gpg.gen_key(ian_input)
         ian_fpr = str(ian_key.fingerprint)
+        extra_keyrings.append('--keyring %s' % ian_key.pubring)
+        self.gpg.options = extra_keyrings
 
         kat_input = self.gpg.gen_key_input(separate_keyring=True, **kat)
         log.info("Key stored in separate keyring: %s" % self.gpg.temp_keyring)
