@@ -215,6 +215,19 @@ def _is_hex(string):
         return True
     return False
 
+def _is_string(thing):
+    """Python character arrays are a mess.
+
+    If Python2, check if ``thing`` is a ``unicode()`` or ``str()``.
+    If Python3, check if ``thing`` is a ``str()``.
+
+    :param thing: The thing to check.
+    :returns: ``True`` if ``thing`` is a "string" according to whichever
+              version of Python we're running in.
+    """
+    if _util._py3k: return isinstance(thing, str)
+    else: return isinstance(thing, basestring)
+
 def _sanitise(*args):
     """Take an arg or the key portion of a kwarg and check that it is in the
     set of allowed GPG options and flags, and that it has the correct
@@ -277,40 +290,39 @@ def _sanitise(*args):
         except (AssertionError, ProtectedOption) as error:
             log.warn("_check_option(): %s" % error.message)
         else:
-            safe_option += (flag + ' ')
-            if (not _util._py3k and isinstance(value, basestring)) \
-                    or (_util._py3k and isinstance(value, str)):
+            checked += (flag + ' ')
+
+            if _is_string(value):
                 values = value.split(' ')
                 for v in values:
-                    try:
-                        assert v is not None
-                        assert not v.isspace()
-                    except:
-                        log.debug("Dropping %s %s" % (flag, v))
-                        continue
-
                     ## these can be handled separately, without _fix_unsafe(),
                     ## because they are only allowed if the pass the regex
-                    if flag in ['--default-key', '--recipient', '--export',
-                                '--export-secret-keys', '--delete-keys',
-                                '--list-sigs', '--export-secret-subkeys',
-                                '--recv-keys']:
-                        if _is_hex(v): safe_option += (v + " ")
-                        else: log.debug("'%s %s' not hex." % (flag, v))
+                    if (flag in none_options) and (v is None):
+                        continue
+
+                    if flag in hex_options:
+                        if _is_hex(v): checked += (v + " ")
+                        else:
+                            log.debug("'%s %s' not hex." % (flag, v))
+                            if (flag in hex_or_none_options) and (v is None):
+                                log.debug("Allowing '%s' for all keys" % flag)
                         continue
 
                     elif flag in ['--keyserver']:
                         host = _check_keyserver(v)
                         if host:
                             log.debug("Setting keyserver: %s" % host)
-                            safe_option += (v + " ")
+                            checked += (v + " ")
                         else: log.debug("Dropping keyserver: %s" % v)
                         continue
 
+                    ## the rest are strings, filenames, etc, and should be
+                    ## shell escaped:
                     val = _fix_unsafe(v)
-
                     try:
-                        assert v is not None
+                        assert not val is None
+                        assert not val.isspace()
+                        assert not v is None
                         assert not v.isspace()
                     except:
                         log.debug("Dropping %s %s" % (flag, v))
@@ -318,27 +330,27 @@ def _sanitise(*args):
 
                     if flag in ['--encrypt', '--encrypt-files', '--decrypt',
                                 '--decrypt-files', '--import', '--verify']:
-                        if _util._is_file(val): safe_option += (val + " ")
+                        if _util._is_file(val): checked += (val + " ")
                         else: log.debug("%s not file: %s" % (flag, val))
 
                     elif flag in ['--cipher-algo', '--personal-cipher-prefs',
                                   '--personal-cipher-preferences']:
                         legit_algos = _check_preferences(val, 'cipher')
-                        if legit_algos: safe_option += (legit_algos + " ")
+                        if legit_algos: checked += (legit_algos + " ")
                         else: log.debug("'%s' is not cipher" % val)
 
                     elif flag in ['--compress-algo', '--compression-algo',
                                   '--personal-compress-prefs',
                                   '--personal-compress-preferences']:
                         legit_algos = _check_preferences(val, 'compress')
-                        if legit_algos: safe_option += (legit_algos + " ")
+                        if legit_algos: checked += (legit_algos + " ")
                         else: log.debug("'%s' not compress algo" % val)
 
                     else:
-                        safe_option += (val + " ")
+                        checked += (val + " ")
                         log.debug("_check_option(): No checks for %s" % val)
 
-        return safe_option
+        return checked
 
     is_flag = lambda x: x.startswith('--')
 
