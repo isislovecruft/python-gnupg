@@ -118,7 +118,6 @@ def _fix_unsafe(shell_input):
 
     :param str shell_input: The input intended for the GnuPG process.
     """
-    ## xxx do we want to add ';'?
     _unsafe = re.compile(r'[^\w@%+=:,./-]', 256)
     try:
         if len(_unsafe.findall(shell_input)) == 0:
