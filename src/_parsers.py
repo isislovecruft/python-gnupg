@@ -784,7 +784,7 @@ class Sign(object):
             self.status = "skipped signing key, key expired"
             if (value is not None) and (len(value) > 0):
                  self.status += " on {}".format(str(value))
-		elif key == "KEYREVOKED":
+        elif key == "KEYREVOKED":
             self.status = "skipped signing key, key revoked"
             if (value is not None) and (len(value) > 0):
                  self.status += " on {}".format(str(value))
@@ -940,7 +940,7 @@ class ImportResult(object):
         elif key == "KEYEXPIRED":
             self.results.append({'fingerprint': None,
                 'problem': '0', 'text': 'Key expired'})
-		elif key == "KEYREVOKED":
+        elif key == "KEYREVOKED":
             self.results.append({'fingerprint': None,
                 'problem': '0', 'text': 'Key revoked'})
         elif key == "SIGEXPIRED":
@@ -1145,7 +1145,7 @@ class Crypt(Verify):
             self.status = 'invalid recipient'
         elif key == "KEYEXPIRED":
             self.status = 'key expired'
-		elif key == "KEYREVOKED":
+        elif key == "KEYREVOKED":
             self.status = 'key revoked'
         elif key == "SIG_CREATED":
             self.status = 'sig created'
