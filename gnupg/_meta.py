@@ -121,6 +121,7 @@ class GPGBase(object):
             sys.getfilesystemencoding().lower())
 
         self._keyserver = 'hkp://subkeys.pgp.net'
+        self.__generated_keys = os.path.join(self.homedir, 'generated-keys')
 
         try:
             assert self.binary, "Could not find binary %s" % binary
@@ -341,6 +342,58 @@ class GPGBase(object):
             self._homedir = hd
 
     homedir = _util.InheritableProperty(_homedir_getter, _homedir_setter)
+
+    def _generated_keys_getter(self):
+        """Get the ``homedir`` subdirectory for storing generated keys.
+
+        :rtype: str
+        :returns: The absolute path to the current GnuPG homedir.
+        """
+        return self.__generated_keys
+
+    def _generated_keys_setter(self, directory):
+        """Set the directory for storing generated keys.
+
+        If unspecified, use $GNUPGHOME/generated-keys. If specified, ensure
+        that the ``directory`` does not contain various shell escape
+        characters. If ``directory`` is not found, it will be automatically
+        created. Lastly, the ``direcory`` will be checked that the EUID has
+        read and write permissions for it.
+
+        :param str directory: A relative or absolute path to the directory to
+             use for storing/accessing GnuPG's files, including keyrings and
+             the trustdb.
+        :raises: :exc:`RuntimeError` if unable to find a suitable directory to
+             use.
+        """
+        if not directory:
+            directory = os.path.join(self.homedir, 'generated-keys')
+            log.debug("GPGBase._generated_keys_setter(): Using '%s'"
+                      % directory)
+
+        hd = _parsers._fix_unsafe(directory)
+        log.debug("GPGBase._generated_keys_setter(): got directory '%s'" % hd)
+
+        if hd:
+            log.debug("GPGBase._generated_keys_setter(): Check exists '%s'"
+                      % hd)
+            _util._create_if_necessary(hd)
+
+        try:
+            log.debug("GPGBase._generated_keys_setter(): check permissions")
+            assert _util._has_readwrite(hd), \
+                "Keys dir '%s' needs read/write permissions" % hd
+        except AssertionError as ae:
+            msg = ("Unable to set '%s' as generated keys dir" % directory)
+            log.debug("GPGBase._generated_keys_setter(): %s" % msg)
+            log.debug(ae.message)
+            raise RuntimeError(ae.message)
+        else:
+            log.info("Setting homedir to '%s'" % hd)
+            self.__generated_keys = hd
+
+    _generated_keys = _util.InheritableProperty(_generated_keys_getter,
+                                                _generated_keys_setter)
 
     def _make_args(self, args, passphrase=False):
         """Make a list of command line elements for GPG. The value of ``args``
