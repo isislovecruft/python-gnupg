@@ -54,6 +54,9 @@ tags
 *random_seed*
 *.log
 tests/doctests/*
+gnupg/test/doctests/*
+gnupg/test/logs/*
+gnupg/test/tmp/*
 
 # Ignore distutils record of installed files:
 installed-files.txt
