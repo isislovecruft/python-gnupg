@@ -165,261 +165,19 @@ def _is_allowed(input):
     :return: The original parameter ``input``, unmodified and unsanitized,
              if no errors occur.
     """
-
-    three_hundred_eighteen = ("""
---allow-freeform-uid              --multifile
---allow-multiple-messages         --no
---allow-multisig-verification     --no-allow-freeform-uid
---allow-non-selfsigned-uid        --no-allow-multiple-messages
---allow-secret-key-import         --no-allow-non-selfsigned-uid
---always-trust                    --no-armor
---armor                           --no-armour
---armour                          --no-ask-cert-expire
---ask-cert-expire                 --no-ask-cert-level
---ask-cert-level                  --no-ask-sig-expire
---ask-sig-expire                  --no-auto-check-trustdb
---attribute-fd                    --no-auto-key-locate
---attribute-file                  --no-auto-key-retrieve
---auto-check-trustdb              --no-batch
---auto-key-locate                 --no-comments
---auto-key-retrieve               --no-default-keyring
---batch                           --no-default-recipient
---bzip2-compress-level            --no-disable-mdc
---bzip2-decompress-lowmem         --no-emit-version
---card-edit                       --no-encrypt-to
---card-status                     --no-escape-from-lines
---cert-digest-algo                --no-expensive-trust-checks
---cert-notation                   --no-expert
---cert-policy-url                 --no-force-mdc
---change-pin                      --no-force-v3-sigs
---charset                         --no-force-v4-certs
---check-sig                       --no-for-your-eyes-only
---check-sigs                      --no-greeting
---check-trustdb                   --no-groups
---cipher-algo                     --no-literal
---clearsign                       --no-mangle-dos-filenames
---command-fd                      --no-mdc-warning
---command-file                    --no-options
---comment                         --no-permission-warning
---completes-needed                --no-pgp2
---compress-algo                   --no-pgp6
---compression-algo                --no-pgp7
---compress-keys                   --no-pgp8
---compress-level                  --no-random-seed-file
---compress-sigs                   --no-require-backsigs
---ctapi-driver                    --no-require-cross-certification
---dearmor                         --no-require-secmem
---dearmour                        --no-rfc2440-text
---debug                           --no-secmem-warning
---debug-all                       --no-show-notation
---debug-ccid-driver               --no-show-photos
---debug-level                     --no-show-policy-url
---decrypt                         --no-sig-cache
---decrypt-files                   --no-sig-create-check
---default-cert-check-level        --no-sk-comments
---default-cert-expire             --no-strict
---default-cert-level              --notation-data
---default-comment                 --not-dash-escaped
---default-key                     --no-textmode
---default-keyserver-url           --no-throw-keyid
---default-preference-list         --no-throw-keyids
---default-recipient               --no-tty
---default-recipient-self          --no-use-agent
---default-sig-expire              --no-use-embedded-filename
---delete-keys                     --no-utf8-strings
---delete-secret-and-public-keys   --no-verbose
---delete-secret-keys              --no-version
---desig-revoke                    --openpgp
---detach-sign                     --options
---digest-algo                     --output
---disable-ccid                    --override-session-key
---disable-cipher-algo             --passphrase
---disable-dsa2                    --passphrase-fd
---disable-mdc                     --passphrase-file
---disable-pubkey-algo             --passphrase-repeat
---display                         --pcsc-driver
---display-charset                 --personal-cipher-preferences
---dry-run                         --personal-cipher-prefs
---dump-options                    --personal-compress-preferences
---edit-key                        --personal-compress-prefs
---emit-version                    --personal-digest-preferences
---enable-dsa2                     --personal-digest-prefs
---enable-progress-filter          --pgp2
---enable-special-filenames        --pgp6
---enarmor                         --pgp7
---enarmour                        --pgp8
---encrypt                         --photo-viewer
---encrypt-files                   --pipemode
---encrypt-to                      --preserve-permissions
---escape-from-lines               --primary-keyring
---exec-path                       --print-md
---exit-on-status-write-error      --print-mds
---expert                          --quick-random
---export                          --quiet
---export-options                  --reader-port
---export-ownertrust               --rebuild-keydb-caches
---export-secret-keys              --recipient
---export-secret-subkeys           --recv-keys
---fast-import                     --refresh-keys
---fast-list-mode                  --remote-user
---fetch-keys                      --require-backsigs
---fingerprint                     --require-cross-certification
---fixed-list-mode                 --require-secmem
---fix-trustdb                     --rfc1991
---force-mdc                       --rfc2440
---force-ownertrust                --rfc2440-text
---force-v3-sigs                   --rfc4880
---force-v4-certs                  --run-as-shm-coprocess
---for-your-eyes-only              --s2k-cipher-algo
---gen-key                         --s2k-count
---gen-prime                       --s2k-digest-algo
---gen-random                      --s2k-mode
---gen-revoke                      --search-keys
---gnupg                           --secret-keyring
---gpg-agent-info                  --send-keys
---gpgconf-list                    --set-filename
---gpgconf-test                    --set-filesize
---group                           --set-notation
---help                            --set-policy-url
---hidden-encrypt-to               --show-keyring
---hidden-recipient                --show-notation
---homedir                         --show-photos
---honor-http-proxy                --show-policy-url
---ignore-crc-error                --show-session-key
---ignore-mdc-error                --sig-keyserver-url
---ignore-time-conflict            --sign
---ignore-valid-from               --sign-key
---import                          --sig-notation
---import-options                  --sign-with
---import-ownertrust               --sig-policy-url
---interactive                     --simple-sk-checksum
---keyid-format                    --sk-comments
---keyring                         --skip-verify
---keyserver                       --status-fd
---keyserver-options               --status-file
---lc-ctype                        --store
---lc-messages                     --strict
---limit-card-insert-tries         --symmetric
---list-config                     --temp-directory
---list-key                        --textmode
---list-keys                       --throw-keyid
---list-only                       --throw-keyids
---list-options                    --trustdb-name
---list-ownertrust                 --trusted-key
---list-packets                    --trust-model
---list-public-keys                --try-all-secrets
---list-secret-keys                --ttyname
---list-sig                        --ttytype
---list-sigs                       --ungroup
---list-trustdb                    --update-trustdb
---load-extension                  --use-agent
---local-user                      --use-embedded-filename
---lock-multiple                   --user
---lock-never                      --utf8-strings
---lock-once                       --verbose
---logger-fd                       --verify
---logger-file                     --verify-files
---lsign-key                       --verify-options
---mangle-dos-filenames            --version
---marginals-needed                --warranty
---max-cert-depth                  --with-colons
---max-output                      --with-fingerprint
---merge-only                      --with-key-data
---min-cert-level                  --yes
-""").split()
-
-    possible = frozenset(three_hundred_eighteen)
+    gnupg_options = _get_all_gnupg_options()
+    allowed = _get_options_group("allowed")
 
     ## these are the allowed options we will handle so far, all others should
     ## be dropped. this dance is so that when new options are added later, we
     ## merely add the to the _allowed list, and the `` _allowed.issubset``
     ## assertion will check that GPG will recognise them
-    ##
-    ## xxx checkout the --store option for creating rfc1991 data packets
-    ## xxx key fetching/retrieving options: [fetch_keys, merge_only, recv_keys]
-    ##
-    allowed = frozenset(['--fixed-list-mode',  ## key/packet listing
-                         '--list-key',
-                         '--list-keys',
-                         '--list-options',
-                         '--list-packets',
-                         '--list-public-keys',
-                         '--list-secret-keys',
-                         '--print-md',
-                         '--print-mds',
-                         '--with-colons',
-                         ## deletion
-                         '--delete-keys',
-                         '--delete-secret-keys',
-                         ## en-/de-cryption
-                         '--always-trust',
-                         '--decrypt',
-                         '--decrypt-files',
-                         '--encrypt',
-                         '--encrypt-files',
-                         '--recipient',
-                         '--no-default-recipient',
-                         '--symmetric',
-                         '--use-agent',
-                         '--no-use-agent',
-                         ## signing/certification
-                         '--armor',
-                         '--armour',
-                         '--clearsign',
-                         '--detach-sign',
-                         '--list-sigs',
-                         '--sign',
-                         '--verify',
-                         ## i/o and files
-                         '--batch',
-                         '--debug-all',
-                         '--debug-level',
-                         '--gen-key',
-                         #'--multifile',
-                         '--no-emit-version',
-                         '--no-tty',
-                         '--output',
-                         '--passphrase-fd',
-                         '--status-fd',
-                         '--version',
-                         ## keyring, homedir, & options
-                         '--homedir',
-                         '--keyring',
-                         '--primary-keyring',
-                         '--secret-keyring',
-                         '--no-default-keyring',
-                         '--default-key',
-                         '--no-options',
-                         '--keyserver',
-                         '--recv-keys',
-                         '--send-keys',
-                         ## preferences
-                         '--digest-algo',
-                         '--cipher-algo',
-                         '--compress-algo',
-                         '--compression-algo',
-                         '--cert-digest-algo',
-                         '--list-config',
-                         '--personal-digest-prefs',
-                         '--personal-digest-preferences',
-                         '--personal-cipher-prefs',
-                         '--personal-cipher-preferences',
-                         '--personal-compress-prefs',
-                         '--personal-compress-preferences',
-                         ## export/import
-                         '--import',
-                         '--export',
-                         '--export-secret-keys',
-                         '--export-secret-subkeys',
-                         '--fingerprint',
-                     ])
-
     try:
-        ## check that allowed is a subset of possible
-        assert allowed.issubset(possible)
+        ## check that allowed is a subset of all gnupg_options
+        assert allowed.issubset(gnupg_options)
     except AssertionError:
         raise UsageError("'allowed' isn't a subset of known options, diff: %s"
-                         % allowed.difference(possible))
+                         % allowed.difference(gnupg_options))
 
     ## if we got a list of args, join them
     ##
@@ -504,7 +262,10 @@ def _sanitise(*args):
         :rtype: str
         :returns: A string of the items in ``checked`` delimited by spaces.
         """
-        safe_option = str()
+        checked = str()
+        none_options        = _get_options_group("none_options")
+        hex_options         = _get_options_group("hex_options")
+        hex_or_none_options = _get_options_group("hex_or_none_options")
 
         if not _util._py3k:
             if not isinstance(arg, list) and isinstance(arg, unicode):
@@ -667,6 +428,313 @@ def _sanitise_list(arg_list):
             if safe_arg != "":
                 yield safe_arg
 
+def _get_options_group(group=None):
+    """Get a specific group of options which are allowed."""
+
+    #: These expect a hexidecimal keyid as their argument, and can be parsed
+    #: with :func:`_is_hex`.
+    hex_options = frozenset(['--check-sigs',
+                             '--default-key',
+                             '--default-recipient',
+                             '--delete-keys',
+                             '--delete-secret-keys',
+                             '--delete-secret-and-public-keys',
+                             '--desig-revoke',
+                             '--export',
+                             '--export-secret-keys',
+                             '--export-secret-subkeys',
+                             '--fingerprint',
+                             '--gen-revoke',
+                             '--list-key',
+                             '--list-keys',
+                             '--list-public-keys',
+                             '--list-secret-keys',
+                             '--list-sigs',
+                             '--recipient',
+                             '--recv-keys',
+                             '--send-keys',
+                             ])
+    #: These options expect value which are left unchecked, though still run
+    #: through :func:`_fix_unsafe`.
+    unchecked_options = frozenset(['--list-options',
+                                   '--passphrase-fd',
+                                   '--status-fd',
+                                   '--verify-options',
+                               ])
+    #: These have their own parsers and don't really fit into a group
+    other_options = frozenset(['--debug-level',
+                               '--keyserver',
+
+                           ])
+    #: These should have a directory for an argument
+    dir_options = frozenset(['--homedir',
+                             ])
+    #: These expect a keyring or keyfile as their argument
+    keyring_options = frozenset(['--keyring',
+                                 '--primary-keyring',
+                                 '--secret-keyring',
+                                 '--trustdb-name',
+                                 ])
+    #: These expect a filename (or the contents of a file as a string) or None
+    #: (meaning that they read from stdin)
+    file_or_none_options = frozenset(['--decrypt',
+                                      '--decrypt-files',
+                                      '--encrypt',
+                                      '--encrypt-files',
+                                      '--import',
+                                      '--verify',
+                                      '--verify-files',
+                                      ])
+    #: These options expect a string. see :func:`_check_preferences`.
+    pref_options = frozenset(['--digest-algo',
+                              '--cipher-algo',
+                              '--compress-algo',
+                              '--compression-algo',
+                              '--cert-digest-algo',
+                              '--personal-digest-prefs',
+                              '--personal-digest-preferences',
+                              '--personal-cipher-prefs',
+                              '--personal-cipher-preferences',
+                              '--personal-compress-prefs',
+                              '--personal-compress-preferences',
+                              '--print-md',
+                              ])
+    #: These options expect no arguments
+    none_options = frozenset(['--always-trust',
+                              '--armor',
+                              '--armour',
+                              '--batch',
+                              '--check-sigs',
+                              '--check-trustdb',
+                              '--clearsign',
+                              '--debug-all',
+                              '--default-recipient-self',
+                              '--detach-sign',
+                              '--export',
+                              '--export-secret-keys',
+                              '--export-secret-subkeys',
+                              '--fingerprint',
+                              '--fixed-list-mode',
+                              '--gen-key',
+                              '--list-config',
+                              '--list-key',
+                              '--list-keys',
+                              '--list-packets',
+                              '--list-public-keys',
+                              '--list-secret-keys',
+                              '--list-sigs',
+                              '--no-default-keyring',
+                              '--no-default-recipient',
+                              '--no-emit-version',
+                              '--no-options',
+                              '--no-tty',
+                              '--no-use-agent',
+                              '--no-verbose',
+                              '--print-mds',
+                              '--quiet',
+                              '--sign',
+                              '--symmetric',
+                              '--use-agent',
+                              '--verbose',
+                              '--version',
+                              '--with-colons',
+                              '--yes',
+                              ])
+    #: These options expect either None or a hex string
+    hex_or_none_options = hex_options.intersection(none_options)
+    allowed = hex_options.union(unchecked_options, other_options, dir_options,
+                                keyring_options, file_or_none_options,
+                                pref_options, none_options)
+
+    if group and group in locals().keys():
+        return locals()[group]
+
+def _get_all_gnupg_options():
+    """Get all GnuPG options and flags.
+
+    This is hardcoded within a local scope to reduce the chance of a tampered
+    GnuPG binary reporting falsified option sets, i.e. because certain options
+    (namedly the '--no-options' option, which prevents the usage of gpg.conf
+    files) are necessary and statically specified in
+    :meth:`gnupg.GPG._makeargs`, if the inputs into Python are already
+    controlled, and we were to summon the GnuPG binary to ask it for its
+    options, it would be possible to receive a falsified options set missing
+    the '--no-options' option in response. This seems unlikely, and the method
+    is stupid and ugly, but at least we'll never have to debug whether or not
+    an option *actually* disappeared in a different GnuPG version, or some
+    funny business is happening.
+
+    These are the options as of GnuPG 1.4.12; the current stable branch of the
+    2.1.x tree contains a few more -- if you need them you'll have to add them
+    in here.
+
+    :ivar frozenset gnupg_options: All known GPG options and flags.
+    :rtype: frozenset
+    :returns: ``gnupg_options``
+    """
+    three_hundred_eighteen = ("""
+--allow-freeform-uid              --multifile
+--allow-multiple-messages         --no
+--allow-multisig-verification     --no-allow-freeform-uid
+--allow-non-selfsigned-uid        --no-allow-multiple-messages
+--allow-secret-key-import         --no-allow-non-selfsigned-uid
+--always-trust                    --no-armor
+--armor                           --no-armour
+--armour                          --no-ask-cert-expire
+--ask-cert-expire                 --no-ask-cert-level
+--ask-cert-level                  --no-ask-sig-expire
+--ask-sig-expire                  --no-auto-check-trustdb
+--attribute-fd                    --no-auto-key-locate
+--attribute-file                  --no-auto-key-retrieve
+--auto-check-trustdb              --no-batch
+--auto-key-locate                 --no-comments
+--auto-key-retrieve               --no-default-keyring
+--batch                           --no-default-recipient
+--bzip2-compress-level            --no-disable-mdc
+--bzip2-decompress-lowmem         --no-emit-version
+--card-edit                       --no-encrypt-to
+--card-status                     --no-escape-from-lines
+--cert-digest-algo                --no-expensive-trust-checks
+--cert-notation                   --no-expert
+--cert-policy-url                 --no-force-mdc
+--change-pin                      --no-force-v3-sigs
+--charset                         --no-force-v4-certs
+--check-sig                       --no-for-your-eyes-only
+--check-sigs                      --no-greeting
+--check-trustdb                   --no-groups
+--cipher-algo                     --no-literal
+--clearsign                       --no-mangle-dos-filenames
+--command-fd                      --no-mdc-warning
+--command-file                    --no-options
+--comment                         --no-permission-warning
+--completes-needed                --no-pgp2
+--compress-algo                   --no-pgp6
+--compression-algo                --no-pgp7
+--compress-keys                   --no-pgp8
+--compress-level                  --no-random-seed-file
+--compress-sigs                   --no-require-backsigs
+--ctapi-driver                    --no-require-cross-certification
+--dearmor                         --no-require-secmem
+--dearmour                        --no-rfc2440-text
+--debug                           --no-secmem-warning
+--debug-all                       --no-show-notation
+--debug-ccid-driver               --no-show-photos
+--debug-level                     --no-show-policy-url
+--decrypt                         --no-sig-cache
+--decrypt-files                   --no-sig-create-check
+--default-cert-check-level        --no-sk-comments
+--default-cert-expire             --no-strict
+--default-cert-level              --notation-data
+--default-comment                 --not-dash-escaped
+--default-key                     --no-textmode
+--default-keyserver-url           --no-throw-keyid
+--default-preference-list         --no-throw-keyids
+--default-recipient               --no-tty
+--default-recipient-self          --no-use-agent
+--default-sig-expire              --no-use-embedded-filename
+--delete-keys                     --no-utf8-strings
+--delete-secret-and-public-keys   --no-verbose
+--delete-secret-keys              --no-version
+--desig-revoke                    --openpgp
+--detach-sign                     --options
+--digest-algo                     --output
+--disable-ccid                    --override-session-key
+--disable-cipher-algo             --passphrase
+--disable-dsa2                    --passphrase-fd
+--disable-mdc                     --passphrase-file
+--disable-pubkey-algo             --passphrase-repeat
+--display                         --pcsc-driver
+--display-charset                 --personal-cipher-preferences
+--dry-run                         --personal-cipher-prefs
+--dump-options                    --personal-compress-preferences
+--edit-key                        --personal-compress-prefs
+--emit-version                    --personal-digest-preferences
+--enable-dsa2                     --personal-digest-prefs
+--enable-progress-filter          --pgp2
+--enable-special-filenames        --pgp6
+--enarmor                         --pgp7
+--enarmour                        --pgp8
+--encrypt                         --photo-viewer
+--encrypt-files                   --pipemode
+--encrypt-to                      --preserve-permissions
+--escape-from-lines               --primary-keyring
+--exec-path                       --print-md
+--exit-on-status-write-error      --print-mds
+--expert                          --quick-random
+--export                          --quiet
+--export-options                  --reader-port
+--export-ownertrust               --rebuild-keydb-caches
+--export-secret-keys              --recipient
+--export-secret-subkeys           --recv-keys
+--fast-import                     --refresh-keys
+--fast-list-mode                  --remote-user
+--fetch-keys                      --require-backsigs
+--fingerprint                     --require-cross-certification
+--fixed-list-mode                 --require-secmem
+--fix-trustdb                     --rfc1991
+--force-mdc                       --rfc2440
+--force-ownertrust                --rfc2440-text
+--force-v3-sigs                   --rfc4880
+--force-v4-certs                  --run-as-shm-coprocess
+--for-your-eyes-only              --s2k-cipher-algo
+--gen-key                         --s2k-count
+--gen-prime                       --s2k-digest-algo
+--gen-random                      --s2k-mode
+--gen-revoke                      --search-keys
+--gnupg                           --secret-keyring
+--gpg-agent-info                  --send-keys
+--gpgconf-list                    --set-filename
+--gpgconf-test                    --set-filesize
+--group                           --set-notation
+--help                            --set-policy-url
+--hidden-encrypt-to               --show-keyring
+--hidden-recipient                --show-notation
+--homedir                         --show-photos
+--honor-http-proxy                --show-policy-url
+--ignore-crc-error                --show-session-key
+--ignore-mdc-error                --sig-keyserver-url
+--ignore-time-conflict            --sign
+--ignore-valid-from               --sign-key
+--import                          --sig-notation
+--import-options                  --sign-with
+--import-ownertrust               --sig-policy-url
+--interactive                     --simple-sk-checksum
+--keyid-format                    --sk-comments
+--keyring                         --skip-verify
+--keyserver                       --status-fd
+--keyserver-options               --status-file
+--lc-ctype                        --store
+--lc-messages                     --strict
+--limit-card-insert-tries         --symmetric
+--list-config                     --temp-directory
+--list-key                        --textmode
+--list-keys                       --throw-keyid
+--list-only                       --throw-keyids
+--list-options                    --trustdb-name
+--list-ownertrust                 --trusted-key
+--list-packets                    --trust-model
+--list-public-keys                --try-all-secrets
+--list-secret-keys                --ttyname
+--list-sig                        --ttytype
+--list-sigs                       --ungroup
+--list-trustdb                    --update-trustdb
+--load-extension                  --use-agent
+--local-user                      --use-embedded-filename
+--lock-multiple                   --user
+--lock-never                      --utf8-strings
+--lock-once                       --verbose
+--logger-fd                       --verify
+--logger-file                     --verify-files
+--lsign-key                       --verify-options
+--mangle-dos-filenames            --version
+--marginals-needed                --warranty
+--max-cert-depth                  --with-colons
+--max-output                      --with-fingerprint
+--merge-only                      --with-key-data
+--min-cert-level                  --yes
+""").split()
+    gnupg_options = frozenset(three_hundred_eighteen)
+    return gnupg_options
 
 def nodata(status_code):
     """Translate NODATA status codes from GnuPG to messages."""
