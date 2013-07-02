@@ -28,7 +28,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-import inspect
 import os
 
 ## Upgrade setuptools to a version which supports Python 2 and 3
@@ -44,18 +43,13 @@ versioneer.tag_prefix = ''
 versioneer.parentdir_prefix = 'gnupg-'
 
 __author__ = "Isis Agora Lovecruft"
-__contact__ = 'isis@leap.se'
-__url__ = 'https://github.com/isislovecruft/python-gnupg \
-https://python-gnupg.readthedocs.org'
+__contact__ = 'isis@patternsinthevoid.net'
+__url__ = 'https://github.com/isislovecruft/python-gnupg'
 
-def get_current_dir():
-    """Current dir of this file, regardless of where we're called from."""
-    here = inspect.getabsfile(inspect.currentframe()).rsplit(os.path.sep, 1)[0]
-    return here
 
 def get_deps_reqs():
     """Get dependencies from the pip requirements.txt file."""
-    requirements_file = os.path.join(get_current_dir(), 'requirements.txt')
+    requirements_file = os.path.join(os.getcwd(), 'requirements.txt')
     dependency_links = []
     install_requires = []
     with open(requirements_file) as pipfile:
