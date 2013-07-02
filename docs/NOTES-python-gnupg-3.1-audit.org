@@ -1,0 +1,233 @@
+-*- mode: org; epa-file-encrypt-to: ("lunar@anargeek.net") -*-
+#+TITLE:     python-gnupg audit
+#+AUTHOR:    isis
+#+EMAIL:     isis@leap.se
+#+DATE:      2013-02-01 Fri
+#+DESCRIPTION:
+#+KEYWORDS:
+#+LANGUAGE:  en
+#+OPTIONS:   H:3 num:t toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS:   TeX:t LaTeX:t skip:nil d:nil todo:t pri:nil tags:not-in-toc
+#+INFOJS_OPT: view:nil toc:2 ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+LINK_UP:   
+#+LINK_HOME: 
+#+XSLT:
+
+[2013-02-01 Fri]
+
+* gnugp.__main__()
+** comments
+L58 NullHandler?? see self._write_passphrase
+L61 there nifty check for p3k
+** def _copy_data(instream, outstream)                              :cleanup:
+   copies data from one stream to another, 1024 bytes at a time.
+*** L79:                                                          :bad_logic:
+    instream is apparently a file descriptor, but is not checked nor
+    encased in a try/except block.
+
+*** L78:                                               :hanging_fd:bad_logic:
+    while True: loop, should be 
+    : with open(instream) as instrm:
+*** L88:                                             :bad_exception_handling:
+    : except: 
+    should catch an IOError, or whatever specific error is raised for broken
+    pipes.
+** def _threaded_copy_data(instream, outstream):
+*** L99:
+    this just wraps self._copy_data in a thread
+** def _write_passphrase(stream, passphrase, encoding):        :vuln:cleanup:
+*** L110:                                         :writes_passphrase_to_disk:
+    logger writes passphrase into debug log. this should be patched.
+* class Verify(object)
+  basic parsing class, no errors found
+* class ImportResult(object)
+  basic parsing class, no errors found
+* class ListKeys(list):
+  basic parsing class, no errors found
+* class Crypt(Verify):
+  basic parsing class, no errors found
+** def __init__(self, gpg)                                          :cleanup:
+*** L338                                                       :mro_conflict:
+
+    #+BEGIN_SRC python
+    Verify.__init__(self,gpg)
+    #+END_SRC
+
+    should be changed to:
+
+    #+BEGIN_SRC python
+    super(Verify, self).__init__(gpg)
+    #+END_SRC
+* class GenKey(object)
+  basic parsing class, no errors found
+* class DeleteResult(object)
+  basic parsing class, no errors found
+* class Sign(object)
+  basic parsing class, no errors found
+* class GPG(object)                                             :exploitable:
+*** L474:                                                           :cleanup:
+    : cls.__doc__ 
+    should go directly underneath class signature
+** def __init__(self, gpgbinary='gpg', gnupghome=None, verbose=False, use_agent=False, keyring=None) :bug:
+*** L494-495:                                                    :type_error:
+    
+    #+BEGIN_SRC python
+    if gnupghome and not os.path.isdir(self.gnupghome):
+        os.makedirs(self.gnupghome,0x1C0)
+    #+END_SRC
+
+    #+BEGIN_EXAMPLE
+    In [20]: os.makedirs?
+    Type:       function
+    String Form:<function makedirs at 0x7f8ddeb6cc08>
+    File:       /usr/lib/python2.7/os.py
+    Definition: os.makedirs(name, mode=511)
+    Docstring:
+    makedirs(path [, mode=0777])
+    Super-mkdir; create a leaf directory and all intermediate ones.
+    Works like mkdir, except that any intermediate path segment (not
+    just the rightmost) will be created if it does not exist.  This is
+    recursive.
+    
+    setting mode=0x1c0 is equivalent to mode=hex(0700), which
+    may cause bugs on some systems, see
+    http://ubuntuforums.org/showthread.php?t=2044879
+    
+    this could be do to the complete lack of input validation in
+    os.makedirs, and it's calling of the os.mkdir() built-in, which
+    may vary depending on the python compilation:
+    #+END_EXAMPLE
+
+    #+BEGIN_SRC python
+    Source:
+    def makedirs(name, mode=0777):
+        """makedirs(path [, mode=0777])
+        
+        Super-mkdir; create a leaf directory and all intermediate ones.
+        Works like mkdir, except that any intermediate path segment (not
+        just the rightmost) will be created if it does not exist.  This is
+        recursive.
+        """
+        head, tail = path.split(name)
+        if not tail:
+            head, tail = path.split(head)
+        if head and tail and not path.exists(head):
+            try:
+                makedirs(head, mode)
+            except OSError, e:
+                # be happy if someone already created the path
+                if e.errno != errno.EEXIST:
+                    raise
+            if tail == curdir:           # xxx/newdir/. exists if xxx/newdir exists
+                return
+        mkdir(name, mode)
+    #+END_SRC
+
+** def _open_subprocess(self, args, passphrase=False)                  :vuln:
+*** L515:                                            :unvalidated_user_input:
+    : cmd.extend(args)
+    
+    cmd is a list of strings, eventually joined with cmd=' '.join(cmd), and
+    the args are unvalidated in this function. Then this concatenation of args
+    is fed directly into subprocess.Popen(cmd, shell=True, stdin=PIPE,
+    stdout=PIPE, stderr=PIPE). THIS SHOULD BE PATCHED.
+
+** def _collect_output(self, process, result, writer=None, stdin=None)
+   sends stdout to self._read_data() and stderr to self._read_response()
+
+** def _handle_io(self, args, file, result, passphrase=None, binary=False) :vuln:cleanup:
+*** L601:                         :unvalidated_user_input:type_check_in_call:
+    : p = self._open_subprocess(args, passphrase is not None)
+    
+    you shouldn't assign or type check in a function call
+
+** def sign(self, message, **kwargs)                                :cleanup:
+*** L617-619:                                                    :hanging_fd:
+   calls self._make_binary_stream(), which leaves the file descriptor for
+   the encoded message to be encrypted hanging between scopes.
+
+** def sign_file(self, file, keyid=None, passphrase=None, clearsign=True, detach=False, binary=False) :cleanup:
+*** L632-635:                                                     :bad_logic:
+    #+BEGIN_SRC python
+    if detach:
+        args.append("--detach-sign")
+    elif clearsign:
+        args.append("--clearsign")
+    #+END_SRC
+
+    the logic here allows that if a user erroneously specifies both options,
+    rather than doing what the system gnupg would do (that is, do --clearsign,
+    and ignore the --attach-sign), python-gnupg would ignore both.
+
+*** L626-641:
+    input 'args' into self._open_subprocess() is defined as static strings.
+    
+** def verify(self, data):                                          :cleanup:
+*** L668-670:                                                    :hanging_fd:
+    same hanging file descriptor problem as in self.sign()
+
+** def verify_file(self, file, data_filename=None)             :vuln:cleanup:
+*** L683:                                                        :hanging_fd:
+    more potentially hanging file descriptors...
+*** L684:                                                        :hanging_fd:
+    oh look, another hanging file descriptor. imagine that.
+*** L690:                                            :unvalidated_user_input:
+    : args.append('"%s"' % data_filename)
+    well, there's the exploit. see included POC script.
+
+** def import_keys(self, key_data)                                     :vuln:
+*** L749:                                            :unvalidated_user_input:
+    this function could potentially allow an attacker with a GPG exploit to
+    use it, because it passes key generation parameter directly into the
+    internal packet parsers of GPG. however, without a GPG exploit for one of
+    the GPG packet parsers (for explanation of GPG packets look into pgpdump),
+    this function alone is not exploitable.    
+
+** def recieve_keys(self, keyserver, *keyids)                          :vuln:
+*** L770:                                            :unvalidated_user_input:
+    : args.extend(keyids)
+
+** def export_keys(self, keyids, secret=False)                         :vuln:
+*** L795-796:                                        :unvalidated_user_input:
+    args problem again. exploitable though parameter ``keyids``.
+
+** def list_keys(self, secret=False)
+*** L827:
+    args is static string.
+
+** def gen_key(self, input)                                         :cleanup:
+*** L864:
+    args, passed to self._handle_io(), which in turn passes args directly to
+    Popen(), is set to a static string. this function is halfway okay, though
+    it really could be more careful with the ``input`` parameter.
+
+** def gen_key_input(self, **kwargs)                                   :vuln:
+*** L981-983:                                        :unvalidated_user_input:
+    this function could potentially allow an attacker with a GPG exploit to
+    use it, because it passes key generation parameter directly into the
+    internal packet parsers of GPG. however, without a GPG exploit for one of
+    the GPG packet parsers (for explanation of GPG packets look into pgpdump),
+    this function alone is not exploitable.
+
+** def encrypt_file(self, file, recipiencts, sign=None, ...)           :vuln:
+*** L939:                                            :unvalidated_user_input:
+    several of the inputs to this function are unvalidated, turned into
+    strings, and passed to Popen(). exploitable.
+
+** def encrypt(self, data, recipients, **kwargs):                      :vuln:
+*** L997:                                            :unvalidated_user_input:
+    exploitable, passes kwargs to self.encrypt_file()
+
+** def decrypt(self, message **kwargs):                                :vuln:
+*** L1003:                                           :unvalidated_user_input:
+    kwargs are passed to self.decrypt_file(), unvalidated, making this
+    function also exploitable
+
+** def decrypt_file(self, file, always_trust=False, passphrase=None, output=None) :vuln:
+*** L1013:                                           :unvalidated_user_input:
+    unvalidated user input: this function is also exploitable
+
+* POC
+#+INCLUDE: "../python-gnupg-0.3.1/python-gnupg-exploit.py" python

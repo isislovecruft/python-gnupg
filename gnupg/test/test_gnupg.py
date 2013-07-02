@@ -27,6 +27,7 @@ from __future__ import with_statement
 from argparse   import ArgumentParser
 from codecs     import open as open
 from functools  import wraps
+from glob       import glob
 from inspect    import getabsfile
 from inspect    import currentframe
 from time       import gmtime
@@ -66,6 +67,13 @@ if __name__ == "__main__" and __package__ is None:
         from .. import _logger
     except (ImportError, ValueError) as ierr:
         print(ierr.message)
+else:
+    try:
+        import gnupg._util    as _util
+        import gnupg._parsers as _parsers
+        import gnupg._logger  as _logger
+    except (ImportError, ValueError) as ierr:
+        raise SystemExit(ierr.message)
 
 
 log = _util.log
@@ -475,8 +483,8 @@ class GPGTestCase(unittest.TestCase):
         self.assertIsNotNone(key)
         self.assertEqual(len(keys), 1)
         key = keys[0]
-        self.assertIsNotNone(key.type)
-        self.assertIsNotNone(key.fingerprint)
+        self.assertIsNotNone(key['type'])
+        self.assertIsNotNone(key['fingerprint'])
         uids = key['uids']
         self.assertEqual(len(uids), 1)
         uid = uids[0]
@@ -1057,8 +1065,20 @@ def main(args):
         if os.path.isdir(_tempd):
             shutil.rmtree(_tempd)
 
+def before_run():
+    if os.path.isdir(_util._here):
+        print("_util._here says we're here: %s" % _util._here)
+        pattern = os.path.join(_util._here, '*ring')
+        rings = glob(pattern)
+        if len(rings) > 0:
+            for ring in rings:
+                fn = os.path.basename(ring)
+                os.rename(ring, os.path.join(_tests, 'generated-keys'))
+
 
 if __name__ == "__main__":
+
+    before_run()
 
     suite_names = list()
     for name, methodset in suites.items():
