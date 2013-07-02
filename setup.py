@@ -99,7 +99,7 @@ greater.""",
     scripts=['versioneer.py'],
     test_suite='gnupg.test.test_gnupg',
 
-    install_requires=reqs,
+    install_requires=['psutil>=0.5.1'],
     dependency_links=deps,
     extras_require={'docs': ["Sphinx>=1.1", "repoze.sphinx"]},
 
