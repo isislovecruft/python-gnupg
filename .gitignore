@@ -47,11 +47,23 @@ tags
 *.org
 
 # Ignore log files and directories from tests:
-keys/*
+*keys/*
+*generated-keys*
+*.pubring
+*.secring
+*random_seed*
 *.log
+tests/doctests/*
+gnupg/test/doctests/*
+gnupg/test/logs/*
+gnupg/test/tmp/*
+gnupg/test/files/*
 
 # Ignore distutils record of installed files:
 installed-files.txt
+
+# Ignore maintainer setup.cfg file:
+setup.cfg
 
 # Ignore PyCharm files:
 .idea/*
@@ -59,6 +71,7 @@ installed-files.txt
 # and git-tickets and tickets:
 .tickets/*
 tickets/*
+TICKET-*
 
 # Ignore virtualenv folders, if they are here:
 include/*
@@ -67,8 +80,9 @@ local/*
 # Ignore gpg binary symlinks:
 gpg
 
-# Ignore keys generated during tests:
-*generated-keys*
-*.pubring
-*.secring
-*random_seed*
+# Ignore quilt patch directory:
+.pc/*
+
+# setuptools/distribute files:
+PKG-INFO
+MANIFEST*

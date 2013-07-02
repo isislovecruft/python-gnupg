@@ -1,0 +1,4 @@
+This directory contains files related to doctests in python-gnupg docstrings.
+
+This file is a placeholder so that this directory exists when doctests are
+executed, and is not necessary to keep. It is safe to delete this directory.

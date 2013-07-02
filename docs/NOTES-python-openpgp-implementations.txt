@@ -1,0 +1,31 @@
+-*- mode: org -*-
+
+* Other Python OpenPGP libraries and utilities:
+     
+*** pygpgme - https://launchpad.net/pygpgme
+A limited set of Python wrappers around GPGME
+http://www.gnupg.org/documentation/manuals/gpgme/
+
+*** py-gnupg - https://github.com/kevinoid/py-gnupg/blob/master/GnuPGInterface.py
+Focuses mainly on using file handles to interact with GnuPG.
+
+*** OpenPGP-Python - https://github.com/singpolyma/OpenPGP-Python
+The commit messages are a bit worrysome and the code has some scary
+error-prone-looking method chaining going on, a five minute glance over the
+/OpenPGP/Crypto.py file and it appears this is actually a valid OpenPGP
+implementation, built using D.Litzenberger's PyCrypto library.
+https://github.com/dlitz/pycrypto
+
+This person also wrote OpenPGP-Haskell:
+https://github.com/singpolyma/OpenPGP-Haskell
+
+...and OpenPGP-PHP (/horrorface): https://github.com/singpolyma/openpgp-php and
+an HTTP server as a shell script with a pretty crazy pipe hack.
+
+...and kudos on this one, it's an attempt at a mnemnonic system for squaring
+Zooko's Triangle (L17 being a function named "countLeadingCrapAndZeros"):
+https://github.com/singpolyma/mnemonicode/blob/master/mnencode.c#L17
+
+* GnuPG unattended key generation scripts:
+
+*** mandos-keygen http://bzr.recompile.se/loggerhead/mandos/trunk/annotate/523/mandos-keygen?start_revid=616
