@@ -530,7 +530,7 @@ class GPGTestCase(unittest.TestCase):
         keyfile = os.path.join(self.gpg._keys_dir, 'test_key_3.pub')
         log.debug("Storing downloaded key as %s" % keyfile)
         with open(keyfile, 'w') as fh:
-            fh.write(key)
+            fh.write(str(key))
         self.assertTrue(os.path.isfile(keyfile))
 
     def test_import_and_export(self):
