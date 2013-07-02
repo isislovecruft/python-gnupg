@@ -109,9 +109,9 @@ greater.""",
     platforms="Linux, BSD, OSX, Windows",
     download_url="https://github.com/isislovecruft/python-gnupg/archive/master.zip",
     classifiers=[
-        'Development Status :: 4 - Alpha',
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
-        'Classifier:: License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',
+        "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
         "Programming Language :: Python",
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",
@@ -121,7 +121,7 @@ greater.""",
         "Programming Language :: Python :: 3.1",
         "Programming Language :: Python :: 3.2",
         "Topic :: Software Development :: Libraries :: Python Modules",
-        'Classifier:: Topic :: Security :: Cryptography',
-        'Classifier:: Topic :: Software Development :: Libraries :: Python Modules',
-        'Classifier:: Topic :: Utilities',]
+        "Topic :: Security :: Cryptography",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+        "Topic :: Utilities",]
 )
