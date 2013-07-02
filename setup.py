@@ -102,6 +102,7 @@ greater.""",
     package_dir={'gnupg': 'gnupg'},
     packages=['gnupg'],
     package_data={'': ['README', 'LICENSE', 'TODO']},
+    scripts=['versioneer.py'],
 
     install_requires=reqs,
     dependency_links=deps,
