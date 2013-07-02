@@ -1,4 +1,0 @@
-include README
-include LICENSE
-include TODO
-include versioneer.py
