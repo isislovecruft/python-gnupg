@@ -1,16 +1,37 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
+# This file is part of python-gnupg, a Python interface to GnuPG.
+# Copyright © 2013 Isis Lovecruft
+#           © 2008-2012 Vinay Sajip
+#           © 2005 Steve Traugott
+#           © 2004 A.M. Kuchling
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+"""test_gnupg.py
+----------------
+A test harness and unittests for gnupg.py.
 """
-A test harness for gnupg.py.
 
-Copyright © 2013 Isis Lovecruft.
-Copyright © 2008-2013 Vinay Sajip. All rights reserved.
-"""
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import with_statement
+from argparse   import ArgumentParser
+from codecs     import open as open
+from functools  import wraps
+from inspect    import getabsfile
+from inspect    import currentframe
+from time       import gmtime
+from time       import mktime
 
-from functools import wraps
-
-import argparse
-import codecs
 import encodings
 import doctest
 import io
@@ -19,8 +40,11 @@ import os
 import shutil
 import sys
 import tempfile
-import time
 
+## This is less applicable now that we're using distribute with a bootstrap
+## script for newer versions of distribute, and pip>=1.3.1, since both of
+## these dependencies require Python>=2.6 in order to have proper SSL support.
+##
 ## Use unittest2 if we're on Python2.6 or less:
 if sys.version_info.major == 2 and sys.version_info.minor <= 6:
     unittest = __import__(unittest2)
@@ -28,22 +52,35 @@ else:
     import unittest
 
 import gnupg
-from gnupg import _parsers
-from gnupg import _util
-from gnupg import _logger
+
+## see PEP-366 http://www.python.org/dev/peps/pep-0366/
+print("NAME: %r" % __name__)
+print("PACKAGE: %r" % __package__)
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "gnupg.test"
+    print("NAME: %r" % __name__)
+    print("PACKAGE: %r" % __package__)
+    try:
+        from .. import _util
+        from .. import _parsers
+        from .. import _logger
+    except (ImportError, ValueError) as ierr:
+        print(ierr.message)
 
 
 log = _util.log
 log.setLevel(9)
 
-_here  = os.path.join(os.getcwd(), 'tests')
-_files = os.path.join(_here, 'files')
-_tempd = os.path.join(_here, 'tmp')
+print("Current source directory: %s" % _util._here)
+print("Current os.cwd directory: %s" % os.getcwd())
+_tests = os.path.join(_util._here, 'test')
+_files = os.path.join(_tests, 'files')
+_tempd = os.path.join(_tests, 'tmp')
 
 tempfile.tempdir = _tempd
 if not os.path.isdir(tempfile.gettempdir()):
     log.debug("Creating temporary testing directory: %s"
-                 % tempfile.gettempdir())
+              % tempfile.gettempdir())
     os.makedirs(tempfile.gettempdir())
 
 @wraps(tempfile.TemporaryFile)
@@ -138,7 +175,7 @@ class GPGTestCase(unittest.TestCase):
 
     def setUp(self):
         """This method is called once per self.test_* method."""
-        print "%s%s%s" % (os.linesep, str("=" * 70), os.linesep)
+        print("%s%s%s" % (os.linesep, str("=" * 70), os.linesep))
         hd = tempfile.mkdtemp()
         if os.path.exists(hd):
             if not RETAIN_TEST_DIRS:
@@ -154,6 +191,7 @@ class GPGTestCase(unittest.TestCase):
         self.keyring = self.gpg.keyring
         self.secring = self.gpg.secring
         self.insecure_prng = False
+        self.gpg._keys_dir = os.path.join(_files, 'generated-keys')
 
     def tearDown(self):
         """This is called once per self.test_* method after the test run."""
@@ -165,17 +203,21 @@ class GPGTestCase(unittest.TestCase):
         else:
             log.warn("Can't delete homedir: '%s' not a directory"
                      % self.homedir)
-        log.warn("%s%s%s" % (os.linesep, str("=" * 70), os.linesep))
 
     def test_parsers_fix_unsafe(self):
         """Test that unsafe inputs are quoted out and then ignored."""
         shell_input = "\"&coproc /bin/sh\""
         fixed = _parsers._fix_unsafe(shell_input)
-        print fixed
+        print(fixed)
         test_file = os.path.join(_files, 'cypherpunk_manifesto')
         self.assertTrue(os.path.isfile(test_file))
         has_shell = self.gpg.verify_file(test_file, fixed)
         self.assertFalse(has_shell.valid)
+
+    def test_parsers_fix_unsafe_semicolon(self):
+        """Test that we can't escape into the Python interpreter."""
+        shell_input = "; import antigravity ;"
+        fixed = _parsers._fix_unsafe(shell_input)
 
     def test_parsers_is_hex_valid(self):
         """Test that valid hexidecimal passes the parsers._is_hex() check"""
@@ -198,7 +240,7 @@ class GPGTestCase(unittest.TestCase):
         with self.assertRaises(LookupError):
             _util.find_encodings(enc)
 
-    def test_encodings_iso_8859_1(self):
+    def test_encodings_big5(self):
         """Test that _util.find_encodings works for Chinese Traditional."""
         enc = 'big5'
         coder = _util.find_encodings(enc)
@@ -261,7 +303,7 @@ class GPGTestCase(unittest.TestCase):
 
     def test_gpg_binary_not_abs(self):
         """Test that a non-absolute path to gpg results in a full path."""
-        print self.gpg.binary
+        print(self.gpg.binary)
         self.assertTrue(os.path.isabs(self.gpg.binary))
 
     def test_make_args_drop_protected_options(self):
@@ -340,8 +382,8 @@ class GPGTestCase(unittest.TestCase):
         """Generate a basic key."""
         key_input = self.generate_key_input(real_name, email_domain, **kwargs)
         key = self.gpg.gen_key(key_input)
-        print "\nKEY TYPE: ", key.type
-        print "KEY FINGERPRINT: ", key.fingerprint
+        print("\nKEY TYPE: ", key.type)
+        print("KEY FINGERPRINT: ", key.fingerprint)
         return key
 
     def test_gen_key_input(self):
@@ -478,6 +520,20 @@ class GPGTestCase(unittest.TestCase):
         keys = self.gpg.list_keys(secret=True)
         self.assertTrue(os.path.isfile(self.gpg.secring))
 
+    def test_recv_keys_default(self):
+        """Testing receiving keys from a keyserver."""
+        fpr = '0A6A58A14B5946ABDE18E207A3ADB67A2CDB8B35'
+        key = self.gpg.recv_keys(fpr)
+        self.assertIsNotNone(key)
+        self.assertNotEquals(key, "")
+        self.assertGreater(len(str(key)), 0)
+        keyfile = os.path.join(self.gpg._keys_dir, 'test_key_3.pub')
+        log.debug("Storing downloaded key as %s" % keyfile)
+        with open(keyfile, 'w') as fh:
+            fh.write(str(key))
+        self.assertTrue(os.path.isfile(keyfile))
+        self.assertGreater(os.stat(keyfile).st_size, 0)
+
     def test_import_and_export(self):
         """Test that key import and export works."""
         self.test_list_keys_initial_public()
@@ -526,39 +582,46 @@ class GPGTestCase(unittest.TestCase):
             log.info("now: %r", ascii)
         self.assertEqual(0, match, "Keys must match")
 
-    def test_signature_string(self):
+    def test_signature_string_algorithm_encoding(self):
         """Test that signing a message string works."""
         key = self.generate_key("Werner Koch", "gnupg.org")
         message = "Damn, I really wish GnuPG had ECC support."
         sig = self.gpg.sign(message, default_key=key.fingerprint,
                             passphrase='wernerkoch')
-        print "SIGNATURE:\n", sig.data
+        print("SIGNATURE:\n", sig.data)
         self.assertIsNotNone(sig.data)
-
-    def test_signature_algorithm(self):
-        """Test that determining the signing algorithm works."""
-        key = self.generate_key("Ron Rivest", "rsa.com")
-        message = "Someone should add GCM block cipher mode to PyCrypto."
-        sig = self.gpg.sign(message, default_key=key.fingerprint,
-                            passphrase='ronrivest')
-        print "ALGORITHM:\n", sig.sig_algo
+        print("ALGORITHM:\n", sig.sig_algo)
         self.assertIsNotNone(sig.sig_algo)
+
+        log.info("Testing signature strings with alternate encodings.")
+        self.gpg._encoding = 'latin-1'
+        message = "Mêle-toi de tes oignons"
+        sig = self.gpg.sign(message, default_key=key.fingerprint,
+                            passphrase='wernerkoch')
+        self.assertTrue(sig)
+        print("SIGNATURE:\n", sig.data)
+        self.assertIsNotNone(sig.data)
+        print("ALGORITHM:\n", sig.sig_algo)
+        self.assertIsNotNone(sig.sig_algo)
+
+        fpr = str(key.fingerprint)
+        seckey = self.gpg.export_keys(fpr, secret=True, subkeys=True)
+        keyfile = os.path.join(_files, 'test_key_4.sec')
+        log.info("Writing generated key to %s" % keyfile)
+        with open(keyfile, 'w') as fh:
+            fh.write(seckey)
+        self.assertTrue(os.path.isfile(keyfile))
 
     def test_signature_string_bad_passphrase(self):
         """Test that signing and verification works."""
-        key = self.generate_key("Taher ElGamal", "cryto.me")
+        keyfile = os.path.join(_files, 'test_key_1.sec')
+        key = open(keyfile).read()
+        self.gpg.import_keys(key)
+        key = self.gpg.list_keys()[0]
+        fpr = key['fingerprint']
         message = 'أصحاب المصالح لا يحبون الثوراتز'
-        sig = self.gpg.sign(message, default_key=key.fingerprint,
-                            passphrase='foo')
+        sig = self.gpg.sign(message, default_key=fpr, passphrase='foo')
         self.assertFalse(sig, "Bad passphrase should fail")
-
-    def test_signature_string_alternate_encoding(self):
-        key = self.generate_key("Nos Oignons", "nos-oignons.net")
-        self.gpg.encoding = 'latin-1'
-        message = "Mêle-toi de tes oignons"
-        sig = self.gpg.sign(message, default_key=key.fingerprint,
-                            passphrase='nosoignons')
-        self.assertTrue(sig)
 
     def test_signature_file(self):
         """Test that signing a message file works."""
@@ -576,7 +639,7 @@ class GPGTestCase(unittest.TestCase):
         message += '[hackers in popular culture] to push for more power'
         sig = self.gpg.sign(message, default_key=key.fingerprint,
                             passphrase='bruceschneier')
-        now = time.mktime(time.gmtime())
+        now = mktime(gmtime())
         self.assertTrue(sig, "Good passphrase should succeed")
         verified = self.gpg.verify(sig.data)
         self.assertIsNotNone(verified.fingerprint)
@@ -603,7 +666,7 @@ class GPGTestCase(unittest.TestCase):
                             passphrase='johanborst')
         self.assertTrue(sig, "Good passphrase should succeed")
         try:
-            file = _util._make_binary_stream(sig.data, self.gpg.encoding)
+            file = _util._make_binary_stream(sig.data, self.gpg._encoding)
             verified = self.gpg.verify_file(file)
         except UnicodeDecodeError: #happens in Python 2.6
             verified = self.gpg.verify_file(io.BytesIO(sig.data))
@@ -638,13 +701,20 @@ class GPGTestCase(unittest.TestCase):
     def test_signature_verification_detached_binary(self):
         """Test that detached signature verification in binary mode fails."""
         key = self.generate_key("Adi Shamir", "rsa.com")
-        with open(os.path.join(_files, 'cypherpunk_manifesto'), 'rb') as cm:
+        datafile = os.path.join(_files, 'cypherpunk_manifesto')
+        with open(datafile, 'rb') as cm:
             sig = self.gpg.sign(cm, default_key=key.fingerprint,
                                 passphrase='adishamir',
                                 detach=True, binary=True, clearsign=False)
             self.assertTrue(sig.data, "File signing should succeed")
+            with open(datafile+'.sig', 'w') as bs:
+                bs.write(sig.data)
+                bs.flush()
             with self.assertRaises(UnicodeDecodeError):
-                print "SIG=", sig
+                print("SIG=%s" % sig)
+        with open(datafile+'.sig', 'rb') as fsig:
+            with open(datafile, 'rb') as fdata:
+                self.gpg.verify_file(fdata, fsig)
 
     def test_deletion(self):
         """Test that key deletion works."""
@@ -677,7 +747,7 @@ authentication."""
         encrypted = str(gpg.encrypt(message, dijk))
         log.debug("Plaintext: %s" % message)
         log.debug("Encrypted: %s" % encrypted)
-        self.assertNotEqual(message, encrypted)
+        self.assertNotEquals(message, encrypted)
 
     def test_encryption_alt_encoding(self):
         """Test encryption with latin-1 encoding"""
@@ -686,12 +756,12 @@ authentication."""
         gentry = str(key.fingerprint)
         key = self.generate_key("Marten van Dijk", "xorr.ox")
         dijk = str(key.fingerprint)
-        self.gpg.encoding = 'latin-1'
+        self.gpg._encoding = 'latin-1'
         if _util._py3k:
             data = 'Hello, André!'
         else:
-            data = unicode('Hello, André', self.gpg.encoding)
-        data = data.encode(self.gpg.encoding)
+            data = unicode('Hello, André', self.gpg._encoding)
+        data = data.encode(self.gpg._encoding)
         encrypted = self.gpg.encrypt(data, gentry)
         edata = str(encrypted.data)
         self.assertNotEqual(data, edata)
@@ -699,7 +769,7 @@ authentication."""
 
     def test_encryption_multi_recipient(self):
         """Test encrypting a message for multiple recipients"""
-        self.gpg.homedir = _here
+        self.gpg.homedir = _util._here
 
         ian = { 'name_real': 'Ian Goldberg',
                 'name_email': 'gold@stein',
@@ -727,14 +797,17 @@ authentication."""
                 'passphrase': 'overalls' }
 
         ian_input = self.gpg.gen_key_input(separate_keyring=True, **ian)
+        log.info("Key stored in separate keyring: %s" % self.gpg.temp_keyring)
         ian_key = self.gpg.gen_key(ian_input)
-        log.debug("ian_key status: %s" % ian_key.status)
         ian_fpr = str(ian_key.fingerprint)
+        self.gpg.options = ['--keyring {}'.format(ian_key.keyring)]
 
         kat_input = self.gpg.gen_key_input(separate_keyring=True, **kat)
+        log.info("Key stored in separate keyring: %s" % self.gpg.temp_keyring)
         kat_key = self.gpg.gen_key(kat_input)
-        log.debug("kat_key status: %s" % kat_key.status)
         kat_fpr = str(kat_key.fingerprint)
+        self.gpg.options.append('--keyring {}'.format(kat_key.keyring))
+        self.gpg.import_keys(kat_key.data)
 
         message = """
 In 2010 Riggio and Sicari presented a practical application of homomorphic
@@ -747,11 +820,13 @@ authentication."""
         log.debug("kat_fpr type: %s" % type(kat_fpr))
         log.debug("ian_fpr type: %s" % type(ian_fpr))
 
-        encrypted = self.gpg.encrypt(message, (ian_fpr, kat_fpr))
+        encrypted = str(self.gpg.encrypt(message, ian_fpr, kat_fpr))
         log.debug("Plaintext: %s" % message)
-        log.debug("Ciphertext: %s" % str(encrypted.data))
+        log.debug("Ciphertext: %s" % encrypted)
 
-        self.assertNotEqual(message, str(encrypted.data))
+        self.assertNotEquals(message, encrypted)
+        self.assertIsNotNone(encrypted)
+        self.assertGreater(len(encrypted), 0)
 
     def test_decryption(self):
         """Test decryption"""
@@ -830,21 +905,31 @@ authentication."""
         log.debug("encryption_decryption_multi_recipient() Ciphertext = %s"
                   % encrypted)
 
-        self.assertNotEqual(message, encrypted)
+        self.assertNotEquals(message, encrypted)
         dec_alice = self.gpg.decrypt(encrypted, passphrase="test")
-        self.assertEqual(message, str(dec_alice.data))
+        self.assertEquals(message, str(dec_alice.data))
         dec_bob = self.gpg.decrypt(encrypted, passphrase="test")
-        self.assertEqual(message, str(dec_bob.data))
+        self.assertEquals(message, str(dec_bob.data))
 
     def test_symmetric_encryption_and_decryption(self):
         """Test symmetric encryption and decryption"""
-        msg  = """If you have something that you don't want anyone to know,
- maybe you shouldn't be doing it in the first place. - Eric Schmidt, CEO
- of Google"""
+        msg  = """If you have something that you don't want anyone to
+know, maybe you shouldn't be doing it in the first place.
+-- Eric Schmidt, CEO of Google"""
         encrypted = str(self.gpg.encrypt(msg, passphrase='quiscustodiet',
                                          symmetric=True, encrypt=False))
-        decrypted = self.gpg.decrypt(encrypted, passphrase='quiscustodiet')
-        self.assertEqual(msg, str(decrypted.data))
+        decrypt = self.gpg.decrypt(encrypted, passphrase='quiscustodiet')
+        decrypted = str(decrypt.data)
+
+        log.info("Symmetrically encrypted data:\n%s" % encrypted)
+        log.info("Symmetrically decrypted data:\n%s" % decrypted)
+
+        self.assertIsNotNone(encrypted)
+        self.assertNotEquals(encrypted, "")
+        self.assertNotEquals(encrypted, msg)
+        self.assertIsNotNone(decrypted)
+        self.assertNotEquals(decrypted, "")
+        self.assertEqual(decrypted, msg)
 
     def test_file_encryption_and_decryption(self):
         """Test that encryption/decryption to/from file works."""
@@ -868,7 +953,7 @@ authentication."""
                 fdata = enc2.read()
                 ddata = str(self.gpg.decrypt(fdata, passphrase="overalls"))
 
-                data = data.encode(self.gpg.encoding)
+                data = data.encode(self.gpg._encoding)
                 if ddata != data:
                     log.debug("data was: %r" % data)
                     log.debug("new (from filehandle): %r" % fdata)
@@ -877,14 +962,14 @@ authentication."""
 
 
 suites = { 'parsers': set(['test_parsers_fix_unsafe',
+                           'test_parsers_fix_unsafe_semicolon',
                            'test_parsers_is_hex_valid',
                            'test_parsers_is_hex_lowercase',
                            'test_parsers_is_hex_invalid',
                            'test_copy_data_bytesio',]),
-           'encodings': set(['test_encodings_iso_8859_1',
+           'encodings': set(['test_encodings_big5',
                              'test_encodings_spiteful',
-                             'test_encodings_non_specified',
-                         ]),
+                             'test_encodings_non_specified',]),
            'basic': set(['test_homedir_creation',
                          'test_binary_discovery',
                          'test_gpg_binary',
@@ -911,10 +996,8 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                         'test_signature_verification_detached_binary',
                         'test_signature_file',
                         'test_signature_string_bad_passphrase',
-                        'test_signature_string_alternate_encoding',
                         'test_signature_string_verification',
-                        'test_signature_algorithm',
-                        'test_signature_string']),
+                        'test_signature_string_algorithm_encoding']),
            'crypt': set(['test_encryption',
                          'test_encryption_alt_encoding',
                          'test_encryption_multi_recipient',
@@ -926,8 +1009,9 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
            'keyrings': set(['test_public_keyring',
                             'test_secret_keyring',
                             'test_import_and_export',
-                            'test_deletion']),
-           'import': set(['test_import_only']), }
+                            'test_deletion',
+                            'test_import_only',
+                            'test_recv_keys_default',]), }
 
 def main(args):
     if not args.quiet:
@@ -981,7 +1065,7 @@ if __name__ == "__main__":
         suite_names.append(name)
         setattr(GPGTestCase, name, list(methodset))
 
-    parser = argparse.ArgumentParser(description="Unittests for python-gnupg")
+    parser = ArgumentParser(description="Unittests for python-gnupg")
     parser.add_argument('--doctest', dest='run_doctest',
                         type=bool, default=False,
                         help='Run example code in docstrings')

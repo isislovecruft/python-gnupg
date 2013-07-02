@@ -15,31 +15,33 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-'''
-util.py
+'''util.py
 ----------
 Extra utilities for python-gnupg.
 '''
 
-from datetime import datetime
-from socket   import gethostname
+from __future__ import absolute_import
+from datetime   import datetime
+from socket     import gethostname
+from time       import gmtime
+from time       import mktime
 
 import codecs
 import encodings
 import os
-import time
 import threading
 import random
 import string
 import sys
-
-import _logger
 
 try:
     from io import StringIO
     from io import BytesIO
 except ImportError:
     from cStringIO import StringIO
+
+from . import _logger
+
 
 try:
     unicode
@@ -48,17 +50,19 @@ try:
         isinstance(__name__, basestring)
     except NameError:
         msg  = "Sorry, python-gnupg requires a Python version with proper"
-        msg += " unicode support. Please upgrade to Python>=2.3."
+        msg += " unicode support. Please upgrade to Python>=2.6."
         raise SystemExit(msg)
 except NameError:
     _py3k = True
 
 
 ## Directory shortcuts:
-_here = os.getcwd()
-_test = os.path.join(os.path.join(_here, 'tests'), 'tmp') ## ./tests/tmp
-_user = os.environ.get('HOME')                            ## $HOME
-_ugpg = os.path.join(_user, '.gnupg')                     ## $HOME/.gnupg
+## we don't want to use this one because it writes to the install dir:
+#_here = getabsfile(currentframe()).rsplit(os.path.sep, 1)[0]
+_here = os.path.join(os.getcwd(), 'gnupg')                   ## current dir
+_test = os.path.join(os.path.join(_here, 'test'), 'tmp')     ## ./tests/tmp
+_user = os.environ.get('HOME')                               ## $HOME
+_ugpg = os.path.join(_user, '.gnupg')                        ## $HOME/.gnupg
 _conf = os.path.join(os.path.join(_user, '.config'), 'python-gnupg')
                                      ## $HOME/.config/python-gnupg
 
@@ -100,6 +104,16 @@ def find_encodings(enc=None, system=False):
 
     return coder
 
+def author_info(name, contact=None, public_key=None):
+    """Easy object-oriented representation of contributor info.
+
+    :param str name: The contributor´s name.
+    :param str contact: The contributor´s email address or contact
+                        information, if given.
+    :param str public_key: The contributor´s public keyid, if given.
+    """
+    return Storage(name=name, contact=contact, public_key=public_key)
+
 def _copy_data(instream, outstream):
     """Copy data from one stream to another.
 
@@ -108,14 +122,6 @@ def _copy_data(instream, outstream):
     :param file outstream: The file descriptor of a tmpfile to write to.
     """
     sent = 0
-
-    #try:
-    #    #assert (util._is_stream(instream)
-    #    #        or isinstance(instream, file)), "instream not stream or file"
-    #    assert isinstance(outstream, file), "outstream is not a file"
-    #except AssertionError as ae:
-    #    log.exception(ae)
-    #    return
 
     coder = find_encodings()
 
@@ -139,9 +145,12 @@ def _copy_data(instream, outstream):
             except IOError:
                 log.exception("Error sending data: Broken pipe")
                 break
-        except IOError:
+        except IOError as ioe:
             # Can get 'broken pipe' errors even when all data was sent
-            log.exception('Error sending data: Broken pipe')
+            if 'Broken pipe' in ioe.message:
+                log.error('Error sending data: Broken pipe')
+            else:
+                log.exception(ioe)
             break
     try:
         outstream.close()
@@ -321,7 +330,7 @@ def _make_passphrase(length=None, save=False, file=None):
     if save:
         ruid, euid, suid = os.getresuid()
         gid = os.getgid()
-        now = time.mktime(time.gmtime())
+        now = mktime(gmtime())
 
         if not file:
             filename = str('passphrase-%s-%s' % uid, now)
@@ -379,7 +388,7 @@ def _threaded_copy_data(instream, outstream):
 
 def _utc_epoch():
     """Get the seconds since epoch for UTC."""
-    return int(time.mktime(time.gmtime()))
+    return int(mktime(gmtime()))
 
 def _which(executable, flags=os.X_OK):
     """Borrowed from Twisted's :mod:twisted.python.proutils .
@@ -468,3 +477,45 @@ class InheritableProperty(object):
       self.fdel(obj)
     else:
       getattr(obj, self.fdel.__name__)()
+
+class Storage(dict):
+    """A dictionary where keys are stored as class attributes.
+
+    For example, ``obj.foo`` can be used in addition to ``obj['foo']``:
+
+        >>> o = Storage(a=1)
+        >>> o.a
+        1
+        >>> o['a']
+        1
+        >>> o.a = 2
+        >>> o['a']
+        2
+        >>> del o.a
+        >>> o.a
+        None
+    """
+    def __getattr__(self, key):
+        try:
+            return self[key]
+        except KeyError, k:
+            return None
+
+    def __setattr__(self, key, value):
+        self[key] = value
+
+    def __delattr__(self, key):
+        try:
+            del self[key]
+        except KeyError as k:
+            raise AttributeError(k.message)
+
+    def __repr__(self):
+        return '<Storage ' + dict.__repr__(self) + '>'
+
+    def __getstate__(self):
+        return dict(self)
+
+    def __setstate__(self, value):
+        for (k, v) in value.items():
+            self[k] = v

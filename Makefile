@@ -1,3 +1,10 @@
+SHELL=/bin/sh
+TESTDIR=./gnupg/test
+TESTHANDLE=$(TESTDIR)/test_gnupg.py
+FILES=$(SHELL find ./gnupg/ -name "*.py" -printf "%p,")
+
+.PHONY=all
+all: uninstall install test
 
 ctags:
 	ctags -R *.py
@@ -5,25 +12,18 @@ ctags:
 etags:
 	find . -name "*.py" -print | xargs etags
 
-cleanup-src:
-	cd src && \
-		rm -f \#*\# && \
-		rm -f ./*.pyc && \
-		rm -f ./*.pyo
+# Sanitation targets -- clean leaves libraries, executables and tags
+# files, which clobber removes as well
+pycremoval:
+	find . -name '*.py[co]' -exec rm -f {} ';'
 
-cleanup-tests:
-	cd tests && \
-		rm -f \#*\# && \
-		rm -f ./*.pyc && \
-		rm -f ./*.pyo
-	mkdir -p tests/tmp
-	mkdir -p tests/logs
-	touch tests/placeholder.log
-	mv tests/*.log tests/logs/
-	rm tests/logs/placeholder.log
-	touch placeholder.log
-	rm *.log
-	rm tests/random_seed
+cleanup-src: pycremoval
+	cd gnupg && rm -f \#*\#
+
+cleanup-tests: cleanup-src
+	cd $(TESTDIR) && rm -f \#*\#
+	mkdir -p gnupg/test/tmp
+	mkdir -p gnupg/test/logs
 
 cleanup-tests-all: cleanup-tests
 	rm -rf tests/tmp
@@ -32,19 +32,22 @@ cleanup-build:
 	mkdir buildnot
 	rm -rf build*
 
-test: cleanup-src cleanup-tests
-	which gpg
-	gpg --version
-	which gpg2
-	gpg2 --version
+test-before: cleanup-src cleanup-tests
+	which gpg && gpg --version
+	which gpg2 && gpg2 --version
 	which gpg-agent
 	which pinentry
-	which python
-	python --version
-	which pip
-	pip --version
-	pip list
-	python tests/test_gnupg.py parsers basic encodings genkey sign listkeys crypt keyrings import
+	which python && python --version
+	which pip && pip --version && pip list
+
+test: test-before
+	python $(TESTHANDLE) basic encodings parsers keyrings listkeys genkey \
+		sign crypt
+	touch gnupg/test/placeholder.log
+	mv gnupg/test/*.log gnupg/test/logs/
+	rm gnupg/test/logs/placeholder.log
+	touch gnupg/test/random_seed_is_sekritly_pi
+	rm gnupg/test/random_seed*
 
 install: 
 	python setup.py install --record installed-files.txt
@@ -53,13 +56,13 @@ uninstall:
 	touch installed-files.txt
 	cat installed-files.txt | sudo xargs rm -rf
 
+reinstall: uninstall install
+
 cleandocs:
-	sphinx-apidoc -F -A "Isis Agora Lovecruft" -H "python-gnupg" -V 0.4.0 -R 0.4.0 -o docs src/ tests/
+	sphinx-apidoc -F -A "Isis Agora Lovecruft" -H "python-gnupg" \
+		-o docs gnupg/ tests/
 
 docs:
-	cd docs
-	make clean
-	make html
-
-venv:
-	-source /usr/shared/python/ns/virtualenvwrapper.sh && mkvirtualenv -a "$PWD" --no-site-packages --unzip-setuptools --distribute python-gnupg
+	cd docs && \
+		make clean && \
+		make html

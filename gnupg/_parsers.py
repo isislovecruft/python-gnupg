@@ -15,17 +15,19 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Affero General Public License for more details.
-'''
-parsers.py
-----------
+'''parsers.py
+-------------
 Classes for parsing GnuPG status messages and sanitising commandline options.
 '''
 
+from __future__ import absolute_import
+from __future__ import print_function
+
+import collections
 import re
 
-from _util import log
-
-import _util
+from .      import _util
+from ._util import log
 
 
 ESCAPE_PATTERN = re.compile(r'\\x([0-9a-f][0-9a-f])', re.I)
@@ -38,6 +40,34 @@ class ProtectedOption(Exception):
 class UsageError(Exception):
     """Raised when incorrect usage of the API occurs.."""
 
+
+def _check_keyserver(location):
+    """Check that a given keyserver is a known protocol and does not contain
+    shell escape characters.
+
+    :param str location: A string containing the default keyserver. This
+                         should contain the desired keyserver protocol which
+                         is supported by the keyserver, for example, the
+                         default is ``'hkp://subkeys.pgp.net'``.
+    :rtype: str or None
+    :returns: A string specifying the protocol and keyserver hostname, if the
+              checks passed. If not, returns None.
+    """
+    protocols = ['hkp://', 'hkps://', 'http://', 'https://', 'ldap://',
+                 'mailto:'] ## xxx feels like i´m forgetting one...
+    for proto in protocols:
+        if location.startswith(proto):
+            url = location.replace(proto, str())
+            host, slash, extra = url.partition('/')
+            if extra: log.warn("URI text for %s: '%s'" % (host, extra))
+            log.debug("Got host string for keyserver setting: '%s'" % host)
+
+            host = _fix_unsafe(host)
+            if host:
+                log.debug("Cleaned host string: '%s'" % host)
+                keyserver = proto + host
+                return keyserver
+            return None
 
 def _check_preferences(prefs, pref_type=None):
     """Check cipher, digest, and compression preference settings.
@@ -62,7 +92,7 @@ def _check_preferences(prefs, pref_type=None):
     elif isinstance(prefs, list):
         prefs = set(prefs)
     else:
-        msg = "prefs must be a list of strings, or one space-separated string"
+        msg = "prefs must be list of strings, or space-separated string"
         log.error("parsers._check_preferences(): %s" % message)
         raise TypeError(message)
 
@@ -88,7 +118,6 @@ def _fix_unsafe(shell_input):
 
     :param str shell_input: The input intended for the GnuPG process.
     """
-    ## xxx do we want to add ';'?
     _unsafe = re.compile(r'[^\w@%+=:,./-]', 256)
     try:
         if len(_unsafe.findall(shell_input)) == 0:
@@ -113,21 +142,22 @@ def _hyphenate(input, add_prefix=False):
     return ret
 
 def _is_allowed(input):
-    """
-    Check that an option or argument given to GPG is in the set of allowed
+    """Check that an option or argument given to GPG is in the set of allowed
     options, the latter being a strict subset of the set of all options known
     to GPG.
 
     :param str input: An input meant to be parsed as an option or flag to the
                       GnuPG process. Should be formatted the same as an option
                       or flag to the commandline gpg, i.e. "--encrypt-files".
-    :ivar frozenset _possible: All known GPG options and flags.
-    :ivar frozenset _allowed: All allowed GPG options and flags, e.g. all GPG
-                              options and flags which we are willing to
-                              acknowledge and parse. If we want to support a
-                              new option, it will need to have its own parsing
-                              class and its name will need to be added to this
-                              set.
+
+    :ivar frozenset gnupg_options: All known GPG options and flags.
+
+    :ivar frozenset allowed: All allowed GPG options and flags, e.g. all GPG
+                             options and flags which we are willing to
+                             acknowledge and parse. If we want to support a
+                             new option, it will need to have its own parsing
+                             class and its name will need to be added to this
+                             set.
 
     :rtype: Exception or str
     :raise: :exc:UsageError if ``_allowed`` is not a subset of ``_possible``.
@@ -135,7 +165,425 @@ def _is_allowed(input):
     :return: The original parameter ``input``, unmodified and unsanitized,
              if no errors occur.
     """
+    gnupg_options = _get_all_gnupg_options()
+    allowed = _get_options_group("allowed")
 
+    ## these are the allowed options we will handle so far, all others should
+    ## be dropped. this dance is so that when new options are added later, we
+    ## merely add the to the _allowed list, and the `` _allowed.issubset``
+    ## assertion will check that GPG will recognise them
+    try:
+        ## check that allowed is a subset of all gnupg_options
+        assert allowed.issubset(gnupg_options)
+    except AssertionError:
+        raise UsageError("'allowed' isn't a subset of known options, diff: %s"
+                         % allowed.difference(gnupg_options))
+
+    ## if we got a list of args, join them
+    ##
+    ## see TODO file, tag :cleanup:
+    if not isinstance(input, str):
+        input = ' '.join([x for x in input])
+
+    if isinstance(input, str):
+        if input.find('_') > 0:
+            if not input.startswith('--'):
+                hyphenated = _hyphenate(input, add_prefix=True)
+            else:
+                hyphenated = _hyphenate(input)
+        else:
+            hyphenated = input
+            ## xxx we probably want to use itertools.dropwhile here
+            try:
+                assert hyphenated in allowed
+            except AssertionError as ae:
+                dropped = _fix_unsafe(hyphenated)
+                log.warn("_is_allowed(): Dropping option '%s'..." % dropped)
+                raise ProtectedOption("Option '%s' not supported." % dropped)
+            else:
+                return input
+    return None
+
+def _is_hex(string):
+    """Check that a string is hexidecimal, with alphabetic characters
+    capitalized and without whitespace.
+
+    :param str string: The string to check.
+    """
+    matched = HEXIDECIMAL.match(string)
+    if matched is not None and len(matched.group()) >= 2:
+        return True
+    return False
+
+def _is_string(thing):
+    """Python character arrays are a mess.
+
+    If Python2, check if ``thing`` is a ``unicode()`` or ``str()``.
+    If Python3, check if ``thing`` is a ``str()``.
+
+    :param thing: The thing to check.
+    :returns: ``True`` if ``thing`` is a "string" according to whichever
+              version of Python we're running in.
+    """
+    if _util._py3k: return isinstance(thing, str)
+    else: return isinstance(thing, basestring)
+
+def _sanitise(*args):
+    """Take an arg or the key portion of a kwarg and check that it is in the
+    set of allowed GPG options and flags, and that it has the correct
+    type. Then, attempt to escape any unsafe characters. If an option is not
+    allowed, drop it with a logged warning. Returns a dictionary of all
+    sanitised, allowed options.
+
+    Each new option that we support that is not a boolean, but instead has
+    some extra inputs, i.e. "--encrypt-file foo.txt", will need some basic
+    safety checks added here.
+
+    GnuPG has three-hundred and eighteen commandline flags. Also, not all
+    implementations of OpenPGP parse PGP packets and headers in the same way,
+    so there is added potential there for messing with calls to GPG.
+
+    For information on the PGP message format specification, see:
+        https://www.ietf.org/rfc/rfc1991.txt
+
+    If you're asking, "Is this *really* necessary?": No, not really -- we could
+    just do a check as described here: https://xkcd.com/1181/
+
+    :param str args: (optional) The boolean arguments which will be passed to
+                     the GnuPG process.
+    :rtype: str
+    :returns: ``sanitised``
+    """
+
+    ## see TODO file, tag :cleanup:sanitise:
+
+    def _check_option(arg, value):
+        """
+        Check that a single :param:arg is an allowed option. If it is allowed,
+        quote out any escape characters in :param:values, and add the pair to
+        :ivar:sanitised.
+
+        :param str arg: The arguments which will be passed to the GnuPG
+                        process, and, optionally their corresponding values.
+                        The values are any additional arguments following the
+                        GnuPG option or flag. For example, if we wanted to pass
+                        "--encrypt --recipient isis@leap.se" to gpg, then
+                        "--encrypt" would be an arg without a value, and
+                        "--recipient" would also be an arg, with a value of
+                        "isis@leap.se".
+        :ivar list checked: The sanitised, allowed options and values.
+        :rtype: str
+        :returns: A string of the items in ``checked`` delimited by spaces.
+        """
+        checked = str()
+        none_options        = _get_options_group("none_options")
+        hex_options         = _get_options_group("hex_options")
+        hex_or_none_options = _get_options_group("hex_or_none_options")
+
+        if not _util._py3k:
+            if not isinstance(arg, list) and isinstance(arg, unicode):
+                arg = str(arg)
+
+        try:
+            flag = _is_allowed(arg)
+            assert flag is not None, "_check_option(): got None for flag"
+        except (AssertionError, ProtectedOption) as error:
+            log.warn("_check_option(): %s" % error.message)
+        else:
+            checked += (flag + ' ')
+
+            if _is_string(value):
+                values = value.split(' ')
+                for v in values:
+                    ## these can be handled separately, without _fix_unsafe(),
+                    ## because they are only allowed if the pass the regex
+                    if (flag in none_options) and (v is None):
+                        continue
+
+                    if flag in hex_options:
+                        if _is_hex(v): checked += (v + " ")
+                        else:
+                            log.debug("'%s %s' not hex." % (flag, v))
+                            if (flag in hex_or_none_options) and (v is None):
+                                log.debug("Allowing '%s' for all keys" % flag)
+                        continue
+
+                    elif flag in ['--keyserver']:
+                        host = _check_keyserver(v)
+                        if host:
+                            log.debug("Setting keyserver: %s" % host)
+                            checked += (v + " ")
+                        else: log.debug("Dropping keyserver: %s" % v)
+                        continue
+
+                    ## the rest are strings, filenames, etc, and should be
+                    ## shell escaped:
+                    val = _fix_unsafe(v)
+                    try:
+                        assert not val is None
+                        assert not val.isspace()
+                        assert not v is None
+                        assert not v.isspace()
+                    except:
+                        log.debug("Dropping %s %s" % (flag, v))
+                        continue
+
+                    if flag in ['--encrypt', '--encrypt-files', '--decrypt',
+                                '--decrypt-files', '--import', '--verify']:
+                        if _util._is_file(val): checked += (val + " ")
+                        else: log.debug("%s not file: %s" % (flag, val))
+
+                    elif flag in ['--cipher-algo', '--personal-cipher-prefs',
+                                  '--personal-cipher-preferences']:
+                        legit_algos = _check_preferences(val, 'cipher')
+                        if legit_algos: checked += (legit_algos + " ")
+                        else: log.debug("'%s' is not cipher" % val)
+
+                    elif flag in ['--compress-algo', '--compression-algo',
+                                  '--personal-compress-prefs',
+                                  '--personal-compress-preferences']:
+                        legit_algos = _check_preferences(val, 'compress')
+                        if legit_algos: checked += (legit_algos + " ")
+                        else: log.debug("'%s' not compress algo" % val)
+
+                    else:
+                        checked += (val + " ")
+                        log.debug("_check_option(): No checks for %s" % val)
+
+        return checked
+
+    is_flag = lambda x: x.startswith('--')
+
+    def _make_filo(args_string):
+        filo = arg.split(' ')
+        filo.reverse()
+        log.debug("_make_filo(): Converted to reverse list: %s" % filo)
+        return filo
+
+    def _make_groups(filo):
+        groups = {}
+        while len(filo) >= 1:
+            last = filo.pop()
+            if is_flag(last):
+                log.debug("Got arg: %s" % last)
+                if last == '--verify':
+                    groups[last] = str(filo.pop())
+                    ## accept the read-from-stdin arg:
+                    if len(filo) >= 1 and filo[len(filo)-1] == '-':
+                        groups[last] += str(' - \'\'') ## gross hack
+                else:
+                    groups[last] = str()
+                while len(filo) > 1 and not is_flag(filo[len(filo)-1]):
+                    log.debug("Got value: %s" % filo[len(filo)-1])
+                    groups[last] += (filo.pop() + " ")
+                else:
+                    if len(filo) == 1 and not is_flag(filo[0]):
+                        log.debug("Got value: %s" % filo[0])
+                        groups[last] += filo.pop()
+            else:
+                log.warn("_make_groups(): Got solitary value: %s" % last)
+                groups["xxx"] = last
+        return groups
+
+    def _check_groups(groups):
+        log.debug("Got groups: %s" % groups)
+        checked_groups = []
+        for a,v in groups.items():
+            v = None if len(v) == 0 else v
+            safe = _check_option(a, v)
+            if safe is not None and not safe.strip() == "":
+                log.debug("Appending option: %s" % safe)
+                checked_groups.append(safe)
+            else:
+                log.warn("Dropped option: '%s %s'" % (a,v))
+        return checked_groups
+
+    if args is not None:
+        option_groups = {}
+        for arg in args:
+            ## if we're given a string with a bunch of options in it split
+            ## them up and deal with them separately
+            if (not _util._py3k and isinstance(arg, basestring)) \
+                    or (_util._py3k and isinstance(arg, str)):
+                log.debug("Got arg string: %s" % arg)
+                if arg.find(' ') > 0:
+                    filo = _make_filo(arg)
+                    option_groups.update(_make_groups(filo))
+                else:
+                    option_groups.update({ arg: "" })
+            elif isinstance(arg, list):
+                log.debug("Got arg list: %s" % arg)
+                arg.reverse()
+                option_groups.update(_make_groups(arg))
+            else:
+                log.warn("Got non-str/list arg: '%s', type '%s'"
+                         % (arg, type(arg)))
+        checked = _check_groups(option_groups)
+        sanitised = ' '.join(x for x in checked)
+        return sanitised
+    else:
+        log.debug("Got None for args")
+
+def _sanitise_list(arg_list):
+    """A generator for iterating through a list of gpg options and sanitising
+    them.
+
+    :param list arg_list: A list of options and flags for GnuPG.
+    :rtype: generator
+    :returns: A generator whose next() method returns each of the items in
+              ``arg_list`` after calling ``_sanitise()`` with that item as a
+              parameter.
+    """
+    if isinstance(arg_list, list):
+        for arg in arg_list:
+            safe_arg = _sanitise(arg)
+            if safe_arg != "":
+                yield safe_arg
+
+def _get_options_group(group=None):
+    """Get a specific group of options which are allowed."""
+
+    #: These expect a hexidecimal keyid as their argument, and can be parsed
+    #: with :func:`_is_hex`.
+    hex_options = frozenset(['--check-sigs',
+                             '--default-key',
+                             '--default-recipient',
+                             '--delete-keys',
+                             '--delete-secret-keys',
+                             '--delete-secret-and-public-keys',
+                             '--desig-revoke',
+                             '--export',
+                             '--export-secret-keys',
+                             '--export-secret-subkeys',
+                             '--fingerprint',
+                             '--gen-revoke',
+                             '--list-key',
+                             '--list-keys',
+                             '--list-public-keys',
+                             '--list-secret-keys',
+                             '--list-sigs',
+                             '--recipient',
+                             '--recv-keys',
+                             '--send-keys',
+                             ])
+    #: These options expect value which are left unchecked, though still run
+    #: through :func:`_fix_unsafe`.
+    unchecked_options = frozenset(['--list-options',
+                                   '--passphrase-fd',
+                                   '--status-fd',
+                                   '--verify-options',
+                               ])
+    #: These have their own parsers and don't really fit into a group
+    other_options = frozenset(['--debug-level',
+                               '--keyserver',
+
+                           ])
+    #: These should have a directory for an argument
+    dir_options = frozenset(['--homedir',
+                             ])
+    #: These expect a keyring or keyfile as their argument
+    keyring_options = frozenset(['--keyring',
+                                 '--primary-keyring',
+                                 '--secret-keyring',
+                                 '--trustdb-name',
+                                 ])
+    #: These expect a filename (or the contents of a file as a string) or None
+    #: (meaning that they read from stdin)
+    file_or_none_options = frozenset(['--decrypt',
+                                      '--decrypt-files',
+                                      '--encrypt',
+                                      '--encrypt-files',
+                                      '--import',
+                                      '--verify',
+                                      '--verify-files',
+                                      ])
+    #: These options expect a string. see :func:`_check_preferences`.
+    pref_options = frozenset(['--digest-algo',
+                              '--cipher-algo',
+                              '--compress-algo',
+                              '--compression-algo',
+                              '--cert-digest-algo',
+                              '--personal-digest-prefs',
+                              '--personal-digest-preferences',
+                              '--personal-cipher-prefs',
+                              '--personal-cipher-preferences',
+                              '--personal-compress-prefs',
+                              '--personal-compress-preferences',
+                              '--print-md',
+                              ])
+    #: These options expect no arguments
+    none_options = frozenset(['--always-trust',
+                              '--armor',
+                              '--armour',
+                              '--batch',
+                              '--check-sigs',
+                              '--check-trustdb',
+                              '--clearsign',
+                              '--debug-all',
+                              '--default-recipient-self',
+                              '--detach-sign',
+                              '--export',
+                              '--export-secret-keys',
+                              '--export-secret-subkeys',
+                              '--fingerprint',
+                              '--fixed-list-mode',
+                              '--gen-key',
+                              '--list-config',
+                              '--list-key',
+                              '--list-keys',
+                              '--list-packets',
+                              '--list-public-keys',
+                              '--list-secret-keys',
+                              '--list-sigs',
+                              '--no-default-keyring',
+                              '--no-default-recipient',
+                              '--no-emit-version',
+                              '--no-options',
+                              '--no-tty',
+                              '--no-use-agent',
+                              '--no-verbose',
+                              '--print-mds',
+                              '--quiet',
+                              '--sign',
+                              '--symmetric',
+                              '--use-agent',
+                              '--verbose',
+                              '--version',
+                              '--with-colons',
+                              '--yes',
+                              ])
+    #: These options expect either None or a hex string
+    hex_or_none_options = hex_options.intersection(none_options)
+    allowed = hex_options.union(unchecked_options, other_options, dir_options,
+                                keyring_options, file_or_none_options,
+                                pref_options, none_options)
+
+    if group and group in locals().keys():
+        return locals()[group]
+
+def _get_all_gnupg_options():
+    """Get all GnuPG options and flags.
+
+    This is hardcoded within a local scope to reduce the chance of a tampered
+    GnuPG binary reporting falsified option sets, i.e. because certain options
+    (namedly the '--no-options' option, which prevents the usage of gpg.conf
+    files) are necessary and statically specified in
+    :meth:`gnupg.GPG._makeargs`, if the inputs into Python are already
+    controlled, and we were to summon the GnuPG binary to ask it for its
+    options, it would be possible to receive a falsified options set missing
+    the '--no-options' option in response. This seems unlikely, and the method
+    is stupid and ugly, but at least we'll never have to debug whether or not
+    an option *actually* disappeared in a different GnuPG version, or some
+    funny business is happening.
+
+    These are the options as of GnuPG 1.4.12; the current stable branch of the
+    2.1.x tree contains a few more -- if you need them you'll have to add them
+    in here.
+
+    :ivar frozenset gnupg_options: All known GPG options and flags.
+    :rtype: frozenset
+    :returns: ``gnupg_options``
+    """
     three_hundred_eighteen = ("""
 --allow-freeform-uid              --multifile
 --allow-multiple-messages         --no
@@ -297,337 +745,8 @@ def _is_allowed(input):
 --merge-only                      --with-key-data
 --min-cert-level                  --yes
 """).split()
-
-    possible = frozenset(three_hundred_eighteen)
-
-    ## these are the allowed options we will handle so far, all others should
-    ## be dropped. this dance is so that when new options are added later, we
-    ## merely add the to the _allowed list, and the `` _allowed.issubset``
-    ## assertion will check that GPG will recognise them
-    ##
-    ## xxx checkout the --store option for creating rfc1991 data packets
-    ## xxx key fetching/retrieving options: [fetch_keys, merge_only, recv_keys]
-    ##
-    allowed = frozenset(['--fixed-list-mode',  ## key/packet listing
-                         '--list-key',
-                         '--list-keys',
-                         '--list-options',
-                         '--list-packets',
-                         '--list-public-keys',
-                         '--list-secret-keys',
-                         '--print-md',
-                         '--print-mds',
-                         '--with-colons',
-                         ## deletion
-                         '--delete-keys',
-                         '--delete-secret-keys',
-                         ## en-/de-cryption
-                         '--always-trust',
-                         '--decrypt',
-                         '--decrypt-files',
-                         '--encrypt',
-                         '--encrypt-files',
-                         '--recipient',
-                         '--no-default-recipient',
-                         '--symmetric',
-                         '--use-agent',
-                         '--no-use-agent',
-                         ## signing/certification
-                         '--armor',
-                         '--armour',
-                         '--clearsign',
-                         '--detach-sign',
-                         '--list-sigs',
-                         '--sign',
-                         '--verify',
-                         ## i/o and files
-                         '--batch',
-                         '--debug-all',
-                         '--debug-level',
-                         '--gen-key',
-                         #'--multifile',
-                         '--no-emit-version',
-                         '--no-tty',
-                         '--output',
-                         '--passphrase-fd',
-                         '--status-fd',
-                         '--version',
-                         ## keyring, homedir, & options
-                         '--homedir',
-                         '--keyring',
-                         '--primary-keyring',
-                         '--secret-keyring',
-                         '--no-default-keyring',
-                         '--default-key',
-                         '--no-options',
-                         ## preferences
-                         '--digest-algo',
-                         '--cipher-algo',
-                         '--compress-algo',
-                         '--compression-algo',
-                         '--cert-digest-algo',
-                         '--list-config',
-                         '--personal-digest-prefs',
-                         '--personal-digest-preferences',
-                         '--personal-cipher-prefs',
-                         '--personal-cipher-preferences',
-                         '--personal-compress-prefs',
-                         '--personal-compress-preferences',
-                         ## export/import
-                         '--import',
-                         '--export',
-                         '--export-secret-keys',
-                         '--export-secret-subkeys',
-                         '--fingerprint',
-                     ])
-
-    ## check that allowed is a subset of possible
-    try:
-        assert allowed.issubset(possible), \
-            'allowed is not subset of known options, difference: %s' \
-            % allowed.difference(possible)
-    except AssertionError as ae:
-        log.error("_is_allowed(): %s" % ae.message)
-        raise UsageError(ae.message)
-
-    ## if we got a list of args, join them
-    ##
-    ## see TODO file, tag :cleanup:
-    if not isinstance(input, str):
-        input = ' '.join([x for x in input])
-
-    if isinstance(input, str):
-        if input.find('_') > 0:
-            if not input.startswith('--'):
-                hyphenated = _hyphenate(input, add_prefix=True)
-            else:
-                hyphenated = _hyphenate(input)
-        else:
-            hyphenated = input
-            ## xxx we probably want to use itertools.dropwhile here
-            try:
-                assert hyphenated in allowed
-            except AssertionError as ae:
-                dropped = _fix_unsafe(hyphenated)
-                log.warn("_is_allowed(): Dropping option '%s'..." % dropped)
-                raise ProtectedOption("Option '%s' not supported." % dropped)
-            else:
-                return input
-    return None
-
-def _is_hex(string):
-    """Check that a string is hexidecimal, with alphabetic characters
-    capitalized and without whitespace.
-
-    :param str string: The string to check.
-    """
-    matched = HEXIDECIMAL.match(string)
-    if matched is not None and len(matched.group()) >= 2:
-        return True
-    return False
-
-def _sanitise(*args):
-    """Take an arg or the key portion of a kwarg and check that it is in the
-    set of allowed GPG options and flags, and that it has the correct
-    type. Then, attempt to escape any unsafe characters. If an option is not
-    allowed, drop it with a logged warning. Returns a dictionary of all
-    sanitised, allowed options.
-
-    Each new option that we support that is not a boolean, but instead has
-    some extra inputs, i.e. "--encrypt-file foo.txt", will need some basic
-    safety checks added here.
-
-    GnuPG has three-hundred and eighteen commandline flags. Also, not all
-    implementations of OpenPGP parse PGP packets and headers in the same way,
-    so there is added potential there for messing with calls to GPG.
-
-    For information on the PGP message format specification, see:
-        https://www.ietf.org/rfc/rfc1991.txt
-
-    If you're asking, "Is this *really* necessary?": No, not really -- we could
-    just do a check as described here: https://xkcd.com/1181/
-
-    :param str args: (optional) The boolean arguments which will be passed to
-                     the GnuPG process.
-    :rtype: str
-    :returns: ``sanitised``
-    """
-
-    ## see TODO file, tag :cleanup:sanitise:
-
-    def _check_option(arg, value):
-        """
-        Check that a single :param:arg is an allowed option. If it is allowed,
-        quote out any escape characters in :param:values, and add the pair to
-        :ivar:sanitised.
-
-        :param str arg: The arguments which will be passed to the GnuPG
-                        process, and, optionally their corresponding values.
-                        The values are any additional arguments following the
-                        GnuPG option or flag. For example, if we wanted to pass
-                        "--encrypt --recipient isis@leap.se" to gpg, then
-                        "--encrypt" would be an arg without a value, and
-                        "--recipient" would also be an arg, with a value of
-                        "isis@leap.se".
-        :ivar list checked: The sanitised, allowed options and values.
-        :rtype: str
-        :returns: A string of the items in ``checked`` delimited by spaces.
-        """
-        safe_option = str()
-
-        if not _util._py3k:
-            if not isinstance(arg, list) and isinstance(arg, unicode):
-                arg = str(arg)
-
-        try:
-            flag = _is_allowed(arg)
-            assert flag is not None, "_check_option(): got None for flag"
-        except (AssertionError, ProtectedOption) as error:
-            log.warn("_check_option(): %s" % error.message)
-        else:
-            safe_option += (flag + " ")
-            if (not _util._py3k and isinstance(value, basestring)) \
-                    or (_util._py3k and isinstance(value, str)):
-                values = value.split(' ')
-                for v in values:
-                    try:
-                        assert v is not None
-                        assert v.strip() != ""
-                    except:
-                        log.debug("Dropping %s %s" % (flag, v))
-                        continue
-
-                    ## these can be handled separately, without _fix_unsafe(),
-                    ## because they are only allowed if the pass the regex
-                    if flag in ['--default-key', '--recipient', '--export',
-                                '--export-secret-keys', '--delete-keys',
-                                '--list-sigs', '--export-secret-subkeys',]:
-                        if _is_hex(v):
-                            safe_option += (v + " ")
-                            continue
-                        else: log.debug("'%s %s' not hex." % (flag, v))
-
-                    val = _fix_unsafe(v)
-
-                    try:
-                        assert v is not None
-                        assert v.strip() != ""
-                    except:
-                        log.debug("Dropping %s %s" % (flag, v))
-                        continue
-
-                    if flag in ['--encrypt', '--encrypt-files', '--decrypt',
-                                '--decrypt-files', '--import', '--verify']:
-                        if _util._is_file(val): safe_option += (val + " ")
-                        else: log.debug("%s not file: %s" % (flag, val))
-
-                    elif flag in ['--cipher-algo', '--personal-cipher-prefs',
-                                  '--personal-cipher-preferences']:
-                        legit_algos = _check_preferences(val, 'cipher')
-                        if legit_algos: safe_option += (legit_algos + " ")
-                        else: log.debug("'%s' is not cipher" % val)
-
-                    elif flag in ['--compress-algo', '--compression-algo',
-                                  '--personal-compress-prefs',
-                                  '--personal-compress-preferences']:
-                        legit_algos = _check_preferences(val, 'compress')
-                        if legit_algos: safe_option += (legit_algos + " ")
-                        else: log.debug("'%s' not compress algo" % val)
-
-                    else:
-                        safe_option += (val + " ")
-                        log.debug("_check_option(): No checks for %s" % val)
-
-        return safe_option
-
-    is_flag = lambda x: x.startswith('--')
-
-    def _make_filo(args_string):
-        filo = arg.split(' ')
-        filo.reverse()
-        log.debug("_make_filo(): Converted to reverse list: %s" % filo)
-        return filo
-
-    def _make_groups(filo):
-        groups = {}
-        while len(filo) >= 1:
-            last = filo.pop()
-            if is_flag(last):
-                log.debug("Got arg: %s" % last)
-                if last == '--verify':
-                    groups[last] = str(filo.pop())
-                    ## accept the read-from-stdin arg:
-                    if len(filo) >= 1 and filo[len(filo)-1] == '-':
-                        groups[last] += str(' - \'\'') ## gross hack
-                else:
-                    groups[last] = str()
-                while len(filo) > 1 and not is_flag(filo[len(filo)-1]):
-                    log.debug("Got value: %s" % filo[len(filo)-1])
-                    groups[last] += (filo.pop() + " ")
-                else:
-                    if len(filo) == 1 and not is_flag(filo[0]):
-                        log.debug("Got value: %s" % filo[0])
-                        groups[last] += filo.pop()
-            else:
-                log.warn("_make_groups(): Got solitary value: %s" % last)
-                groups["xxx"] = last
-        return groups
-
-    def _check_groups(groups):
-        log.debug("Got groups: %s" % groups)
-        checked_groups = []
-        for a,v in groups.items():
-            v = None if len(v) == 0 else v
-            safe = _check_option(a, v)
-            if safe is not None and not safe.strip() == "":
-                log.debug("Appending option: %s" % safe)
-                checked_groups.append(safe)
-            else:
-                log.warn("Dropped option: '%s %s'" % (a,v))
-        return checked_groups
-
-    if args is not None:
-        option_groups = {}
-        for arg in args:
-            ## if we're given a string with a bunch of options in it split
-            ## them up and deal with them separately
-            if (not _util._py3k and isinstance(arg, basestring)) \
-                    or (_util._py3k and isinstance(arg, str)):
-                log.debug("Got arg string: %s" % arg)
-                if arg.find(' ') > 0:
-                    filo = _make_filo(arg)
-                    option_groups.update(_make_groups(filo))
-                else:
-                    option_groups.update({ arg: "" })
-            elif isinstance(arg, list):
-                log.debug("Got arg list: %s" % arg)
-                arg.reverse()
-                option_groups.update(_make_groups(arg))
-            else:
-                log.warn("Got non-str/list arg: '%s', type '%s'"
-                         % (arg, type(arg)))
-        checked = _check_groups(option_groups)
-        sanitised = ' '.join(x for x in checked)
-        return sanitised
-    else:
-        log.debug("Got None for args")
-
-def _sanitise_list(arg_list):
-    """A generator for iterating through a list of gpg options and sanitising
-    them.
-
-    :param list arg_list: A list of options and flags for GnuPG.
-    :rtype: generator
-    :return: A generator whose next() method returns each of the items in
-             ``arg_list`` after calling ``_sanitise()`` with that item as a
-             parameter.
-    """
-    if isinstance(arg_list, list):
-        for arg in arg_list:
-            safe_arg = _sanitise(arg)
-            if safe_arg != "":
-                yield safe_arg
-
+    gnupg_options = frozenset(three_hundred_eighteen)
+    return gnupg_options
 
 def nodata(status_code):
     """Translate NODATA status codes from GnuPG to messages."""
@@ -663,7 +782,7 @@ class GenKey(object):
     generated key's fingerprint, or a status string explaining the results.
     """
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
         ## this should get changed to something more useful, like 'key_type'
         #: 'P':= primary, 'S':= subkey, 'B':= both
         self.type = None
@@ -671,6 +790,12 @@ class GenKey(object):
         self.status = None
         self.subkey_created = False
         self.primary_created = False
+        #: This will store the filename of the key's public keyring if
+        #: :meth:`GPG.gen_key_input` was called with ``separate_keyring=True``
+        self.keyring = None
+        #: This will store the filename of the key's secret keyring if
+        #: :meth:`GPG.gen_key_input` was called with ``separate_keyring=True``
+        self.secring = None
 
     def __nonzero__(self):
         if self.fingerprint: return True
@@ -686,7 +811,7 @@ class GenKey(object):
             else:
                 return False
 
-    def handle_status(self, key, value):
+    def _handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
         :raises: :exc:`ValueError` if the status message is unknown.
@@ -706,14 +831,14 @@ class GenKey(object):
             raise ValueError("Unknown status message: %r" % key)
 
         if self.type in ('B', 'P'):
-            self.primary_key_created = True
+            self.primary_created = True
         if self.type in ('B', 'S'):
             self.subkey_created = True
 
 class DeleteResult(object):
     """Handle status messages for --delete-keys and --delete-secret-keys"""
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
         self.status = 'ok'
 
     def __str__(self):
@@ -723,7 +848,7 @@ class DeleteResult(object):
                        '2': 'Must delete secret key first',
                        '3': 'Ambigious specification', }
 
-    def handle_status(self, key, value):
+    def _handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
         :raises: :exc:`ValueError` if the status message is unknown.
@@ -754,7 +879,7 @@ class Sign(object):
     what = None
 
     def __init__(self, gpg):
-        self.gpg = gpg
+        self._gpg = gpg
 
     def __nonzero__(self):
         """Override the determination for truthfulness evaluation.
@@ -766,9 +891,9 @@ class Sign(object):
     __bool__ = __nonzero__
 
     def __str__(self):
-        return self.data.decode(self.gpg.encoding, self.gpg._decode_errors)
+        return self.data.decode(self._gpg._encoding, self._gpg._decode_errors)
 
-    def handle_status(self, key, value):
+    def _handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
         :raises: :exc:`ValueError` if the status message is unknown.
@@ -813,7 +938,7 @@ class ListKeys(list):
 
     def __init__(self, gpg):
         super(ListKeys, self).__init__()
-        self.gpg = gpg
+        self._gpg = gpg
         self.curkey = None
         self.fingerprints = []
         self.uids = []
@@ -848,7 +973,7 @@ class ListKeys(list):
         subkey = [args[4], args[11]]
         self.curkey['subkeys'].append(subkey)
 
-    def handle_status(self, key, value):
+    def _handle_status(self, key, value):
         pass
 
 
@@ -858,13 +983,25 @@ class ImportResult(object):
     :type gpg: :class:`gnupg.GPG`
     :param gpg: An instance of :class:`gnupg.GPG`.
     """
+    _ok_reason = {'0': 'Not actually changed',
+                  '1': 'Entirely new key',
+                  '2': 'New user IDs',
+                  '4': 'New signatures',
+                  '8': 'New subkeys',
+                  '16': 'Contains private key',
+                  '17': 'Contains private key',}
 
-    counts = '''count no_user_id imported imported_rsa unchanged
-            n_uids n_subk n_sigs n_revoc sec_read sec_imported
-            sec_dups not_imported'''.split()
+    _problem_reason = { '0': 'No specific reason given',
+                        '1': 'Invalid Certificate',
+                        '2': 'Issuer Certificate missing',
+                        '3': 'Certificate Chain too long',
+                        '4': 'Error storing certificate', }
 
-    #: List of all keys imported.
-    imported = list()
+    _fields = '''count no_user_id imported imported_rsa unchanged
+    n_uids n_subk n_sigs n_revoc sec_read sec_imported sec_dups
+    not_imported'''.split()
+    _counts = collections.OrderedDict(
+        zip(_fields, [int(0) for x in xrange(len(_fields))]) )
 
     #: A list of strings containing the fingerprints of the GnuPG keyIDs
     #: imported.
@@ -875,9 +1012,8 @@ class ImportResult(object):
     results = list()
 
     def __init__(self, gpg):
-        self.gpg = gpg
-        for result in self.counts:
-            setattr(self, result, None)
+        self._gpg = gpg
+        self.counts = self._counts
 
     def __nonzero__(self):
         """Override the determination for truthfulness evaluation.
@@ -885,26 +1021,12 @@ class ImportResult(object):
         :rtype: bool
         :returns: True if we have immport some keys, False otherwise.
         """
-        if self.not_imported: return False
-        if not self.fingerprints: return False
+        if self.counts.not_imported > 0: return False
+        if len(self.fingerprints) == 0: return False
         return True
     __bool__ = __nonzero__
 
-    ok_reason = {'0': 'Not actually changed',
-                 '1': 'Entirely new key',
-                 '2': 'New user IDs',
-                 '4': 'New signatures',
-                 '8': 'New subkeys',
-                 '16': 'Contains private key',
-                 '17': 'Contains private key',}
-
-    problem_reason = { '0': 'No specific reason given',
-                       '1': 'Invalid Certificate',
-                       '2': 'Issuer Certificate missing',
-                       '3': 'Certificate Chain too long',
-                       '4': 'Error storing certificate', }
-
-    def handle_status(self, key, value):
+    def _handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
         :raises: :exc:`ValueError` if the status message is unknown.
@@ -914,16 +1036,16 @@ class ImportResult(object):
             pass
         elif key == "NODATA":
             self.results.append({'fingerprint': None,
-                'problem': '0', 'text': 'No valid data found'})
+                                 'status': 'No valid data found'})
         elif key == "IMPORT_OK":
             reason, fingerprint = value.split()
             reasons = []
-            for code, text in self.ok_reason.items():
-                if int(reason) | int(code) == int(reason):
+            for code, text in self._ok_reason.items():
+                if int(reason) == int(code):
                     reasons.append(text)
             reasontext = '\n'.join(reasons) + "\n"
             self.results.append({'fingerprint': fingerprint,
-                'ok': reason, 'text': reasontext})
+                                 'status': reasontext})
             self.fingerprints.append(fingerprint)
         elif key == "IMPORT_PROBLEM":
             try:
@@ -932,38 +1054,62 @@ class ImportResult(object):
                 reason = value
                 fingerprint = '<unknown>'
             self.results.append({'fingerprint': fingerprint,
-                'problem': reason, 'text': self.problem_reason[reason]})
+                                 'status': self._problem_reason[reason]})
         elif key == "IMPORT_RES":
             import_res = value.split()
-            for i in range(len(self.counts)):
-                setattr(self, self.counts[i], int(import_res[i]))
+            for x in range(len(self.counts)):
+                self.counts[self.counts.keys()[x]] = int(import_res[x])
         elif key == "KEYEXPIRED":
-            self.results.append({'fingerprint': None,
-                'problem': '0', 'text': 'Key expired'})
-        elif key == "KEYREVOKED":
-            self.results.append({'fingerprint': None,
-                'problem': '0', 'text': 'Key revoked'})
+            res = {'fingerprint': None,
+                   'status': 'Key expired'}
+            self.results.append(res)
+        ## Accoring to docs/DETAILS L859, SIGEXPIRED is obsolete:
+        ## "Removed on 2011-02-04. This is deprecated in favor of KEYEXPIRED."
         elif key == "SIGEXPIRED":
-            self.results.append({'fingerprint': None,
-                'problem': '0', 'text': 'Signature expired'})
+            res = {'fingerprint': None,
+                   'status': 'Signature expired'}
+            self.results.append(res)
         else:
             raise ValueError("Unknown status message: %r" % key)
 
     def summary(self):
         l = []
-        l.append('%d imported' % self.imported)
-        if self.not_imported:
-            l.append('%d not imported' % self.not_imported)
+        l.append('%d imported' % self.counts['imported'])
+        if self.counts['not_imported']:
+            l.append('%d not imported' % self.counts['not_imported'])
         return ', '.join(l)
 
 
 class Verify(object):
-    """Parser for internal status messages from GnuPG for
-    certification/signature verification, and for parsing portions of status
-    messages from decryption operations.
+    """Parser for status messages from GnuPG for certifications and signature
+    verifications.
 
-    :type gpg: :class:`gnupg.GPG`
-    :param gpg: An instance of :class:`gnupg.GPG`.
+    People often mix these up, or think that they are the same thing. While it
+    is true that certifications and signatures *are* the same cryptographic
+    operation -- and also true that both are the same as the decryption
+    operation -- a distinction is made for important reasons.
+
+    A certification:
+        * is made on a key,
+        * can help to validate or invalidate the key owner's identity,
+        * can assign trust levels to the key (or to uids and/or subkeys that
+          the key contains),
+        * and can be used in absense of in-person fingerprint checking to try
+          to build a path (through keys whose fingerprints have been checked)
+          to the key, so that the identity of the key's owner can be more
+          reliable without having to actually physically meet in person.
+
+    A signature:
+        * is created for a file or other piece of data,
+        * can help to prove that the data hasn't been altered,
+        * and can help to prove that the data was sent by the person(s) in
+          possession of the private key that created the signature, and for
+          parsing portions of status messages from decryption operations.
+
+    There are probably other things unique to each that have been
+    scatterbrainedly omitted due to the programmer sitting still and staring
+    at GnuPG debugging logs for too long without snacks, but that is the gist
+    of it.
     """
 
     TRUST_UNDEFINED = 0
@@ -978,49 +1124,44 @@ class Verify(object):
                     "TRUST_FULLY" : TRUST_FULLY,
                     "TRUST_ULTIMATE" : TRUST_ULTIMATE,}
 
-    #: True if the signature is valid, False otherwise.
-    valid = False
-    #: A string describing the status of the signature verification.
-    #: Can be one of ``'signature bad'``, ``'signature good'``,
-    #: ``'signature valid'``, ``'signature error'``, ``'decryption failed'``,
-    #: ``'no public key'``, ``'key exp'``, or ``'key rev'``.
-    status = None
-    #: The fingerprint of the signing keyid.
-    fingerprint = None
-    #: The fingerprint of the corresponding public key, which may be different
-    #: if the signature was created with a subkey.
-    pubkey_fingerprint = None
-    #: The keyid of the signing key.
-    key_id = None
-    #: The id of the signature itself.
-    signature_id = None
-    #: The creation date of the signing key.
-    creation_date = None
-    #: The timestamp of the purported signature, if we are unable to parse it.
-    timestamp = None
-    #: The userid of the signing key which was used to create the signature.
-    username = None
-    #: When the signing key is due to expire.
-    expire_timestamp = None
-    #: The timestamp for when the signature was created.
-    sig_timestamp = None
-    #: A number 0-4 describing the trust level of the signature.
-    trust_level = None
-    #: The string corresponding to the ``trust_level`` number.
-    trust_text = None
-
     def __init__(self, gpg):
-        self.gpg = gpg
+        """Create a parser for verification and certification commands.
+
+        :param gpg: An instance of :class:`gnupg.GPG`.
+        """
+        self._gpg = gpg
+        #: True if the signature is valid, False otherwise.
         self.valid = False
-        self.fingerprint = self.creation_date = self.timestamp = None
-        self.signature_id = self.key_id = None
-        self.username = None
+        #: A string describing the status of the signature verification.
+        #: Can be one of ``signature bad``, ``signature good``,
+        #: ``signature valid``, ``signature error``, ``decryption failed``,
+        #: ``no public key``, ``key exp``, or ``key rev``.
         self.status = None
+        #: The fingerprint of the signing keyid.
+        self.fingerprint = None
+        #: The fingerprint of the corresponding public key, which may be
+        #: different if the signature was created with a subkey.
         self.pubkey_fingerprint = None
-        self.expire_timestamp = None
+        #: The keyid of the signing key.
+        self.key_id = None
+        #: The id of the signature itself.
+        self.signature_id = None
+        #: The creation date of the signing key.
+        self.creation_date = None
+        #: The timestamp of the purported signature, if we are unable to parse
+        #: and/or validate it.
+        self.timestamp = None
+        #: The timestamp for when the valid signature was created.
         self.sig_timestamp = None
-        self.trust_text = None
+        #: The userid of the signing key which was used to create the
+        #: signature.
+        self.username = None
+        #: When the signing key is due to expire.
+        self.expire_timestamp = None
+        #: An integer 0-4 describing the trust level of the signature.
         self.trust_level = None
+        #: The string corresponding to the ``trust_level`` number.
+        self.trust_text = None
 
     def __nonzero__(self):
         """Override the determination for truthfulness evaluation.
@@ -1031,7 +1172,7 @@ class Verify(object):
         return self.valid
     __bool__ = __nonzero__
 
-    def handle_status(self, key, value):
+    def _handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
         :raises: :exc:`ValueError` if the status message is unknown.
@@ -1077,7 +1218,7 @@ class Verify(object):
             self.valid = False
             self.key_id = value
             self.status = 'no public key'
-        elif key in ("KEYEXPIRED", "SIGEXPIRED", "KEYREVOKED"):
+        elif key in ("KEYEXPIRED", "SIGEXPIRED"):
             # these are useless in verify, since they are spit out for any
             # pub/subkeys on the key, not just the one doing the signing.
             # if we want to check for signatures with expired key,
@@ -1098,10 +1239,10 @@ class Crypt(Verify):
     """
     def __init__(self, gpg):
         Verify.__init__(self, gpg)
-        self.gpg = gpg
+        self._gpg = gpg
         self.data = ''
         self.ok = False
-        self.status = ''
+        self.status = None
         self.data_format = None
         self.data_timestamp = None
         self.data_filename = None
@@ -1112,9 +1253,9 @@ class Crypt(Verify):
     __bool__ = __nonzero__
 
     def __str__(self):
-        return self.data.decode(self.gpg.encoding, self.gpg._decode_errors)
+        return self.data.decode(self._gpg._encoding, self._gpg._decode_errors)
 
-    def handle_status(self, key, value):
+    def _handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
         :raises: :exc:`ValueError` if the status message is unknown.
@@ -1162,29 +1303,28 @@ class Crypt(Verify):
             ## i.e. '62'→'b':= binary data
             self.data_format = chr(int(str(fmt), 16))
         else:
-            super(Crypt, self).handle_status(key, value)
+            super(Crypt, self)._handle_status(key, value)
 
 class ListPackets(object):
-    """
-    Handle status messages for --list-packets.
-    """
+    """Handle status messages for --list-packets."""
 
     def __init__(self, gpg):
-        self.gpg = gpg
-        self.nodata = None
-        self.key = None
+        self._gpg = gpg
+        #: A string describing the current processing status, or error, if one
+        #: has occurred.
+        self.status = None
+        self.key_id = None
         self.need_passphrase = None
         self.need_passphrase_sym = None
         self.userid_hint = None
 
-    def handle_status(self, key, value):
+    def _handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
         :raises: :exc:`ValueError` if the status message is unknown.
         """
-        # TODO: write tests for handle_status
         if key == 'NODATA':
-            self.nodata = True
+            self.status = nodata(value)
         elif key == 'ENC_TO':
             # This will only capture keys in our keyring. In the future we
             # may want to include multiple unknown keys in this list.

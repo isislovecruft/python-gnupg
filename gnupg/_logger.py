@@ -20,6 +20,7 @@
 Logging module for python-gnupg.
 '''
 
+from __future__ import absolute_import
 from __future__ import print_function
 from datetime   import datetime
 from functools  import wraps
@@ -28,8 +29,6 @@ import logging
 import sys
 import os
 
-import _ansistrm
-
 try:
     from logging import NullHandler
 except:
@@ -37,6 +36,7 @@ except:
         def handle(self, record):
             pass
 
+from . import _ansistrm
 
 GNUPG_STATUS_LEVEL = 9
 
@@ -61,7 +61,7 @@ def create_logger(level=logging.NOTSET):
                   40  ERROR     Error messages and tracebacks.
                   50  CRITICAL  Unhandled exceptions and tracebacks.
     """
-    _test = os.path.join(os.getcwd(), 'tests')
+    _test = os.path.join(os.path.join(os.getcwd(), 'gnupg'), 'test')
     _now  = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     _fn   = os.path.join(_test, "%s_test_gnupg.log" % _now)
     _fmt  = "%(relativeCreated)-4d L%(lineno)-4d:%(funcName)-18.18s %(levelname)-7.7s %(message)s"
