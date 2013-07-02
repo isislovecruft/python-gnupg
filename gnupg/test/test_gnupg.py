@@ -482,8 +482,8 @@ class GPGTestCase(unittest.TestCase):
         self.assertIsNotNone(key)
         self.assertEqual(len(keys), 1)
         key = keys[0]
-        self.assertIsNotNone(key.type)
-        self.assertIsNotNone(key.fingerprint)
+        self.assertIsNotNone(key['type'])
+        self.assertIsNotNone(key['fingerprint'])
         uids = key['uids']
         self.assertEqual(len(uids), 1)
         uid = uids[0]
