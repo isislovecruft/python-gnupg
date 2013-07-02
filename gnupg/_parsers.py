@@ -909,6 +909,10 @@ class Sign(object):
             self.status = "skipped signing key, key expired"
             if (value is not None) and (len(value) > 0):
                  self.status += " on {}".format(str(value))
+        elif key == "KEYREVOKED":
+            self.status = "skipped signing key, key revoked"
+            if (value is not None) and (len(value) > 0):
+                 self.status += " on {}".format(str(value))
         elif key == "NODATA":
             self.status = nodata(value)
         else:
@@ -1282,6 +1286,8 @@ class Crypt(Verify):
             self.status = 'invalid recipient'
         elif key == "KEYEXPIRED":
             self.status = 'key expired'
+        elif key == "KEYREVOKED":
+            self.status = 'key revoked'
         elif key == "SIG_CREATED":
             self.status = 'sig created'
         elif key == "SIGEXPIRED":
