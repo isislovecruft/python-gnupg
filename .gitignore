@@ -62,9 +62,6 @@ gnupg/test/files/*
 # Ignore distutils record of installed files:
 installed-files.txt
 
-# Ignore maintainer setup.cfg file:
-setup.cfg
-
 # Ignore PyCharm files:
 .idea/*
 
