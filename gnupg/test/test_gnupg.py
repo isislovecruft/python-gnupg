@@ -532,6 +532,7 @@ class GPGTestCase(unittest.TestCase):
         with open(keyfile, 'w') as fh:
             fh.write(str(key))
         self.assertTrue(os.path.isfile(keyfile))
+        self.assertGreater(os.stat(keyfile).st_size, 0)
 
     def test_import_and_export(self):
         """Test that key import and export works."""
