@@ -73,7 +73,7 @@ log.setLevel(9)
 
 print("Current source directory: %s" % _util._here)
 print("Current os.cwd directory: %s" % os.getcwd())
-_tests = os.path.join(os.path.join(_util._here, 'gnupg'), 'test')
+_tests = os.path.join(_util._here, 'test')
 _files = os.path.join(_tests, 'files')
 _tempd = os.path.join(_tests, 'tmp')
 
