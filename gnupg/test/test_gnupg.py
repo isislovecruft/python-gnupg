@@ -528,6 +528,7 @@ class GPGTestCase(unittest.TestCase):
         self.assertNotEquals(key, "")
         self.assertGreater(len(str(key)), 0)
         keyfile = os.path.join(self.gpg._keys_dir, 'test_key_3.pub')
+        log.debug("Storing downloaded key as %s" % keyfile)
         with open(keyfile, 'w') as fh:
             fh.write(key)
         self.assertTrue(os.path.isfile(keyfile))
