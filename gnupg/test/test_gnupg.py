@@ -792,13 +792,13 @@ authentication."""
         log.info("Key stored in separate keyring: %s" % self.gpg.temp_keyring)
         ian_key = self.gpg.gen_key(ian_input)
         ian_fpr = str(ian_key.fingerprint)
-        self.gpg.options = ['--keyring {}'.format(ian_key.pubring)]
+        self.gpg.options = ['--keyring {}'.format(ian_key.keyring)]
 
         kat_input = self.gpg.gen_key_input(separate_keyring=True, **kat)
         log.info("Key stored in separate keyring: %s" % self.gpg.temp_keyring)
         kat_key = self.gpg.gen_key(kat_input)
         kat_fpr = str(kat_key.fingerprint)
-        self.gpg.options.append('--keyring {}'.format(kat_key.pubring))
+        self.gpg.options.append('--keyring {}'.format(kat_key.keyring))
         self.gpg.import_keys(kat_key.data)
 
         message = """
