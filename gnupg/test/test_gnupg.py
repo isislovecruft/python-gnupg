@@ -71,9 +71,9 @@ if __name__ == "__main__" and __package__ is None:
 log = _util.log
 log.setLevel(9)
 
-print("Current directory: %s" % _util._here)
-print("Current os directory: %s" % os.getcwd())
-_tests = os.path.join(os.path.join(os.getcwd(), 'gnupg'), 'test')
+print("Current source directory: %s" % _util._here)
+print("Current os.cwd directory: %s" % os.getcwd())
+_tests = os.path.join(os.path.join(_util._here, 'gnupg'), 'test')
 _files = os.path.join(_tests, 'files')
 _tempd = os.path.join(_tests, 'tmp')
 
