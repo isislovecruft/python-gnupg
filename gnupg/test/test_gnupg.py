@@ -66,6 +66,13 @@ if __name__ == "__main__" and __package__ is None:
         from .. import _logger
     except (ImportError, ValueError) as ierr:
         print(ierr.message)
+else:
+    try:
+        import gnupg._util    as _util
+        import gnupg._parsers as _parsers
+        import gnupg._logger  as _logger
+    except (ImportError, ValueError) as ierr:
+        raise SystemExit(ierr.message)
 
 
 log = _util.log
