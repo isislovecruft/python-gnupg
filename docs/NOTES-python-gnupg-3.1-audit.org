@@ -1,4 +1,3 @@
--*- mode: org; epa-file-encrypt-to: ("lunar@anargeek.net") -*-
 #+TITLE:     python-gnupg audit
 #+AUTHOR:    isis
 #+EMAIL:     isis@leap.se
