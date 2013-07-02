@@ -701,13 +701,20 @@ class GPGTestCase(unittest.TestCase):
     def test_signature_verification_detached_binary(self):
         """Test that detached signature verification in binary mode fails."""
         key = self.generate_key("Adi Shamir", "rsa.com")
-        with open(os.path.join(_files, 'cypherpunk_manifesto'), 'rb') as cm:
+        datafile = os.path.join(_files, 'cypherpunk_manifesto')
+        with open(datafile, 'rb') as cm:
             sig = self.gpg.sign(cm, default_key=key.fingerprint,
                                 passphrase='adishamir',
                                 detach=True, binary=True, clearsign=False)
             self.assertTrue(sig.data, "File signing should succeed")
+            with open(datafile+'.sig', 'w') as bs:
+                bs.write(sig.data)
+                bs.flush()
             with self.assertRaises(UnicodeDecodeError):
                 print("SIG=%s" % sig)
+        with open(datafile+'.sig', 'rb') as fsig:
+            with open(datafile, 'rb') as fdata:
+                self.gpg.verify_file(fdata, fsig)
 
     def test_deletion(self):
         """Test that key deletion works."""
