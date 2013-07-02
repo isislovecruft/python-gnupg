@@ -28,8 +28,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-import os
-
 ## Upgrade setuptools to a version which supports Python 2 and 3
 #os.system('python ./distribute_setup.py')
 ## Upgrade pip to a version with proper SSL support
@@ -46,31 +44,6 @@ __author__ = "Isis Agora Lovecruft"
 __contact__ = 'isis@patternsinthevoid.net'
 __url__ = 'https://github.com/isislovecruft/python-gnupg'
 
-
-def get_deps_reqs():
-    """Get dependencies from the pip requirements.txt file."""
-    requirements_file = os.path.join(os.getcwd(), 'requirements.txt')
-    dependency_links = []
-    install_requires = []
-    with open(requirements_file) as pipfile:
-        for line in pipfile.readlines():
-            line = line.strip()
-            if not line.startswith('#'):
-                if line.startswith('https'):
-                    dependency_links.append(line)
-                    continue
-                else:
-                    install_requires.append(line)
-    return dependency_links, install_requires
-deps, reqs = get_deps_reqs()
-print('%s' % deps)
-print('%s' % reqs)
-
-
-def run_distribute_setup_script():
-    """Run the setuptools/distribute setup script."""
-    script = os.path.join(get_current_dir(), 'distribute_setup.py')
-    os.system(script)
 
 setuptools.setup(
     name = "gnupg",
@@ -100,7 +73,6 @@ greater.""",
     test_suite='gnupg.test.test_gnupg',
 
     install_requires=['psutil>=0.5.1'],
-    dependency_links=deps,
     extras_require={'docs': ["Sphinx>=1.1", "repoze.sphinx"]},
 
     platforms="Linux, BSD, OSX, Windows",
