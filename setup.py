@@ -44,9 +44,8 @@ versioneer.tag_prefix = ''
 versioneer.parentdir_prefix = 'gnupg-'
 
 __author__ = "Isis Agora Lovecruft"
-__contact__ = 'isis@leap.se'
-__url__ = 'https://github.com/isislovecruft/python-gnupg \
-https://python-gnupg.readthedocs.org'
+__contact__ = 'isis@patternsinthevoid.net'
+__url__ = 'https://github.com/isislovecruft/python-gnupg'
 
 def get_current_dir():
     """Current dir of this file, regardless of where we're called from."""
