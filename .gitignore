@@ -82,4 +82,4 @@ gpg
 
 # setuptools/distribute files:
 PKG-INFO
-MANIFEST*
+MANIFEST
