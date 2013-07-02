@@ -57,6 +57,7 @@ tests/doctests/*
 gnupg/test/doctests/*
 gnupg/test/logs/*
 gnupg/test/tmp/*
+gnupg/test/files/*
 
 # Ignore distutils record of installed files:
 installed-files.txt
