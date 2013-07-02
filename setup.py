@@ -55,7 +55,7 @@ def get_current_dir():
 
 def get_deps_reqs():
     """Get dependencies from the pip requirements.txt file."""
-    requirements_file = os.path.join(get_current_dir(), 'requirements.txt')
+    requirements_file = os.path.join(os.getcwd(), 'requirements.txt')
     dependency_links = []
     install_requires = []
     with open(requirements_file) as pipfile:
