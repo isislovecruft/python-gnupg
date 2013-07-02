@@ -38,7 +38,7 @@ import os
 
 import setuptools
 import versioneer
-versioneer.versionfile_source = 'src/_version.py'
+versioneer.versionfile_source = 'gnupg/_version.py'
 versioneer.versionfile_build  = 'gnupg/_version.py'
 versioneer.tag_prefix = ''
 versioneer.parentdir_prefix = 'gnupg-'
