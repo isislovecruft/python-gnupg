@@ -218,7 +218,6 @@ class GPGTestCase(unittest.TestCase):
         """Test that we can't escape into the Python interpreter."""
         shell_input = "; import antigravity ;"
         fixed = _parsers._fix_unsafe(shell_input)
-        print(fixed)
 
     def test_parsers_is_hex_valid(self):
         """Test that valid hexidecimal passes the parsers._is_hex() check"""
