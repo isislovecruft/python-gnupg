@@ -101,7 +101,7 @@ greater.""",
 
     package_dir={'gnupg': 'gnupg'},
     packages=['gnupg'],
-    package_data={'': ['README', 'LICENSE', 'TODO']},
+    package_data={'': ['README', 'LICENSE', 'TODO', 'requirements.txt']},
     scripts=['versioneer.py'],
     test_suite='gnupg.test.test_gnupg',
 
