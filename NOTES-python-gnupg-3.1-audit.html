@@ -1,0 +1,946 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+               "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>python-gnupg audit</title>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"/>
+<meta name="title" content="python-gnupg audit"/>
+<meta name="generator" content="Org-mode"/>
+<meta name="generated" content="2013-02-01 Fri"/>
+<meta name="author" content="isis"/>
+<meta name="description" content=""/>
+<meta name="keywords" content=""/>
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  html { font-family: Times, serif; font-size: 12pt; }
+  .title  { text-align: center; }
+  .todo   { color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #add8e6; font-weight:normal }
+  .target { }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .right  {margin-left:auto; margin-right:0px;  text-align:right;}
+  .left   {margin-left:0px;  margin-right:auto; text-align:left;}
+  .center {margin-left:auto; margin-right:auto; text-align:center;}
+  p.verse { margin-left: 3% }
+  pre {
+	border: 1pt solid #AEBDCC;
+	background-color: #F3F5F7;
+	padding: 5pt;
+	font-family: courier, monospace;
+        font-size: 90%;
+        overflow:auto;
+  }
+  table { border-collapse: collapse; }
+  td, th { vertical-align: top;  }
+  th.right  { text-align:center;  }
+  th.left   { text-align:center;   }
+  th.center { text-align:center; }
+  td.right  { text-align:right;  }
+  td.left   { text-align:left;   }
+  td.center { text-align:center; }
+  dt { font-weight: bold; }
+  div.figure { padding: 0.5em; }
+  div.figure p { text-align: center; }
+  div.inlinetask {
+    padding:10px;
+    border:2px solid gray;
+    margin:10px;
+    background: #ffffcc;
+  }
+  textarea { overflow-x: auto; }
+  .linenr { font-size:smaller }
+  .code-highlighted {background-color:#ffff00;}
+  .org-info-js_info-navigation { border-style:none; }
+  #org-info-js_console-label { font-size:10px; font-weight:bold;
+                               white-space:nowrap; }
+  .org-info-js_search-highlight {background-color:#ffff00; color:#000000;
+                                 font-weight:bold; }
+  /*]]>*/-->
+</style>
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012  Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+
+</head>
+<body>
+
+<div id="preamble">
+
+</div>
+
+<div id="content">
+<h1 class="title">python-gnupg audit</h1>
+
+<p> <span class="timestamp-wrapper"> <span class="timestamp">2013-02-01 Fri</span></span><br/>
+</p>
+
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1 gnugp._<sub>main</sub>_<sub>()</sub></a>
+<ul>
+<li><a href="#sec-1-1">1.1 comments</a></li>
+<li><a href="#sec-1-2">1.2 def <sub>copy</sub><sub>data</sub>(instream, outstream)</a>
+<ul>
+<li><a href="#sec-1-2-1">1.2.1 L79:</a></li>
+<li><a href="#sec-1-2-2">1.2.2 L78:</a></li>
+<li><a href="#sec-1-2-3">1.2.3 L88:</a></li>
+</ul>
+</li>
+<li><a href="#sec-1-3">1.3 def <sub>threaded</sub><sub>copy</sub><sub>data</sub>(instream, outstream):</a>
+<ul>
+<li><a href="#sec-1-3-1">1.3.1 L99:</a></li>
+</ul>
+</li>
+<li><a href="#sec-1-4">1.4 def <sub>write</sub><sub>passphrase</sub>(stream, passphrase, encoding):</a>
+<ul>
+<li><a href="#sec-1-4-1">1.4.1 L110:</a></li>
+</ul></li>
+</ul>
+</li>
+<li><a href="#sec-2">2 class Verify(object)</a></li>
+<li><a href="#sec-3">3 class ImportResult(object)</a></li>
+<li><a href="#sec-4">4 class ListKeys(list):</a></li>
+<li><a href="#sec-5">5 class Crypt(Verify):</a>
+<ul>
+<li><a href="#sec-5-1">5.1 def _<sub>init</sub>_<sub>(self, gpg)</sub></a>
+<ul>
+<li><a href="#sec-5-1-1">5.1.1 L338</a></li>
+</ul></li>
+</ul>
+</li>
+<li><a href="#sec-6">6 class GenKey(object)</a></li>
+<li><a href="#sec-7">7 class DeleteResult(object)</a></li>
+<li><a href="#sec-8">8 class Sign(object)</a></li>
+<li><a href="#sec-9">9 class GPG(object)</a>
+<ul>
+<li>
+<ul>
+<li><a href="#sec-9-1">9.1 L474:</a></li>
+</ul>
+</li>
+<li><a href="#sec-9-1">9.1 def _<sub>init</sub>_<sub>(self, gpgbinary='gpg', gnupghome=None, verbose=False, use<sub>agent</sub>=False, keyring=None)</sub></a>
+<ul>
+<li><a href="#sec-9-1-1">9.1.1 L494-495:</a></li>
+</ul>
+</li>
+<li><a href="#sec-9-2">9.2 def <sub>open</sub><sub>subprocess</sub>(self, args, passphrase=False)</a>
+<ul>
+<li><a href="#sec-9-2-1">9.2.1 L515:</a></li>
+</ul>
+</li>
+<li><a href="#sec-9-3">9.3 def <sub>collect</sub><sub>output</sub>(self, process, result, writer=None, stdin=None)</a></li>
+<li><a href="#sec-9-4">9.4 def <sub>handle</sub><sub>io</sub>(self, args, file, result, passphrase=None, binary=False)</a>
+<ul>
+<li><a href="#sec-9-4-1">9.4.1 L601:</a></li>
+</ul>
+</li>
+<li><a href="#sec-9-5">9.5 def sign(self, message, **kwargs)</a>
+<ul>
+<li><a href="#sec-9-5-1">9.5.1 L617-619:</a></li>
+</ul>
+</li>
+<li><a href="#sec-9-6">9.6 def sign<sub>file</sub>(self, file, keyid=None, passphrase=None, clearsign=True, detach=False, binary=False)</a>
+<ul>
+<li><a href="#sec-9-6-1">9.6.1 L632-635:</a></li>
+<li><a href="#sec-9-6-2">9.6.2 L626-641:</a></li>
+</ul>
+</li>
+<li><a href="#sec-9-7">9.7 def verify(self, data):</a>
+<ul>
+<li><a href="#sec-9-7-1">9.7.1 L668-670:</a></li>
+</ul>
+</li>
+<li><a href="#sec-9-8">9.8 def verify<sub>file</sub>(self, file, data<sub>filename</sub>=None)</a>
+<ul>
+<li><a href="#sec-9-8-1">9.8.1 L683:</a></li>
+<li><a href="#sec-9-8-2">9.8.2 L684:</a></li>
+<li><a href="#sec-9-8-3">9.8.3 L690:</a></li>
+</ul>
+</li>
+<li><a href="#sec-9-9">9.9 def import<sub>keys</sub>(self, key<sub>data</sub>)</a>
+<ul>
+<li><a href="#sec-9-9-1">9.9.1 L749:</a></li>
+</ul>
+</li>
+<li><a href="#sec-9-10">9.10 def recieve<sub>keys</sub>(self, keyserver, *keyids)</a>
+<ul>
+<li><a href="#sec-9-10-1">9.10.1 L770:</a></li>
+</ul>
+</li>
+<li><a href="#sec-9-11">9.11 def export<sub>keys</sub>(self, keyids, secret=False)</a>
+<ul>
+<li><a href="#sec-9-11-1">9.11.1 L795-796:</a></li>
+</ul>
+</li>
+<li><a href="#sec-9-12">9.12 def list<sub>keys</sub>(self, secret=False)</a>
+<ul>
+<li><a href="#sec-9-12-1">9.12.1 L827:</a></li>
+</ul>
+</li>
+<li><a href="#sec-9-13">9.13 def gen<sub>key</sub>(self, input)</a>
+<ul>
+<li><a href="#sec-9-13-1">9.13.1 L864:</a></li>
+</ul>
+</li>
+<li><a href="#sec-9-14">9.14 def gen<sub>key</sub><sub>input</sub>(self, **kwargs)</a>
+<ul>
+<li><a href="#sec-9-14-1">9.14.1 L981-983:</a></li>
+</ul>
+</li>
+<li><a href="#sec-9-15">9.15 def encrypt<sub>file</sub>(self, file, recipiencts, sign=None, &hellip;)</a>
+<ul>
+<li><a href="#sec-9-15-1">9.15.1 L939:</a></li>
+</ul>
+</li>
+<li><a href="#sec-9-16">9.16 def encrypt(self, data, recipients, **kwargs):</a>
+<ul>
+<li><a href="#sec-9-16-1">9.16.1 L997:</a></li>
+</ul>
+</li>
+<li><a href="#sec-9-17">9.17 def decrypt(self, message **kwargs):</a>
+<ul>
+<li><a href="#sec-9-17-1">9.17.1 L1003:</a></li>
+</ul>
+</li>
+<li><a href="#sec-9-18">9.18 def decrypt<sub>file</sub>(self, file, always<sub>trust</sub>=False, passphrase=None, output=None)</a>
+<ul>
+<li><a href="#sec-9-18-1">9.18.1 L1013:</a></li>
+</ul></li>
+</ul>
+</li>
+<li><a href="#sec-10">10 POC</a></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> gnugp._<sub>main</sub>_<sub>()</sub></h2>
+<div class="outline-text-2" id="text-1">
+
+
+</div>
+
+<div id="outline-container-1-1" class="outline-3">
+<h3 id="sec-1-1"><span class="section-number-3">1.1</span> comments</h3>
+<div class="outline-text-3" id="text-1-1">
+
+<p>L58 NullHandler?? see self.<sub>write</sub><sub>passphrase</sub>
+L61 there nifty check for p3k
+</p></div>
+
+</div>
+
+<div id="outline-container-1-2" class="outline-3">
+<h3 id="sec-1-2"><span class="section-number-3">1.2</span> def <sub>copy</sub><sub>data</sub>(instream, outstream) &nbsp;&nbsp;&nbsp;<span class="tag"><span class="cleanup">cleanup</span></span></h3>
+<div class="outline-text-3" id="text-1-2">
+
+<p>   copies data from one stream to another, 1024 bytes at a time.
+</p>
+</div>
+
+<div id="outline-container-1-2-1" class="outline-4">
+<h4 id="sec-1-2-1"><span class="section-number-4">1.2.1</span> L79: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="bad_logic">bad_logic</span></span></h4>
+<div class="outline-text-4" id="text-1-2-1">
+
+<p>    instream is apparently a file descriptor, but is not checked nor
+    encased in a try/except block.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-1-2-2" class="outline-4">
+<h4 id="sec-1-2-2"><span class="section-number-4">1.2.2</span> L78: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="hanging_fd">hanging_fd</span>&nbsp;<span class="bad_logic">bad_logic</span></span></h4>
+<div class="outline-text-4" id="text-1-2-2">
+
+<p>    while True: loop, should be 
+</p><pre class="example">
+with open(instream) as instrm:
+</pre>
+
+</div>
+
+</div>
+
+<div id="outline-container-1-2-3" class="outline-4">
+<h4 id="sec-1-2-3"><span class="section-number-4">1.2.3</span> L88: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="bad_exception_handling">bad_exception_handling</span></span></h4>
+<div class="outline-text-4" id="text-1-2-3">
+
+<pre class="example">
+except: 
+</pre>
+
+<p>    should catch an IOError, or whatever specific error is raised for broken
+    pipes.
+</p></div>
+</div>
+
+</div>
+
+<div id="outline-container-1-3" class="outline-3">
+<h3 id="sec-1-3"><span class="section-number-3">1.3</span> def <sub>threaded</sub><sub>copy</sub><sub>data</sub>(instream, outstream):</h3>
+<div class="outline-text-3" id="text-1-3">
+
+
+</div>
+
+<div id="outline-container-1-3-1" class="outline-4">
+<h4 id="sec-1-3-1"><span class="section-number-4">1.3.1</span> L99:</h4>
+<div class="outline-text-4" id="text-1-3-1">
+
+<p>    this just wraps self.<sub>copy</sub><sub>data</sub> in a thread
+</p></div>
+</div>
+
+</div>
+
+<div id="outline-container-1-4" class="outline-3">
+<h3 id="sec-1-4"><span class="section-number-3">1.4</span> def <sub>write</sub><sub>passphrase</sub>(stream, passphrase, encoding): &nbsp;&nbsp;&nbsp;<span class="tag"><span class="vuln">vuln</span>&nbsp;<span class="cleanup">cleanup</span></span></h3>
+<div class="outline-text-3" id="text-1-4">
+
+
+</div>
+
+<div id="outline-container-1-4-1" class="outline-4">
+<h4 id="sec-1-4-1"><span class="section-number-4">1.4.1</span> L110: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="writes_passphrase_to_disk">writes_passphrase_to_disk</span></span></h4>
+<div class="outline-text-4" id="text-1-4-1">
+
+<p>    logger writes passphrase into debug log. this should be patched.
+</p></div>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> class Verify(object)</h2>
+<div class="outline-text-2" id="text-2">
+
+<p>  basic parsing class, no errors found
+</p></div>
+
+</div>
+
+<div id="outline-container-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> class ImportResult(object)</h2>
+<div class="outline-text-2" id="text-3">
+
+<p>  basic parsing class, no errors found
+</p></div>
+
+</div>
+
+<div id="outline-container-4" class="outline-2">
+<h2 id="sec-4"><span class="section-number-2">4</span> class ListKeys(list):</h2>
+<div class="outline-text-2" id="text-4">
+
+<p>  basic parsing class, no errors found
+</p></div>
+
+</div>
+
+<div id="outline-container-5" class="outline-2">
+<h2 id="sec-5"><span class="section-number-2">5</span> class Crypt(Verify):</h2>
+<div class="outline-text-2" id="text-5">
+
+<p>  basic parsing class, no errors found
+</p>
+</div>
+
+<div id="outline-container-5-1" class="outline-3">
+<h3 id="sec-5-1"><span class="section-number-3">5.1</span> def _<sub>init</sub>_<sub>(self, gpg)</sub> &nbsp;&nbsp;&nbsp;<span class="tag"><span class="cleanup">cleanup</span></span></h3>
+<div class="outline-text-3" id="text-5-1">
+
+
+</div>
+
+<div id="outline-container-5-1-1" class="outline-4">
+<h4 id="sec-5-1-1"><span class="section-number-4">5.1.1</span> L338 &nbsp;&nbsp;&nbsp;<span class="tag"><span class="mro_conflict">mro_conflict</span></span></h4>
+<div class="outline-text-4" id="text-5-1-1">
+
+
+
+
+
+<pre class="src src-python">Verify.__init__(<span style="color: #00cdcd; font-weight: bold;">self</span>,gpg)
+</pre>
+
+
+<p>
+    should be changed to:
+</p>
+
+
+
+<pre class="src src-python"><span style="color: #0000ee; font-weight: bold;">super</span>(Verify, <span style="color: #00cdcd; font-weight: bold;">self</span>).__init__(gpg)
+</pre>
+
+</div>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-6" class="outline-2">
+<h2 id="sec-6"><span class="section-number-2">6</span> class GenKey(object)</h2>
+<div class="outline-text-2" id="text-6">
+
+<p>  basic parsing class, no errors found
+</p></div>
+
+</div>
+
+<div id="outline-container-7" class="outline-2">
+<h2 id="sec-7"><span class="section-number-2">7</span> class DeleteResult(object)</h2>
+<div class="outline-text-2" id="text-7">
+
+<p>  basic parsing class, no errors found
+</p></div>
+
+</div>
+
+<div id="outline-container-8" class="outline-2">
+<h2 id="sec-8"><span class="section-number-2">8</span> class Sign(object)</h2>
+<div class="outline-text-2" id="text-8">
+
+<p>  basic parsing class, no errors found
+</p></div>
+
+</div>
+
+<div id="outline-container-9" class="outline-2">
+<h2 id="sec-9"><span class="section-number-2">9</span> class GPG(object) &nbsp;&nbsp;&nbsp;<span class="tag"><span class="exploitable">exploitable</span></span></h2>
+<div class="outline-text-2" id="text-9">
+
+
+</div>
+
+<div id="outline-container-9-1" class="outline-4">
+<h4 id="sec-9-1"><span class="section-number-4">9.1</span> L474: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="cleanup">cleanup</span></span></h4>
+<div class="outline-text-4" id="text-9-1">
+
+<pre class="example">
+cls.__doc__ 
+</pre>
+
+<p>    should go directly underneath class signature
+</p></div>
+
+</div>
+
+<div id="outline-container-9-1" class="outline-3">
+<h3 id="sec-9-1"><span class="section-number-3">9.1</span> def _<sub>init</sub>_<sub>(self, gpgbinary='gpg', gnupghome=None, verbose=False, use<sub>agent</sub>=False, keyring=None)</sub> &nbsp;&nbsp;&nbsp;<span class="tag"><span class="bug">bug</span></span></h3>
+<div class="outline-text-3" id="text-9-1">
+
+
+</div>
+
+<div id="outline-container-9-1-1" class="outline-4">
+<h4 id="sec-9-1-1"><span class="section-number-4">9.1.1</span> L494-495: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="type_error">type_error</span></span></h4>
+<div class="outline-text-4" id="text-9-1-1">
+
+
+
+
+
+<pre class="src src-python"><span style="color: #00cdcd; font-weight: bold;">if</span> gnupghome <span style="color: #00cdcd; font-weight: bold;">and</span> <span style="color: #00cdcd; font-weight: bold;">not</span> os.path.isdir(<span style="color: #00cdcd; font-weight: bold;">self</span>.gnupghome):
+    os.makedirs(<span style="color: #00cdcd; font-weight: bold;">self</span>.gnupghome,0x1C0)
+</pre>
+
+
+
+<pre class="example">In [20]: os.makedirs?
+Type:       function
+String Form:&lt;function makedirs at 0x7f8ddeb6cc08&gt;
+File:       /usr/lib/python2.7/os.py
+Definition: os.makedirs(name, mode=511)
+Docstring:
+makedirs(path [, mode=0777])
+Super-mkdir; create a leaf directory and all intermediate ones.
+Works like mkdir, except that any intermediate path segment (not
+just the rightmost) will be created if it does not exist.  This is
+recursive.
+
+setting mode=0x1c0 is equivalent to mode=hex(0700), which
+may cause bugs on some systems, see
+http://ubuntuforums.org/showthread.php?t=2044879
+
+this could be do to the complete lack of input validation in
+os.makedirs, and it's calling of the os.mkdir() built-in, which
+may vary depending on the python compilation:
+</pre>
+
+
+
+<pre class="src src-python">Source:
+<span style="color: #00cdcd; font-weight: bold;">def</span> <span style="color: #0000ee; font-weight: bold;">makedirs</span>(name, mode=0777):
+    <span style="color: #00cd00;">"""makedirs(path [, mode=0777])</span>
+
+<span style="color: #00cd00;">    Super-mkdir; create a leaf directory and all intermediate ones.</span>
+<span style="color: #00cd00;">    Works like mkdir, except that any intermediate path segment (not</span>
+<span style="color: #00cd00;">    just the rightmost) will be created if it does not exist.  This is</span>
+<span style="color: #00cd00;">    recursive.</span>
+<span style="color: #00cd00;">    """</span>
+    <span style="color: #cdcd00;">head</span>, <span style="color: #cdcd00;">tail</span> = path.split(name)
+    <span style="color: #00cdcd; font-weight: bold;">if</span> <span style="color: #00cdcd; font-weight: bold;">not</span> tail:
+        <span style="color: #cdcd00;">head</span>, <span style="color: #cdcd00;">tail</span> = path.split(head)
+    <span style="color: #00cdcd; font-weight: bold;">if</span> head <span style="color: #00cdcd; font-weight: bold;">and</span> tail <span style="color: #00cdcd; font-weight: bold;">and</span> <span style="color: #00cdcd; font-weight: bold;">not</span> path.exists(head):
+        <span style="color: #00cdcd; font-weight: bold;">try</span>:
+            makedirs(head, mode)
+        <span style="color: #00cdcd; font-weight: bold;">except</span> <span style="color: #00cd00;">OSError</span>, e:
+            <span style="color: #cdcd00;"># </span><span style="color: #cdcd00;">be happy if someone already created the path</span>
+            <span style="color: #00cdcd; font-weight: bold;">if</span> e.errno != errno.EEXIST:
+                <span style="color: #00cdcd; font-weight: bold;">raise</span>
+        <span style="color: #00cdcd; font-weight: bold;">if</span> tail == curdir:           <span style="color: #cdcd00;"># </span><span style="color: #cdcd00;">xxx/newdir/. exists if xxx/newdir exists</span>
+            <span style="color: #00cdcd; font-weight: bold;">return</span>
+    mkdir(name, mode)
+</pre>
+
+
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-9-2" class="outline-3">
+<h3 id="sec-9-2"><span class="section-number-3">9.2</span> def <sub>open</sub><sub>subprocess</sub>(self, args, passphrase=False) &nbsp;&nbsp;&nbsp;<span class="tag"><span class="vuln">vuln</span></span></h3>
+<div class="outline-text-3" id="text-9-2">
+
+
+</div>
+
+<div id="outline-container-9-2-1" class="outline-4">
+<h4 id="sec-9-2-1"><span class="section-number-4">9.2.1</span> L515: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="unvalidated_user_input">unvalidated_user_input</span></span></h4>
+<div class="outline-text-4" id="text-9-2-1">
+
+<pre class="example">
+cmd.extend(args)
+</pre>
+
+
+<p>    
+    cmd is a list of strings, eventually joined with cmd=' '.join(cmd), and
+    the args are unvalidated in this function. Then this concatenation of args
+    is fed directly into subprocess.Popen(cmd, shell=True, stdin=PIPE,
+    stdout=PIPE, stderr=PIPE). THIS SHOULD BE PATCHED.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-9-3" class="outline-3">
+<h3 id="sec-9-3"><span class="section-number-3">9.3</span> def <sub>collect</sub><sub>output</sub>(self, process, result, writer=None, stdin=None)</h3>
+<div class="outline-text-3" id="text-9-3">
+
+<p>   sends stdout to self.<sub>read</sub><sub>data</sub>() and stderr to self.<sub>read</sub><sub>response</sub>()
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-9-4" class="outline-3">
+<h3 id="sec-9-4"><span class="section-number-3">9.4</span> def <sub>handle</sub><sub>io</sub>(self, args, file, result, passphrase=None, binary=False) &nbsp;&nbsp;&nbsp;<span class="tag"><span class="vuln">vuln</span>&nbsp;<span class="cleanup">cleanup</span></span></h3>
+<div class="outline-text-3" id="text-9-4">
+
+
+</div>
+
+<div id="outline-container-9-4-1" class="outline-4">
+<h4 id="sec-9-4-1"><span class="section-number-4">9.4.1</span> L601: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="unvalidated_user_input">unvalidated_user_input</span>&nbsp;<span class="type_check_in_call">type_check_in_call</span></span></h4>
+<div class="outline-text-4" id="text-9-4-1">
+
+<pre class="example">
+p = self._open_subprocess(args, passphrase is not None)
+</pre>
+
+
+<p>    
+    you shouldn't assign or type check in a function call
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-9-5" class="outline-3">
+<h3 id="sec-9-5"><span class="section-number-3">9.5</span> def sign(self, message, **kwargs) &nbsp;&nbsp;&nbsp;<span class="tag"><span class="cleanup">cleanup</span></span></h3>
+<div class="outline-text-3" id="text-9-5">
+
+
+</div>
+
+<div id="outline-container-9-5-1" class="outline-4">
+<h4 id="sec-9-5-1"><span class="section-number-4">9.5.1</span> L617-619: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="hanging_fd">hanging_fd</span></span></h4>
+<div class="outline-text-4" id="text-9-5-1">
+
+<p>   calls self.<sub>make</sub><sub>binary</sub><sub>stream</sub>(), which leaves the file descriptor for
+   the encoded message to be encrypted hanging between scopes.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-9-6" class="outline-3">
+<h3 id="sec-9-6"><span class="section-number-3">9.6</span> def sign<sub>file</sub>(self, file, keyid=None, passphrase=None, clearsign=True, detach=False, binary=False) &nbsp;&nbsp;&nbsp;<span class="tag"><span class="cleanup">cleanup</span></span></h3>
+<div class="outline-text-3" id="text-9-6">
+
+
+</div>
+
+<div id="outline-container-9-6-1" class="outline-4">
+<h4 id="sec-9-6-1"><span class="section-number-4">9.6.1</span> L632-635: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="bad_logic">bad_logic</span></span></h4>
+<div class="outline-text-4" id="text-9-6-1">
+
+
+
+
+<pre class="src src-python"><span style="color: #00cdcd; font-weight: bold;">if</span> detach:
+    args.append(<span style="color: #00cd00;">"--detach-sign"</span>)
+<span style="color: #00cdcd; font-weight: bold;">elif</span> clearsign:
+    args.append(<span style="color: #00cd00;">"--clearsign"</span>)
+</pre>
+
+
+<p>
+    the logic here allows that if a user erroneously specifies both options,
+    rather than doing what the system gnupg would do (that is, do &ndash;clearsign,
+    and ignore the &ndash;attach-sign), python-gnupg would ignore both.
+</p>
+</div>
+
+</div>
+
+<div id="outline-container-9-6-2" class="outline-4">
+<h4 id="sec-9-6-2"><span class="section-number-4">9.6.2</span> L626-641:</h4>
+<div class="outline-text-4" id="text-9-6-2">
+
+<p>    input 'args' into self.<sub>open</sub><sub>subprocess</sub>() is defined as static strings.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-9-7" class="outline-3">
+<h3 id="sec-9-7"><span class="section-number-3">9.7</span> def verify(self, data): &nbsp;&nbsp;&nbsp;<span class="tag"><span class="cleanup">cleanup</span></span></h3>
+<div class="outline-text-3" id="text-9-7">
+
+
+</div>
+
+<div id="outline-container-9-7-1" class="outline-4">
+<h4 id="sec-9-7-1"><span class="section-number-4">9.7.1</span> L668-670: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="hanging_fd">hanging_fd</span></span></h4>
+<div class="outline-text-4" id="text-9-7-1">
+
+<p>    same hanging file descriptor problem as in self.sign()
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-9-8" class="outline-3">
+<h3 id="sec-9-8"><span class="section-number-3">9.8</span> def verify<sub>file</sub>(self, file, data<sub>filename</sub>=None) &nbsp;&nbsp;&nbsp;<span class="tag"><span class="vuln">vuln</span>&nbsp;<span class="cleanup">cleanup</span></span></h3>
+<div class="outline-text-3" id="text-9-8">
+
+
+</div>
+
+<div id="outline-container-9-8-1" class="outline-4">
+<h4 id="sec-9-8-1"><span class="section-number-4">9.8.1</span> L683: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="hanging_fd">hanging_fd</span></span></h4>
+<div class="outline-text-4" id="text-9-8-1">
+
+<p>    more potentially hanging file descriptors&hellip;
+</p></div>
+
+</div>
+
+<div id="outline-container-9-8-2" class="outline-4">
+<h4 id="sec-9-8-2"><span class="section-number-4">9.8.2</span> L684: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="hanging_fd">hanging_fd</span></span></h4>
+<div class="outline-text-4" id="text-9-8-2">
+
+<p>    oh look, another hanging file descriptor. imagine that.
+</p></div>
+
+</div>
+
+<div id="outline-container-9-8-3" class="outline-4">
+<h4 id="sec-9-8-3"><span class="section-number-4">9.8.3</span> L690: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="unvalidated_user_input">unvalidated_user_input</span></span></h4>
+<div class="outline-text-4" id="text-9-8-3">
+
+<pre class="example">
+args.append('"%s"' % data_filename)
+</pre>
+
+<p>    well, there's the exploit. see included POC script.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-9-9" class="outline-3">
+<h3 id="sec-9-9"><span class="section-number-3">9.9</span> def import<sub>keys</sub>(self, key<sub>data</sub>) &nbsp;&nbsp;&nbsp;<span class="tag"><span class="vuln">vuln</span></span></h3>
+<div class="outline-text-3" id="text-9-9">
+
+
+</div>
+
+<div id="outline-container-9-9-1" class="outline-4">
+<h4 id="sec-9-9-1"><span class="section-number-4">9.9.1</span> L749: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="unvalidated_user_input">unvalidated_user_input</span></span></h4>
+<div class="outline-text-4" id="text-9-9-1">
+
+<p>    this function could potentially allow an attacker with a GPG exploit to
+    use it, because it passes key generation parameter directly into the
+    internal packet parsers of GPG. however, without a GPG exploit for one of
+    the GPG packet parsers (for explanation of GPG packets look into pgpdump),
+    this function alone is not exploitable.    
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-9-10" class="outline-3">
+<h3 id="sec-9-10"><span class="section-number-3">9.10</span> def recieve<sub>keys</sub>(self, keyserver, *keyids) &nbsp;&nbsp;&nbsp;<span class="tag"><span class="vuln">vuln</span></span></h3>
+<div class="outline-text-3" id="text-9-10">
+
+
+</div>
+
+<div id="outline-container-9-10-1" class="outline-4">
+<h4 id="sec-9-10-1"><span class="section-number-4">9.10.1</span> L770: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="unvalidated_user_input">unvalidated_user_input</span></span></h4>
+<div class="outline-text-4" id="text-9-10-1">
+
+<pre class="example">
+args.extend(keyids)
+</pre>
+
+
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-9-11" class="outline-3">
+<h3 id="sec-9-11"><span class="section-number-3">9.11</span> def export<sub>keys</sub>(self, keyids, secret=False) &nbsp;&nbsp;&nbsp;<span class="tag"><span class="vuln">vuln</span></span></h3>
+<div class="outline-text-3" id="text-9-11">
+
+
+</div>
+
+<div id="outline-container-9-11-1" class="outline-4">
+<h4 id="sec-9-11-1"><span class="section-number-4">9.11.1</span> L795-796: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="unvalidated_user_input">unvalidated_user_input</span></span></h4>
+<div class="outline-text-4" id="text-9-11-1">
+
+<p>    args problem again. exploitable though parameter ``keyids``.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-9-12" class="outline-3">
+<h3 id="sec-9-12"><span class="section-number-3">9.12</span> def list<sub>keys</sub>(self, secret=False)</h3>
+<div class="outline-text-3" id="text-9-12">
+
+
+</div>
+
+<div id="outline-container-9-12-1" class="outline-4">
+<h4 id="sec-9-12-1"><span class="section-number-4">9.12.1</span> L827:</h4>
+<div class="outline-text-4" id="text-9-12-1">
+
+<p>    args is static string.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-9-13" class="outline-3">
+<h3 id="sec-9-13"><span class="section-number-3">9.13</span> def gen<sub>key</sub>(self, input) &nbsp;&nbsp;&nbsp;<span class="tag"><span class="cleanup">cleanup</span></span></h3>
+<div class="outline-text-3" id="text-9-13">
+
+
+</div>
+
+<div id="outline-container-9-13-1" class="outline-4">
+<h4 id="sec-9-13-1"><span class="section-number-4">9.13.1</span> L864:</h4>
+<div class="outline-text-4" id="text-9-13-1">
+
+<p>    args, passed to self.<sub>handle</sub><sub>io</sub>(), which in turn passes args directly to
+    Popen(), is set to a static string. this function is halfway okay, though
+    it really could be more careful with the ``input`` parameter.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-9-14" class="outline-3">
+<h3 id="sec-9-14"><span class="section-number-3">9.14</span> def gen<sub>key</sub><sub>input</sub>(self, **kwargs) &nbsp;&nbsp;&nbsp;<span class="tag"><span class="vuln">vuln</span></span></h3>
+<div class="outline-text-3" id="text-9-14">
+
+
+</div>
+
+<div id="outline-container-9-14-1" class="outline-4">
+<h4 id="sec-9-14-1"><span class="section-number-4">9.14.1</span> L981-983: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="unvalidated_user_input">unvalidated_user_input</span></span></h4>
+<div class="outline-text-4" id="text-9-14-1">
+
+<p>    this function could potentially allow an attacker with a GPG exploit to
+    use it, because it passes key generation parameter directly into the
+    internal packet parsers of GPG. however, without a GPG exploit for one of
+    the GPG packet parsers (for explanation of GPG packets look into pgpdump),
+    this function alone is not exploitable.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-9-15" class="outline-3">
+<h3 id="sec-9-15"><span class="section-number-3">9.15</span> def encrypt<sub>file</sub>(self, file, recipiencts, sign=None, &hellip;) &nbsp;&nbsp;&nbsp;<span class="tag"><span class="vuln">vuln</span></span></h3>
+<div class="outline-text-3" id="text-9-15">
+
+
+</div>
+
+<div id="outline-container-9-15-1" class="outline-4">
+<h4 id="sec-9-15-1"><span class="section-number-4">9.15.1</span> L939: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="unvalidated_user_input">unvalidated_user_input</span></span></h4>
+<div class="outline-text-4" id="text-9-15-1">
+
+<p>    several of the inputs to this function are unvalidated, turned into
+    strings, and passed to Popen(). exploitable.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-9-16" class="outline-3">
+<h3 id="sec-9-16"><span class="section-number-3">9.16</span> def encrypt(self, data, recipients, **kwargs): &nbsp;&nbsp;&nbsp;<span class="tag"><span class="vuln">vuln</span></span></h3>
+<div class="outline-text-3" id="text-9-16">
+
+
+</div>
+
+<div id="outline-container-9-16-1" class="outline-4">
+<h4 id="sec-9-16-1"><span class="section-number-4">9.16.1</span> L997: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="unvalidated_user_input">unvalidated_user_input</span></span></h4>
+<div class="outline-text-4" id="text-9-16-1">
+
+<p>    exploitable, passes kwargs to self.encrypt<sub>file</sub>()
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-9-17" class="outline-3">
+<h3 id="sec-9-17"><span class="section-number-3">9.17</span> def decrypt(self, message **kwargs): &nbsp;&nbsp;&nbsp;<span class="tag"><span class="vuln">vuln</span></span></h3>
+<div class="outline-text-3" id="text-9-17">
+
+
+</div>
+
+<div id="outline-container-9-17-1" class="outline-4">
+<h4 id="sec-9-17-1"><span class="section-number-4">9.17.1</span> L1003: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="unvalidated_user_input">unvalidated_user_input</span></span></h4>
+<div class="outline-text-4" id="text-9-17-1">
+
+<p>    kwargs are passed to self.decrypt<sub>file</sub>(), unvalidated, making this
+    function also exploitable
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-9-18" class="outline-3">
+<h3 id="sec-9-18"><span class="section-number-3">9.18</span> def decrypt<sub>file</sub>(self, file, always<sub>trust</sub>=False, passphrase=None, output=None) &nbsp;&nbsp;&nbsp;<span class="tag"><span class="vuln">vuln</span></span></h3>
+<div class="outline-text-3" id="text-9-18">
+
+
+</div>
+
+<div id="outline-container-9-18-1" class="outline-4">
+<h4 id="sec-9-18-1"><span class="section-number-4">9.18.1</span> L1013: &nbsp;&nbsp;&nbsp;<span class="tag"><span class="unvalidated_user_input">unvalidated_user_input</span></span></h4>
+<div class="outline-text-4" id="text-9-18-1">
+
+<p>    unvalidated user input: this function is also exploitable
+</p>
+</div>
+</div>
+</div>
+
+</div>
+
+<div id="outline-container-10" class="outline-2">
+<h2 id="sec-10"><span class="section-number-2">10</span> POC</h2>
+<div class="outline-text-2" id="text-10">
+
+<p>CANNOT INCLUDE FILE ../python-gnupg-0.3.1/python-gnupg-exploit.py
+</p></div>
+</div>
+</div>
+
+<div id="postamble">
+<p class="date">Date: 2013-02-01 Fri</p>
+<p class="author">Author: isis</p>
+<p class="email"><a href="mailto:isis@leap.se">isis@leap.se</a></p>
+<p class="creator"><a href="http://orgmode.org">Org</a> version 7.9.2 with <a href="http://www.gnu.org/software/emacs/">Emacs</a> version 24</p>
+<a href="http://validator.w3.org/check?uri=referer">Validate XHTML 1.0</a>
+
+</div>
+</body>
+</html>
