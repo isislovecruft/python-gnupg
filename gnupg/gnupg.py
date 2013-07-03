@@ -19,19 +19,9 @@
 ===========
 A Python interface to GnuPG.
 
-This is a modified version of python-gnupg-0.3.2, which was created by Vinay
-Sajip, which itself is a modification of GPG.py written by Steve Traugott,
-which in turn is a modification of the pycrypto GnuPG interface written by
-A.M. Kuchling.
-
-This version is patched to sanitize untrusted inputs, due to the necessity of
-executing :class:`subprocess.Popen([...], shell=True)` in order to communicate
-with GnuPG. Several speed improvements were also made based on code profiling,
-and the API has been cleaned up to support an easier, more Pythonic,
-interaction.
-
-:authors: see ``gnupg.__authors__``
-:license: see ``gnupg.__license__``
+.. moduleauthor:: Isis Agora Lovecruft <isis@patternsinthevoid.net>
+                  see also :attr:`gnupg.__authors__`
+:license: see :attr:`gnupg.__license__`
 :info:    see <https://www.github.com/isislovecruft/python-gnupg>
 """
 
@@ -40,6 +30,7 @@ from codecs     import open as open
 
 import encodings
 import os
+import re
 import textwrap
 
 try:
@@ -59,7 +50,11 @@ from ._util    import log
 
 
 class GPG(GPGBase):
-    """Encapsulate access to the gpg executable"""
+    """Python interface for handling interactions with GnuPG, including keyfile
+    generation, keyring maintainance, import and export, encryption and
+    decryption, sending to and recieving from keyservers, and signing and
+    verification.
+    """
 
     #: The number of simultaneous keyids we should list operations like
     #: '--list-sigs' to:
@@ -152,8 +147,8 @@ class GPG(GPGBase):
     def sign(self, data, **kwargs):
         """Create a signature for a message string or file.
 
-        Note that this method is not for signing other keys. (In GnuPG's terms,
-        what we all usually call 'keysigning' is actually termed
+        Note that this method is not for signing other keys. (In GnuPG's
+        terms, what we all usually call 'keysigning' is actually termed
         'certification'...) Even though they are cryptographically the same
         operation, GnuPG differentiates between them, presumedly because these
         operations are also the same as the decryption operation. If the
@@ -222,10 +217,11 @@ class GPG(GPGBase):
         detached signature should be specified as the ``sig_file``.
 
         :param file file: A file descriptor object. Its type will be checked
-                          with :func:`_util._is_file`.
+            with :func:`_util._is_file`.
+
         :param str sig_file: A file containing the GPG signature data for
-                             ``file``. If given, ``file`` is verified via this
-                             detached signature.
+            ``file``. If given, ``file`` is verified via this detached
+            signature.
         """
 
         fn = None
@@ -303,14 +299,14 @@ class GPG(GPGBase):
     def recv_keys(self, *keyids, **kwargs):
         """Import keys from a keyserver.
 
-        :param str keyids: Each ``keyids`` argument should be a string
-                           containing a keyid to request.
-        :param str keyserver: The keyserver to request the ``keyids`` from;
-                              defaults to :property:`gnupg.GPG.keyserver`.
-
         >>> gpg = gnupg.GPG(homedir="doctests")
         >>> key = gpg.recv_keys('hkp://pgp.mit.edu', '3FF0DB166A7476EA')
         >>> assert key
+
+        :param str keyids: Each ``keyids`` argument should be a string
+             containing a keyid to request.
+        :param str keyserver: The keyserver to request the ``keyids`` from;
+             defaults to :property:`gnupg.GPG.keyserver`.
         """
         if keyids:
             keys = ' '.join([key for key in keyids])
@@ -322,22 +318,21 @@ class GPG(GPGBase):
         """Delete a key, or list of keys, from the current keyring.
 
         The keys must be refered to by their full fingerprint for GnuPG to
-        delete them. If :param:`secret <secret=True>`, the corresponding secret
-        keyring will be deleted from :attr:`GPG.secring <self.secring>`.
+        delete them. If ``secret=True``, the corresponding secret keyring will
+        be deleted from :attr:`GPG.secring`.
 
         :type fingerprints: str or list or tuple
-        :param fingerprints: A string representing the fingerprint (or a
-                             list/tuple of fingerprint strings) for the key(s)
-                             to delete.
+
+        :param fingerprints: A string, or a list/tuple of strings,
+            representing the fingerprint(s) for the key(s) to delete.
 
         :param bool secret: If True, delete the corresponding secret key(s)
-                            also. (default: False)
-        :param bool subkeys: If True, delete the secret subkey first, then
-                             the public key. Same as
-                            ``gpg --delete-secret-and-public-key 0x12345678``
-                            (default: False)
-        """
+            also. (default: False)
 
+        :param bool subkeys: If True, delete the secret subkey first, then the
+            public key. (default: False) Same as:
+                ``$ gpg --delete-secret-and-public-key 0x12345678``
+        """
         which='keys'
         if secret:
             which='secret-key'
@@ -359,7 +354,7 @@ class GPG(GPGBase):
         """Export the indicated ``keyids``.
 
         :param str keyids: A keyid or fingerprint in any format that GnuPG will
-                           accept.
+            accept.
         :param bool secret: If True, export only the secret key.
         :param bool subkeys: If True, export the secret subkeys.
         """
@@ -455,7 +450,7 @@ class GPG(GPGBase):
 
         :rtype: dict
         :returns: A dictionary whose keys are the original keyid parameters,
-                  and whose values are lists of signatures.
+            and whose values are lists of signatures.
         """
         if len(keyids) > self._batch_limit:
             raise ValueError(
@@ -527,19 +522,19 @@ class GPG(GPGBase):
         generation by creating a file with special syntax and then providing it
         to: ``gpg --gen-key --batch``. Batch files look like this:
 
-            Name-Real: Alice
-            Name-Email: alice@inter.net
-            Expire-Date: 2014-04-01
-            Key-Type: RSA
-            Key-Length: 4096
-            Key-Usage: cert
-            Subkey-Type: RSA
-            Subkey-Length: 4096
-            Subkey-Usage: encrypt,sign,auth
-            Passphrase: sekrit
-            %pubring foo.gpg
-            %secring sec.gpg
-            %commit
+        |  Name-Real: Alice
+        |  Name-Email: alice@inter.net
+        |  Expire-Date: 2014-04-01
+        |  Key-Type: RSA
+        |  Key-Length: 4096
+        |  Key-Usage: cert
+        |  Subkey-Type: RSA
+        |  Subkey-Length: 4096
+        |  Subkey-Usage: encrypt,sign,auth
+        |  Passphrase: sekrit
+        |  %pubring foo.gpg
+        |  %secring sec.gpg
+        |  %commit
 
         which is what this function creates for you. All of the available,
         non-control parameters are detailed below (control parameters are the
@@ -583,150 +578,121 @@ class GPG(GPGBase):
         >>> assert isinstance(encrypted.data, str)
 
         :param bool separate_keyring: Specify for the new key to be written to
-                                      a separate pubring.gpg and
-                                      secring.gpg. If True,
-                                      :meth:`GPG.gen_key` will automatically
-                                      rename the separate keyring and secring
-                                      to whatever the fingerprint of the
-                                      generated key ends up being, suffixed
-                                      with '.pubring' and '.secring'
-                                      respectively.
+            a separate pubring.gpg and secring.gpg. If True,
+            :meth:`GPG.gen_key` will automatically rename the separate keyring
+            and secring to whatever the fingerprint of the generated key ends
+            up being, suffixed with '.pubring' and '.secring' respectively.
 
         :param bool save_batchfile: Save a copy of the generated batch file to
-                                    disk in a file named <name_real>.batch,
-                                    where <name_real> is the ``name_real``
-                                    parameter stripped of punctuation, spaces,
-                                    and non-ascii characters.
+            disk in a file named <name_real>.batch, where <name_real> is the
+            ``name_real`` parameter stripped of punctuation, spaces, and
+            non-ascii characters.
 
         :param bool testing: Uses a faster, albeit insecure random number
-                             generator to create keys. This should only be
-                             used for testing purposes, for keys which are
-                             going to be created and then soon after
-                             destroyed, and never for the generation of actual
-                             use keys.
+            generator to create keys. This should only be used for testing
+            purposes, for keys which are going to be created and then soon
+            after destroyed, and never for the generation of actual use keys.
 
         :param str name_real: The name field of the UID in the generated key.
         :param str name_comment: The comment in the UID of the generated key.
         :param str name_email: The email in the UID of the generated key.
-                               (default: $USER@$(hostname) ) Remember to use
-                               UTF-8 encoding for the entirety of the UID. At
-                               least one of :param:`name_real <name_real>`,
-                               :param:`name_comment <name_comment>`, or
-                               :param:`name_email <name_email>` must be
-                               provided, or else no user ID is created.
+            (default: $USER@$(hostname) ) Remember to use UTF-8 encoding for
+            the entirety of the UID. At least one of ``name_real``,
+            ``name_comment``, or ``name_email`` must be provided, or else no
+            user ID is created.
 
         :param str key_type: One of 'RSA', 'DSA', 'ELG-E', or 'default'.
-                             (default: 'default') Starts a new parameter block
-                             by giving the type of the primary key. The
-                             algorithm must be capable of signing. This is a
-                             required parameter. The algorithm may either be
-                             an OpenPGP algorithm number or a string with the
-                             algorithm name. The special value ‘default’ may
-                             be used for algo to create the default key type;
-                             in this case a :param:`key_usage <key_usage>`
-                             should not be given and ‘default’ must also be
-                             used for :param:`subkey_type <subkey_type>`.
+            (default: 'default') Starts a new parameter block by giving the
+            type of the primary key. The algorithm must be capable of
+            signing. This is a required parameter. The algorithm may either be
+            an OpenPGP algorithm number or a string with the algorithm
+            name. The special value ‘default’ may be used for algo to create
+            the default key type; in this case a ``key_usage`` should not be
+            given and 'default' must also be used for ``subkey_type``.
 
         :param int key_length: The requested length of the generated key in
-                               bits. (Default: 4096)
+            bits. (Default: 4096)
 
         :param str key_grip: hexstring This is an optional hexidecimal string
-                             which is used to generate a CSR or certificate
-                             for an already existing key. :param:key_length
-                             will be ignored if this parameter is given.
+            which is used to generate a CSR or certificate for an already
+            existing key. ``key_length`` will be ignored if this parameter
+            is given.
 
         :param str key_usage: Space or comma delimited string of key
-                              usages. Allowed values are ‘encrypt’, ‘sign’,
-                              and ‘auth’. This is used to generate the key
-                              flags. Please make sure that the algorithm is
-                              capable of this usage. Note that OpenPGP
-                              requires that all primary keys are capable of
-                              certification, so no matter what usage is given
-                              here, the ‘cert’ flag will be on. If no
-                              ‘Key-Usage’ is specified and the ‘Key-Type’ is
-                              not ‘default’, all allowed usages for that
-                              particular algorithm are used; if it is not
-                              given but ‘default’ is used the usage will be
-                              ‘sign’.
+            usages. Allowed values are ‘encrypt’, ‘sign’, and ‘auth’. This is
+            used to generate the key flags. Please make sure that the
+            algorithm is capable of this usage. Note that OpenPGP requires
+            that all primary keys are capable of certification, so no matter
+            what usage is given here, the ‘cert’ flag will be on. If no
+            ‘Key-Usage’ is specified and the ‘Key-Type’ is not ‘default’, all
+            allowed usages for that particular algorithm are used; if it is
+            not given but ‘default’ is used the usage will be ‘sign’.
 
         :param str subkey_type: This generates a secondary key
-                                (subkey). Currently only one subkey can be
-                                handled. See also ``key_type`` above.
+            (subkey). Currently only one subkey can be handled. See also
+            ``key_type`` above.
 
         :param int subkey_length: The length of the secondary subkey in bits.
 
         :param str subkey_usage: Key usage for a subkey; similar to
-                                 ``key_usage``.
+            ``key_usage``.
 
         :type expire_date: int or str
         :param expire_date: Can be specified as an iso-date or as
-                            <int>[d|w|m|y] Set the expiration date for the key
-                            (and the subkey). It may either be entered in ISO
-                            date format (2000-08-15) or as number of days,
-                            weeks, month or years. The special notation
-                            "seconds=N" is also allowed to directly give an
-                            Epoch value. Without a letter days are
-                            assumed. Note that there is no check done on the
-                            overflow of the type used by OpenPGP for
-                            timestamps. Thus you better make sure that the
-                            given value make sense. Although OpenPGP works
-                            with time intervals, GnuPG uses an absolute value
-                            internally and thus the last year we can represent
-                            is 2105.
+            <int>[d|w|m|y] Set the expiration date for the key (and the
+            subkey). It may either be entered in ISO date format (2000-08-15)
+            or as number of days, weeks, month or years. The special notation
+            "seconds=N" is also allowed to directly give an Epoch
+            value. Without a letter days are assumed. Note that there is no
+            check done on the overflow of the type used by OpenPGP for
+            timestamps. Thus you better make sure that the given value make
+            sense. Although OpenPGP works with time intervals, GnuPG uses an
+            absolute value internally and thus the last year we can represent
+            is 2105.
 
         :param str creation_date: Set the creation date of the key as stored
-                                  in the key information and which is also
-                                  part of the fingerprint calculation. Either
-                                  a date like "1986-04-26" or a full timestamp
-                                  like "19860426T042640" may be used. The time
-                                  is considered to be UTC. If it is not given
-                                  the current time is used.
+            in the key information and which is also part of the fingerprint
+            calculation. Either a date like "1986-04-26" or a full timestamp
+            like "19860426T042640" may be used. The time is considered to be
+            UTC. If it is not given the current time is used.
 
         :param str passphrase: The passphrase for the new key. The default is
-                               to not use any passphrase. Note that
-                               GnuPG>=2.1.x will not allow you to specify a
-                               passphrase for batch key generation -- GnuPG
-                               will ignore the ``passphrase`` parameter, stop,
-                               and ask the user for the new passphrase.
-                               However, we can put the command
-                               '%no-protection' into the batch key generation
-                               file to allow a passwordless key to be created,
-                               which can then have its passphrase set later
-                               with '--edit-key'.
+            to not use any passphrase. Note that GnuPG>=2.1.x will not allow
+            you to specify a passphrase for batch key generation -- GnuPG will
+            ignore the ``passphrase`` parameter, stop, and ask the user for
+            the new passphrase.  However, we can put the command
+            '%no-protection' into the batch key generation file to allow a
+            passwordless key to be created, which can then have its passphrase
+            set later with '--edit-key'.
 
         :param str preferences: Set the cipher, hash, and compression
-                                preference values for this key. This expects
-                                the same type of string as the sub-command
-                                ‘setpref’ in the --edit-key menu.
+            preference values for this key. This expects the same type of
+            string as the sub-command ‘setpref’ in the --edit-key menu.
 
         :param str revoker: Should be given as 'algo:fpr' [case sensitive].
-                            Add a designated revoker to the generated
-                            key. Algo is the public key algorithm of the
-                            designated revoker (i.e. RSA=1, DSA=17, etc.) fpr
-                            is the fingerprint of the designated revoker. The
-                            optional ‘sensitive’ flag marks the designated
-                            revoker as sensitive information. Only v4 keys may
-                            be designated revokers.
+            Add a designated revoker to the generated key. Algo is the public
+            key algorithm of the designated revoker (i.e. RSA=1, DSA=17, etc.)
+            fpr is the fingerprint of the designated revoker. The optional
+            ‘sensitive’ flag marks the designated revoker as sensitive
+            information. Only v4 keys may be designated revokers.
 
         :param str keyserver: This is an optional parameter that specifies the
-                              preferred keyserver URL for the key.
+            preferred keyserver URL for the key.
 
         :param str handle: This is an optional parameter only used with the
-                           status lines KEY_CREATED and
-                           KEY_NOT_CREATED. string may be up to 100 characters
-                           and should not contain spaces. It is useful for
-                           batch key generation to associate a key parameter
-                           block with a status line.
+            status lines KEY_CREATED and KEY_NOT_CREATED. string may be up to
+            100 characters and should not contain spaces. It is useful for
+            batch key generation to associate a key parameter block with a
+            status line.
 
         :rtype: str
-        :returns: A suitable input string for the ``GPG.gen_key()`` method,
-                  the latter of which will create the new keypair.
+        :returns: A suitable input string for the :meth:`GPG.gen_key` method,
+            the latter of which will create the new keypair.
 
         see
         http://www.gnupg.org/documentation/manuals/gnupg-devel/Unattended-GPG-key-generation.html
         for more details.
         """
-
         parms = {}
 
         #: A boolean for determining whether to set subkey_type to 'default'
@@ -879,9 +845,9 @@ generate keys. Please see
         ...     shutil.rmtree("doctests")
         >>> gpg = gnupg.GPG(homedir="doctests")
         >>> key_settings = gpg.gen_key_input(key_type='RSA',
-        ...                                  key_length=1024,
-        ...                                  key_usage='ESCA',
-        ...                                  passphrase='foo')
+        ...     key_length=1024,
+        ...     key_usage='ESCA',
+        ...     passphrase='foo')
         >>> key = gpg.gen_key(key_settings)
         >>> message = "The crow flies at midnight."
         >>> encrypted = str(gpg.encrypt(message, key.printprint))
@@ -904,6 +870,8 @@ generate keys. Please see
 
         :param str compress_algo: The compression algorithm to use. Can be one
             of ``'ZLIB'``, ``'BZIP2'``, ``'ZIP'``, or ``'Uncompressed'``.
+
+        See also: :meth:`GPGBase._encrypt`
         """
         stream = _make_binary_stream(data, self._encoding)
         result = self._encrypt(stream, recipients, **kwargs)
@@ -913,7 +881,11 @@ generate keys. Please see
     def decrypt(self, message, **kwargs):
         """Decrypt the contents of a string or file-like object ``message``.
 
+        :type message: file or str or :class:`io.BytesIO`
         :param message: A string or file-like object to decrypt.
+        :param bool always_trust: Instruct GnuPG to ignore trust checks.
+        :param str passphrase: The passphrase for the secret key used for decryption.
+        :param str output: A filename to write the decrypted output to.
         """
         stream = _make_binary_stream(message, self._encoding)
         result = self.decrypt_file(stream, **kwargs)
@@ -922,13 +894,12 @@ generate keys. Please see
 
     def decrypt_file(self, filename, always_trust=False, passphrase=None,
                      output=None):
-        """
-        Decrypt the contents of a file-like object :param:file .
+        """Decrypt the contents of a file-like object ``filename`` .
 
-        :param file: A file-like object to decrypt.
-        :param always_trust: Instruct GnuPG to ignore trust checks.
-        :param passphrase: The passphrase for the secret key used for decryption.
-        :param output: A file to write the decrypted output to.
+        :param str filename: A file-like object to decrypt.
+        :param bool always_trust: Instruct GnuPG to ignore trust checks.
+        :param str passphrase: The passphrase for the secret key used for decryption.
+        :param str output: A filename to write the decrypted output to.
         """
         args = ["--decrypt"]
         if output:  # write the output to a file with the specified name
@@ -942,17 +913,18 @@ generate keys. Please see
         log.debug('decrypt result: %r', result.data)
         return result
 
+class GPGUtilities(object):
+    """Extra tools for working with GnuPG."""
 
-class GPGWrapper(GPG):
-    """
-    This is a temporary class for handling GPG requests, and should be
-    replaced by a more general class used throughout the project.
-    """
-    import re
+    def __init__(self, gpg):
+        """Initialise extra utility functions."""
+        self._gpg = gpg
 
     def find_key_by_email(self, email, secret=False):
-        """
-        Find user's key based on their email.
+        """Find user's key based on their email address.
+
+        :param str email: The email address to search for.
+        :param bool secret: If True, search through secret keyring.
         """
         for key in self.list_keys(secret=secret):
             for uid in key['uids']:
@@ -961,6 +933,10 @@ class GPGWrapper(GPG):
         raise LookupError("GnuPG public key for email %s not found!" % email)
 
     def find_key_by_subkey(self, subkey):
+        """Find a key by a fingerprint of one of its subkeys.
+
+        :param str subkey: The fingerprint of the subkey to search for.
+        """
         for key in self.list_keys():
             for sub in key['subkeys']:
                 if sub[0] == subkey:
@@ -981,9 +957,7 @@ class GPGWrapper(GPG):
         return result
 
     def encrypted_to(self, raw_data):
-        """
-        Return the key to which raw_data is encrypted to.
-        """
+        """Return the key to which raw_data is encrypted to."""
         # TODO: make this support multiple keys.
         result = self.list_packets(raw_data)
         if not result.key:
