@@ -921,19 +921,18 @@ class Sign(object):
 class ListKeys(list):
     """Handle status messages for --list-keys.
 
-        Handle pub and uid (relating the latter to the former).
+    Handles pub and uid (relating the latter to the former).  Don't care about
+    the following attributes/status messages (from doc/DETAILS):
 
-        Don't care about (info from src/DETAILS):
-
-        crt = X.509 certificate
-        crs = X.509 certificate and private key available
-        ssb = secret subkey (secondary key)
-        uat = user attribute (same as user id except for field 10).
-        sig = signature
-        rev = revocation signature
-        pkd = public key data (special field format, see below)
-        grp = reserved for gpgsm
-        rvk = revocation key
+    |  crt = X.509 certificate
+    |  crs = X.509 certificate and private key available
+    |  ssb = secret subkey (secondary key)
+    |  uat = user attribute (same as user id except for field 10).
+    |  sig = signature
+    |  rev = revocation signature
+    |  pkd = public key data (special field format, see below)
+    |  grp = reserved for gpgsm
+    |  rvk = revocation key
     """
 
     def __init__(self, gpg):
@@ -1240,8 +1239,12 @@ class Crypt(Verify):
     def __init__(self, gpg):
         Verify.__init__(self, gpg)
         self._gpg = gpg
+        #: A string containing the encrypted or decrypted data.
         self.data = ''
+        #: True if the decryption/encryption process turned out okay.
         self.ok = False
+        #: A string describing the current processing status, or error, if one
+        #: has occurred.
         self.status = None
         self.data_format = None
         self.data_timestamp = None
@@ -1253,6 +1256,14 @@ class Crypt(Verify):
     __bool__ = __nonzero__
 
     def __str__(self):
+        """The str() method for a :class:`Crypt` object will automatically return the
+        decoded data string, which stores the encryped or decrypted data.
+
+        In other words, these two statements are equivalent:
+
+        >>> assert decrypted.data == str(decrypted)
+
+        """
         return self.data.decode(self._gpg._encoding, self._gpg._decode_errors)
 
     def _handle_status(self, key, value):
@@ -1298,7 +1309,7 @@ class Crypt(Verify):
                 self.data_timestamp, self.data_filename = dts.split(' ', 1)
             else:
                 self.data_timestamp = dts
-            ## GnuPG give us a hex byte for an ascii char corresponding to
+            ## GnuPG gives us a hex byte for an ascii char corresponding to
             ## the data format of the resulting plaintext,
             ## i.e. '62'→'b':= binary data
             self.data_format = chr(int(str(fmt), 16))
@@ -1313,9 +1324,11 @@ class ListPackets(object):
         #: A string describing the current processing status, or error, if one
         #: has occurred.
         self.status = None
-        self.key_id = None
+        #: True if the passphrase to a public/private keypair is required.
         self.need_passphrase = None
+        #: True if a passphrase for a symmetric key is required.
         self.need_passphrase_sym = None
+        #: The keyid and uid which this data is encrypted to.
         self.userid_hint = None
 
     def _handle_status(self, key, value):
