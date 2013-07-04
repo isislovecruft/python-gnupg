@@ -959,7 +959,7 @@ class GPGUtilities(object):
     def encrypted_to(self, raw_data):
         """Return the key to which raw_data is encrypted to."""
         # TODO: make this support multiple keys.
-        result = self.list_packets(raw_data)
+        result = self._gpg.list_packets(raw_data)
         if not result.key:
             raise LookupError(
                 "Content is not encrypted to a GnuPG key!")
@@ -969,11 +969,11 @@ class GPGUtilities(object):
             return self.find_key_by_subkey(result.key)
 
     def is_encrypted_sym(self, raw_data):
-        result = self.list_packets(raw_data)
+        result = self._gpg.list_packets(raw_data)
         return bool(result.need_passphrase_sym)
 
     def is_encrypted_asym(self, raw_data):
-        result = self.list_packets(raw_data)
+        result = self._gpg.list_packets(raw_data)
         return bool(result.key)
 
     def is_encrypted(self, raw_data):
