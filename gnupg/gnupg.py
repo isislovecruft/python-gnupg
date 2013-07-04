@@ -977,7 +977,7 @@ class GPGUtilities(object):
         return bool(result.key)
 
     def is_encrypted(self, raw_data):
-        self.is_encrypted_asym() or self.is_encrypted_sym()
+        return self.is_encrypted_asym(raw_data) or self.is_encrypted_sym(raw_data)
 
 if __name__ == "__main__":
     from .test import test_gnupg
