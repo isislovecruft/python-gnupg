@@ -597,7 +597,7 @@ class GPGBase(object):
         """Create a signature for a file.
 
         :param file: The file stream (i.e. it's already been open()'d) to sign.
-        :param str keyid: The key to sign with.
+        :param str default_key: The key to sign with.
         :param str passphrase: The passphrase to pipe to stdin.
         :param bool clearsign: If True, create a cleartext signature.
         :param bool detach: If True, create a detached signature.

@@ -166,7 +166,7 @@ class GPG(GPGBase):
 
         :type data: str or file
         :param data: A string or file stream to sign.
-        :param str keyid: The key to sign with.
+        :param str default_key: The key to sign with.
         :param str passphrase: The passphrase to pipe to stdin.
         :param bool clearsign: If True, create a cleartext signature.
         :param bool detach: If True, create a detached signature.
