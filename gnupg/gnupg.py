@@ -335,9 +335,9 @@ class GPG(GPGBase):
         """
         which='keys'
         if secret:
-            which='secret-key'
+            which='secret-keys'
         if subkeys:
-            which='secret-and-public-key'
+            which='secret-and-public-keys'
 
         if _is_list_or_tuple(fingerprints):
             fingerprints = ' '.join(fingerprints)
