@@ -28,8 +28,6 @@ from argparse   import ArgumentParser
 from codecs     import open as open
 from functools  import wraps
 from glob       import glob
-from inspect    import getabsfile
-from inspect    import currentframe
 from time       import gmtime
 from time       import mktime
 
