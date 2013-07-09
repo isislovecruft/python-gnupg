@@ -1071,8 +1071,12 @@ def before_run():
         if len(rings) > 0:
             for ring in rings:
                 fn = os.path.basename(ring)
-                os.rename(ring, os.path.join(_tests, 'generated-keys'))
-
+                genkeysdir = os.path.join(_tests, 'generated-keys')
+                try:
+                    os.rename(ring, os.path.join(genkeysdir, fn))
+                except OSError as err:
+                    ## if we can't move the files it won't kill us:
+                    log.warn(err)
 
 if __name__ == "__main__":
 
