@@ -166,7 +166,7 @@ class GPG(GPGBase):
 
         :type data: str or file
         :param data: A string or file stream to sign.
-        :param str keyid: The key to sign with.
+        :param str default_key: The key to sign with.
         :param str passphrase: The passphrase to pipe to stdin.
         :param bool clearsign: If True, create a cleartext signature.
         :param bool detach: If True, create a detached signature.
@@ -335,9 +335,9 @@ class GPG(GPGBase):
         """
         which='keys'
         if secret:
-            which='secret-key'
+            which='secret-keys'
         if subkeys:
-            which='secret-and-public-key'
+            which='secret-and-public-keys'
 
         if _is_list_or_tuple(fingerprints):
             fingerprints = ' '.join(fingerprints)
@@ -959,7 +959,7 @@ class GPGUtilities(object):
     def encrypted_to(self, raw_data):
         """Return the key to which raw_data is encrypted to."""
         # TODO: make this support multiple keys.
-        result = self.list_packets(raw_data)
+        result = self._gpg.list_packets(raw_data)
         if not result.key:
             raise LookupError(
                 "Content is not encrypted to a GnuPG key!")
@@ -969,15 +969,15 @@ class GPGUtilities(object):
             return self.find_key_by_subkey(result.key)
 
     def is_encrypted_sym(self, raw_data):
-        result = self.list_packets(raw_data)
+        result = self._gpg.list_packets(raw_data)
         return bool(result.need_passphrase_sym)
 
     def is_encrypted_asym(self, raw_data):
-        result = self.list_packets(raw_data)
+        result = self._gpg.list_packets(raw_data)
         return bool(result.key)
 
     def is_encrypted(self, raw_data):
-        self.is_encrypted_asym() or self.is_encrypted_sym()
+        return self.is_encrypted_asym(raw_data) or self.is_encrypted_sym(raw_data)
 
 if __name__ == "__main__":
     from .test import test_gnupg

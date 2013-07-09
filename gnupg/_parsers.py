@@ -1348,5 +1348,8 @@ class ListPackets(object):
             self.need_passphrase_sym = True
         elif key == 'USERID_HINT':
             self.userid_hint = value.strip().split()
+        elif key in ('NO_SECKEY', 'BEGIN_DECRYPTION', 'DECRYPTION_FAILED',
+                     'END_DECRYPTION'):
+            pass
         else:
             raise ValueError("Unknown status message: %r" % key)
