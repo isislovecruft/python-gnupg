@@ -340,7 +340,7 @@ def _make_passphrase(length=None, save=False, file=None):
             fh.write(passphrase)
             fh.flush()
             fh.close()
-            os.chmod(file, 0600)
+            os.chmod(file, stat.S_IRUSR | stat.S_IWUSR)
             os.chown(file, ruid, gid)
 
         log.warn("Generated passphrase saved to %s" % file)
@@ -456,7 +456,7 @@ class InheritableProperty(object):
     if obj is None:
       return self
     if self.fget is None:
-      raise AttributeError, "unreadable attribute"
+      raise AttributeError("unreadable attribute")
     if self.fget.__name__ == '<lambda>' or not self.fget.__name__:
       return self.fget(obj)
     else:
@@ -464,7 +464,7 @@ class InheritableProperty(object):
 
   def __set__(self, obj, value):
     if self.fset is None:
-      raise AttributeError, "can't set attribute"
+      raise AttributeError("can't set attribute")
     if self.fset.__name__ == '<lambda>' or not self.fset.__name__:
       self.fset(obj, value)
     else:
@@ -472,7 +472,7 @@ class InheritableProperty(object):
 
   def __delete__(self, obj):
     if self.fdel is None:
-      raise AttributeError, "can't delete attribute"
+      raise AttributeError("can't delete attribute")
     if self.fdel.__name__ == '<lambda>' or not self.fdel.__name__:
       self.fdel(obj)
     else:
@@ -498,7 +498,7 @@ class Storage(dict):
     def __getattr__(self, key):
         try:
             return self[key]
-        except KeyError, k:
+        except KeyError as k:
             return None
 
     def __setattr__(self, key, value):
