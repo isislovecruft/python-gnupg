@@ -1000,7 +1000,7 @@ class ImportResult(object):
     n_uids n_subk n_sigs n_revoc sec_read sec_imported sec_dups
     not_imported'''.split()
     _counts = collections.OrderedDict(
-        zip(_fields, [int(0) for x in xrange(len(_fields))]) )
+        zip(_fields, [int(0) for x in range(len(_fields))]) )
 
     #: A list of strings containing the fingerprints of the GnuPG keyIDs
     #: imported.
