@@ -28,7 +28,7 @@ from argparse   import ArgumentParser
 from codecs     import open as open
 from functools  import wraps
 from glob       import glob
-from time       import gmtime
+from time       import localtime
 from time       import mktime
 
 import encodings
@@ -645,7 +645,7 @@ class GPGTestCase(unittest.TestCase):
         message += '[hackers in popular culture] to push for more power'
         sig = self.gpg.sign(message, default_key=key.fingerprint,
                             passphrase='bruceschneier')
-        now = mktime(gmtime())
+        now = mktime(localtime())
         self.assertTrue(sig, "Good passphrase should succeed")
         verified = self.gpg.verify(sig.data)
         self.assertIsNotNone(verified.fingerprint)
