@@ -180,7 +180,7 @@ class GPG(GPGBase):
         else:
             log.warn("No 'default_key' given! Using first key on secring.")
 
-        if isinstance(data, file):
+        if hasattr(data, 'read'):
             result = self._sign_file(data, **kwargs)
         elif not _is_stream(data):
             stream = _make_binary_stream(data, self._encoding)
