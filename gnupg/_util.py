@@ -23,7 +23,7 @@ Extra utilities for python-gnupg.
 from __future__ import absolute_import
 from datetime   import datetime
 from socket     import gethostname
-from time       import gmtime
+from time       import localtime
 from time       import mktime
 
 import codecs
@@ -330,7 +330,7 @@ def _make_passphrase(length=None, save=False, file=None):
     if save:
         ruid, euid, suid = os.getresuid()
         gid = os.getgid()
-        now = mktime(gmtime())
+        now = mktime(localtime())
 
         if not file:
             filename = str('passphrase-%s-%s' % uid, now)
@@ -387,8 +387,8 @@ def _threaded_copy_data(instream, outstream):
     return copy_thread
 
 def _utc_epoch():
-    """Get the seconds since epoch for UTC."""
-    return int(mktime(gmtime()))
+    """Get the seconds since epoch."""
+    return int(mktime(localtime()))
 
 def _which(executable, flags=os.X_OK):
     """Borrowed from Twisted's :mod:twisted.python.proutils .
