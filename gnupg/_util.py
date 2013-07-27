@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of python-gnupg, a Python wrapper around GnuPG.
-# Copyright © 2013 Isis Lovecruft, Andrej B.
+# This file is part of python-gnupg, a Python interface to GnuPG.
+# Copyright © 2013 Isis Lovecruft, <isis@leap.se> 0xA3ADB67A2CDB8B35
+#           © 2013 Andrej B.
+#           © 2013 LEAP Encryption Access Project
 #           © 2008-2012 Vinay Sajip
 #           © 2005 Steve Traugott
 #           © 2004 A.M. Kuchling
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
+# 
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option)
+# any later version.
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
+
 '''util.py
 ----------
 Extra utilities for python-gnupg.
@@ -23,7 +25,7 @@ Extra utilities for python-gnupg.
 from __future__ import absolute_import
 from datetime   import datetime
 from socket     import gethostname
-from time       import gmtime
+from time       import localtime
 from time       import mktime
 
 import codecs
@@ -330,7 +332,7 @@ def _make_passphrase(length=None, save=False, file=None):
     if save:
         ruid, euid, suid = os.getresuid()
         gid = os.getgid()
-        now = mktime(gmtime())
+        now = mktime(localtime())
 
         if not file:
             filename = str('passphrase-%s-%s' % uid, now)
@@ -340,7 +342,7 @@ def _make_passphrase(length=None, save=False, file=None):
             fh.write(passphrase)
             fh.flush()
             fh.close()
-            os.chmod(file, 0600)
+            os.chmod(file, stat.S_IRUSR | stat.S_IWUSR)
             os.chown(file, ruid, gid)
 
         log.warn("Generated passphrase saved to %s" % file)
@@ -387,8 +389,8 @@ def _threaded_copy_data(instream, outstream):
     return copy_thread
 
 def _utc_epoch():
-    """Get the seconds since epoch for UTC."""
-    return int(mktime(gmtime()))
+    """Get the seconds since epoch."""
+    return int(mktime(localtime()))
 
 def _which(executable, flags=os.X_OK):
     """Borrowed from Twisted's :mod:twisted.python.proutils .
@@ -456,7 +458,7 @@ class InheritableProperty(object):
     if obj is None:
       return self
     if self.fget is None:
-      raise AttributeError, "unreadable attribute"
+      raise AttributeError("unreadable attribute")
     if self.fget.__name__ == '<lambda>' or not self.fget.__name__:
       return self.fget(obj)
     else:
@@ -464,7 +466,7 @@ class InheritableProperty(object):
 
   def __set__(self, obj, value):
     if self.fset is None:
-      raise AttributeError, "can't set attribute"
+      raise AttributeError("can't set attribute")
     if self.fset.__name__ == '<lambda>' or not self.fset.__name__:
       self.fset(obj, value)
     else:
@@ -472,7 +474,7 @@ class InheritableProperty(object):
 
   def __delete__(self, obj):
     if self.fdel is None:
-      raise AttributeError, "can't delete attribute"
+      raise AttributeError("can't delete attribute")
     if self.fdel.__name__ == '<lambda>' or not self.fdel.__name__:
       self.fdel(obj)
     else:
@@ -498,7 +500,7 @@ class Storage(dict):
     def __getattr__(self, key):
         try:
             return self[key]
-        except KeyError, k:
+        except KeyError as k:
             return None
 
     def __setattr__(self, key, value):

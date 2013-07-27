@@ -2,20 +2,22 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of python-gnupg, a Python interface to GnuPG.
-# Copyright © 2013 Isis Lovecruft
+# Copyright © 2013 Isis Lovecruft, <isis@leap.se> 0xA3ADB67A2CDB8B35
+#           © 2013 Andrej B.
+#           © 2013 LEAP Encryption Access Project
 #           © 2008-2012 Vinay Sajip
 #           © 2005 Steve Traugott
 #           © 2004 A.M. Kuchling
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
+# 
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option)
+# any later version.
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
+
 """test_gnupg.py
 ----------------
 A test harness and unittests for gnupg.py.
@@ -28,7 +30,7 @@ from argparse   import ArgumentParser
 from codecs     import open as open
 from functools  import wraps
 from glob       import glob
-from time       import gmtime
+from time       import localtime
 from time       import mktime
 
 import encodings
@@ -645,7 +647,7 @@ class GPGTestCase(unittest.TestCase):
         message += '[hackers in popular culture] to push for more power'
         sig = self.gpg.sign(message, default_key=key.fingerprint,
                             passphrase='bruceschneier')
-        now = mktime(gmtime())
+        now = mktime(localtime())
         self.assertTrue(sig, "Good passphrase should succeed")
         verified = self.gpg.verify(sig.data)
         self.assertIsNotNone(verified.fingerprint)

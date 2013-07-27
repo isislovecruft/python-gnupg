@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of python-gnupg, a Python interface to GnuPG.
-# Copyright © 2013 Isis Lovecruft
+# Copyright © 2013 Isis Lovecruft, <isis@leap.se> 0xA3ADB67A2CDB8B35
+#           © 2013 Andrej B.
+#           © 2013 LEAP Encryption Access Project
 #           © 2008-2012 Vinay Sajip
 #           © 2005 Steve Traugott
 #           © 2004 A.M. Kuchling
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published
-# by the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
+# 
+# This program is free software: you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option)
+# any later version.
+# 
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
+
 """gnupg.py
 ===========
 A Python interface to GnuPG.
@@ -482,7 +484,6 @@ class GPG(GPGBase):
         :returns: The result mapping with details of the new key, which is a
                   :class:`parsers.GenKey <GenKey>` object.
         """
-        ## see TODO file, tag :gen_key: for todo items
         args = ["--gen-key --batch"]
         key = self._result_map['generate'](self)
         f = _make_binary_stream(input, self._encoding)
