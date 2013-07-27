@@ -1056,8 +1056,8 @@ class ImportResult(object):
                                  'status': self._problem_reason[reason]})
         elif key == "IMPORT_RES":
             import_res = value.split()
-            for x in range(len(self.counts)):
-                self.counts[self.counts.keys()[x]] = int(import_res[x])
+            for x in self.counts.keys():
+                self.counts[x] = int(import_res.pop(0))
         elif key == "KEYEXPIRED":
             res = {'fingerprint': None,
                    'status': 'Key expired'}
