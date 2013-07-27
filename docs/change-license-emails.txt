@@ -1,0 +1,272 @@
+From: intrigeri <intrigeri@boum.org>
+To: Isis! <isis@patternsinthevoid.net>
+Subject: AGPL library, really?
+Date: Thu, 04 Jul 2013 17:38:46 +0000
+
+Hi isis,
+
+I see on https://pypi.python.org/pypi/gnupg that you released this
+library under AGPLv3. Is this correct?
+
+If it is, then you might be interested to have a look to this long
+ongoing thread on debian-devel mailing-list where I've seen explained
+(by people I trust on this topic) that AGPLv3 is really not well
+suited for libraries -- to start with, quite some of its terms are
+ambiguous when one tries to apply them to a library:
+https://lists.debian.org/debian-devel/2013/07/msg00031.html
+
+Cheers,
+-- 
+  intrigeri
+  | GnuPG key @ https://gaffer.ptitcanardnoir.org/intrigeri/intrigeri.asc
+  | OTR fingerprint @ https://gaffer.ptitcanardnoir.org/intrigeri/otr.asc
+
+
+From: isis agora lovecruft <isis@patternsinthevoid.net>
+To: intrigeri <intrigeri@boum.org>
+Subject: Re: AGPL library, really?
+Date: Sun, 07 Jul 2013 04:20:13 +0000
+
+Hi intrigeri!
+
+intrigeri transcribed 2.3K bytes:
+> I see on https://pypi.python.org/pypi/gnupg that you released this
+> library under AGPLv3. Is this correct?
+
+Yes, that it correct.
+
+> If it is, then you might be interested to have a look to this long
+> ongoing thread on debian-devel mailing-list where I've seen explained
+> (by people I trust on this topic) that AGPLv3 is really not well
+> suited for libraries -- to start with, quite some of its terms are
+> ambiguous when one tries to apply them to a library:
+> https://lists.debian.org/debian-devel/2013/07/msg00031.html
+
+Okay, thanks!
+
+/me reads…
+
+I think this message better describes why AGPL is bad for libraries:
+https://lists.debian.org/debian-devel/2013/07/msg00041.html or, at least, I
+understood that one better than the first.
+
+I certainly do not want to make problems for Debian, and now that a bunch of
+Tor, LEAP, CryptoParty, and Freebox projects, and perhaps soon Pip too, will
+be depending on this, I *really* don't want to make anyone else's license hell
+worse.
+
+Attached is an email from leap@lists.riseup.net where we had fisticuffs over
+licensing opinions, wherein I explained my preference for AGPL for
+everything. Essentially, I do not want people/corporations/etc. to use my work
+in a closed source application and then potentially make changes to patch
+found vulnerabilities without contributing those patches back to the main
+codebase.
+
+Though, you're correct, this doesn't make sense for a library, as a
+closed-source web-service frontend to this Python module likely isn't going to
+get anyone exploited except the person running the service. So it doesn't make
+as much sense.
+
+Do you know if it is okay for me to re-license it as regular GPL?
+
+Do you have any advice on which of GPLv(2|3)(\+)* that I should use?
+
+Thanks for pointing this out so quickly before it caused trouble, by the
+way. :)
+
+--
+ ♥Ⓐisis agora lovecruft
+_________________________________________________________
+GPG: 4096R/A3ADB67A2CDB8B35
+Current Keys: https://blog.patternsinthevoid.net/isis.txt
+
+--Attachment 1--
+    Date: Tue, 28 May 2013 04:13:56 +0000
+    From: isis agora lovecruft <isis@patternsinthevoid.net>
+    To: micah <micah@riseup.net>
+    Cc: leap@lists.riseup.net
+    X-GPG-Public-Key-URL: https://blog.patternsinthevoid.net/isis.txt
+    X-Louis-Lingg: In this hope do I say to you I despise you. I despise your
+     order, your laws, your force-propped authority. Hang me for it!
+    Subject: Re: [leap] license
+
+    micah transcribed 1.3K bytes:
+    > Tomas Touceda <chiiph@riseup.net> writes:
+    >
+    > > On 05/13/2013 05:32 PM, elijah wrote:
+    > >> if you have any wisdom or opinions regarding the ever joyful and
+    > >> uncontroversial topic of free software licenses, then please deposit
+    > >> said wisdom or opinions in this wiki:
+    > >>
+    > >> https://we.riseup.net/leap/license
+    > >>
+    > >> in a nutshell, we need to decide on a license for the client.
+    > >
+    > > Does anybody have license knowledge a priori? Or should I get started
+    > > reading licenses?
+    >
+    > I'm supposed to have a more than zero knowledge of what constitutes free
+    > licenses due to my debian training, and debian is world-renknowned for
+    > having a particularly nasty debian-legal mailing list where licenses are
+    > chewed up and spit out... but I personally hate the topic and tend to
+    > avoid it as much as possible.
+    >
+    > So basically my opinons are:
+    >
+    > 1. no license that is incompatible with the DFSG[0] (debian free
+    > software guidelines) - it seems like we are probably in agreement about
+    > this?
+
+    ACK
+
+    > 2. BSD multi-claused licenses and MIT are confusing and annoying, so I
+    > tend to think they should be avoided due to this
+    >
+
+    ACK
+
+    > 3. openssl derived works require granting an exception with GPL licenses
+    > (an exception is trivial), so I prefer gnutls code where possible
+    >
+
+    ACK
+
+    > 4. it seems weird to make things AGPL that aren't webapps
+    >
+
+    I started release everything I could AGPLv3 three years ago, after a
+    conversation with some other activist free-software devs:
+
+        Me: "I want a license which says 'If you are part of any governing body or
+        corporation which contracts to any private or public military entity, then
+        you should go fuck youself. And no, you cannot use my software -- I will
+        sue your pants off.'"
+
+        Them: "Isis, that is silly, and even na=C3=AFve. Universities are libraries are
+        often 'part of governing bodies', you don't want to exclude them, do you?
+        And also, you're like not going to see the blobs your code is included
+        in...it will get privately installed on custom military and law
+        enforcement hardware, and when they're done with it it'll go and rot
+        outside on a base or in a police confiscation parking lot somewhere."
+
+        Me: "Hum. I hate talking about licenses anyway."
+
+        Them: "Yeah, it sucks. But it's important for us to take this seriously,
+        because the tools we're working on have the potential for helping us
+        better organise at protests, as well as better help the cops kettle us
+        into paddy wagons." [one of the tools was a crisis mapping thing]
+
+        Different one of them: "Perhaps you both should read AGPL, and see if that
+        helps. I don't think using law against them is going to work, because we
+        can't assume they will play by the rules, but if we're arguing licenses
+        anyway..."
+
+    AGPL also seems useful when it seems possible that shady closed-source
+    startups are going to add a fancier UI or other feature to your code, and then
+    market it. This is especially worrying, not because they are "stealing users",
+    but because it's never clear if vulns discovered in your own code have been
+    fixed in theirs and vice versa. Or, it could get used in way that is
+    dangerous, or that it wasn't meant for. (For example, there is currently a
+    concern that a certain shell company is going to use OONI's code on these
+    little android-system-on-a-USB dongly thingies...and there are certain dangers
+    with Tor on Android that these people either don't understand or have no
+    intention of warning users about.)
+
+    Anyway. There is my argument for AGPL.
+
+    Though I also hate these discussions, don't care about laws, think reformism
+    is bunk, WTFPL is the only sane LICENSE, and all that jazz, so I'm going to go
+    stand over there ----------------------------------------------------------->
+    and watch everybody else duke it out. :)
+
+    --
+     ♥Ⓐ isis agora lovecruft
+    _________________________________________________________
+    GPG: 4096R/A3ADB67A2CDB8B35
+    Current Keys: https://blog.patternsinthevoid.net/isis.txt
+--End Attachment 1--
+
+From: intrigeri <intrigeri@boum.org>
+To: Isis! <isis@patternsinthevoid.net>
+Subject: Re: AGPL library, really?
+Date: Tue, 09 Jul 2013 18:30:46 +0000
+
+Hi isis,
+
+isis agora lovecruft wrote (07 Jul 2013 04:20:13 GMT) :
+> I think this message better describes why AGPL is bad for libraries:
+> https://lists.debian.org/debian-devel/2013/07/msg00041.html
+> or, at least, I understood that one better than the first.
+
+TBH, I've pointed you at the beginning of the thread because I was too
+lazy to go fetch the best email in there. I'm glad it helps anyway.
+
+> Do you know if it is okay for me to re-license it as regular GPL?
+
+I've just re-read a bit to confirm, and my conclusion is that: yeah,
+as the sole copyright holder (is this the case?) you can freely
+re-licence to whatever you want.
+
+> Do you have any advice on which of GPLv(2|3)(\+)* that I should use?
+
+I usually do GPL-3+, but I would not be able to defend it seriously
+against v2 or v2+.
+
+> Thanks for pointing this out so quickly before it caused trouble, by the
+> way. :)
+
+Np.
+
+Cheers!
+--
+  intrigeri
+  | GnuPG key @ https://gaffer.ptitcanardnoir.org/intrigeri/intrigeri.asc
+  | OTR fingerprint @ https://gaffer.ptitcanardnoir.org/intrigeri/otr.asc
+
+From: isis agora lovecruft <isis@patternsinthevoid.net>
+To: intrigeri <intrigeri@boum.org>
+Subject: Re: AGPL library, really?
+Date: Thu, 11 Jul 2013 09:24:12 +0000
+
+intrigeri transcribed 2.6K bytes:
+> isis agora lovecruft wrote (07 Jul 2013 04:20:13 GMT) :
+> > Do you know if it is okay for me to re-license it as regular GPL?
+>
+> I've just re-read a bit to confirm, and my conclusion is that: yeah,
+> as the sole copyright holder (is this the case?) you can freely
+> re-licence to whatever you want.
+
+Hey intrigeri,
+
+I've decided to re-license with your recommendation of GPL3+. Is it okay to
+credit you and/or publicly point to these emails as the basis for the
+rationale for the switch?
+
+--
+ ♥Ⓐ isis agora lovecruft
+_________________________________________________________
+GPG: 4096R/A3ADB67A2CDB8B35
+Current Keys: https://blog.patternsinthevoid.net/isis.txt
+
+From: intrigeri <intrigeri@boum.org>
+To: Isis! <isis@patternsinthevoid.net>
+Subject: Re: AGPL library, really?
+Date: Sun, 14 Jul 2013 22:33:35 +0000
+
+Hi isis,
+
+> Is it okay to credit you and/or publicly point to these emails as
+> the basis for the rationale for the switch?
+
+Feel free to credit me if you wish, but I certainly don't feel it's
+necessary.
+
+I feel a bit lazy to read this thread again to check if it's fine to
+publish stuff from there, so if you don't mind, I'd rather skip this
+part ;)
+
+Cheers,
+--
+  intrigeri
+  | GnuPG key @ https://gaffer.ptitcanardnoir.org/intrigeri/intrigeri.asc
+  | OTR fingerprint @ https://gaffer.ptitcanardnoir.org/intrigeri/otr.asc
