@@ -484,7 +484,6 @@ class GPG(GPGBase):
         :returns: The result mapping with details of the new key, which is a
                   :class:`parsers.GenKey <GenKey>` object.
         """
-        ## see TODO file, tag :gen_key: for todo items
         args = ["--gen-key --batch"]
         key = self._result_map['generate'](self)
         f = _make_binary_stream(input, self._encoding)

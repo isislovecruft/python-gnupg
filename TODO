@@ -1,13 +1,5 @@
 -*- mode: org -*-
 
-* Keyring separation                                      :keyseparation:
-** TODO in GPG.gen_key()                           :keyseparation:gen_key:
-It would be nice to have an option for gen_key() [[gnupg.py:927]] to
-automatically switch before key generation to a new tempfile.mkdtemp()
-directory, with a new keyring and secring, and then to rename either the
-directory or the keyrings with the long keyid of the key which was freshly
-generated.
-
 * I/O                                                                :io:
 ** TODO in GPG.__make_args()                                 :io:makeargs:
 It would be nice to make the file descriptors for communication with the GnuPG
