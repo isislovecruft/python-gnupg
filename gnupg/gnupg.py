@@ -137,14 +137,20 @@ class GPG(GPGBase):
         self.temp_keyring = None
         #: The secring used in the most recently created batch file
         self.temp_secring = None
+        #: The version string of our GnuPG binary
+        self.binary_version = str()
 
-        ## check that everything runs alright:
+        ## check that everything runs alright, and grab the gpg binary's
+        ## version number while we're at it:
         proc = self._open_subprocess(["--list-config", "--with-colons"])
         result = self._result_map['list'](self)
-        self._collect_output(proc, result, stdin=proc.stdin)
-        if proc.returncode != 0:
-            raise RuntimeError("Error invoking gpg: %s: %s"
-                               % (proc.returncode, result.stderr))
+        self._read_data(proc.stdout, result)
+        if proc.returncode:
+            raise RuntimeError("Error invoking gpg: %s" % result.data)
+
+        version_line = str(result.data).partition(':version:')[2]
+        self.binary_version = version_line.split('\n')[0]
+        log.debug("Using GnuPG version %s" % self.binary_version)
 
     def sign(self, data, **kwargs):
         """Create a signature for a message string or file.
