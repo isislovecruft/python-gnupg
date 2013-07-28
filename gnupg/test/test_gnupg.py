@@ -571,7 +571,7 @@ class GPGTestCase(unittest.TestCase):
                         "Exported key should be private")
 
     def test_import_only(self):
-	"""Test that key import works."""
+        """Test that key import works."""
         self.test_list_keys_initial_public()
         self.gpg.import_keys(KEYS_TO_IMPORT)
         public_keys = self.gpg.list_keys()
