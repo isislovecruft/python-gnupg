@@ -751,6 +751,12 @@ class GPG(GPGBase):
         if 'Subkey-Length' in parms.keys():
             out += "Subkey-Length: %s\n" % parms.pop('Subkey-Length')
 
+        if _util._is_gpg2() and ('Passphrase' in list(parms.items())):
+            ## XXX need a way to do '--edit-key' and add the passphrase.
+            # we should not do:
+            # self.passphrase = parms.pop('Passphrase')
+            out += "%no-protection"
+
         for key, val in list(parms.items()):
             out += "%s: %s\n" % (key, val)
 
