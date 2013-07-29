@@ -19,7 +19,15 @@ see :compatibility:gen__key_input:
 
 * Compatibility between GnuPG versions                    :compatibility:
 ** TODO GnuPG>=2.1.0 won't allow key generation with preset passphrase
-*** TODO in GPG.gen__key_input()             :compatibility:gen_key_input:
+*** DONE add version detection for GPG.gen_key_input() :compatibility:gen_key_input:
+DONE: use gnupg._util._is_gpg2() and gnupg.util._is_gpg1() to check versions
+
+If we add a GnuPG version detection feature (the version string is already
+obtained in GPG.___init___() [[gnupg.py:407]]), then we can automatically chain
+GPG.gen__key_input() to another new feature for '--edit-key'. This chaining
+would likely need to happen here [[gnupg.py:1146]].
+
+*** TODO passphase setting for GnuPGv2.x in GPG.gen__key_input() :compatibility:gen_key_input:
 In the docstring of GPG.gen__key_input() [[gnupg.py:1068]], for the parameter
 'passphrase', it is explained that:
 
@@ -34,16 +42,16 @@ In the docstring of GPG.gen__key_input() [[gnupg.py:1068]], for the parameter
                                passwordless key to be created, which can then
                                have its passphrase set later with '--edit-key'.
 
-If we add a GnuPG version detection feature (the version string is already
-obtained in GPG.___init___() [[gnupg.py:407]]), then we can automatically chain
-GPG.gen__key_input() to another new feature for '--edit-key'. This chaining
-would likely need to happen here [[gnupg.py:1146]].
-
 *** TODO add '--edit-key' feature                               :editkey:
 This would be necessary for adding a passphrase to the key after passwordless
 generation in GnuPG>=2.1.0.
 
-** TODO GnuPG==1.4.12 doesn't process "Key-Type: default" in batch files
+** DONE GnuPG==1.4.12 doesn't process "Key-Type: default" in batch files
+
+DONE:  GnuPG  version  detection  in   gen_key_input()  was  added  in  commits
+6eccbe704841cca90573dc554019712528d927a0 and
+1e867d6e117f603cd9f2238641a1fb9cb87d4b51
+
 (python-gnupg)∃!isisⒶwintermute:~/code/riseup/python-gnupg ∴ ipython
 WARNING: Attempting to work in a virtualenv. If you encounter problems, please install IPython inside the virtualenv.
 
