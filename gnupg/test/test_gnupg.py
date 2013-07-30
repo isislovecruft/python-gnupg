@@ -288,13 +288,13 @@ class GPGTestCase(unittest.TestCase):
         self.assertEqual(proc.returncode, 0)
 
     def test_gpg_binary_version_str(self):
-        """That that 'gpg --version' returns the expected output."""
+        """Test that 'gpg --version' returns the expected output."""
         proc = self.gpg._open_subprocess(['--version'])
         result = proc.stdout.read(1024)
-        expected1 = "Supported algorithms:"
-        expected2 = "Pubkey:"
-        expected3 = "Cipher:"
-        expected4 = "Compression:"
+        expected1 = b"Supported algorithms:"
+        expected2 = b"Pubkey:"
+        expected3 = b"Cipher:"
+        expected4 = b"Compression:"
         self.assertGreater(result.find(expected1), 0)
         self.assertGreater(result.find(expected2), 0)
         self.assertGreater(result.find(expected3), 0)
