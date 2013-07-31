@@ -57,23 +57,12 @@ import gnupg
 ## see PEP-366 http://www.python.org/dev/peps/pep-0366/
 print("NAME: %r" % __name__)
 print("PACKAGE: %r" % __package__)
-if __name__ == "__main__" and __package__ is None:
-    __package__ = "gnupg.test"
-    print("NAME: %r" % __name__)
-    print("PACKAGE: %r" % __package__)
-    try:
-        from .. import _util
-        from .. import _parsers
-        from .. import _logger
-    except (ImportError, ValueError) as ierr:
-        print(ierr.message)
-else:
-    try:
-        import gnupg._util    as _util
-        import gnupg._parsers as _parsers
-        import gnupg._logger  as _logger
-    except (ImportError, ValueError) as ierr:
-        raise SystemExit(ierr.message)
+try:
+    import gnupg._util    as _util
+    import gnupg._parsers as _parsers
+    import gnupg._logger  as _logger
+except (ImportError, ValueError) as ierr:
+    raise SystemExit(ierr.message)
 
 
 log = _util.log
