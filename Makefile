@@ -49,14 +49,27 @@ test: test-before
 	touch gnupg/test/random_seed_is_sekritly_pi
 	rm gnupg/test/random_seed*
 
+py3k-test: test-before
+	python3 $(TESTHANDLE) basic encodings parsers keyrings listkeys genkey \
+		sign crypt
+	touch gnupg/test/placeholder.log
+	mv gnupg/test/*.log gnupg/test/logs/
+	rm gnupg/test/logs/placeholder.log
+	touch gnupg/test/random_seed_is_sekritly_pi
+	rm gnupg/test/random_seed*
+
 install: 
 	python setup.py install --record installed-files.txt
+py3k-install:
+	python3 setup.py install --record installed-files.txt
 
 uninstall:
 	touch installed-files.txt
 	cat installed-files.txt | sudo xargs rm -rf
+py3k-uninstall: uninstall
 
 reinstall: uninstall install
+py3k-reinstall: py3k-uninstall py3k-install
 
 cleandocs:
 	sphinx-apidoc -F -A "Isis Agora Lovecruft" -H "python-gnupg" \
