@@ -57,23 +57,12 @@ import gnupg
 ## see PEP-366 http://www.python.org/dev/peps/pep-0366/
 print("NAME: %r" % __name__)
 print("PACKAGE: %r" % __package__)
-if __name__ == "__main__" and __package__ is None:
-    __package__ = "gnupg.test"
-    print("NAME: %r" % __name__)
-    print("PACKAGE: %r" % __package__)
-    try:
-        from .. import _util
-        from .. import _parsers
-        from .. import _logger
-    except (ImportError, ValueError) as ierr:
-        print(ierr.message)
-else:
-    try:
-        import gnupg._util    as _util
-        import gnupg._parsers as _parsers
-        import gnupg._logger  as _logger
-    except (ImportError, ValueError) as ierr:
-        raise SystemExit(ierr.message)
+try:
+    import gnupg._util    as _util
+    import gnupg._parsers as _parsers
+    import gnupg._logger  as _logger
+except (ImportError, ValueError) as ierr:
+    raise SystemExit(ierr.message)
 
 
 log = _util.log
@@ -288,13 +277,13 @@ class GPGTestCase(unittest.TestCase):
         self.assertEqual(proc.returncode, 0)
 
     def test_gpg_binary_version_str(self):
-        """That that 'gpg --version' returns the expected output."""
+        """Test that 'gpg --version' returns the expected output."""
         proc = self.gpg._open_subprocess(['--version'])
         result = proc.stdout.read(1024)
-        expected1 = "Supported algorithms:"
-        expected2 = "Pubkey:"
-        expected3 = "Cipher:"
-        expected4 = "Compression:"
+        expected1 = b"Supported algorithms:"
+        expected2 = b"Pubkey:"
+        expected3 = b"Cipher:"
+        expected4 = b"Compression:"
         self.assertGreater(result.find(expected1), 0)
         self.assertGreater(result.find(expected2), 0)
         self.assertGreater(result.find(expected3), 0)
@@ -571,7 +560,7 @@ class GPGTestCase(unittest.TestCase):
                         "Exported key should be private")
 
     def test_import_only(self):
-	"""Test that key import works."""
+        """Test that key import works."""
         self.test_list_keys_initial_public()
         self.gpg.import_keys(KEYS_TO_IMPORT)
         public_keys = self.gpg.list_keys()

@@ -474,7 +474,8 @@ class GPGBase(object):
         cmd = ' '.join(self._make_args(args, passphrase))
         log.debug("Sending command to GnuPG process:%s%s" % (os.linesep, cmd))
         return subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                env={'LANGUAGE': 'en'})
 
     def _read_response(self, stream, result):
         """Reads all the stderr output from GPG, taking notice only of lines

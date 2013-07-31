@@ -33,6 +33,7 @@ import encodings
 import os
 import threading
 import random
+import re
 import string
 import sys
 
@@ -295,6 +296,28 @@ def _is_list_or_tuple(instance):
     """
     return isinstance(instance, (list, tuple,))
 
+def _is_gpg1(version):
+    """Returns True if using GnuPG version 1.x.
+
+    :param tuple version: A tuple of three integers indication major, minor,
+        and micro version numbers.
+    """
+    (major, minor, micro) = _match_version_string(version)
+    if major == 1:
+        return True
+    return False
+
+def _is_gpg2(version):
+    """Returns True if using GnuPG version 2.x.
+
+    :param tuple version: A tuple of three integers indication major, minor,
+        and micro version numbers.
+    """
+    (major, minor, micro) = _match_version_string(version)
+    if major == 2:
+        return True
+    return False
+
 def _make_binary_stream(s, encoding):
     """
     xxx fill me in
@@ -355,6 +378,17 @@ def _make_random_string(length):
     """
     chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
     return ''.join(random.choice(chars) for x in range(length))
+
+def _match_version_string(version):
+    """Sort a binary version string into major, minor, and micro integers.
+
+    :param str version: A version string in the form x.x.x
+    """
+    regex = re.compile('(\d)*(\.)*(\d)*(\.)*(\d)*')
+    matched = regex.match(version)
+    g = matched.groups()
+    major, minor, micro = int(g[0]), int(g[2]), int(g[4])
+    return (major, minor, micro)
 
 def _next_year():
     """Get the date of today plus one year.
