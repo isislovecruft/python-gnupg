@@ -32,13 +32,15 @@ cleanup-build:
 	mkdir buildnot
 	rm -rf build*
 
+# it's not strictly necessary that gnupg2, gpg-agent, pinentry, or pip be
+# installed, so ignore error exit statuses for those commands
 test-before: cleanup-src cleanup-tests
 	which gpg && gpg --version
-	which gpg2 && gpg2 --version
-	which gpg-agent
-	which pinentry
+	-which gpg2 && gpg2 --version
+	-which gpg-agent
+	-which pinentry
 	which python && python --version
-	which pip && pip --version && pip list
+	-which pip && pip --version && pip list
 
 test: test-before
 	python $(TESTHANDLE) basic encodings parsers keyrings listkeys genkey \
