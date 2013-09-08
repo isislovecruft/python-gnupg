@@ -530,6 +530,16 @@ class GPGTestCase(unittest.TestCase):
         self.assertTrue(os.path.isfile(keyfile))
         self.assertGreater(os.stat(keyfile).st_size, 0)
 
+    def test_search_keys_default(self):
+        """Testing searching keys on a keyserver."""
+        query = "garrettr@riseup.net"
+        search_results = self.gpg.search_keys(query)
+        self.assertIsNotNone(search_results)
+        self.assertEquals(len(search_results), 1)
+        self.assertEquals(search_results[0]['algo'], 'RSA (Encrypt or Sign)')
+        self.assertEquals(search_results[0]['keyid'], 'D3EF9CAE')
+        self.assertEquals(search_results[0]['keylen'], 4096)
+
     def test_import_and_export(self):
         """Test that key import and export works."""
         self.test_list_keys_initial_public()
@@ -1008,7 +1018,8 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                             'test_import_and_export',
                             'test_deletion',
                             'test_import_only',
-                            'test_recv_keys_default',]), }
+                            'test_recv_keys_default',]),
+           'searchkeys': set(['test_search_keys_default']), }
 
 def main(args):
     if not args.quiet:

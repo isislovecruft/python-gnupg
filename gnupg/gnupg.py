@@ -381,6 +381,27 @@ class GPG(GPGBase):
         else:
             log.error("No keyids requested for --recv-keys!")
 
+    def search_keys(self, *names, **kwargs):
+        """Search for keys on a keyserver.
+
+        >>> gpg = gnupg.GPG(homedir="doctests")
+        >>> search_results = gpg.search_keys('3FF0DB166A7476EA')
+        >>> assert search_results[0]['uids'][0]['uid'] == 'Nicholas Thomas (Repository signing key) <root@lupine.me.uk>'
+
+        :param str names: Each ``names`` argument should be string specifying
+            a user id (valid ways of describing user IDs are listed in the gpg man
+            page in the section "HOW TO SPECIFY A USER ID"). Multiple names are
+            joined to create the search string for the keyserver.
+        :param str keyserver: The keyserver to search for ``names`` on;
+            defaults to :property:`gnupg.GPG.keyserver`.
+        """
+        if names:
+            # xxx since GPG joins all the names into one search string, we
+            # don't need to escape or quote names with spaces in them afaict
+            return self._search_keys(' '.join(names), **kwargs)
+        else:
+            log.error("No names given to search for in --search-keys!")
+
     def delete_keys(self, fingerprints, secret=False, subkeys=False):
         """Delete a key, or list of keys, from the current keyring.
 
