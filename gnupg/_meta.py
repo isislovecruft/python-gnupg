@@ -600,7 +600,8 @@ class GPGBase(object):
         return result
 
     def _sign_file(self, file, default_key=None, passphrase=None,
-                   clearsign=True, detach=False, binary=False):
+                   clearsign=True, detach=False, binary=False,
+                   digest_algo='SHA512'):
         """Create a signature for a file.
 
         :param file: The file stream (i.e. it's already been open()'d) to sign.
@@ -609,6 +610,10 @@ class GPGBase(object):
         :param bool clearsign: If True, create a cleartext signature.
         :param bool detach: If True, create a detached signature.
         :param bool binary: If True, do not ascii armour the output.
+        :param str digest_algo: The hash digest to use. Again, to see which
+            hashes your GnuPG is capable of using, do:
+                ``$ gpg --with-colons --list-config digestname``.
+            The default, if unspecified, is ``'SHA512'``.
         """
         log.debug("_sign_file():")
         if binary:
@@ -628,6 +633,8 @@ class GPGBase(object):
 
         if default_key:
             args.append(str("--default-key %s" % default_key))
+
+        args.append(str("--digest-algo %s" % digest_algo))
 
         ## We could use _handle_io here except for the fact that if the
         ## passphrase is bad, gpg bails and you can't write the message.
