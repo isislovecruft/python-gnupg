@@ -533,15 +533,19 @@ class GPGBase(object):
             :attr:`GPGBase._result_mapping`.
         """
         chunks = []
+        log.debug("Reading data from stream %r..." % stream.__repr__())
+
         while True:
             data = stream.read(1024)
             if len(data) == 0:
                 break
-            log.debug("read from stdout: %r" % data[:256])
             chunks.append(data)
+            log.debug("Read %4d bytes" % len(data))
 
         # Join using b'' or '', as appropriate
         result.data = type(data)().join(chunks)
+        log.debug("Finishing reading from stream %r..." % stream.__repr__())
+        log.debug("Read %4d bytes total" % len(result.data))
 
     def _collect_output(self, process, result, writer=None, stdin=None):
         """Drain the subprocesses output streams, writing the collected output
