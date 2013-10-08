@@ -525,11 +525,13 @@ def _get_options_group(group=None):
                               '--default-recipient-self',
                               '--detach-sign',
                               '--export',
+                              '--export-ownertrust',
                               '--export-secret-keys',
                               '--export-secret-subkeys',
                               '--fingerprint',
                               '--fixed-list-mode',
                               '--gen-key',
+                              '--import-ownertrust',
                               '--list-config',
                               '--list-key',
                               '--list-keys',
@@ -747,6 +749,11 @@ def _get_all_gnupg_options():
 --merge-only                      --with-key-data
 --min-cert-level                  --yes
 """).split()
+
+    # These are extra options which only exist for GnuPG>=2.0.0
+    three_hundred_eighteen.append('--export-ownertrust')
+    three_hundred_eighteen.append('--import-ownertrust')
+
     gnupg_options = frozenset(three_hundred_eighteen)
     return gnupg_options
 
@@ -1283,6 +1290,8 @@ class Crypt(Verify):
                      "MISSING_PASSPHRASE", "DECRYPTION_FAILED",
                      "KEY_NOT_CREATED"):
             self.status = key.replace("_", " ").lower()
+        elif key == "NEED_TRUSTDB":
+            self._gpg._create_trustdb()
         elif key == "NEED_PASSPHRASE_SYM":
             self.status = 'need symmetric passphrase'
         elif key == "BEGIN_DECRYPTION":

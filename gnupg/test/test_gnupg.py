@@ -152,23 +152,8 @@ def compare_keys(k1, k2):
     return k1 != k2
 
 
-class ResultStringIO(io.StringIO):
-    def __init__(self, init_string):
-        super(ResultStringIO, self).__init__(init_string)
-    def write(self, data):
-        super(ResultStringIO, self).write(unicode(data))
-
-
 class GPGTestCase(unittest.TestCase):
     """:class:`unittest.TestCase <TestCase>`s for python-gnupg."""
-
-    @classmethod
-    def setUpClass(cls):
-        """Setup ``GPGTestCase`` and runtime environment for tests.
-
-        This function must be called manually.
-        """
-        pass
 
     def setUp(self):
         """This method is called once per self.test_* method."""
@@ -306,8 +291,9 @@ class GPGTestCase(unittest.TestCase):
     def test_make_args_drop_protected_options(self):
         """Test that unsupported gpg options are dropped."""
         self.gpg.options = ['--tyrannosaurus-rex', '--stegosaurus']
+        gpg_binary_path = _util._find_binary('gpg')
         cmd = self.gpg._make_args(None, False)
-        expected = ['/usr/bin/gpg',
+        expected = [gpg_binary_path,
                     '--no-options --no-emit-version --no-tty --status-fd 2',
                     '--homedir "%s"' % self.homedir,
                     '--no-default-keyring --keyring %s' % self.keyring,
@@ -340,17 +326,30 @@ class GPGTestCase(unittest.TestCase):
 
     def test_copy_data_bytesio(self):
         """Test that _copy_data() is able to duplicate byte streams."""
-        message = "This is a BytesIO string string in memory."
+        message = "This is a BytesIO string."
         instream = io.BytesIO(message)
         self.assertEqual(unicode(message), instream.getvalue())
-        outstream = ResultStringIO(u'result:')
-        copied = outstream
+
+        out_filename = 'test-copy-data-bytesio'
+
+        # Create the test file:
+        outfile = os.path.join(os.getcwdu(), out_filename)
+        outstream = open(outfile, 'w+')
+
+        # _copy_data() will close both file descriptors
         _util._copy_data(instream, outstream)
-        self.assertTrue(outstream.readable())
+
         self.assertTrue(outstream.closed)
         self.assertFalse(instream.closed)
-        self.assertTrue(copied.closed)
-        #self.assertEqual(instream.getvalue()[6:], outstream.getvalue())
+        self.assertTrue(os.path.isfile(outfile))
+
+        with open(outfile) as out:
+            out.flush()
+            out.seek(0)
+            output = out.read()
+            self.assertEqual(message, output)
+
+        os.remove(outfile)
 
     def generate_key_input(self, real_name, email_domain, key_length=None,
                            key_type=None, subkey_type=None, passphrase=None):
@@ -766,58 +765,59 @@ authentication."""
 
     def test_encryption_multi_recipient(self):
         """Test encrypting a message for multiple recipients"""
-        self.gpg.homedir = _util._here
-
-        ian = { 'name_real': 'Ian Goldberg',
-                'name_email': 'gold@stein',
-                'key_type': 'RSA',
-                'key_length': 2048,
-                'key_usage': '',
-                'subkey_type': 'RSA',
-                'subkey_length': 2048,
-                'subkey_usage': 'encrypt,sign',
-                'passphrase': 'victorygin' }
+        riggio = { 'name_real': 'Riggio',
+                   'name_email': 'ri@gg.io',
+                   'key_type': 'RSA',
+                   'key_length': 2048,
+                   'key_usage': '',
+                   'subkey_type': 'RSA',
+                   'subkey_length': 2048,
+                   'subkey_usage': 'encrypt,sign',
+                   'passphrase': 'victorygin' }
 
         ## when we don't specify the subkey lengths and the keylength
         ## gets set automatically in gen_key_input(), gpg complains:
         ##
         ##     gpg: keysize invalid; using 1024 bits
         ##
-        kat = { 'name_real': 'Kat Hannah',
-                'name_email': 'kat@pics',
-                'key_type': 'RSA',
-                'key_length': 2048,
-                'key_usage': '',
-                'subkey_type': 'RSA',
-                'subkey_length': 2048,
-                'subkey_usage': 'encrypt,sign',
-                'passphrase': 'overalls' }
+        sicari = { 'name_real': 'Sicari',
+                   'name_email': 'si@ca.ri',
+                   'key_type': 'RSA',
+                   'key_length': 2048,
+                   'key_usage': '',
+                   'subkey_type': 'RSA',
+                   'subkey_length': 2048,
+                   'subkey_usage': 'encrypt,sign',
+                   'passphrase': 'overalls' }
 
-        ian_input = self.gpg.gen_key_input(separate_keyring=True, **ian)
+        riggio_input = self.gpg.gen_key_input(separate_keyring=True, **riggio)
         log.info("Key stored in separate keyring: %s" % self.gpg.temp_keyring)
-        ian_key = self.gpg.gen_key(ian_input)
-        ian_fpr = str(ian_key.fingerprint)
-        self.gpg.options = ['--keyring {}'.format(ian_key.keyring)]
+        riggio = self.gpg.gen_key(riggio_input)
+        self.gpg.options = ['--keyring {}'.format(riggio.keyring)]
+        riggio_key = self.gpg.export_keys(riggio.fingerprint)
+        self.gpg.import_keys(riggio_key)
 
-        kat_input = self.gpg.gen_key_input(separate_keyring=True, **kat)
+        sicari_input = self.gpg.gen_key_input(separate_keyring=True, **sicari)
         log.info("Key stored in separate keyring: %s" % self.gpg.temp_keyring)
-        kat_key = self.gpg.gen_key(kat_input)
-        kat_fpr = str(kat_key.fingerprint)
-        self.gpg.options.append('--keyring {}'.format(kat_key.keyring))
-        self.gpg.import_keys(kat_key.data)
+        sicari = self.gpg.gen_key(sicari_input)
+        self.gpg.options.append('--keyring {}'.format(sicari.keyring))
+        sicari_key = self.gpg.export_keys(sicari.fingerprint)
+        self.gpg.import_keys(sicari_key)
 
         message = """
 In 2010 Riggio and Sicari presented a practical application of homomorphic
 encryption to a hybrid wireless sensor/mesh network. The system enables
 transparent multi-hop wireless backhauls that are able to perform statistical
-analysis of different kinds of data (temperature, humidity, etc.)  coming from
+analysis of different kinds of data (temperature, humidity, etc.) coming from
 a WSN while ensuring both end-to-end encryption and hop-by-hop
 authentication."""
 
-        log.debug("kat_fpr type: %s" % type(kat_fpr))
-        log.debug("ian_fpr type: %s" % type(ian_fpr))
+        if self.gpg.is_gpg2:
+            self.gpg.fix_trustdb()
 
-        encrypted = str(self.gpg.encrypt(message, ian_fpr, kat_fpr))
+        encrypted = str(self.gpg.encrypt(message,
+                                         riggio.fingerprint,
+                                         sicari.fingerprint))
         log.debug("Plaintext: %s" % message)
         log.debug("Ciphertext: %s" % encrypted)
 

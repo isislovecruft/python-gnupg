@@ -18,21 +18,9 @@
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
 #______________________________________________________________________________
-#
-# NOTE: setuptools is currently (as of 27 May 2013) being merged back into its
-# parent project, distribute. By using the included distribute_setup.py
-# script, we make sure that we have a recent version of setuptools/distribute,
-# which is the *only* Python packaging framework compatible at this point with
-# both Python>=2.4 and Python3.x.
-#
 
 from __future__ import absolute_import
 from __future__ import print_function
-
-## Upgrade setuptools to a version which supports Python 2 and 3
-#os.system('python ./distribute_setup.py')
-## Upgrade pip to a version with proper SSL support
-#os.system('python ./get-pip.py')
 
 import setuptools
 import versioneer
@@ -56,10 +44,6 @@ through file descriptors. Input arguments are strictly checked and sanitised, \
 and therefore this module should be safe to use in networked applications \
 requiring direct user input. It is intended for use with Python 2.6 or \
 greater.
-
-Documentation can be found on readthedocs_.
-
-.. _readthedocs: https://python-gnupg.readthedocs.org/en/latest/
 """,
     license="GPLv3+",
 

@@ -90,7 +90,6 @@ class GPGBase(object):
     """Base class for property storage and to control process initialisation."""
 
     __metaclass__  = GPGMeta
-
     _decode_errors = 'strict'
     _result_map    = { 'crypt':    _parsers.Crypt,
                        'delete':   _parsers.DeleteResult,
@@ -140,6 +139,12 @@ class GPGBase(object):
             log.error("GPGBase.__init__(): %s" % ae.message)
             raise RuntimeError(ae.message)
         else:
+            if verbose is True:
+                # The caller wants logging, but we need a valid --debug-level
+                # for gpg. Default to "basic", and warn about the ambiguity.
+                # (garrettr)
+                verbose = "basic"
+                log.warning('GPG(verbose=True) is ambiguous, defaulting to "basic" logging')
             self.verbose = verbose
             self.use_agent = use_agent
 
@@ -498,19 +503,24 @@ class GPGBase(object):
                 break
             lines.append(line)
             line = line.rstrip()
-            if line[0:9] == '[GNUPG:] ':
-                # Chop off the prefix
-                line = line[9:]
-                log.status("%s" % line)
-                L = line.split(None, 1)
-                keyword = L[0]
-                if len(L) > 1:
-                    value = L[1]
-                else:
-                    value = ""
+
+            if line.startswith('[GNUPG:]'):
+                line = _util._deprefix(line, '[GNUPG:] ', log.status)
+                keyword, value = _util._separate_keyword(line)
                 result._handle_status(keyword, value)
-            elif line[0:5] == 'gpg: ':
-                log.warn("%s" % line)
+            elif line.startswith('gpg:'):
+                line = _util._deprefix(line, 'gpg: ')
+                keyword, value = _util._separate_keyword(line)
+
+                # Log gpg's userland messages at our own levels:
+                if keyword.upper().startswith("WARNING"):
+                    log.warn("%s" % value)
+                elif keyword.upper().startswith("FATAL"):
+                    log.critical("%s" % value)
+                    # Handle the gpg2 error where a missing trustdb.gpg is,
+                    # for some stupid reason, considered fatal:
+                    if value.find("trustdb.gpg") and value.find("No such file"):
+                        result._handle_status('NEED_TRUSTDB', '')
             else:
                 if self.verbose:
                     log.info("%s" % line)
@@ -519,19 +529,29 @@ class GPGBase(object):
         result.stderr = ''.join(lines)
 
     def _read_data(self, stream, result):
-        """Read the contents of the file from GPG's stdout."""
+        """Incrementally read from ``stream`` and store read data.
+
+        All data gathered from calling ``stream.read()`` will be concatenated
+        and stored as ``result.data``.
+
+        :param stream: An open file-like object to read() from.
+        :param result: An instance of one of the result parsing classes from
+            :attr:`GPGBase._result_mapping`.
+        """
         chunks = []
+        log.debug("Reading data from stream %r..." % stream.__repr__())
+
         while True:
             data = stream.read(1024)
             if len(data) == 0:
                 break
-            log.debug("read from stdout: %r" % data[:256])
             chunks.append(data)
-        if _util._py3k:
-            # Join using b'' or '', as appropriate
-            result.data = type(data)().join(chunks)
-        else:
-            result.data = ''.join(chunks)
+            log.debug("Read %4d bytes" % len(data))
+
+        # Join using b'' or '', as appropriate
+        result.data = type(data)().join(chunks)
+        log.debug("Finishing reading from stream %r..." % stream.__repr__())
+        log.debug("Read %4d bytes total" % len(result.data))
 
     def _collect_output(self, process, result, writer=None, stdin=None):
         """Drain the subprocesses output streams, writing the collected output
@@ -600,7 +620,8 @@ class GPGBase(object):
         return result
 
     def _sign_file(self, file, default_key=None, passphrase=None,
-                   clearsign=True, detach=False, binary=False):
+                   clearsign=True, detach=False, binary=False,
+                   digest_algo='SHA512'):
         """Create a signature for a file.
 
         :param file: The file stream (i.e. it's already been open()'d) to sign.
@@ -609,6 +630,10 @@ class GPGBase(object):
         :param bool clearsign: If True, create a cleartext signature.
         :param bool detach: If True, create a detached signature.
         :param bool binary: If True, do not ascii armour the output.
+        :param str digest_algo: The hash digest to use. Again, to see which
+            hashes your GnuPG is capable of using, do:
+                ``$ gpg --with-colons --list-config digestname``.
+            The default, if unspecified, is ``'SHA512'``.
         """
         log.debug("_sign_file():")
         if binary:
@@ -628,6 +653,8 @@ class GPGBase(object):
 
         if default_key:
             args.append(str("--default-key %s" % default_key))
+
+        args.append(str("--digest-algo %s" % digest_algo))
 
         ## We could use _handle_io here except for the fact that if the
         ## passphrase is bad, gpg bails and you can't write the message.
@@ -797,5 +824,5 @@ class GPGBase(object):
                   % (data, type(data)))
         self._handle_io(args, data, result,
                         passphrase=passphrase, binary=True)
-        log.debug('GPG.encrypt_file(): Result: %r', result.data)
+        log.debug("\n%s" % result.data)
         return result
