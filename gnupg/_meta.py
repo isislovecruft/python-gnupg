@@ -139,6 +139,12 @@ class GPGBase(object):
             log.error("GPGBase.__init__(): %s" % ae.message)
             raise RuntimeError(ae.message)
         else:
+            if verbose is True:
+                # The caller wants logging, but we need a valid --debug-level
+                # for gpg. Default to "basic", and warn about the ambiguity.
+                # (garrettr)
+                verbose = "basic"
+                log.warning('GPG(verbose=True) is ambiguous, defaulting to "basic" logging')
             self.verbose = verbose
             self.use_agent = use_agent
 
