@@ -506,6 +506,11 @@ class GPGBase(object):
                 line = _util._deprefix(line, 'gpg: ')
                 keyword, value = _util._separate_keyword(line)
 
+                # Log gpg's userland messages at our own levels:
+                if keyword.upper().startswith("WARNING"):
+                    log.warn("%s" % value)
+                elif keyword.upper().startswith("FATAL"):
+                    log.critical("%s" % value)
             else:
                 if self.verbose:
                     log.info("%s" % line)
