@@ -155,14 +155,6 @@ def compare_keys(k1, k2):
 class GPGTestCase(unittest.TestCase):
     """:class:`unittest.TestCase <TestCase>`s for python-gnupg."""
 
-    @classmethod
-    def setUpClass(cls):
-        """Setup ``GPGTestCase`` and runtime environment for tests.
-
-        This function must be called manually.
-        """
-        pass
-
     def setUp(self):
         """This method is called once per self.test_* method."""
         print("%s%s%s" % (os.linesep, str("=" * 70), os.linesep))
