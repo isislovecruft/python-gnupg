@@ -7,12 +7,12 @@
 #           © 2008-2012 Vinay Sajip
 #           © 2005 Steve Traugott
 #           © 2004 A.M. Kuchling
-# 
+#
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option)
 # any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
@@ -219,6 +219,34 @@ def create_uid_email(username=None, hostname=None):
 
     return uid
 
+def _deprefix(line, prefix, callback=None):
+    """Remove the prefix string from the beginning of line, if it exists.
+
+    :param string line: A line, such as one output by GnuPG's status-fd.
+    :param string prefix: A substring to remove from the beginning of
+        ``line``. Case insensitive.
+    :type callback: callable
+    :param callback: Function to call if the prefix is found. The signature to
+        callback will be only one argument, the ``line`` without the ``prefix``, i.e.
+        ``callback(line)``.
+    :rtype: string
+    :returns: If the prefix was found, the ``line`` without the prefix is
+        returned. Otherwise, the original ``line`` is returned.
+    """
+    try:
+        assert line.upper().startswith(u''.join(prefix).upper())
+    except AssertionError:
+        log.debug("Line doesn't start with prefix '%s':\n%s" % (prefix, line))
+        return line
+    else:
+        newline = line[len(prefix):]
+        if callback is not None:
+            try:
+                callback(newline)
+            except Exception as exc:
+                log.exception(exc)
+        return newline
+
 def _find_binary(binary=None):
     """Find the absolute path to the GnuPG binary.
 
@@ -417,6 +445,15 @@ def _next_year():
 def _now():
     """Get a timestamp for right now, formatted according to ISO 8601."""
     return datetime.isoformat(datetime.now())
+
+def _separate_keyword(line):
+    """Split the line, and return (first_word, the_rest)."""
+    try:
+        first, rest = line.split(None, 1)
+    except ValueError:
+        first = line.strip()
+        rest = ''
+    return first, rest
 
 def _threaded_copy_data(instream, outstream):
     """Copy data from one stream to another in a separate thread.

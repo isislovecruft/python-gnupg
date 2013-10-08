@@ -90,7 +90,6 @@ class GPGBase(object):
     """Base class for property storage and to control process initialisation."""
 
     __metaclass__  = GPGMeta
-
     _decode_errors = 'strict'
     _result_map    = { 'crypt':    _parsers.Crypt,
                        'delete':   _parsers.DeleteResult,
@@ -498,19 +497,15 @@ class GPGBase(object):
                 break
             lines.append(line)
             line = line.rstrip()
-            if line[0:9] == '[GNUPG:] ':
-                # Chop off the prefix
-                line = line[9:]
-                log.status("%s" % line)
-                L = line.split(None, 1)
-                keyword = L[0]
-                if len(L) > 1:
-                    value = L[1]
-                else:
-                    value = ""
+
+            if line.startswith('[GNUPG:]'):
+                line = _util._deprefix(line, '[GNUPG:] ', log.status)
+                keyword, value = _util._separate_keyword(line)
                 result._handle_status(keyword, value)
-            elif line[0:5] == 'gpg: ':
-                log.warn("%s" % line)
+            elif line.startswith('gpg:'):
+                line = _util._deprefix(line, 'gpg: ')
+                keyword, value = _util._separate_keyword(line)
+
             else:
                 if self.verbose:
                     log.info("%s" % line)
