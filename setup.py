@@ -56,10 +56,6 @@ through file descriptors. Input arguments are strictly checked and sanitised, \
 and therefore this module should be safe to use in networked applications \
 requiring direct user input. It is intended for use with Python 2.6 or \
 greater.
-
-Documentation can be found on readthedocs_.
-
-.. _readthedocs: https://python-gnupg.readthedocs.org/en/latest/
 """,
     license="GPLv3+",
 
