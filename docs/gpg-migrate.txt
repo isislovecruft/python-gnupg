@@ -1,0 +1,208 @@
+# taken from http://atom.smasher.org/gpg/gpg-migrate.txt on 8 Aug 2013
+
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+HOW TO MIGRATE A (SUB)KEY INTO A NEW KEY
+
+this document [is intended to] explain how to migrate a key or subkey from
+one OpenPGP key into another OpenPGP key.
+
+here i'll walk you through the steps of migrating my old primary signing
+key (3D7D41E3) into my new key (D9F57808). the process of migrating
+encryption (and signing) subkeys is nearly identical. for the adventurous,
+you can even migrate several keys at once using this method (i recommend
+going through it once or twice with only one key).
+
+============================================================================
+
+doing this requires:
+	1) basic knowledge of a *nix command line and how to use it
+	2) advanced knowledge of gpg and how to use it
+	3) common sense (BACKUP YOUR DATA!!)
+
+please note:
+	* this works for me. that does not necessarily mean that it will
+		work for you
+	* if you screw something up, it's *YOUR* problem, not mine
+	* this was tested with GnuPG 1.2.4, and written on or about
+		12 May 2004
+	* updates, if there are any, will probably be noted above
+	* comments and suggestions about this tutorial should be sent to:
+		<atom {at} smasher.org>
+	* questions about gpg should be sent to the gnupg-users mailing
+		list: http://lists.gnupg.org/mailman/listinfo/gnupg-users
+
+============================================================================
+
+* old key:	3EBE 2810 30AE 601D 54B2  4A90 9C28 0BBF 3D7D 41E3
+
+pub  1024D/3D7D41E3 2003-10-04 Atom Smasher <atom@suspicious.org>
+uid                            Atom Smasher <atom@smasher.org>
+sub  2048g/1E88BF71 2003-10-04 [expires: 2005-01-26]
+
+================
+
+* new key:	762A 3B98 A3C3 96C9 C6B7  582A B88D 52E4 D9F5 7808
+
+pub  4096R/D9F57808 2004-05-11 Atom Smasher <atom@smasher.org>
+uid                            Atom Smasher <atom@suspicious.org>
+sub  1024D/3D7D41E3 2003-10-04 [expires: 2006-02-13]
+sub  2048g/1E88BF71 2003-10-04 [expires: 2006-01-26]
+
+===================================
+
+backup the new keys:
+	$ gpg --export D9F57808 > D9F57808_original.txt
+	$ gpg --export-secret-key D9F57808 > D9F57808_original_secret.txt
+
+and the old keys:
+	$ gpg --export 3D7D41E3 > 3D7D41E3_original.txt
+	$ gpg --export-secret-key 3D7D41E3 > 3D7D41E3_original_secret.txt
+
+break the old secret key into pieces:
+	$ gpg --export-secret-key 3D7D41E3 | gpgsplit -vp OLD_SEC
+
+===================================
+
+in this case, the old primary key needs to be converted into a subkey.
+pgpdump shows that it's a primary key:
+	$ pgpdump OLD_SEC000001-005.secret_key
+	Old: Secret Key Packet(tag 5)
+	<<snip>>
+
+only do this if you're converting a PRIMARY KEY into a SUBKEY: open that
+file in a hex editor and refer to RFC2440 4.2 & 4.3. i recommend setting
+the hex editor into a binary display. in this example the first byte is
+"10010101" and it needs to be changed to "10011101". the change can be
+confirmed with pgpdump:
+	$ pgpdump OLD_SEC000001-005.secret_key
+	Old: Secret Subkey Packet(tag 7)
+	<<snip>>
+
+we've now converted the old primary key into a subkey. if you're moving a
+subkey from one key to another, you don't have to do that.
+
+===================================
+
+use "edit-key" and add a subkey of the same type (DSA, for this example)
+and size to the new key. this subkey will be discarded, but we need to
+generate it for now: this seems to be the quickest way to generate a
+keybinding signature with the correct features.
+
+exit from "edit-key" and save.
+
+===================================
+
+split the current version of the new public key:
+	$ gpg --export D9F57808 | gpgsplit -vp TEMP_KEY1
+the only part we need from that split is the binding signature that was
+just generated.
+
+delete (from the keyring) both the private and public copies of the new
+key:
+	$ gpg --delete-secret-key D9F57808
+	$ gpg --delete-key D9F57808
+
+also delete (from the keyring) both the private and public copies of the
+old key.
+
+because the subkey that we're adding to the new key does not correspond to
+the subkey binding signature that was created for it, gpg will not allow
+the key to be imported. the way around that is to "force feed" the key into
+the keyring, bypassing the normal sanity checks. once it's in the keyring
+we can make it all work.
+
+* note: the actual file names that you're using may differ somewhat from
+mine. when in doubt (or rather, when you're not sure), use pgpdump to
+examine the contents of files.
+
+~import~ (directly into the secret keyring) the original copy of the new
+key (D9F57808_original_secret.txt), the edited copy of the old primary key
+(now a subkey, OLD_SEC000001-005.secret_key) and the binding signature of
+the subkey that we just generated (TEMP_KEY1000007-002.sig):
+	$ cat	D9F57808_original_secret.txt		\
+		OLD_SEC000001-005.secret_key		\
+		TEMP_KEY1000007-002.sig >> ~/.gnupg/secring.gpg
+
+~import~ (directly into the public keyring) a public key by adding
+"| gpgsplit --no-split --secret-to-public" to the above command like this:
+	$ cat	D9F57808_original_secret.txt		\
+		OLD_SEC000001-005.secret_key		\
+		TEMP_KEY1000007-002.sig			\
+		| gpgsplit --no-split --secret-to-public >> ~/.gnupg/pubring.gpg
+
+now we have to make a *valid* keybinding signature for the subkey that we
+just added. use "edit-key", select the newly added subkey, and reset it's
+expiration date. that will generate a valid keybinding signature.
+
+while in "edit-key", reset the password. otherwise you may inadvertently
+create a key with multiple passwords, as described here -
+	http://atom.smasher.org/gpg/gpg-passwords.txt
+
+exit from "edit-key" and save.
+
+=========================
+
+this last part makes no sense to me (but it doesn't seem to work
+otherwise).
+
+back up (export) the latest version of the public and private keys:
+	$ gpg --export-secret-key D9F57808 > new-key.sec
+	$ gpg --export D9F57808 > new-key.pub
+
+delete (from the keyring) the private and public key:
+	$ gpg --delete-secret-key D9F57808
+	$ gpg --delete-key D9F57808
+
+also, delete (from the keyring) all copies of the old (sub)key that was
+just added to the new key.
+
+import the new public and private keys:
+	$ gpg --import new-key.sec new-key.pub
+
+=========================
+
+before you publish your new key:
+
+* make sure the key is "ultimately trusted". deleting and importing will
+have removed it from the trust db. since you own the key, ultimate trust
+seems reasonable.
+
+* check all expiration dates and preferences. some of these operations may
+have changed your expiration dates and preferences; reset as necessary.
+
+* test out all key components for creating and verifying signatures, and
+encryption/decryption. use the bang (!) to force each (sub)key:
+	create & verify signatures:
+		$ date | gpg -u 'D9F57808!' --clearsign | gpg -v --verify
+		$ date | gpg -u '3D7D41E3!' --clearsign | gpg -v --verify
+	encrypt/decrypt:
+		$ date | gpg -ear 'D9F57808!' | gpg -v --decrypt
+		$ date | gpg -ear '1E88BF71!' | gpg -v --decrypt
+
+* after testing out the keys locally, send your new public key to one or
+two people and test all key components (sending signed/encrypted messages
+to each other using all key components). make sure that they first delete
+(from their keyrings) your old key! and make sure that they understand that
+the key should NOT be circulated until all functions are verified to be
+working!
+
+* when putting the new key into circulation, it's probably a good idea to
+expire/revoke the old key. include a revocation comment that specifies the
+new key ID and instructions to delete the old key from the keyring.
+
+* note on key revocation: according to the OpenPGP standards a revocation
+generated by a sub key will be ignored, unless that subkey has been
+designated (by the primary key) as a revocation key. GnuPG seems to behave
+correctly, but some versions of PGP(tm) may not. if someone is claiming
+that your new key is revoked, have then remove all of your old and current
+keys from their keyring: then re-import your current key(s).
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.2.4 (FreeBSD)
+
+iD8DBQFApwlpnCgLvz19QeMRAhrpAJ4rhLrmVDjABh8CpPdTZ5jNMi7LsgCgp35S
+6qcUe4csx1p5AE2rAsvDi9c=
+=y7bA
+-----END PGP SIGNATURE-----
