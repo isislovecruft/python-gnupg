@@ -152,13 +152,6 @@ def compare_keys(k1, k2):
     return k1 != k2
 
 
-class ResultStringIO(io.StringIO):
-    def __init__(self, init_string):
-        super(ResultStringIO, self).__init__(init_string)
-    def write(self, data):
-        super(ResultStringIO, self).write(unicode(data))
-
-
 class GPGTestCase(unittest.TestCase):
     """:class:`unittest.TestCase <TestCase>`s for python-gnupg."""
 
@@ -341,17 +334,28 @@ class GPGTestCase(unittest.TestCase):
 
     def test_copy_data_bytesio(self):
         """Test that _copy_data() is able to duplicate byte streams."""
-        message = "This is a BytesIO string string in memory."
+        message = "This is a BytesIO string."
         instream = io.BytesIO(message)
         self.assertEqual(unicode(message), instream.getvalue())
-        outstream = ResultStringIO(u'result:')
-        copied = outstream
+
+        out_filename = 'test-copy-data-bytesio'
+
+        # Create the test file:
+        outfile = os.path.join(os.getcwdu(), out_filename)
+        outstream = open(outfile, 'w+')
+
+        # _copy_data() will close both file descriptors
         _util._copy_data(instream, outstream)
-        self.assertTrue(outstream.readable())
+
         self.assertTrue(outstream.closed)
         self.assertFalse(instream.closed)
-        self.assertTrue(copied.closed)
-        #self.assertEqual(instream.getvalue()[6:], outstream.getvalue())
+        self.assertTrue(os.path.isfile(outfile))
+
+        with open(outfile) as out:
+            out.flush()
+            out.seek(0)
+            output = out.read()
+            self.assertEqual(message, output)
 
     def generate_key_input(self, real_name, email_domain, key_length=None,
                            key_type=None, subkey_type=None, passphrase=None):
