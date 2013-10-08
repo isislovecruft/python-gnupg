@@ -818,5 +818,5 @@ class GPGBase(object):
                   % (data, type(data)))
         self._handle_io(args, data, result,
                         passphrase=passphrase, binary=True)
-        log.debug('GPG.encrypt_file(): Result: %r', result.data)
+        log.debug("\n%s" % result.data)
         return result
