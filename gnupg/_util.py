@@ -231,23 +231,35 @@ def _find_binary(binary=None):
     :returns: The absolute path to the GnuPG binary to use, if no exceptions
               occur.
     """
-    gpg_binary = None
+    found = None
     if binary is not None:
         if not os.path.isabs(binary):
-            try: binary = _which(binary)[0]
+            try:
+                found = _which(binary)
+                log.debug("Found potential binary paths: %s"
+                          % '\n'.join([path for path in found]))
+                found = found[0]
             except IndexError as ie:
-                log.error(ie.message)
-    if binary is None:
-        try: binary = _which('gpg')[0]
-        except IndexError: raise RuntimeError("GnuPG is not installed!")
+                log.info("Could not determine absolute path of binary: '%s'"
+                          % binary)
+    if found is None:
+        try: found = _which('gpg')[0]
+        except IndexError as ie:
+            log.error("Could not find binary for 'gpg'.")
+            try: found = _which('gpg2')[0]
+            except IndexError as ie:
+                log.error("Could not find binary for 'gpg2'.")
+    if found is None:
+        raise RuntimeError("GnuPG is not installed!")
+
     try:
-        assert os.path.isabs(binary), "Path to gpg binary not absolute"
-        assert not os.path.islink(binary), "Path to gpg binary is symlink"
-        assert os.access(binary, os.X_OK), "Lacking +x perms for gpg binary"
+        assert os.path.isabs(found), "Path to gpg binary not absolute"
+        assert not os.path.islink(found), "Path to gpg binary is symlink"
+        assert os.access(found, os.X_OK), "Lacking +x perms for gpg binary"
     except (AssertionError, AttributeError) as ae:
         log.error(ae.message)
     else:
-        return binary
+        return found
 
 def _has_readwrite(path):
     """
