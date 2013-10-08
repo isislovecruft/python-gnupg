@@ -523,7 +523,15 @@ class GPGBase(object):
         result.stderr = ''.join(lines)
 
     def _read_data(self, stream, result):
-        """Read the contents of the file from GPG's stdout."""
+        """Incrementally read from ``stream`` and store read data.
+
+        All data gathered from calling ``stream.read()`` will be concatenated
+        and stored as ``result.data``.
+
+        :param stream: An open file-like object to read() from.
+        :param result: An instance of one of the result parsing classes from
+            :attr:`GPGBase._result_mapping`.
+        """
         chunks = []
         while True:
             data = stream.read(1024)
