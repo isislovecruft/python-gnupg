@@ -349,6 +349,8 @@ class GPGTestCase(unittest.TestCase):
             output = out.read()
             self.assertEqual(message, output)
 
+        os.remove(outfile)
+
     def generate_key_input(self, real_name, email_domain, key_length=None,
                            key_type=None, subkey_type=None, passphrase=None):
         """Generate a GnuPG batch file for key unattended key creation."""
