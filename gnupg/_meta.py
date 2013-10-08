@@ -539,11 +539,9 @@ class GPGBase(object):
                 break
             log.debug("read from stdout: %r" % data[:256])
             chunks.append(data)
-        if _util._py3k:
-            # Join using b'' or '', as appropriate
-            result.data = type(data)().join(chunks)
-        else:
-            result.data = ''.join(chunks)
+
+        # Join using b'' or '', as appropriate
+        result.data = type(data)().join(chunks)
 
     def _collect_output(self, process, result, writer=None, stdin=None):
         """Drain the subprocesses output streams, writing the collected output
