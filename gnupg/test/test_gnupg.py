@@ -765,58 +765,59 @@ authentication."""
 
     def test_encryption_multi_recipient(self):
         """Test encrypting a message for multiple recipients"""
-        self.gpg.homedir = _util._here
-
-        ian = { 'name_real': 'Ian Goldberg',
-                'name_email': 'gold@stein',
-                'key_type': 'RSA',
-                'key_length': 2048,
-                'key_usage': '',
-                'subkey_type': 'RSA',
-                'subkey_length': 2048,
-                'subkey_usage': 'encrypt,sign',
-                'passphrase': 'victorygin' }
+        riggio = { 'name_real': 'Riggio',
+                   'name_email': 'ri@gg.io',
+                   'key_type': 'RSA',
+                   'key_length': 2048,
+                   'key_usage': '',
+                   'subkey_type': 'RSA',
+                   'subkey_length': 2048,
+                   'subkey_usage': 'encrypt,sign',
+                   'passphrase': 'victorygin' }
 
         ## when we don't specify the subkey lengths and the keylength
         ## gets set automatically in gen_key_input(), gpg complains:
         ##
         ##     gpg: keysize invalid; using 1024 bits
         ##
-        kat = { 'name_real': 'Kat Hannah',
-                'name_email': 'kat@pics',
-                'key_type': 'RSA',
-                'key_length': 2048,
-                'key_usage': '',
-                'subkey_type': 'RSA',
-                'subkey_length': 2048,
-                'subkey_usage': 'encrypt,sign',
-                'passphrase': 'overalls' }
+        sicari = { 'name_real': 'Sicari',
+                   'name_email': 'si@ca.ri',
+                   'key_type': 'RSA',
+                   'key_length': 2048,
+                   'key_usage': '',
+                   'subkey_type': 'RSA',
+                   'subkey_length': 2048,
+                   'subkey_usage': 'encrypt,sign',
+                   'passphrase': 'overalls' }
 
-        ian_input = self.gpg.gen_key_input(separate_keyring=True, **ian)
+        riggio_input = self.gpg.gen_key_input(separate_keyring=True, **riggio)
         log.info("Key stored in separate keyring: %s" % self.gpg.temp_keyring)
-        ian_key = self.gpg.gen_key(ian_input)
-        ian_fpr = str(ian_key.fingerprint)
-        self.gpg.options = ['--keyring {}'.format(ian_key.keyring)]
+        riggio = self.gpg.gen_key(riggio_input)
+        self.gpg.options = ['--keyring {}'.format(riggio.keyring)]
+        riggio_key = self.gpg.export_keys(riggio.fingerprint)
+        self.gpg.import_keys(riggio_key)
 
-        kat_input = self.gpg.gen_key_input(separate_keyring=True, **kat)
+        sicari_input = self.gpg.gen_key_input(separate_keyring=True, **sicari)
         log.info("Key stored in separate keyring: %s" % self.gpg.temp_keyring)
-        kat_key = self.gpg.gen_key(kat_input)
-        kat_fpr = str(kat_key.fingerprint)
-        self.gpg.options.append('--keyring {}'.format(kat_key.keyring))
-        self.gpg.import_keys(kat_key.data)
+        sicari = self.gpg.gen_key(sicari_input)
+        self.gpg.options.append('--keyring {}'.format(sicari.keyring))
+        sicari_key = self.gpg.export_keys(sicari.fingerprint)
+        self.gpg.import_keys(sicari_key)
 
         message = """
 In 2010 Riggio and Sicari presented a practical application of homomorphic
 encryption to a hybrid wireless sensor/mesh network. The system enables
 transparent multi-hop wireless backhauls that are able to perform statistical
-analysis of different kinds of data (temperature, humidity, etc.)  coming from
+analysis of different kinds of data (temperature, humidity, etc.) coming from
 a WSN while ensuring both end-to-end encryption and hop-by-hop
 authentication."""
 
-        log.debug("kat_fpr type: %s" % type(kat_fpr))
-        log.debug("ian_fpr type: %s" % type(ian_fpr))
+        if self.gpg.is_gpg2:
+            self.gpg.fix_trustdb()
 
-        encrypted = str(self.gpg.encrypt(message, ian_fpr, kat_fpr))
+        encrypted = str(self.gpg.encrypt(message,
+                                         riggio.fingerprint,
+                                         sicari.fingerprint))
         log.debug("Plaintext: %s" % message)
         log.debug("Ciphertext: %s" % encrypted)
 
