@@ -511,6 +511,10 @@ class GPGBase(object):
                     log.warn("%s" % value)
                 elif keyword.upper().startswith("FATAL"):
                     log.critical("%s" % value)
+                    # Handle the gpg2 error where a missing trustdb.gpg is,
+                    # for some stupid reason, considered fatal:
+                    if value.find("trustdb.gpg") and value.find("No such file"):
+                        result._handle_status('NEED_TRUSTDB', '')
             else:
                 if self.verbose:
                     log.info("%s" % line)

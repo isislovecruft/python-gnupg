@@ -1290,6 +1290,8 @@ class Crypt(Verify):
                      "MISSING_PASSPHRASE", "DECRYPTION_FAILED",
                      "KEY_NOT_CREATED"):
             self.status = key.replace("_", " ").lower()
+        elif key == "NEED_TRUSTDB":
+            self._gpg._create_trustdb()
         elif key == "NEED_PASSPHRASE_SYM":
             self.status = 'need symmetric passphrase'
         elif key == "BEGIN_DECRYPTION":
