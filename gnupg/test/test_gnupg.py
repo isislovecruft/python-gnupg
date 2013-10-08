@@ -306,8 +306,9 @@ class GPGTestCase(unittest.TestCase):
     def test_make_args_drop_protected_options(self):
         """Test that unsupported gpg options are dropped."""
         self.gpg.options = ['--tyrannosaurus-rex', '--stegosaurus']
+        gpg_binary_path = _util._find_binary('gpg')
         cmd = self.gpg._make_args(None, False)
-        expected = ['/usr/bin/gpg',
+        expected = [gpg_binary_path,
                     '--no-options --no-emit-version --no-tty --status-fd 2',
                     '--homedir "%s"' % self.homedir,
                     '--no-default-keyring --keyring %s' % self.keyring,
