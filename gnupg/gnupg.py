@@ -179,6 +179,10 @@ class GPG(GPGBase):
         :param bool clearsign: If True, create a cleartext signature.
         :param bool detach: If True, create a detached signature.
         :param bool binary: If True, do not ascii armour the output.
+        :param str digest_algo: The hash digest to use. Again, to see which
+            hashes your GnuPG is capable of using, do:
+                ``$ gpg --with-colons --list-config digestname``.
+            The default, if unspecified, is ``'SHA512'``.
         """
         if 'default_key' in kwargs.items():
             log.info("Signing message '%r' with keyid: %s"
