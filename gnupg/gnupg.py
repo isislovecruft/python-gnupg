@@ -31,6 +31,7 @@ from __future__ import absolute_import
 from codecs     import open as open
 
 import encodings
+import functools
 import os
 import re
 import textwrap
@@ -43,6 +44,7 @@ except ImportError:
 ## see PEP-328 http://docs.python.org/2.5/whatsnew/pep-328.html
 from .         import _parsers
 from .         import _util
+from .         import _trust
 from ._meta    import GPGBase
 from ._parsers import _fix_unsafe
 from ._util    import _is_list_or_tuple
@@ -151,6 +153,52 @@ class GPG(GPGBase):
         version_line = str(result.data).partition(':version:')[2]
         self.binary_version = version_line.split('\n')[0]
         log.debug("Using GnuPG version %s" % self.binary_version)
+
+        if _util._is_gpg2:
+            # Make GnuPG>=2.0.0-only methods public:
+            self.fix_trustdb       = self._fix_trustdb
+            self.import_ownertrust = self._import_ownertrust
+            self.export_ownertrust = self._export_ownertrust
+
+            # Make sure that the trustdb exists, or else GnuPG will exit with
+            # a fatal error (at least it does with GnuPG>=2.0.0):
+            self._create_trustdb()
+
+    @functools.wraps(_trust._create_trustdb)
+    def _create_trustdb(self):
+        if self.is_gpg2():
+            _trust._create_trustdb(self)
+        else:
+            log.info("Creating the trustdb is only available with GnuPG>=2.x")
+
+    @functools.wraps(_trust.fix_trustdb)
+    def _fix_trustdb(self, trustdb=None):
+        if self.is_gpg2():
+            _trust.fix_trustdb(self)
+        else:
+            log.info("Fixing the trustdb is only available with GnuPG>=2.x")
+
+    @functools.wraps(_trust.import_ownertrust)
+    def _import_ownertrust(self, trustdb=None):
+        if self.is_gpg2():
+            _trust.import_ownertrust(self)
+        else:
+            log.info("Importing ownertrust is only available with GnuPG>=2.x")
+
+    @functools.wraps(_trust.export_ownertrust)
+    def _export_ownertrust(self, trustdb=None):
+        if self.is_gpg2():
+            _trust.export_ownertrust(self)
+        else:
+            log.info("Exporting ownertrust is only available with GnuPG>=2.x")
+
+    def is_gpg1(self):
+        """Returns true if using GnuPG <= 1.x."""
+        return _util._is_gpg1(self.binary_version)
+
+    def is_gpg2(self):
+        """Returns true if using GnuPG >= 2.x."""
+        return _util._is_gpg2(self.binary_version)
 
     def sign(self, data, **kwargs):
         """Create a signature for a message string or file.
