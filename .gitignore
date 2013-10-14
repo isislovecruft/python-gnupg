@@ -86,3 +86,5 @@ MANIFEST
 
 # sphinx default build
 docs/_build
+# sphinx js
+docs/_static/*.js
