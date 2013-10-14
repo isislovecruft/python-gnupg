@@ -7,12 +7,12 @@
 #           © 2008-2012 Vinay Sajip
 #           © 2005 Steve Traugott
 #           © 2004 A.M. Kuchling
-# 
+#
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option)
 # any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
@@ -373,7 +373,7 @@ class GPG(GPGBase):
         :param str keyids: Each ``keyids`` argument should be a string
              containing a keyid to request.
         :param str keyserver: The keyserver to request the ``keyids`` from;
-             defaults to :property:`gnupg.GPG.keyserver`.
+             defaults to `gnupg.GPG.keyserver`.
         """
         if keyids:
             keys = ' '.join([key for key in keyids])
@@ -389,22 +389,23 @@ class GPG(GPGBase):
         be deleted from :attr:`GPG.secring`.
 
         :type fingerprints: str or list or tuple
-
         :param fingerprints: A string, or a list/tuple of strings,
-            representing the fingerprint(s) for the key(s) to delete.
+                             representing the fingerprint(s) for the key(s)
+                             to delete.
 
         :param bool secret: If True, delete the corresponding secret key(s)
-            also. (default: False)
+                            also. (default: False)
 
         :param bool subkeys: If True, delete the secret subkey first, then the
-            public key. (default: False) Same as:
-                ``$ gpg --delete-secret-and-public-key 0x12345678``
+                             public key. (default: False) Same as:
+                             ``$ gpg --delete-secret-and-public-key
+                             0x12345678``
         """
-        which='keys'
+        which = 'keys'
         if secret:
-            which='secret-keys'
+            which = 'secret-keys'
         if subkeys:
-            which='secret-and-public-keys'
+            which = 'secret-and-public-keys'
 
         if _is_list_or_tuple(fingerprints):
             fingerprints = ' '.join(fingerprints)
@@ -425,11 +426,11 @@ class GPG(GPGBase):
         :param bool secret: If True, export only the secret key.
         :param bool subkeys: If True, export the secret subkeys.
         """
-        which=''
+        which = ''
         if subkeys:
-            which='-secret-subkeys'
+            which = '-secret-subkeys'
         elif secret:
-            which='-secret-keys'
+            which = '-secret-keys'
 
         if _is_list_or_tuple(keyids):
             keyids = ' '.join(['%s' % k for k in keyids])
@@ -441,7 +442,7 @@ class GPG(GPGBase):
         ## gpg --export produces no status-fd output; stdout will be empty in
         ## case of failure
         #stdout, stderr = p.communicate()
-        result = self._result_map['delete'](self) # any result will do
+        result = self._result_map['delete'](self)  # any result will do
         self._collect_output(p, result, stdin=p.stdin)
         log.debug('Exported:%s%r' % (os.linesep, result.data))
         return result.data.decode(self._encoding, self._decode_errors)
@@ -467,9 +468,9 @@ class GPG(GPGBase):
         >>> assert print2 in pubkeys.fingerprints
         """
 
-        which='public-keys'
+        which = 'public-keys'
         if secret:
-            which='secret-keys'
+            which = 'secret-keys'
         args = "--list-%s --fixed-list-mode --fingerprint " % (which,)
         args += "--with-colons --list-options no-show-photos"
         args = [args]
