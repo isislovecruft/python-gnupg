@@ -173,7 +173,6 @@ class GPGTestCase(unittest.TestCase):
         self.keyring = self.gpg.keyring
         self.secring = self.gpg.secring
         self.insecure_prng = False
-        self.gpg._keys_dir = os.path.join(_files, 'generated-keys')
 
     def tearDown(self):
         """This is called once per self.test_* method after the test run."""
@@ -523,7 +522,7 @@ class GPGTestCase(unittest.TestCase):
         self.assertIsNotNone(key)
         self.assertNotEquals(key, "")
         self.assertGreater(len(str(key)), 0)
-        keyfile = os.path.join(self.gpg._keys_dir, 'test_key_3.pub')
+        keyfile = os.path.join(_files, 'test_key_3.pub')
         log.debug("Storing downloaded key as %s" % keyfile)
         with open(keyfile, 'w') as fh:
             fh.write(str(key))
