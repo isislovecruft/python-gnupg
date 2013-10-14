@@ -7,12 +7,12 @@
 #           © 2008-2012 Vinay Sajip
 #           © 2005 Steve Traugott
 #           © 2004 A.M. Kuchling
-# 
+#
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option)
 # any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
@@ -373,7 +373,7 @@ class GPG(GPGBase):
         :param str keyids: Each ``keyids`` argument should be a string
              containing a keyid to request.
         :param str keyserver: The keyserver to request the ``keyids`` from;
-             defaults to :property:`gnupg.GPG.keyserver`.
+             defaults to `gnupg.GPG.keyserver`.
         """
         if keyids:
             keys = ' '.join([key for key in keyids])
