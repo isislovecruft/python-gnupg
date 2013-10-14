@@ -31,6 +31,7 @@ from time       import mktime
 import codecs
 import encodings
 import os
+import psutil
 import threading
 import random
 import re
@@ -393,7 +394,7 @@ def _make_passphrase(length=None, save=False, file=None):
     passphrase = _make_random_string(length)
 
     if save:
-        ruid, euid, suid = os.getresuid()
+        ruid, euid, suid = psutil.Process(os.getpid()).uids
         gid = os.getgid()
         now = mktime(localtime())
 
