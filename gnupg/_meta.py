@@ -87,7 +87,8 @@ class GPGMeta(type):
 
 
 class GPGBase(object):
-    """Base class for property storage and to control process initialisation."""
+    """Base class for property storage and to control process
+    initialisation."""
 
     __metaclass__  = GPGMeta
     _decode_errors = 'strict'
@@ -631,9 +632,10 @@ class GPGBase(object):
         :param bool detach: If True, create a detached signature.
         :param bool binary: If True, do not ascii armour the output.
         :param str digest_algo: The hash digest to use. Again, to see which
-            hashes your GnuPG is capable of using, do:
-                ``$ gpg --with-colons --list-config digestname``.
-            The default, if unspecified, is ``'SHA512'``.
+                                hashes your GnuPG is capable of using, do:
+                                ``$ gpg --with-colons --list-config
+                                digestname``. The default, if unspecified, is
+                                ``'SHA512'``.
         """
         log.debug("_sign_file():")
         if binary:
@@ -685,42 +687,55 @@ class GPGBase(object):
 
         :param str data: The file or bytestream to encrypt.
 
-        :param str recipients: The recipients to encrypt to. Recipients must
-            be specified keyID/fingerprint. Care should be taken in Python2.x
-            to make sure that the given fingerprint is in fact a string and
-            not a unicode object.
+        :param recipients: The recipients to encrypt to. Recipients must be
+                           specified keyID/fingerprint. Care should be taken
+                           in Python2.x to make sure that the given fingerprint
+                           is in fact a string and not a unicode object.
+        :type recipients: str
 
-        :param str default_key: The keyID/fingerprint of the key to use for
-            signing. If given, ``data`` will be encrypted and signed.
+        :param default_key: The keyID/fingerprint of the key to use for
+                            signing. If given, ``data`` will be encrypted
+                            and signed.
+        :type default_key: str
 
-        :param str passphrase: If given, and ``default_key`` is also given,
-            use this passphrase to unlock the secret portion of the
-            ``default_key`` to sign the encrypted ``data``. Otherwise, if
-            ``default_key`` is not given, but ``symmetric=True``, then use
-            this passphrase as the passphrase for symmetric
-            encryption. Signing and symmetric encryption should *not* be
-            combined when sending the ``data`` to other recipients, else the
-            passphrase to the secret key would be shared with them.
+        :param passphrase: If given, and ``default_key`` is also given,
+                           use this passphrase to unlock the secret portion of
+                           the ``default_key`` to sign the encrypted ``data``.
+                           Otherwise, if ``default_key`` is not given, but
+                           ``symmetric=True``, then use this passphrase as the
+                           passphrase for symmetric encryption. Signing and
+                           symmetric encryption should *not* be combined when
+                           sending the ``data`` to other recipients, else the
+                           passphrase to the secret key would be shared with
+                           them.
+        :type passphrase: str
 
-        :param bool armor: If True, ascii armor the output; otherwise, the
-            output will be in binary format. (Default: True)
+        :param armor: If True, ascii armor the output; otherwise, the output
+                      will be in binary format. (Default: True)
+        :type armor: bool
 
-        :param bool encrypt: If True, encrypt the ``data`` using the
-            ``recipients`` public keys. (Default: True)
+        :param encrypt: If True, encrypt the ``data`` using the ``recipients``
+                        public keys. (Default: True)
+        :type encrypt: bool
 
-        :param bool symmetric: If True, encrypt the ``data`` to ``recipients``
-            using a symmetric key. See the ``passphrase`` parameter. Symmetric
-            encryption and public key encryption can be used simultaneously,
-            and will result in a ciphertext which is decryptable with either
-            the symmetric ``passphrase`` or one of the corresponding private
-            keys.
+        :param symmetric: If True, encrypt the ``data`` to ``recipients``
+                          using a symmetric key. See the ``passphrase``
+                          parameter. Symmetric encryption and public key
+                          encryption can be used simultaneously, and will
+                          result in a ciphertext which is decryptable with
+                          either the symmetric ``passphrase`` or one of the
+                          corresponding private keys.
+        :type symmetric: bool
 
-        :param bool always_trust: If True, ignore trust warnings on recipient
-            keys. If False, display trust warnings.  (default: True)
+        :param always_trust: If True, ignore trust warnings on recipient
+                             keys. If False, display trust warnings.
+                             (default: True)
+        :type always_trust: bool
 
-        :param str output: The output file to write to. If not specified, the
-            encrypted output is returned, and thus should be stored as an
-            object in Python. For example:
+        :param output: The output file to write to. If not specified, the
+                       encrypted output is returned, and thus should be
+                       stored as an object in Python. For example:
+        :type output: str
 
         >>> import shutil
         >>> import gnupg
@@ -742,16 +757,21 @@ class GPGBase(object):
         'The crow flies at midnight.'
 
         :param str cipher_algo: The cipher algorithm to use. To see available
-            algorithms with your version of GnuPG, do:
-                ``$ gpg --with-colons --list-config ciphername``.
-            The default ``cipher_algo``, if unspecified, is ``'AES256'``.
+                                algorithms with your version of GnuPG, do:
+                                ``$ gpg --with-colons --list-config
+                                ciphername``.
+                                The default ``cipher_algo``, if unspecified,
+                                is ``'AES256'``.
+        :type cipher_algo: str
 
-        :param str digest_algo: The hash digest to use. Again, to see which
-            hashes your GnuPG is capable of using, do:
-                ``$ gpg --with-colons --list-config digestname``.
-            The default, if unspecified, is ``'SHA512'``.
+        :param digest_algo: The hash digest to use. Again, to see which
+                            hashes your GnuPG is capable of using, do:
+                            ``$ gpg --with-colons --list-config digestname``.
+                            The default, if unspecified, is ``'SHA512'``.
+        :type digest_algo: str
 
-        :param str compress_algo: The compression algorithm to use. Can be one
+        :param compress_algo: The compression algorithm to use. Can be one
+        :type compress_algo: str
             of ``'ZLIB'``, ``'BZIP2'``, ``'ZIP'``, or ``'Uncompressed'``.
         """
         args = []
