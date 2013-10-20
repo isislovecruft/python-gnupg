@@ -928,6 +928,68 @@ know, maybe you shouldn't be doing it in the first place.
         self.assertNotEquals(decrypted, "")
         self.assertEqual(decrypted, msg)
 
+    def test_encrypt_to_filename(self):
+        """Test encrypt() function given a filename argument."""
+        # grab a secret key and public key from our test/files/
+        with open(os.path.join(_files, 'test_key_1.sec')) as seckey:
+            self.gpg.import_keys(seckey.read())
+
+        with open(os.path.join(_files, 'test_key_1.pub')) as pubkey:
+            self.gpg.import_keys(pubkey.read())
+
+        fingerprint = self.gpg.list_keys()[0]['fingerprint']
+        self.assertIsNotNone(fingerprint)
+        self.assertNotEquals(fingerprint, '')
+        self.assertEqual(len(fingerprint), 40)
+
+        message_file = open(os.path.join(_files, 'cypherpunk_manifesto'))
+        message = message_file.read()
+        message_file.flush()
+        message_file.close()
+        self.assertIsNotNone(message)
+        self.assertNotEquals(message, '')
+
+        filename = './enc-to-file-test'
+        enc = self.gpg.encrypt(message, fingerprint, filename)
+        self.assertIsNotNone(enc.data)
+        self.assertNotEquals(enc.data, '')
+        self.assertTrue(enc.data.find('BEGIN PGP MESSAGE'))
+        self.assertTrue(os.path.isfile(filename))
+
+    def test_encrypt_to_opened_file(self):
+        """Test encrypt() function given a filename argument."""
+        # grab a secret key and public key from our test/files/
+        with open(os.path.join(_files, 'test_key_1.sec')) as seckey:
+            self.gpg.import_keys(seckey.read())
+
+        with open(os.path.join(_files, 'test_key_1.pub')) as pubkey:
+            self.gpg.import_keys(pubkey.read())
+
+        fingerprint = self.gpg.list_keys()[0]['fingerprint']
+        self.assertIsNotNone(fingerprint)
+        self.assertNotEquals(fingerprint, '')
+        self.assertEqual(len(fingerprint), 40)
+
+        message_file = open(os.path.join(_files, 'cypherpunk_manifesto'))
+        message = message_file.read()
+        message_file.flush()
+        message_file.close()
+        self.assertIsNotNone(message)
+        self.assertNotEquals(message, '')
+
+        filename = './enc-to-file-test'
+        with open(filename, 'wb') as fh:
+            enc = self.gpg.encrypt(message, fingerprint)
+            fh.write(enc.data)
+
+        self.assertTrue(os.path.isfile(filename))
+
+        with open(filename, 'r') as fh:
+            enc = fh.read()
+            self.assertIsNotNone(enc)            
+            self.assertNotEquals(enc, '')
+            self.assertTrue(enc.find('BEGIN PGP MESSAGE'))
+
     def test_file_encryption_and_decryption(self):
         """Test that encryption/decryption to/from file works."""
         with open(os.path.join(_files, 'kat.sec')) as katsec:
@@ -1001,7 +1063,9 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                          'test_encryption_decryption_multi_recipient',
                          'test_decryption',
                          'test_symmetric_encryption_and_decryption',
-                         'test_file_encryption_and_decryption']),
+                         'test_file_encryption_and_decryption',
+                         'test_encrypt_to_filename',
+                         'test_encrypt_to_opened_file']),
            'listkeys': set(['test_list_keys_after_generation']),
            'keyrings': set(['test_public_keyring',
                             'test_secret_keyring',
