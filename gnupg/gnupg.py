@@ -308,7 +308,7 @@ class GPG(GPGBase):
             sig_fh = None
             try:
                 sig_fh = open(sig_file)
-                args = ["--verify %s - " % sig_fh.name]
+                args = ["--verify %s -" % sig_fh.name]
                 proc = self._open_subprocess(args)
                 writer = _util._threaded_copy_data(file, proc.stdin)
                 self._collect_output(proc, result, stdin=proc.stdin)

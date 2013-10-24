@@ -298,7 +298,7 @@ def _sanitise(*args):
                 values = value.split(' ')
                 for v in values:
                     ## these can be handled separately, without _fix_unsafe(),
-                    ## because they are only allowed if the pass the regex
+                    ## because they are only allowed if they pass the regex
                     if (flag in none_options) and (v is None):
                         continue
 
@@ -332,8 +332,11 @@ def _sanitise(*args):
 
                     if flag in ['--encrypt', '--encrypt-files', '--decrypt',
                                 '--decrypt-files', '--import', '--verify']:
-                        if _util._is_file(val): checked += (val + " ")
-                        else: log.debug("%s not file: %s" % (flag, val))
+                        if _util._is_file(val) or \
+                                (flag == '--verify' and val == '-'):
+                            checked += (val + " ")
+                        else:
+                            log.debug("%s not file: %s" % (flag, val))
 
                     elif flag in ['--cipher-algo', '--personal-cipher-prefs',
                                   '--personal-cipher-preferences']:
@@ -372,7 +375,8 @@ def _sanitise(*args):
                     groups[last] = str(filo.pop())
                     ## accept the read-from-stdin arg:
                     if len(filo) >= 1 and filo[len(filo)-1] == '-':
-                        groups[last] += str(' - \'\'') ## gross hack
+                        groups[last] += str(' - ') ## gross hack
+                        filo.pop()
                 else:
                     groups[last] = str()
                 while len(filo) > 1 and not is_flag(filo[len(filo)-1]):
