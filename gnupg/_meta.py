@@ -75,7 +75,7 @@ class GPGMeta(type):
                   same effective user ID as that of this program. Otherwise,
                   returns None.
         """
-        identity = os.getresuid()
+        identity = psutil.Process(os.getpid()).uids
         for proc in psutil.process_iter():
             if (proc.name == "gpg-agent") and proc.is_running:
                 log.debug("Found gpg-agent process with pid %d" % proc.pid)
