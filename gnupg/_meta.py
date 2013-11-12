@@ -442,17 +442,17 @@ class GPGBase(object):
         if self.use_agent: cmd.append('--use-agent')
         else: cmd.append('--no-use-agent')
 
-        if self.options:
-            [cmd.append(opt) for opt in iter(_sanitise_list(self.options))]
-        if args:
-            [cmd.append(arg) for arg in iter(_sanitise_list(args))]
-
         if self.verbose:
             cmd.append('--debug-all')
             if ((isinstance(self.verbose, str) and
                  self.verbose in ['basic', 'advanced', 'expert', 'guru'])
                 or (isinstance(self.verbose, int) and (1<=self.verbose<=9))):
                 cmd.append('--debug-level %s' % self.verbose)
+
+        if self.options:
+            [cmd.append(opt) for opt in iter(_sanitise_list(self.options))]
+        if args:
+            [cmd.append(arg) for arg in iter(_sanitise_list(args))]
 
         return cmd
 

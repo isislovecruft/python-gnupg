@@ -257,7 +257,7 @@ class GPG(GPGBase):
             result = None
         return result
 
-    def verify(self, data):
+    def verify(self, data, signature=None):
         """Verify the signature on the contents of the string ``data``.
 
         >>> gpg = GPG(homedir="doctests")
@@ -271,9 +271,24 @@ class GPG(GPGBase):
         >>> verify = gpg.verify(sig.data)
         >>> assert verify
 
+        :param str data: A string to verify.
+
+        :param str signature: A string containing the detached GPG signature data for
+            ``data``. If given, ``data`` is verified via this detached
+            signature.
         """
         f = _make_binary_stream(data, self._encoding)
-        result = self.verify_file(f)
+        if signature:
+            import os, tempfile
+            tmp = tempfile.NamedTemporaryFile(prefix='gnupg',delete=False)
+            fd = tmp.file
+            fn = tmp.name
+            fd.write(signature)
+            fd.close()
+            try: result = self.verify_file(f,fn)
+            finally: os.unlink(fn)
+        else:
+            result = self.verify_file(f)
         f.close()
         return result
 
