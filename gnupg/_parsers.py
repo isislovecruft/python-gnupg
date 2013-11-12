@@ -34,7 +34,7 @@ from ._util import log
 
 ESCAPE_PATTERN = re.compile(r'\\x([0-9a-f][0-9a-f])', re.I)
 HEXIDECIMAL    = re.compile('([0-9A-Fa-f]{2})+')
-
+EMAIL          = re.compile('[-0-9a-zA-Z.+_]+@[-0-9a-zA-Z.+_]+(\.[a-zA-Z]{2,4})?')
 
 class ProtectedOption(Exception):
     """Raised when the option passed to GPG is disallowed."""
@@ -213,6 +213,9 @@ def _is_hex(string):
     :param str string: The string to check.
     """
     matched = HEXIDECIMAL.match(string)
+    if matched is not None and len(matched.group()) >= 2:
+        return True
+    matched = EMAIL.match(string)
     if matched is not None and len(matched.group()) >= 2:
         return True
     return False
