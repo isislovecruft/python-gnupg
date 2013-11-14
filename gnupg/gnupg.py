@@ -171,6 +171,9 @@ class GPG(GPGBase):
             # a fatal error (at least it does with GnuPG>=2.0.0):
             self._create_trustdb()
 
+            # --no-use-agent is obsolete
+            if not self.use_agent: self.use_agent = None 
+
     @functools.wraps(_trust._create_trustdb)
     def _create_trustdb(self):
         if self.is_gpg2():
