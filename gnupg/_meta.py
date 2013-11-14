@@ -538,7 +538,7 @@ class GPGBase(object):
         if passphrase: cmd.append('--batch --passphrase-fd 0')
 
         if self.use_agent: cmd.append('--use-agent')
-        else: cmd.append('--no-use-agent')
+        elif self.use_agent==False: cmd.append('--no-use-agent') # obsolete for GPG 2.0
 
         # The arguments for debugging and verbosity should be placed into the
         # cmd list before the options/args in order to resolve Issue #76:
