@@ -7,12 +7,12 @@
 #           © 2008-2012 Vinay Sajip
 #           © 2005 Steve Traugott
 #           © 2004 A.M. Kuchling
-# 
+#
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option)
 # any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
@@ -25,7 +25,14 @@ Classes for parsing GnuPG status messages and sanitising commandline options.
 from __future__ import absolute_import
 from __future__ import print_function
 
-import collections
+try:
+    # py2.7+ comes with collections.OrderedDict
+    from collections import OrderedDict
+except ImportError:
+    # py2.6 doesn't; this is an equivalent;
+    # `pip install ordereddict`
+    from ordereddict import OrderedDict
+
 import re
 
 from .      import _util
@@ -1008,7 +1015,7 @@ class ImportResult(object):
     _fields = '''count no_user_id imported imported_rsa unchanged
     n_uids n_subk n_sigs n_revoc sec_read sec_imported sec_dups
     not_imported'''.split()
-    _counts = collections.OrderedDict(
+    _counts = OrderedDict(
         zip(_fields, [int(0) for x in range(len(_fields))]) )
 
     #: A list of strings containing the fingerprints of the GnuPG keyIDs
