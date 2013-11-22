@@ -261,6 +261,8 @@ def _find_binary(binary=None):
     """
     found = None
     if binary is not None:
+        if os.path.isabs(binary) and os.path.isfile(binary):
+            return binary
         if not os.path.isabs(binary):
             try:
                 found = _which(binary)
