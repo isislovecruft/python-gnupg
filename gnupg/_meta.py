@@ -321,11 +321,11 @@ class GPGBase(object):
         created. Lastly, the ``direcory`` will be checked that the EUID has
         read and write permissions for it.
 
-        :param str homedir: A relative or absolute path to the directory to use
-                            for storing/accessing GnuPG's files, including
+        :param str directory: A relative or absolute path to the directory to
+                            use for storing/accessing GnuPG's files, including
                             keyrings and the trustdb.
         :raises: :exc:`RuntimeError` if unable to find a suitable directory to
-                 use.
+            use.
         """
         if not directory:
             log.debug("GPGBase._homedir_setter(): Using default homedir: '%s'"
