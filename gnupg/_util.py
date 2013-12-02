@@ -31,6 +31,7 @@ from time       import mktime
 import codecs
 import encodings
 import os
+import psutil
 import threading
 import random
 import re
@@ -270,6 +271,8 @@ def _find_binary(binary=None):
             except IndexError as ie:
                 log.info("Could not determine absolute path of binary: '%s'"
                           % binary)
+        elif os.access(binary, os.X_OK):
+            found = binary
     if found is None:
         try: found = _which('gpg')[0]
         except IndexError as ie:
@@ -393,7 +396,7 @@ def _make_passphrase(length=None, save=False, file=None):
     passphrase = _make_random_string(length)
 
     if save:
-        ruid, euid, suid = os.getresuid()
+        ruid, euid, suid = psutil.Process(os.getpid()).uids
         gid = os.getgid()
         now = mktime(localtime())
 

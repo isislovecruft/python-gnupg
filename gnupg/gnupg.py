@@ -308,7 +308,7 @@ class GPG(GPGBase):
             sig_fh = None
             try:
                 sig_fh = open(sig_file)
-                args = ["--verify %s - " % sig_fh.name]
+                args = ["--verify %s -" % sig_fh.name]
                 proc = self._open_subprocess(args)
                 writer = _util._threaded_copy_data(file, proc.stdin)
                 self._collect_output(proc, result, stdin=proc.stdin)
@@ -557,18 +557,20 @@ class GPG(GPGBase):
 
         fpr = str(key.fingerprint)
         if len(fpr) == 20:
-            if self.temp_keyring or self.temp_secring:
-                if not os.path.exists(self._keys_dir):
-                    os.makedirs(self._keys_dir)
-                prefix = os.path.join(self._keys_dir, fpr)
+            for d in map(lambda x: os.path.dirname(x),
+                         [self.temp_keyring, self.temp_secring]):
+                if not os.path.exists(d):
+                    os.makedirs(d)
 
             if self.temp_keyring:
                 if os.path.isfile(self.temp_keyring):
+                    prefix = os.path.join(self.temp_keyring, fpr)
                     try: os.rename(self.temp_keyring, prefix+".pubring")
                     except OSError as ose: log.error(ose.message)
 
             if self.temp_secring:
                 if os.path.isfile(self.temp_secring):
+                    prefix = os.path.join(self.temp_secring, fpr)
                     try: os.rename(self.temp_secring, prefix+".secring")
                     except OSError as ose: log.error(ose.message)
 
