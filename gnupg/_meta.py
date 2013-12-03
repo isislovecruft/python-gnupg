@@ -17,10 +17,8 @@
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
 
-'''meta.py
-----------
-Meta and base classes for hiding internal functions, and controlling attribute
-creation and handling.
+'''Meta and base classes for hiding internal functions, and controlling
+attribute creation and handling.
 '''
 
 from __future__ import absolute_import

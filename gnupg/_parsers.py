@@ -17,9 +17,8 @@
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
 
-'''parsers.py
--------------
-Classes for parsing GnuPG status messages and sanitising commandline options.
+'''Classes for parsing GnuPG status messages and sanitising commandline
+options.
 '''
 
 from __future__ import absolute_import

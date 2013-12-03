@@ -17,9 +17,7 @@
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
 
-'''trust.py
------------
-Functions for handling trustdb and trust calculations.
+'''Functions for handling trustdb and trust calculations.
 
 The functions within this module take an instance of :class:`gnupg.GPGBase` or
 a suitable subclass as their first argument.

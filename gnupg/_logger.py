@@ -17,10 +17,7 @@
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
 
-'''log.py
-----------
-Logging module for python-gnupg.
-'''
+'''Logging module for python-gnupg.'''
 
 from __future__ import absolute_import
 from __future__ import print_function

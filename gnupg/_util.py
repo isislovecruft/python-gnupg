@@ -17,10 +17,7 @@
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
 
-'''util.py
-----------
-Extra utilities for python-gnupg.
-'''
+'''Extra utilities for python-gnupg.'''
 
 from __future__ import absolute_import
 from datetime   import datetime
