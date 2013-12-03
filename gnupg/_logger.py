@@ -86,10 +86,8 @@ def create_logger(level=logging.NOTSET):
 
         formatr = logging.Formatter(_fmt)
         handler.setFormatter(formatr)
-        print("Starting the logger...")
     else:
         handler = NullHandler()
-        print("GnuPG logging disabled...")
 
     log = logging.getLogger('gnupg')
     log.addHandler(handler)
