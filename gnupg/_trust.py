@@ -42,11 +42,12 @@ def _create_trustdb(cls):
 def export_ownertrust(cls, trustdb=None):
     """Export ownertrust to a trustdb file.
 
-    If there is already a file named 'trustdb.gpg' in the current GnuPG
-    homedir, it will be renamed to 'trustdb.gpg.bak'.
+    If there is already a file named :file:`trustdb.gpg` in the current GnuPG
+    homedir, it will be renamed to :file:`trustdb.gpg.bak`.
 
     :param string trustdb: The path to the trustdb.gpg file. If not given,
-        defaults to 'trustdb.gpg' in the current GnuPG homedir.
+                           defaults to ``'trustdb.gpg'`` in the current GnuPG
+                           homedir.
     """
     if trustdb is None:
         trustdb = os.path.join(cls.homedir, 'trustdb.gpg')
@@ -63,8 +64,9 @@ def export_ownertrust(cls, trustdb=None):
 def import_ownertrust(self, trustdb=None):
     """Import ownertrust from a trustdb file.
 
-    :param string trustdb: The path to the trustdb.gpg file. If not given,
-        defaults to 'trustdb.gpg' in the current GnuPG homedir.
+    :param str trustdb: The path to the trustdb.gpg file. If not given,
+                        defaults to :file:`trustdb.gpg` in the current GnuPG
+                        homedir.
     """
     if trustdb is None:
         trustdb = os.path.join(cls.homedir, 'trustdb.gpg')
@@ -78,20 +80,21 @@ def fix_trustdb(cls, trustdb=None):
 
     GnuPG>=2.0.x has this magical-seeming flag: `--fix-trustdb`. You'd think
     it would fix the the trustdb. Hah! It doesn't. Here's what it does
-    instead:
+    instead::
 
-    (python-gnupg)∃!isisⒶwintermute:(testing/digest-algo)~/code/python-gnupg ∴ gpg2 --fix-trustdb
-    gpg: You may try to re-create the trustdb using the commands:
-    gpg:   cd ~/.gnupg
-    gpg:   gpg2 --export-ownertrust > otrust.tmp
-    gpg:   rm trustdb.gpg
-    gpg:   gpg2 --import-ownertrust < otrust.tmp
-    gpg: If that does not work, please consult the manual
+      (gpg)∃!isisⒶwintermute:(testing/algo)~/code/python-gnupg ∴ gpg2 --fix-trustdb
+      gpg: You may try to re-create the trustdb using the commands:
+      gpg:   cd ~/.gnupg
+      gpg:   gpg2 --export-ownertrust > otrust.tmp
+      gpg:   rm trustdb.gpg
+      gpg:   gpg2 --import-ownertrust < otrust.tmp
+      gpg: If that does not work, please consult the manual
 
     Brilliant piece of software engineering right there.
 
-    :param string trustdb: The path to the trustdb.gpg file. If not given,
-        defaults to 'trustdb.gpg' in the current GnuPG homedir.
+    :param str trustdb: The path to the trustdb.gpg file. If not given,
+                        defaults to :file:`trustdb.gpg` in the current GnuPG
+                        homedir.
     """
     if trustdb is None:
         trustdb = os.path.join(cls.homedir, 'trustdb.gpg')
