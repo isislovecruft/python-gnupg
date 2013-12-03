@@ -17,6 +17,7 @@ do:
     :private-members:
     :show-inheritance:
 
+.. _meta:
 
 meta module
 -----------
@@ -32,6 +33,7 @@ doing some serious hacking.
     :private-members:
     :show-inheritance:
 
+.. _parsers:
 
 parsers module
 --------------
@@ -51,6 +53,8 @@ source_, which has been included here_ as well.
     :private-members:
     :show-inheritance:
 
+
+.. _util:
 
 util module
 -----------
