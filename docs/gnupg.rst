@@ -29,8 +29,10 @@ doing some serious hacking.
 
 .. automodule:: gnupg._meta
     :members:
-    :undoc-members:
     :private-members:
+    :special-members:
+    :exclude-members: _agent_proc, __module__, __dict__, _decode_errors, init,
+                      __weakref__, _result_map, __metaclass__
     :show-inheritance:
 
 .. _parsers:
