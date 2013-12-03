@@ -33,7 +33,12 @@ needs_sphinx = '1.1'
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode']
+extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.viewcode',
+              'sphinx.ext.intersphinx',
+              'sphinx.ext.doctest',
+              'sphinxcontrib.fulltoc',
+          ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_static']
@@ -95,6 +100,8 @@ pygments_style = 'monokai'
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
 
+# Example configuration for intersphinx: refer to the Python standard library.
+intersphinx_mapping = {'http://docs.python.org/': None}
 
 # -- Options for HTML output ---------------------------------------------------
 
