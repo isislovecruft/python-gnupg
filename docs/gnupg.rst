@@ -43,10 +43,11 @@ parsers module
 These are classes for parsing both user inputs and status file descriptor
 flags from GnuPG's output. The latter are used in order to determine what our
 GnuPG process is doing and retrieve information about its operations, which
-are stored in corresponding classes in :attr:`gnupg.GPG._result_dict`. Some
-status flags aren't handled yet -- infomation on *all* of the flags (well, at
-least the documented ones…) can be found in the docs/DETAILS file in GnuPG's
-source_, which has been included here_ as well.
+are stored in corresponding classes in
+:attr:`~gnupg._meta.GPGBase._result_map`. Some status flags aren't handled yet
+-- information on *all* of the flags (well, at least the documented ones…) can
+be found in the :file:`docs/DETAILS` file in GnuPG's source_, which has been
+included here_ as well.
 
 
 .. automodule:: gnupg._parsers
@@ -81,10 +82,9 @@ by Steve Traugott, which in turn is a modification of the pycrypto GnuPG
 interface written by A.M. Kuchling.
 
 This version is patched to sanitize untrusted inputs, due to the necessity of
-executing :class:`subprocess.Popen([...], shell=True)` in order to communicate
-with GnuPG. Several speed improvements were also made based on code profiling,
-and the API has been cleaned up to support an easier, more Pythonic,
-interaction.
+executing ``subprocess.Popen([...], shell=True)`` in order to communicate with
+GnuPG. Several speed improvements were also made based on code profiling, and
+the API has been cleaned up to support an easier, more Pythonic, interaction.
 
 
 Previous Authors' Documentation
@@ -128,4 +128,4 @@ Vinay Sajip's documentation:
 .. _GnuPG: http://gnupg.org
 .. _python-gnupg: https://code.google.com/p/python-gnupg/
 .. _source: http://http://git.gnupg.org/cgi-bin/gitweb.cgi?p=gnupg.git;a=shortlog;h=refs/heads/master
-.. _here: ./DETAILS.html
+.. _here: ./_static/DETAILS.html
