@@ -7,12 +7,12 @@
 #           © 2008-2012 Vinay Sajip
 #           © 2005 Steve Traugott
 #           © 2004 A.M. Kuchling
-# 
+#
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option)
 # any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
@@ -78,11 +78,11 @@ def import_ownertrust(self, trustdb=None):
 def fix_trustdb(cls, trustdb=None):
     """Attempt to repair a broken trustdb.gpg file.
 
-    GnuPG>=2.0.x has this magical-seeming flag: '--fix-trustdb'. You'd think
+    GnuPG>=2.0.x has this magical-seeming flag: `--fix-trustdb`. You'd think
     it would fix the the trustdb. Hah! It doesn't. Here's what it does
     instead:
 
-    (python-gnupg)∃!isisⒶwintermute:(testing/digest-algo *$=)~/code/python-gnupg ∴ gpg2 --fix-trustdb
+    (python-gnupg)∃!isisⒶwintermute:(testing/digest-algo)~/code/python-gnupg ∴ gpg2 --fix-trustdb
     gpg: You may try to re-create the trustdb using the commands:
     gpg:   cd ~/.gnupg
     gpg:   gpg2 --export-ownertrust > otrust.tmp

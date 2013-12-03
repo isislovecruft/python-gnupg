@@ -83,3 +83,7 @@ gpg
 # setuptools/distribute files:
 PKG-INFO
 MANIFEST
+
+# sphinx default build
+docs/_build
+docs/_static
