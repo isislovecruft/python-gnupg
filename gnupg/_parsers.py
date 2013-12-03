@@ -50,7 +50,7 @@ def _check_keyserver(location):
                          should contain the desired keyserver protocol which
                          is supported by the keyserver, for example, the
                          default is ``'hkp://subkeys.pgp.net'``.
-    :rtype: str or None
+    :rtype: :obj:`str` or :obj:`None`
     :returns: A string specifying the protocol and keyserver hostname, if the
               checks passed. If not, returns None.
     """
@@ -73,10 +73,11 @@ def _check_keyserver(location):
 def _check_preferences(prefs, pref_type=None):
     """Check cipher, digest, and compression preference settings.
 
-    MD5 is not allowed. This is not 1994.[0] SHA1 is allowed grudgingly.[1]
+    MD5 is not allowed. This is `not 1994`__. SHA1 is allowed_ grudgingly_.
 
-    [0]: http://www.cs.colorado.edu/~jrblack/papers/md5e-full.pdf
-    [1]: http://eprint.iacr.org/2008/469.pdf
+    __ http://www.cs.colorado.edu/~jrblack/papers/md5e-full.pdf
+    .. _allowed: http://eprint.iacr.org/2008/469.pdf
+    .. _grudgingly: https://www.schneier.com/blog/archives/2012/10/when_will_we_se.html
     """
     if prefs is None: return
 
@@ -114,8 +115,8 @@ def _check_preferences(prefs, pref_type=None):
     return allowed
 
 def _fix_unsafe(shell_input):
-    """Find characters used to escape from a string into a shell, and wrap them
-    in quotes if they exist. Regex pilfered from python-3.x shlex module.
+    """Find characters used to escape from a string into a shell, and wrap them in
+    quotes if they exist. Regex pilfered from Python3 :mod:`shlex` module.
 
     :param str shell_input: The input intended for the GnuPG process.
     """
@@ -160,11 +161,15 @@ def _is_allowed(input):
                              class and its name will need to be added to this
                              set.
 
-    :rtype: Exception or str
-    :raise: :exc:UsageError if ``_allowed`` is not a subset of ``_possible``.
-            ProtectedOption if ``input`` is not in the set ``_allowed``.
-    :return: The original parameter ``input``, unmodified and unsanitized,
-             if no errors occur.
+    :raises: :exc:`UsageError` if **input** is not a subset of the hard-coded
+             set of all GnuPG options in :func:`_get_all_gnupg_options`.
+
+             :exc:`ProtectedOption` if **input** is not in the set of allowed
+             options.
+
+    :rtype: str
+    :return: The original **input** parameter, unmodified and unsanitized, if
+             no errors occur.
     """
     gnupg_options = _get_all_gnupg_options()
     allowed = _get_options_group("allowed")
@@ -219,12 +224,12 @@ def _is_hex(string):
 def _is_string(thing):
     """Python character arrays are a mess.
 
-    If Python2, check if ``thing`` is a ``unicode()`` or ``str()``.
-    If Python3, check if ``thing`` is a ``str()``.
+    If Python2, check if **thing** is an :obj:`unicode` or a :obj:`str`.
+    If Python3, check if **thing** is a :obj:`str`.
 
     :param thing: The thing to check.
-    :returns: ``True`` if ``thing`` is a "string" according to whichever
-              version of Python we're running in.
+    :returns: ``True`` if **thing** is a string according to whichever version
+              of Python we're running in.
     """
     if _util._py3k: return isinstance(thing, str)
     else: return isinstance(thing, basestring)
@@ -237,18 +242,20 @@ def _sanitise(*args):
     sanitised, allowed options.
 
     Each new option that we support that is not a boolean, but instead has
-    some extra inputs, i.e. "--encrypt-file foo.txt", will need some basic
-    safety checks added here.
+    some additional inputs following it, i.e. "--encrypt-file foo.txt", will
+    need some basic safety checks added here.
 
     GnuPG has three-hundred and eighteen commandline flags. Also, not all
     implementations of OpenPGP parse PGP packets and headers in the same way,
     so there is added potential there for messing with calls to GPG.
 
-    For information on the PGP message format specification, see:
-        https://www.ietf.org/rfc/rfc1991.txt
+    For information on the PGP message format specification, see
+    :rfc:`1991`.
 
     If you're asking, "Is this *really* necessary?": No, not really -- we could
-    just do a check as described here: https://xkcd.com/1181/
+    just follow the security precautions recommended by `this xkcd`__.
+
+     __ https://xkcd.com/1181/
 
     :param str args: (optional) The boolean arguments which will be passed to
                      the GnuPG process.
@@ -259,22 +266,23 @@ def _sanitise(*args):
     ## see TODO file, tag :cleanup:sanitise:
 
     def _check_option(arg, value):
-        """
-        Check that a single :param:arg is an allowed option. If it is allowed,
-        quote out any escape characters in :param:values, and add the pair to
-        :ivar:sanitised.
+        """Check that a single ``arg`` is an allowed option.
+
+        If it is allowed, quote out any escape characters in ``value``, and
+        add the pair to :ivar:`sanitised`. Otherwise, drop them.
 
         :param str arg: The arguments which will be passed to the GnuPG
                         process, and, optionally their corresponding values.
                         The values are any additional arguments following the
-                        GnuPG option or flag. For example, if we wanted to pass
-                        "--encrypt --recipient isis@leap.se" to gpg, then
-                        "--encrypt" would be an arg without a value, and
-                        "--recipient" would also be an arg, with a value of
-                        "isis@leap.se".
+                        GnuPG option or flag. For example, if we wanted to
+                        pass ``"--encrypt --recipient isis@leap.se"`` to
+                        GnuPG, then ``"--encrypt"`` would be an arg without a
+                        value, and ``"--recipient"`` would also be an arg,
+                        with a value of ``"isis@leap.se"``.
+
         :ivar list checked: The sanitised, allowed options and values.
         :rtype: str
-        :returns: A string of the items in ``checked`` delimited by spaces.
+        :returns: A string of the items in ``checked``, delimited by spaces.
         """
         checked = str()
         none_options        = _get_options_group("none_options")
@@ -573,21 +581,22 @@ def _get_all_gnupg_options():
 
     This is hardcoded within a local scope to reduce the chance of a tampered
     GnuPG binary reporting falsified option sets, i.e. because certain options
-    (namedly the '--no-options' option, which prevents the usage of gpg.conf
+    (namedly the ``--no-options`` option, which prevents the usage of gpg.conf
     files) are necessary and statically specified in
-    :meth:`gnupg.GPG._makeargs`, if the inputs into Python are already
-    controlled, and we were to summon the GnuPG binary to ask it for its
-    options, it would be possible to receive a falsified options set missing
-    the '--no-options' option in response. This seems unlikely, and the method
-    is stupid and ugly, but at least we'll never have to debug whether or not
-    an option *actually* disappeared in a different GnuPG version, or some
-    funny business is happening.
+    :meth:`gnupg._meta.GPGBase._make_args`, if the inputs into Python are
+    already controlled, and we were to summon the GnuPG binary to ask it for
+    its options, it would be possible to receive a falsified options set
+    missing the ``--no-options`` option in response. This seems unlikely, and
+    the method is stupid and ugly, but at least we'll never have to debug
+    whether or not an option *actually* disappeared in a different GnuPG
+    version, or some funny business is happening.
 
     These are the options as of GnuPG 1.4.12; the current stable branch of the
     2.1.x tree contains a few more -- if you need them you'll have to add them
     in here.
 
-    :ivar frozenset gnupg_options: All known GPG options and flags.
+    :type gnupg_options: frozenset
+    :ivar gnupg_options: All known GPG options and flags.
     :rtype: frozenset
     :returns: ``gnupg_options``
     """
@@ -790,8 +799,8 @@ def progress(status_code):
 class GenKey(object):
     """Handle status messages for key generation.
 
-    Calling the GenKey.__str__() method of this class will return the
-    generated key's fingerprint, or a status string explaining the results.
+    Calling the ``__str__()`` method of this class will return the generated
+    key's fingerprint, or a status string explaining the results.
     """
     def __init__(self, gpg):
         self._gpg = gpg
@@ -802,11 +811,13 @@ class GenKey(object):
         self.status = None
         self.subkey_created = False
         self.primary_created = False
-        #: This will store the filename of the key's public keyring if
-        #: :meth:`GPG.gen_key_input` was called with ``separate_keyring=True``
+        #: This will store the key's public keyring filename, if
+        #: :meth:`~gnupg.GPG.gen_key_input` was called with
+        #: ``separate_keyring=True``.
         self.keyring = None
-        #: This will store the filename of the key's secret keyring if
-        #: :meth:`GPG.gen_key_input` was called with ``separate_keyring=True``
+        #: This will store the key's secret keyring filename, if :
+        #: :meth:`~gnupg.GPG.gen_key_input` was called with
+        #: ``separate_keyring=True``.
         self.secring = None
 
     def __nonzero__(self):
@@ -826,7 +837,7 @@ class GenKey(object):
     def _handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
-        :raises: :exc:`ValueError` if the status message is unknown.
+        :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
         if key in ("GOOD_PASSPHRASE"):
             pass
@@ -863,7 +874,7 @@ class DeleteResult(object):
     def _handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
-        :raises: :exc:`ValueError` if the status message is unknown.
+        :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
         if key == "DELETE_PROBLEM":
             self.status = self.problem_reason.get(value, "Unknown error: %r"
@@ -908,7 +919,7 @@ class Sign(object):
     def _handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
-        :raises: :exc:`ValueError` if the status message is unknown.
+        :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
         if key in ("USERID_HINT", "NEED_PASSPHRASE", "BAD_PASSPHRASE",
                    "GOOD_PASSPHRASE", "BEGIN_SIGNING", "CARDCTRL",
@@ -1040,7 +1051,7 @@ class ImportResult(object):
     def _handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
-        :raises: :exc:`ValueError` if the status message is unknown.
+        :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
         if key == "IMPORTED":
             # this duplicates info we already see in import_ok & import_problem
@@ -1186,7 +1197,7 @@ class Verify(object):
     def _handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
-        :raises: :exc:`ValueError` if the status message is unknown.
+        :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
         if key in self.TRUST_LEVELS:
             self.trust_text = key
@@ -1281,7 +1292,7 @@ class Crypt(Verify):
     def _handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
-        :raises: :exc:`ValueError` if the status message is unknown.
+        :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
         if key in ("ENC_TO", "USERID_HINT", "GOODMDC", "END_DECRYPTION",
                    "BEGIN_SIGNING", "NO_SECKEY", "ERROR", "NODATA",
@@ -1348,7 +1359,7 @@ class ListPackets(object):
     def _handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
-        :raises: :exc:`ValueError` if the status message is unknown.
+        :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
         if key == 'NODATA':
             self.status = nodata(value)
