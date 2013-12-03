@@ -27,6 +27,7 @@ from time       import mktime
 
 import codecs
 import encodings
+import exceptions
 import os
 import psutil
 import threading
@@ -252,7 +253,8 @@ def _find_binary(binary=None):
     our process real uid has exec permissions.
 
     :param str binary: The path to the GnuPG binary.
-    :raises: :exc:RuntimeError if it appears that GnuPG is not installed.
+    :raises: :exc:`~exceptions.RuntimeError` if it appears that GnuPG is not
+             installed.
     :rtype: str
     :returns: The absolute path to the GnuPG binary to use, if no exceptions
               occur.
@@ -516,7 +518,7 @@ def _which(executable, flags=os.X_OK):
 def _write_passphrase(stream, passphrase, encoding):
     """Write the passphrase from memory to the GnuPG process' stdin.
 
-    :type stream: file, :class:BytesIO, or :class:StringIO
+    :type stream: file, :class:`~io.BytesIO`, or :class:`~io.StringIO`
     :param stream: The input file descriptor to write the password to.
     :param str passphrase: The passphrase for the secret key material.
     :param str encoding: The data encoding expected by GnuPG. Usually, this
