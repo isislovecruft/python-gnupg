@@ -26,6 +26,7 @@ from __future__ import absolute_import
 import atexit
 import codecs
 import encodings
+import exceptions
 ## For AOS, the locale module will need to point to a wrapper around the
 ## java.util.Locale class.
 ## See https://code.patternsinthevoid.net/?p=android-locale-hack.git
@@ -50,6 +51,10 @@ class GPGMeta(type):
     Detects running gpg-agent processes and the presence of a pinentry
     program, and disables pinentry so that python-gnupg can write the
     passphrase to the controlled GnuPG process without killing the agent.
+
+    :attr _agent_proc: If a :program:`gpg-agent` process is currently running
+                       for the effective userid, then **_agent_proc** will be
+                       set to a ``psutil.Process`` for that process.
     """
 
     def __new__(cls, name, bases, attrs):
@@ -67,7 +72,7 @@ class GPGMeta(type):
 
         If there is a matching gpg-agent process, set a :class:`psutil.Process`
         instance containing the gpg-agent process' information to
-        :attr:`GPG._agent_proc`.
+        ``cls._agent_proc``.
 
         :returns: True if there exists a gpg-agent process running under the
                   same effective user ID as that of this program. Otherwise,
@@ -85,9 +90,13 @@ class GPGMeta(type):
 
 
 class GPGBase(object):
-    """Base class for property storage and to control process
-    initialisation."""
+    """Base class for storing properties and controlling process initialisation.
 
+    :const _result_map: A *dict* containing classes from
+                        :mod:`~gnupg._parsers`, used for parsing results
+                        obtained from GnuPG commands.
+    :const _decode_errors: How to handle encoding errors.
+    """
     __metaclass__  = GPGMeta
     _decode_errors = 'strict'
     _result_map    = { 'crypt':    _parsers.Crypt,
@@ -102,7 +111,28 @@ class GPGBase(object):
     def __init__(self, binary=None, home=None, keyring=None, secring=None,
                  use_agent=False, default_preference_list=None,
                  verbose=False, options=None):
+        """Create a ``GPGBase``.
 
+        This class is used to set up properties for controlling the behaviour
+        of configuring various options for GnuPG, such as setting GnuPG's
+        **homedir** , and the paths to its **binary** and **keyring** .
+
+        :const binary: (:obj:`str`) The full path to the GnuPG binary.
+
+        :ivar homedir: (:class:`~gnupg._util.InheritableProperty`) The full
+                       path to the current setting for the GnuPG
+                       ``--homedir``.
+
+        :ivar _generated_keys: (:class:`~gnupg._util.InheritableProperty`)
+                               Controls setting the directory for storing any
+                               keys which are generated with
+                               :meth:`~gnupg.GPG.gen_key`.
+
+        :ivar str keyring: The filename in **homedir** to use as the keyring
+                           file for public keys.
+        :ivar str secring: The filename in **homedir** to use as the keyring
+                           file for secret keys.
+        """
         self.binary  = _util._find_binary(binary)
         self.homedir = home if home else _util._conf
         pub = _parsers._fix_unsafe(keyring) if keyring else 'pubring.gpg'
@@ -153,15 +183,14 @@ class GPGBase(object):
                 self.__remove_path__('pinentry')
 
     def __remove_path__(self, prog=None, at_exit=True):
-        """Remove a the directories containing a program from the system's
-        ``$PATH``. If :attr:`GPG.binary` is in a directory being removed, it
-        is symlinked to './gpg'
+        """Remove the directories containing a program from the system's
+        ``$PATH``. If ``GPGBase.binary`` is in a directory being removed, it
+        is linked to :file:'./gpg' in the current directory.
 
         :param str prog: The program to remove from ``$PATH``.
-
         :param bool at_exit: Add the program back into the ``$PATH`` when the
                              Python interpreter exits, and delete any symlinks
-                             to :attr:`GPG.binary` which were created.
+                             to ``GPGBase.binary`` which were created.
         """
         #: A list of ``$PATH`` entries which were removed to disable pinentry.
         self._removed_path_entries = []
@@ -221,7 +250,7 @@ class GPGBase(object):
 
             @staticmethod
             def update_path(environment, path):
-                """Add paths to the string at os.environ['PATH'].
+                """Add paths to the string at ``os.environ['PATH']``.
 
                 :param str environment: The environment mapping to update.
                 :param list path: A list of strings to update the PATH with.
@@ -269,7 +298,7 @@ class GPGBase(object):
 
         Note that "original state" does not mean the default preference
         list for whichever version of GnuPG is being used. It means the
-        default preference list defined by :attr:`GPGBase._preferences`.
+        default preference list defined by :attr:`GPGBase._prefs`.
 
         Using BZIP2 is avoided due to not interacting well with some versions
         of GnuPG>=2.0.0.
@@ -323,8 +352,8 @@ class GPGBase(object):
         :param str directory: A relative or absolute path to the directory to
                             use for storing/accessing GnuPG's files, including
                             keyrings and the trustdb.
-        :raises: :exc:`RuntimeError` if unable to find a suitable directory to
-            use.
+        :raises: :exc:`~exceptions.RuntimeError` if unable to find a suitable
+                 directory to use.
         """
         if not directory:
             log.debug("GPGBase._homedir_setter(): Using default homedir: '%s'"
@@ -364,17 +393,18 @@ class GPGBase(object):
     def _generated_keys_setter(self, directory):
         """Set the directory for storing generated keys.
 
-        If unspecified, use $GNUPGHOME/generated-keys. If specified, ensure
-        that the ``directory`` does not contain various shell escape
-        characters. If ``directory`` is not found, it will be automatically
-        created. Lastly, the ``direcory`` will be checked that the EUID has
-        read and write permissions for it.
+        If unspecified, use
+        :meth:`~gnupg._meta.GPGBase.homedir`/generated-keys. If specified,
+        ensure that the ``directory`` does not contain various shell escape
+        characters. If ``directory`` isn't found, it will be automatically
+        created. Lastly, the ``directory`` will be checked to ensure that the
+        current EUID has read and write permissions for it.
 
         :param str directory: A relative or absolute path to the directory to
              use for storing/accessing GnuPG's files, including keyrings and
              the trustdb.
-        :raises: :exc:`RuntimeError` if unable to find a suitable directory to
-             use.
+        :raises: :exc:`~exceptions.RuntimeError` if unable to find a suitable
+             directory to use.
         """
         if not directory:
             directory = os.path.join(self.homedir, 'generated-keys')
@@ -406,10 +436,11 @@ class GPGBase(object):
                                                 _generated_keys_setter)
 
     def _make_args(self, args, passphrase=False):
-        """Make a list of command line elements for GPG. The value of ``args``
-        will be appended only if it passes the checks in
-        :func:`parsers._sanitise`. The ``passphrase`` argument needs to be True
-        if a passphrase will be sent to GPG, else False.
+        """Make a list of command line elements for GPG.
+
+        The value of ``args`` will be appended only if it passes the checks in
+        :func:`gnupg._parsers._sanitise`. The ``passphrase`` argument needs to
+        be True if a passphrase will be sent to GnuPG, else False.
 
         :param list args: A list of strings of options and flags to pass to
                           ``GPG.binary``. This is input safe, meaning that
@@ -488,12 +519,13 @@ class GPGBase(object):
         Calls methods on the response object for each valid token found, with
         the arg being the remainder of the status line.
 
-        :param stream: A byte-stream, file handle, or :class:`subprocess.PIPE`
-                       to parse the for status codes from the GnuPG process.
+        :param stream: A byte-stream, file handle, or a
+                       :data:`subprocess.PIPE` for parsing the status codes
+                       from the GnuPG process.
 
-        :param result: The result parser class from :mod:`_parsers` with which
-                       to call ``handle_status`` and parse the output of
-                       ``stream``.
+        :param result: The result parser class from :mod:`~gnupg._parsers` ―
+                       the ``handle_status()`` method of that class will be
+                       called in order to parse the output of ``stream``.
         """
         lines = []
         while True:
@@ -534,8 +566,8 @@ class GPGBase(object):
         and stored as ``result.data``.
 
         :param stream: An open file-like object to read() from.
-        :param result: An instance of one of the result parsing classes from
-            :attr:`GPGBase._result_mapping`.
+        :param result: An instance of one of the :ref:`result parsing classes
+            <parsers>` from :const:`~gnupg._meta.GPGBase._result_map`.
         """
         chunks = []
         log.debug("Reading data from stream %r..." % stream.__repr__())
@@ -681,59 +713,55 @@ class GPGBase(object):
                  cipher_algo='AES256',
                  digest_algo='SHA512',
                  compress_algo='ZLIB'):
-        """Encrypt the message read from the file-like object ``data``.
+        """Encrypt the message read from the file-like object **data**.
 
         :param str data: The file or bytestream to encrypt.
 
-        :param recipients: The recipients to encrypt to. Recipients must be
-                           specified keyID/fingerprint. Care should be taken
-                           in Python2.x to make sure that the given fingerprint
-                           is in fact a string and not a unicode object.
-        :type recipients: str
+        :param str recipients: The recipients to encrypt to. Recipients must
+                               be specified keyID/fingerprint.
 
-        :param default_key: The keyID/fingerprint of the key to use for
-                            signing. If given, ``data`` will be encrypted
-                            and signed.
-        :type default_key: str
+        .. warning:: Care should be taken in Python2 to make sure that the
+                     given fingerprints for **recipients** are in fact strings
+                     and not unicode objects.
 
-        :param passphrase: If given, and ``default_key`` is also given,
-                           use this passphrase to unlock the secret portion of
-                           the ``default_key`` to sign the encrypted ``data``.
-                           Otherwise, if ``default_key`` is not given, but
-                           ``symmetric=True``, then use this passphrase as the
-                           passphrase for symmetric encryption. Signing and
-                           symmetric encryption should *not* be combined when
-                           sending the ``data`` to other recipients, else the
-                           passphrase to the secret key would be shared with
-                           them.
-        :type passphrase: str
+        :param str default_key: The keyID/fingerprint of the key to use for
+                                signing. If given, **data** will be encrypted
+                                *and* signed.
 
-        :param armor: If True, ascii armor the output; otherwise, the output
-                      will be in binary format. (Default: True)
-        :type armor: bool
+        :param str passphrase: If given, and **default_key** is also given,
+                               use this passphrase to unlock the secret
+                               portion of the **default_key** to sign the
+                               encrypted **data**.  Otherwise, if
+                               **default_key** is not given, but **symmetric**
+                               is ``True``, then use this passphrase as the
+                               passphrase for symmetric encryption. Signing
+                               and symmetric encryption should *not* be
+                               combined when sending the **data** to other
+                               recipients, else the passphrase to the secret
+                               key would be shared with them.
 
-        :param encrypt: If True, encrypt the ``data`` using the ``recipients``
-                        public keys. (Default: True)
-        :type encrypt: bool
+        :param bool armor: If True, ascii armor the output; otherwise, the
+                           output will be in binary format. (Default: True)
 
-        :param symmetric: If True, encrypt the ``data`` to ``recipients``
-                          using a symmetric key. See the ``passphrase``
-                          parameter. Symmetric encryption and public key
-                          encryption can be used simultaneously, and will
-                          result in a ciphertext which is decryptable with
-                          either the symmetric ``passphrase`` or one of the
-                          corresponding private keys.
-        :type symmetric: bool
+        :param bool encrypt: If True, encrypt the **data** using the
+                             **recipients** public keys. (Default: True)
 
-        :param always_trust: If True, ignore trust warnings on recipient
-                             keys. If False, display trust warnings.
-                             (default: True)
-        :type always_trust: bool
+        :param bool symmetric: If True, encrypt the **data** to **recipients**
+                               using a symmetric key. See the **passphrase**
+                               parameter. Symmetric encryption and public key
+                               encryption can be used simultaneously, and will
+                               result in a ciphertext which is decryptable
+                               with either the symmetric **passphrase** or one
+                               of the corresponding private keys.
 
-        :param output: The output file to write to. If not specified, the
-                       encrypted output is returned, and thus should be
-                       stored as an object in Python. For example:
-        :type output: str
+        :param bool always_trust: If True, ignore trust warnings on
+                                  **recipients** keys. If False, display trust
+                                  warnings. (default: True)
+
+        :param str output: The output file to write to. If not specified, the
+                           encrypted output is returned, and thus should be
+                           stored as an object in Python. For example:
+
 
         >>> import shutil
         >>> import gnupg
@@ -756,21 +784,19 @@ class GPGBase(object):
 
         :param str cipher_algo: The cipher algorithm to use. To see available
                                 algorithms with your version of GnuPG, do:
-                                ``$ gpg --with-colons --list-config
-                                ciphername``.
-                                The default ``cipher_algo``, if unspecified,
-                                is ``'AES256'``.
-        :type cipher_algo: str
+                                :command:`$ gpg --with-colons --list-config
+                                ciphername`. The default **cipher_algo**, if
+                                unspecified, is ``'AES256'``.
 
-        :param digest_algo: The hash digest to use. Again, to see which
-                            hashes your GnuPG is capable of using, do:
-                            ``$ gpg --with-colons --list-config digestname``.
-                            The default, if unspecified, is ``'SHA512'``.
-        :type digest_algo: str
+        :param str digest_algo: The hash digest to use. Again, to see which
+                                hashes your GnuPG is capable of using, do:
+                                :command:`$ gpg --with-colons --list-config
+                                digestname`.  The default, if unspecified, is
+                                ``'SHA512'``.
 
-        :param compress_algo: The compression algorithm to use. Can be one
-        :type compress_algo: str
-            of ``'ZLIB'``, ``'BZIP2'``, ``'ZIP'``, or ``'Uncompressed'``.
+        :param str compress_algo: The compression algorithm to use. Can be one
+                                  of ``'ZLIB'``, ``'BZIP2'``, ``'ZIP'``, or
+                                  ``'Uncompressed'``.
         """
         args = []
 
