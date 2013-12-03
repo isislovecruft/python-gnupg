@@ -2,6 +2,11 @@ SHELL=/bin/sh
 TESTDIR=./gnupg/test
 TESTHANDLE=$(TESTDIR)/test_gnupg.py
 FILES=$(SHELL find ./gnupg/ -name "*.py" -printf "%p,")
+PKG_NAME=python-gnupg
+DOC_DIR=docs
+DOC_BUILD_DIR:=$(DOC_DIR)/_build
+DOC_HTML_DIR:=$(DOC_BUILD_DIR)/html
+DOC_BUILD_ZIP:=$(PKG_NAME)-docs.zip
 
 .PHONY=all
 all: uninstall install test
@@ -73,11 +78,15 @@ py3k-uninstall: uninstall
 reinstall: uninstall install
 py3k-reinstall: py3k-uninstall py3k-install
 
-cleandocs:
-	sphinx-apidoc -F -A "Isis Agora Lovecruft" -H "python-gnupg" \
-		-o docs gnupg/ tests/
+docs-clean:
+	-rm -rf $(DOC_BUILD_DIR)
 
-docs:
-	cd docs && \
-		make clean && \
-		make html
+docs-completely-new:
+	sphinx-apidoc -F -A "Isis Agora Lovecruft" -H "python-gnupg" -o $(DOC_DIR) gnupg/ tests/
+
+docs-html:
+	cd $(DOC_DIR) && make clean && make html
+
+docs-zipfile: docs-html
+	cd $(DOC_HTML_DIR) && { find . -name '*' | zip -@ -v ../$(DOC_BUILD_ZIP) ;};
+	@echo "Built documentation in $(DOC_BUILD_DIR)/$(DOC_BUILD_ZIP)"
