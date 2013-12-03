@@ -23,7 +23,10 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import setuptools
+import os
 import versioneer
+
+
 versioneer.versionfile_source = 'gnupg/_version.py'
 versioneer.versionfile_build  = 'gnupg/_version.py'
 versioneer.tag_prefix = ''
@@ -32,6 +35,44 @@ versioneer.parentdir_prefix = 'gnupg-'
 __author__ = "Isis Agora Lovecruft"
 __contact__ = 'isis@patternsinthevoid.net'
 __url__ = 'https://github.com/isislovecruft/python-gnupg'
+
+
+def get_requirements():
+    """Extract the list of requirements from our requirements.txt.
+
+    :rtype: 2-tuple
+    :returns: Two lists, the first is a list of requirements in the form of
+        pkgname==version. The second is a list of URIs or VCS checkout strings
+        which specify the dependency links for obtaining a copy of the
+        requirement.
+    """
+    requirements_file = os.path.join(os.getcwd(), 'requirements.txt')
+    requirements = []
+    links=[]
+    try:
+        with open(requirements_file) as reqfile:
+            for line in reqfile.readlines():
+                line = line.strip()
+                if line.startswith('#'):
+                    continue
+                elif line.startswith(
+                        ('https://', 'git://', 'hg://', 'svn://')):
+                    links.append(line)
+                else:
+                    requirements.append(line)
+
+    except (IOError, OSError) as error:
+        print(error)
+
+    return requirements, links
+
+
+requires, deplinks = get_requirements()
+print('Found requirements:')
+[print('\t%s' % name) for name in requires]
+
+print('Found dependency links:')
+[print('\t%s' % uri) for uri in deplinks]
 
 
 setuptools.setup(
@@ -62,7 +103,8 @@ greater.
     scripts=['versioneer.py'],
     test_suite='gnupg.test.test_gnupg',
 
-    install_requires=['psutil>=0.5.1'],
+    install_requires=requires,
+    dependency_links=deplinks,
     extras_require={'docs': ["Sphinx>=1.1", "repoze.sphinx"]},
 
     platforms="Linux, BSD, OSX, Windows",
