@@ -79,11 +79,6 @@ def get_requirements():
 
 
 requires, deplinks = get_requirements()
-print('Found requirements:')
-[print('\t%s' % name) for name in requires]
-
-print('Found dependency links:')
-[print('\t%s' % uri) for uri in deplinks]
 
 
 setuptools.setup(
