@@ -23,6 +23,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import setuptools
+import sys
 import os
 import versioneer
 
@@ -36,6 +37,12 @@ __author__ = "Isis Agora Lovecruft"
 __contact__ = 'isis@patternsinthevoid.net'
 __url__ = 'https://github.com/isislovecruft/python-gnupg'
 
+
+def python26():
+    """Returns True if we're running on Python2.6."""
+    if sys.version[:3] == "2.6":
+        return True
+    return False
 
 def get_requirements():
     """Extract the list of requirements from our requirements.txt.
@@ -63,6 +70,10 @@ def get_requirements():
 
     except (IOError, OSError) as error:
         print(error)
+
+    if python26():
+        # Required to make `collections.OrderedDict` available on Python<=2.6
+        requirements.append('ordereddict==1.1#a0ed854ee442051b249bfad0f638bbec')
 
     return requirements, links
 
