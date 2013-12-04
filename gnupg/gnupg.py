@@ -308,15 +308,19 @@ class GPG(GPGBase):
                 return result
             log.debug('verify_file(): Handling detached verification')
             sig_fh = None
+            data_fh = None
             try:
-                sig_fh = open(sig_file)
+                sig_fh = open(sig_file, 'rb')
+                data_fh = open(file, 'rb')
                 args = ["--verify %s -" % sig_fh.name]
                 proc = self._open_subprocess(args)
-                writer = _util._threaded_copy_data(file, proc.stdin)
-                self._collect_output(proc, result, stdin=proc.stdin)
+                writer = _util._threaded_copy_data(data_fh, proc.stdin)
+                self._collect_output(proc, result, writer, stdin=proc.stdin)
             finally:
                 if sig_fh and not sig_fh.closed:
                     sig_fh.close()
+                if data_fh and not data_fh.closed:
+                    data_fh.close()
         return result
 
     def import_keys(self, key_data):
