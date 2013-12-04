@@ -82,7 +82,7 @@ def fix_trustdb(cls, trustdb=None):
     it would fix the the trustdb. Hah! It doesn't. Here's what it does
     instead::
 
-      (gpg)∃!isisⒶwintermute:(testing/algo)~/code/python-gnupg ∴ gpg2 --fix-trustdb
+      (gpg)~/code/python-gnupg $ gpg2 --fix-trustdb
       gpg: You may try to re-create the trustdb using the commands:
       gpg:   cd ~/.gnupg
       gpg:   gpg2 --export-ownertrust > otrust.tmp
