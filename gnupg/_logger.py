@@ -17,10 +17,7 @@
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
 
-'''log.py
-----------
-Logging module for python-gnupg.
-'''
+'''Logging module for python-gnupg.'''
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -51,17 +48,23 @@ def status(self, message, *args, **kwargs):
 def create_logger(level=logging.NOTSET):
     """Create a logger for python-gnupg at a specific message level.
 
-    :type level: int or str
-    :param level: A string or an integer for the lowest level to log.
-                  Available levels:
-                  int str       description
-                  0   NOTSET    Disable all logging.
-                  9   GNUPG     Log GnuPG's internal status messages.
-                  10  DEBUG     Log module level debuging messages.
-                  20  INFO      Normal user-level messages.
-                  30  WARN      Warning messages.
-                  40  ERROR     Error messages and tracebacks.
-                  50  CRITICAL  Unhandled exceptions and tracebacks.
+    :type level: :obj:`int` or :obj:`str`
+    :param level: A string or an integer for the lowest level to include in
+                  logs.
+
+    **Available levels:**
+
+    ==== ======== ========================================
+    int   str     description
+    ==== ======== ========================================
+    0    NOTSET   Disable all logging.
+    9    GNUPG    Log GnuPG's internal status messages.
+    10   DEBUG    Log module level debuging messages.
+    20   INFO     Normal user-level messages.
+    30   WARN     Warning messages.
+    40   ERROR    Error messages and tracebacks.
+    50   CRITICAL Unhandled exceptions and tracebacks.
+    ==== ======== ========================================
     """
     _test = os.path.join(os.path.join(os.getcwd(), 'gnupg'), 'test')
     _now  = datetime.now().strftime("%Y-%m-%d_%H%M%S")
@@ -86,10 +89,8 @@ def create_logger(level=logging.NOTSET):
 
         formatr = logging.Formatter(_fmt)
         handler.setFormatter(formatr)
-        print("Starting the logger...")
     else:
         handler = NullHandler()
-        print("GnuPG logging disabled...")
 
     log = logging.getLogger('gnupg')
     log.addHandler(handler)

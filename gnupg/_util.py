@@ -17,10 +17,7 @@
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
 
-'''util.py
-----------
-Extra utilities for python-gnupg.
-'''
+'''Extra utilities for python-gnupg.'''
 
 from __future__ import absolute_import
 from datetime   import datetime
@@ -30,6 +27,7 @@ from time       import mktime
 
 import codecs
 import encodings
+import exceptions
 import os
 import psutil
 import threading
@@ -255,7 +253,8 @@ def _find_binary(binary=None):
     our process real uid has exec permissions.
 
     :param str binary: The path to the GnuPG binary.
-    :raises: :exc:RuntimeError if it appears that GnuPG is not installed.
+    :raises: :exc:`~exceptions.RuntimeError` if it appears that GnuPG is not
+             installed.
     :rtype: str
     :returns: The absolute path to the GnuPG binary to use, if no exceptions
               occur.
@@ -304,22 +303,31 @@ def _has_readwrite(path):
     """
     return os.access(path, os.R_OK ^ os.W_OK)
 
-def _is_file(input):
+def _is_file(filename):
     """Check that the size of the thing which is supposed to be a filename has
     size greater than zero, without following symbolic links or using
     :func:os.path.isfile.
 
-    :param input: An object to check.
+    :param filename: An object to check.
     :rtype: bool
-    :returns: True if :param:input is file-like, False otherwise.
+    :returns: True if **filename** is file-like, False otherwise.
     """
     try:
-        assert os.lstat(input).st_size > 0, "not a file: %s" % input
-    except (AssertionError, TypeError, IOError, OSError) as err:
-        log.error(err.message, exc_info=1)
-        return False
+        statinfo = os.lstat(filename)
+        log.debug("lstat(%r) with type=%s gave us %r"
+                  % (repr(filename), type(filename), repr(statinfo)))
+        if not (statinfo.st_size > 0):
+            raise ValueError("'%s' appears to be an empty file!" % filename)
+    except OSError as oserr:
+        log.error(oserr)
+        if filename == '-':
+            log.debug("Got '-' for filename, assuming sys.stdin...")
+            return True
+    except (ValueError, TypeError, IOError) as err:
+        log.error(err)
     else:
         return True
+    return False
 
 def _is_stream(input):
     """Check that the input is a byte stream.
@@ -519,7 +527,7 @@ def _which(executable, flags=os.X_OK):
 def _write_passphrase(stream, passphrase, encoding):
     """Write the passphrase from memory to the GnuPG process' stdin.
 
-    :type stream: file, :class:BytesIO, or :class:StringIO
+    :type stream: file, :class:`~io.BytesIO`, or :class:`~io.StringIO`
     :param stream: The input file descriptor to write the password to.
     :param str passphrase: The passphrase for the secret key material.
     :param str encoding: The data encoding expected by GnuPG. Usually, this
