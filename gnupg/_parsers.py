@@ -25,9 +25,9 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 try:
-    import collections
+    from collections import OrderedDict
 except ImportError:
-    import ordereddict as collections
+    from ordereddict import OrderedDict
 
 import re
 
@@ -1027,7 +1027,7 @@ class ImportResult(object):
     _fields = '''count no_user_id imported imported_rsa unchanged
     n_uids n_subk n_sigs n_revoc sec_read sec_imported sec_dups
     not_imported'''.split()
-    _counts = collections.OrderedDict(
+    _counts = OrderedDict(
         zip(_fields, [int(0) for x in range(len(_fields))]) )
 
     #: A list of strings containing the fingerprints of the GnuPG keyIDs
