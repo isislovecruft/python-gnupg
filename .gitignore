@@ -86,3 +86,6 @@ MANIFEST
 
 # sphinx default build
 docs/_build
+
+# ignore keys which have been generated example scripts:
+8192-bit-key/*
