@@ -883,7 +883,7 @@ generate keys. Please see
     def encrypt(self, data, recipients, **kwargs):
         """Encrypt the message contained in ``data`` to ``recipients``.
 
-        :param str data: The file or bytestream to encrypt.
+        :param str data: The bytestream to encrypt.
 
         :param list|str recipients: The recipients to encrypt to. Recipients must
             be specified keyID/fingerprint. Care should be taken in Python2.x
@@ -962,6 +962,87 @@ generate keys. Please see
         stream.close()
         return result
 
+    def encrypt_file(self, file, recipients, **kwargs):
+        """Encrypt the file ``file`` to ``recipients``.
+
+        :param str file: The file to encrypt.
+
+        :param list|str recipients: The recipients to encrypt to. Recipients must
+            be specified keyID/fingerprint. Care should be taken in Python2.x
+            to make sure that the given fingerprint is in fact a string and
+            not a unicode object.
+
+        :param str default_key: The keyID/fingerprint of the key to use for
+            signing. If given, ``data`` will be encrypted and signed.
+
+        :param str passphrase: If given, and ``default_key`` is also given,
+            use this passphrase to unlock the secret portion of the
+            ``default_key`` to sign the encrypted ``data``. Otherwise, if
+            ``default_key`` is not given, but ``symmetric=True``, then use
+            this passphrase as the passphrase for symmetric
+            encryption. Signing and symmetric encryption should *not* be
+            combined when sending the ``data`` to other recipients, else the
+            passphrase to the secret key would be shared with them.
+
+        :param bool armor: If True, ascii armor the output; otherwise, the
+            output will be in binary format. (Default: True)
+
+        :param bool encrypt: If True, encrypt the ``data`` using the
+            ``recipients`` public keys. (Default: True)
+
+        :param bool symmetric: If True, encrypt the ``data`` to ``recipients``
+            using a symmetric key. See the ``passphrase`` parameter. Symmetric
+            encryption and public key encryption can be used simultaneously,
+            and will result in a ciphertext which is decryptable with either
+            the symmetric ``passphrase`` or one of the corresponding private
+            keys.
+
+        :param bool always_trust: If True, ignore trust warnings on recipient
+            keys. If False, display trust warnings.  (default: True)
+
+        :param str output: The output file to write to. If not specified, the
+            encrypted output is returned, and thus should be stored as an
+            object in Python. For example:
+
+        >>> import shutil
+        >>> import gnupg
+        >>> if os.path.exists("doctests"):
+        ...     shutil.rmtree("doctests")
+        >>> gpg = gnupg.GPG(homedir="doctests")
+        >>> key_settings = gpg.gen_key_input(key_type='RSA',
+        ...     key_length=1024,
+        ...     key_usage='ESCA',
+        ...     passphrase='foo')
+        >>> key = gpg.gen_key(key_settings)
+        >>> with open('/tmp/gnupg_plaintext','w') as plaintext_fp:
+        >>>     plaintext_fp.write("The crow flies at midnight.")
+        >>> encrypted = str(gpg.encrypt_file('/tmp/gnupg_plaintext', [key.printprint]))
+        >>> assert not encrypted.isspace()
+        >>> decrypted = str(gpg.decrypt(encrypted))
+        >>> assert not decrypted.isspace()
+        >>> decrypted
+        'The crow flies at midnight.'
+
+
+        :param str cipher_algo: The cipher algorithm to use. To see available
+            algorithms with your version of GnuPG, do:
+            :command:`$ gpg --with-colons --list-config ciphername`.
+            The default ``cipher_algo``, if unspecified, is ``'AES256'``.
+
+        :param str digest_algo: The hash digest to use. Again, to see which
+            hashes your GnuPG is capable of using, do:
+            :command:`$ gpg --with-colons --list-config digestname`.
+            The default, if unspecified, is ``'SHA512'``.
+
+        :param str compress_algo: The compression algorithm to use. Can be one
+            of ``'ZLIB'``, ``'BZIP2'``, ``'ZIP'``, or ``'Uncompressed'``.
+
+        .. seealso:: :meth:`._encrypt`
+        """
+
+        result = self._encrypt(file, recipients, **kwargs)
+        return result
+ 
     def decrypt(self, message, **kwargs):
         """Decrypt the contents of a string or file-like object ``message``.
 
