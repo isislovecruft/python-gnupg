@@ -717,8 +717,8 @@ class GPGBase(object):
 
         :param str data: The file or bytestream to encrypt.
 
-        :param str recipients: The recipients to encrypt to. Recipients must
-                               be specified keyID/fingerprint.
+        :param list|str recipients: The recipients to encrypt to. Recipients
+                               must be specified keyID/fingerprint.
 
         .. warning:: Care should be taken in Python2 to make sure that the
                      given fingerprints for **recipients** are in fact strings
@@ -850,11 +850,11 @@ class GPGBase(object):
                     if isinstance(recp, str):
                         args.append('--recipient %s' % recp)
 
-            elif (not _util._py3k) and isinstance(recp, basestring):
+            elif (not _util._py3k) and isinstance(recipients, basestring):
                 for recp in recipients.split('\x20'):
                     args.append('--recipient %s' % recp)
 
-            elif _util._py3k and isinstance(recp, str):
+            elif _util._py3k and isinstance(recipients, str):
                 for recp in recipients.split(' '):
                     args.append('--recipient %s' % recp)
                     ## ...and now that we've proven py3k is better...

@@ -880,12 +880,12 @@ generate keys. Please see
 
         return out
 
-    def encrypt(self, data, *recipients, **kwargs):
+    def encrypt(self, data, recipients, **kwargs):
         """Encrypt the message contained in ``data`` to ``recipients``.
 
         :param str data: The file or bytestream to encrypt.
 
-        :param str recipients: The recipients to encrypt to. Recipients must
+        :param list|str recipients: The recipients to encrypt to. Recipients must
             be specified keyID/fingerprint. Care should be taken in Python2.x
             to make sure that the given fingerprint is in fact a string and
             not a unicode object.
@@ -933,7 +933,7 @@ generate keys. Please see
         ...     passphrase='foo')
         >>> key = gpg.gen_key(key_settings)
         >>> message = "The crow flies at midnight."
-        >>> encrypted = str(gpg.encrypt(message, key.printprint))
+        >>> encrypted = str(gpg.encrypt(message, [key.printprint]))
         >>> assert encrypted != message
         >>> assert not encrypted.isspace()
         >>> decrypted = str(gpg.decrypt(encrypted))
