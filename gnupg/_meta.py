@@ -803,17 +803,9 @@ class GPGBase(object):
         args = []
 
         if output:
-            if getattr(output, 'fileno', None) is not None:
-                ## avoid overwrite confirmation message
-                pass
-            if getattr(output, 'name', None) is None:
-                if os.path.exists(output):
-                    os.remove(output)
-                args.append('--output %s' % output)
-            else:
-                if os.path.exists(output.name):
-                    os.remove(output.name)
-                args.append('--output %s' % output.name)
+            if os.path.exists(output):
+                os.remove(output)
+            args.append('--output %s' % output)
 
         if armor: args.append('--armor')
         if always_trust: args.append('--always-trust')
