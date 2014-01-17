@@ -717,8 +717,10 @@ class GPGBase(object):
 
         :param str data: The file or bytestream to encrypt.
 
-        :param list|str recipients: The recipients to encrypt to. Recipients
+        :param recipients: The recipient(s) to encrypt to. Recipient(s)
                                must be specified keyID/fingerprint.
+
+        :type recipients: string or list of strings
 
         .. warning:: Care should be taken in Python2 to make sure that the
                      given fingerprints for **recipients** are in fact strings

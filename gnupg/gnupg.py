@@ -885,10 +885,12 @@ generate keys. Please see
 
         :param str data: The bytestream to encrypt.
 
-        :param list|str recipients: The recipients to encrypt to. Recipients must
+        :param recipients: The recipient(s) to encrypt to. Recipient(s) must
             be specified keyID/fingerprint. Care should be taken in Python2.x
             to make sure that the given fingerprint is in fact a string and
             not a unicode object.
+
+        :type recipients: string or list of strings
 
         :param str default_key: The keyID/fingerprint of the key to use for
             signing. If given, ``data`` will be encrypted and signed.
@@ -967,10 +969,12 @@ generate keys. Please see
 
         :param str file: The file to encrypt.
 
-        :param list|str recipients: The recipients to encrypt to. Recipients must
+        :param recipients: The recipient(s) to encrypt to. Recipient(s) must
             be specified keyID/fingerprint. Care should be taken in Python2.x
             to make sure that the given fingerprint is in fact a string and
             not a unicode object.
+
+        :type recipients: string or list of strings
 
         :param str default_key: The keyID/fingerprint of the key to use for
             signing. If given, ``data`` will be encrypted and signed.
