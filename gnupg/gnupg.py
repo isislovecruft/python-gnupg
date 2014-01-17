@@ -880,7 +880,7 @@ generate keys. Please see
 
         return out
 
-    def encrypt(self, data, recipients, **kwargs):
+    def encrypt(self, data, *recipients, **kwargs):
         """Encrypt the message contained in ``data`` to ``recipients``.
 
         :param str data: The bytestream to encrypt.
