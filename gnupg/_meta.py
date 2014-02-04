@@ -106,7 +106,8 @@ class GPGBase(object):
                        'list':     _parsers.ListKeys,
                        'sign':     _parsers.Sign,
                        'verify':   _parsers.Verify,
-                       'packets':  _parsers.ListPackets }
+                       'packets':  _parsers.ListPackets,
+                       'search':   _parsers.SearchKeys }
 
     def __init__(self, binary=None, home=None, keyring=None, secring=None,
                  use_agent=False, default_preference_list=None,
@@ -648,6 +649,51 @@ class GPGBase(object):
         proc = self._open_subprocess(args)
         self._collect_output(proc, result)
         log.debug('recv_keys result: %r', result.__dict__)
+        return result
+
+    def _search_keys(self, names, keyserver=None):
+        """Search for keys on a keyserver.
+
+        Warning: keyservers may return short key ids, long key ids, or
+        fingerprints. This is determined by the keyserver, and, while the spec
+        recommends always returning the longest possible key identifier, it
+        appears most keyservers return short key ids.
+
+        :param str names: Each ``names`` argument should be string specifying
+            a user id (valid ways of describing user IDs are listed in the gpg man
+            page in the section "HOW TO SPECIFY A USER ID"). Multiple names are
+            joined to create the search string for the keyserver.
+        :param str keyserver: The keyserver to search for ``names`` on;
+            defaults to :property:`gnupg.GPG.keyserver`.
+        """
+        if not keyserver:
+            keyserver = self.keyserver
+
+        # Use --batch to get the search results without entering the
+        # interactive step
+        args = ['--batch', '--with-colons',
+                '--keyserver {}'.format(keyserver),
+                '--search-keys {}'.format(names)]
+        log.info('Searching for keys from %s: %s' % (keyserver, names))
+
+        result = self._result_map['search'](self)
+        p = self._open_subprocess(args)
+        # gpg --search-keys produces no status-fd (AFAICT)
+        # Get the search results from stdout
+        self._collect_output(p, result)
+        lines = result.data.decode(self._encoding,
+                                   self._decode_errors).splitlines()
+        valid_keywords = 'pub uid'.split()
+        for line in lines:
+            log.debug("%r", line.rstrip())
+            L = line.strip().split(':')
+            if not L:
+                continue
+            keyword = L[0]
+            if keyword in valid_keywords:
+                getattr(result, keyword)(L)
+
+        log.debug('search_keys result: %r', result)
         return result
 
     def _sign_file(self, file, default_key=None, passphrase=None,

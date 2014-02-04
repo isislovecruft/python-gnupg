@@ -30,6 +30,7 @@ except ImportError:
     import ordereddict as collections
 
 import re
+import datetime
 
 from .      import _util
 from ._util import log
@@ -490,6 +491,7 @@ def _get_options_group(group=None):
                                    '--passphrase-fd',
                                    '--status-fd',
                                    '--verify-options',
+                                   '--search-keys',
                                ])
     #: These have their own parsers and don't really fit into a group
     other_options = frozenset(['--debug-level',
@@ -1383,3 +1385,58 @@ class ListPackets(object):
             pass
         else:
             raise ValueError("Unknown status message: %r" % key)
+
+class SearchKeys(list):
+    """Parse search results from --search-keys
+
+    :type gpg: :class:`gnupg.GPG`
+    :param gpg: An instance of :class:`gnupg.GPG`.
+    """
+
+    # http://tools.ietf.org/html/rfc2440#section-9.1
+    _PK_ALGO_CONSTANTS = {
+        1 : 'RSA (Encrypt or Sign)',
+        2 : 'RSA Encrypt-only',
+        3 : 'RSA Sign-only',
+        16 : 'Elgamal (Encrypt-only)',
+        17 : 'DSA (Digital Signature Standard)',
+        18 : 'Reserved for Elliptic Curve',
+        19 : 'Reserved for ECDSA',
+        20 : 'Elgamal (Encrypt or Sign)',
+        21 : 'Reserved for Diffie-Hellman (X9.42, as defined for IETF-S/MIME)',
+    }
+    _PK_ALGO_CONSTANTS.update(dict.fromkeys(range(100,110),
+                                           'Private/Experimental algorithm'))
+
+    def _convert_ks_date(self, date):
+        if date == '':
+            return None
+        return datetime.datetime.utcfromtimestamp(int(date))
+
+    def __init__(self, gpg):
+        super(SearchKeys, self).__init__()
+        self._gpg = gpg
+        self.curkey = None
+
+    def pub(self, args):
+        self.curkey = dict(
+            keyid=args[1],
+            algo=self._PK_ALGO_CONSTANTS[int(args[2])],
+            keylen=int(args[3]),
+            creationdate=self._convert_ks_date(args[4]),
+            expirationdate=self._convert_ks_date(args[5]),
+            flags=args[6] or None,
+            uids=[],
+        )
+        self.append(self.curkey)
+
+    def uid(self, args):
+        self.curkey['uids'].append(dict(
+            uid=ESCAPE_PATTERN.sub(lambda m: chr(int(m.group(1), 16)), args[1]),
+            creationdate=self._convert_ks_date(args[2]),
+            expirationdate=self._convert_ks_date(args[3]),
+            flags=args[4] or None,
+        ))
+
+    def _handle_status(self, key, value):
+        pass

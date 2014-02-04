@@ -69,7 +69,7 @@ _conf = os.path.join(os.path.join(_user, '.config'), 'python-gnupg')
                                      ## $HOME/.config/python-gnupg
 
 ## Logger is disabled by default
-log = _logger.create_logger(0)
+log = _logger.create_logger(10)
 
 
 def find_encodings(enc=None, system=False):
