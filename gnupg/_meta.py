@@ -715,7 +715,7 @@ class GPGBase(object):
                  compress_algo='ZLIB'):
         """Encrypt the message read from the file-like object **data**.
 
-        :param str data: The file or bytestream to encrypt.
+        :param str data: The file handle or bytestream to encrypt.
 
         :param recipients: The recipient(s) to encrypt to. Recipient(s)
                                must be specified keyID/fingerprint.

@@ -890,7 +890,7 @@ generate keys. Please see
             to make sure that the given fingerprint is in fact a string and
             not a unicode object.
 
-        :type recipients: string or list of strings
+        :type recipients: one or more strings
 
         :param str default_key: The keyID/fingerprint of the key to use for
             signing. If given, ``data`` will be encrypted and signed.
@@ -935,7 +935,7 @@ generate keys. Please see
         ...     passphrase='foo')
         >>> key = gpg.gen_key(key_settings)
         >>> message = "The crow flies at midnight."
-        >>> encrypted = str(gpg.encrypt(message, [key.printprint]))
+        >>> encrypted = str(gpg.encrypt(message, key.fingerprint))
         >>> assert encrypted != message
         >>> assert not encrypted.isspace()
         >>> decrypted = str(gpg.decrypt(encrypted))
@@ -964,17 +964,17 @@ generate keys. Please see
         stream.close()
         return result
 
-    def encrypt_file(self, file, recipients, **kwargs):
+    def encrypt_file(self, file, *recipients, **kwargs):
         """Encrypt the file ``file`` to ``recipients``.
 
-        :param str file: The file to encrypt.
+        :param str file: The filename to encrypt.
 
         :param recipients: The recipient(s) to encrypt to. Recipient(s) must
             be specified keyID/fingerprint. Care should be taken in Python2.x
             to make sure that the given fingerprint is in fact a string and
             not a unicode object.
 
-        :type recipients: string or list of strings
+        :type recipients: one or more strings
 
         :param str default_key: The keyID/fingerprint of the key to use for
             signing. If given, ``data`` will be encrypted and signed.
@@ -1020,7 +1020,7 @@ generate keys. Please see
         >>> key = gpg.gen_key(key_settings)
         >>> with open('/tmp/gnupg_plaintext','w') as plaintext_fp:
         >>>     plaintext_fp.write("The crow flies at midnight.")
-        >>> encrypted = str(gpg.encrypt_file('/tmp/gnupg_plaintext', [key.printprint]))
+        >>> encrypted = str(gpg.encrypt_file('/tmp/gnupg_plaintext', key.fingerprint))
         >>> assert not encrypted.isspace()
         >>> decrypted = str(gpg.decrypt(encrypted))
         >>> assert not decrypted.isspace()
