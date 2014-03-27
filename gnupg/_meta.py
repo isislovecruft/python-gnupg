@@ -26,7 +26,6 @@ from __future__ import absolute_import
 import atexit
 import codecs
 import encodings
-import exceptions
 ## For AOS, the locale module will need to point to a wrapper around the
 ## java.util.Locale class.
 ## See https://code.patternsinthevoid.net/?p=android-locale-hack.git

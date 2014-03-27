@@ -27,7 +27,6 @@ from time       import mktime
 
 import codecs
 import encodings
-import exceptions
 import os
 import psutil
 import threading
