@@ -31,7 +31,6 @@ from __future__ import absolute_import
 from codecs     import open as open
 
 import encodings
-import exceptions
 import functools
 import os
 import re
