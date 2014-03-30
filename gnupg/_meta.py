@@ -153,7 +153,7 @@ class GPGBase(object):
         self._filesystemencoding = encodings.normalize_encoding(
             sys.getfilesystemencoding().lower())
 
-        self._keyserver = 'hkp://subkeys.pgp.net'
+        self._keyserver = 'hkp://wwwkeys.pgp.net'
         self.__generated_keys = os.path.join(self.homedir, 'generated-keys')
 
         try:
@@ -164,8 +164,8 @@ class GPGBase(object):
             if self.options is not None:
                 assert isinstance(self.options, str), "options not string"
         except (AssertionError, AttributeError) as ae:
-            log.error("GPGBase.__init__(): %s" % ae.message)
-            raise RuntimeError(ae.message)
+            log.error("GPGBase.__init__(): %s" % str(ae))
+            raise RuntimeError(str(ae))
         else:
             if verbose is True:
                 # The caller wants logging, but we need a valid --debug-level
@@ -200,7 +200,7 @@ class GPGBase(object):
         try:
             program = _util._which(prog)[0]
         except (OSError, IOError, IndexError) as err:
-            log.err(err.message)
+            log.err(str(err))
             log.err("Cannot find program '%s', not changing PATH." % prog)
             return
 
@@ -320,14 +320,14 @@ class GPGBase(object):
                              should contain the desired keyserver protocol
                              which is supported by the keyserver, for example,
                              ``'hkps://keys.mayfirst.org'``. The default
-                             keyserver is ``'hkp://subkeys.pgp.net'``.
+                             keyserver is ``'hkp://wwwkeys.pgp.net'``.
         """
         self._keyserver = location
 
     @keyserver.deleter
     def keyserver(self):
         """Reset the keyserver to the default setting."""
-        self._keyserver = 'hkp://subkeys.pgp.net'
+        self._keyserver = 'hkp://wwwkeys.pgp.net'
 
     def _homedir_getter(self):
         """Get the directory currently being used as GnuPG's homedir.
@@ -373,8 +373,8 @@ class GPGBase(object):
         except AssertionError as ae:
             msg = ("Unable to set '%s' as GnuPG homedir" % directory)
             log.debug("GPGBase.homedir.setter(): %s" % msg)
-            log.debug(ae.message)
-            raise RuntimeError(ae.message)
+            log.debug(str(ae))
+            raise RuntimeError(str(ae))
         else:
             log.info("Setting homedir to '%s'" % hd)
             self._homedir = hd
@@ -425,8 +425,8 @@ class GPGBase(object):
         except AssertionError as ae:
             msg = ("Unable to set '%s' as generated keys dir" % directory)
             log.debug("GPGBase._generated_keys_setter(): %s" % msg)
-            log.debug(ae.message)
-            raise RuntimeError(ae.message)
+            log.debug(str(ae))
+            raise RuntimeError(str(ae))
         else:
             log.info("Setting homedir to '%s'" % hd)
             self.__generated_keys = hd
@@ -696,7 +696,7 @@ class GPGBase(object):
                 _util._write_passphrase(proc.stdin, passphrase, self._encoding)
             writer = _util._threaded_copy_data(file, proc.stdin)
         except IOError as ioe:
-            log.exception("Error writing message: %s" % ioe.message)
+            log.exception("Error writing message: %s" % str(ioe))
             writer = None
         self._collect_output(proc, result, writer, proc.stdin)
         return result

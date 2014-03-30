@@ -53,7 +53,7 @@ def _check_keyserver(location):
     :param str location: A string containing the default keyserver. This
                          should contain the desired keyserver protocol which
                          is supported by the keyserver, for example, the
-                         default is ``'hkp://subkeys.pgp.net'``.
+                         default is ``'hkp://wwwkeys .pgp.net'``.
     :rtype: :obj:`str` or :obj:`None`
     :returns: A string specifying the protocol and keyserver hostname, if the
               checks passed. If not, returns None.
@@ -301,7 +301,7 @@ def _sanitise(*args):
             flag = _is_allowed(arg)
             assert flag is not None, "_check_option(): got None for flag"
         except (AssertionError, ProtectedOption) as error:
-            log.warn("_check_option(): %s" % error.message)
+            log.warn("_check_option(): %s" % str(error))
         else:
             checked += (flag + ' ')
 

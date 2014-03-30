@@ -148,7 +148,7 @@ def _copy_data(instream, outstream):
                 break
         except IOError as ioe:
             # Can get 'broken pipe' errors even when all data was sent
-            if 'Broken pipe' in ioe.message:
+            if 'Broken pipe' in str(ioe):
                 log.error('Error sending data: Broken pipe')
             else:
                 log.exception(ioe)
@@ -286,7 +286,7 @@ def _find_binary(binary=None):
         assert not os.path.islink(found), "Path to gpg binary is symlink"
         assert os.access(found, os.X_OK), "Lacking +x perms for gpg binary"
     except (AssertionError, AttributeError) as ae:
-        log.error(ae.message)
+        log.error(str(ae))
     else:
         return found
 
@@ -604,7 +604,7 @@ class Storage(dict):
         try:
             del self[key]
         except KeyError as k:
-            raise AttributeError(k.message)
+            raise AttributeError(k.args[0])
 
     def __repr__(self):
         return '<Storage ' + dict.__repr__(self) + '>'

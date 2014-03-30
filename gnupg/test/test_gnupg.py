@@ -62,7 +62,7 @@ try:
     import gnupg._parsers as _parsers
     import gnupg._logger  as _logger
 except (ImportError, ValueError) as ierr:
-    raise SystemExit(ierr.message)
+    raise SystemExit(str(ierr))
 
 
 log = _util.log
@@ -325,15 +325,19 @@ class GPGTestCase(unittest.TestCase):
 
     def test_copy_data_bytesio(self):
         """Test that _copy_data() is able to duplicate byte streams."""
-        message = "This is a BytesIO string."
+        message = b"This is a BytesIO string."
         instream = io.BytesIO(message)
-        self.assertEqual(unicode(message), instream.getvalue())
+        self.assertEqual(message, instream.getvalue())
 
         out_filename = 'test-copy-data-bytesio'
 
         # Create the test file:
-        outfile = os.path.join(os.getcwdu(), out_filename)
-        outstream = open(outfile, 'w+')
+        try:
+            cwd = os.getcwdu()
+        except AttributeError:
+            cwd = os.getcwd() # not present in Python 3
+        outfile = os.path.join(cwd, out_filename)
+        outstream = open(outfile, 'wb+')
 
         # _copy_data() will close both file descriptors
         _util._copy_data(instream, outstream)
@@ -685,7 +689,7 @@ class GPGTestCase(unittest.TestCase):
 
         self.assertTrue(sig.data, "File signing should succeed")
 
-        sigfd = open(sigfn, 'w')
+        sigfd = open(sigfn, 'wb')
         sigfd.write(sig.data)
         sigfd.flush()
 
