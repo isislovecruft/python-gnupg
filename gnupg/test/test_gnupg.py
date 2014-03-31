@@ -929,15 +929,15 @@ analysis of different kinds of data (temperature, humidity, etc.)  coming from
 a WSN while ensuring both end-to-end encryption and hop-by-hop
 authentication."""
         enc = self.gpg.encrypt(message, alice_pfpr, bob_pfpr)
-        encrypted = str(enc.data)
+        encrypted = str(enc)
         log.debug("encryption_decryption_multi_recipient() Ciphertext = %s"
                   % encrypted)
 
         self.assertNotEquals(message, encrypted)
         dec_alice = self.gpg.decrypt(encrypted, passphrase="test")
-        self.assertEquals(message, str(dec_alice.data))
+        self.assertEquals(message, str(dec_alice))
         dec_bob = self.gpg.decrypt(encrypted, passphrase="test")
-        self.assertEquals(message, str(dec_bob.data))
+        self.assertEquals(message, str(dec_bob))
 
     def test_symmetric_encryption_and_decryption(self):
         """Test symmetric encryption and decryption"""
@@ -947,7 +947,7 @@ know, maybe you shouldn't be doing it in the first place.
         encrypted = str(self.gpg.encrypt(msg, passphrase='quiscustodiet',
                                          symmetric=True, encrypt=False))
         decrypt = self.gpg.decrypt(encrypted, passphrase='quiscustodiet')
-        decrypted = str(decrypt.data)
+        decrypted = str(decrypt)
 
         log.info("Symmetrically encrypted data:\n%s" % encrypted)
         log.info("Symmetrically decrypted data:\n%s" % decrypted)
@@ -979,9 +979,8 @@ know, maybe you shouldn't be doing it in the first place.
 
             with open(enc_outf) as enc2:
                 fdata = enc2.read()
-                ddata = str(self.gpg.decrypt(fdata, passphrase="overalls"))
+                ddata = self.gpg.decrypt(fdata, passphrase="overalls").data
 
-                data = data.encode(self.gpg._encoding)
                 if ddata != data:
                     log.debug("data was: %r" % data)
                     log.debug("new (from filehandle): %r" % fdata)
