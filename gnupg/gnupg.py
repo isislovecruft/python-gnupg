@@ -416,7 +416,7 @@ class GPG(GPGBase):
             fingerprints = ' '.join(fingerprints)
 
         args = ['--batch']
-        args.append("--delete-{} {}".format(which, fingerprints))
+        args.append("--delete-{0} {1}".format(which, fingerprints))
 
         result = self._result_map['delete'](self)
         p = self._open_subprocess(args)
@@ -441,7 +441,7 @@ class GPG(GPGBase):
             keyids = ' '.join(['%s' % k for k in keyids])
 
         args = ["--armor"]
-        args.append("--export{} {}".format(which, keyids))
+        args.append("--export{0} {1}".format(which, keyids))
 
         p = self._open_subprocess(args)
         ## gpg --export produces no status-fd output; stdout will be empty in

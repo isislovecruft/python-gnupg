@@ -640,8 +640,8 @@ class GPGBase(object):
         if not keyserver:
             keyserver = self.keyserver
 
-        args = ['--keyserver {}'.format(keyserver),
-                '--recv-keys {}'.format(keyids)]
+        args = ['--keyserver {0}'.format(keyserver),
+                '--recv-keys {0}'.format(keyids)]
         log.info('Requesting keys from %s: %s' % (keyserver, keyids))
 
         result = self._result_map['import'](self)

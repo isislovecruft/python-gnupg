@@ -820,14 +820,14 @@ authentication."""
         riggio_input = self.gpg.gen_key_input(separate_keyring=True, **riggio)
         log.info("Key stored in separate keyring: %s" % self.gpg.temp_keyring)
         riggio = self.gpg.gen_key(riggio_input)
-        self.gpg.options = ['--keyring {}'.format(riggio.keyring)]
+        self.gpg.options = ['--keyring {0}'.format(riggio.keyring)]
         riggio_key = self.gpg.export_keys(riggio.fingerprint)
         self.gpg.import_keys(riggio_key)
 
         sicari_input = self.gpg.gen_key_input(separate_keyring=True, **sicari)
         log.info("Key stored in separate keyring: %s" % self.gpg.temp_keyring)
         sicari = self.gpg.gen_key(sicari_input)
-        self.gpg.options.append('--keyring {}'.format(sicari.keyring))
+        self.gpg.options.append('--keyring {0}'.format(sicari.keyring))
         sicari_key = self.gpg.export_keys(sicari.fingerprint)
         self.gpg.import_keys(sicari_key)
 
