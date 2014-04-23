@@ -173,7 +173,6 @@ class GPGTestCase(unittest.TestCase):
         self.keyring = self.gpg.keyring
         self.secring = self.gpg.secring
         self.insecure_prng = False
-        self.gpg._keys_dir = os.path.join(_files, 'generated-keys')
 
     def tearDown(self):
         """This is called once per self.test_* method after the test run."""
@@ -523,7 +522,7 @@ class GPGTestCase(unittest.TestCase):
         self.assertIsNotNone(key)
         self.assertNotEquals(key, "")
         self.assertGreater(len(str(key)), 0)
-        keyfile = os.path.join(self.gpg._keys_dir, 'test_key_3.pub')
+        keyfile = os.path.join(_files, 'test_key_3.pub')
         log.debug("Storing downloaded key as %s" % keyfile)
         with open(keyfile, 'w') as fh:
             fh.write(str(key))
@@ -673,44 +672,72 @@ class GPGTestCase(unittest.TestCase):
 
     def test_signature_verification_detached(self):
         """Test that verification of a detached signature of a file works."""
+
         key = self.generate_key("Paulo S.L.M. Barreto", "anub.is")
-        with open(os.path.join(_files, 'cypherpunk_manifesto'), 'rb') as cm:
-            sig = self.gpg.sign(cm, default_key=key.fingerprint,
-                                passphrase='paulos.l.m.barreto',
-                                detach=True, clearsign=False)
-            self.assertTrue(sig.data, "File signing should succeed")
-            sigfilename = os.path.join(_files, 'cypherpunk_manifesto.sig')
-            with open(sigfilename,'w') as sigfile:
-                sigfile.write(sig.data)
-                sigfile.seek(0)
+        datafn = os.path.join(_files, 'cypherpunk_manifesto')
+        sigfn = os.path.extsep.join([datafn, 'sig'])
 
-            verified = self.gpg.verify_file(cm, sigfilename)
+        datafd = open(datafn, 'rb')
+        sig = self.gpg.sign(datafd, default_key=key.fingerprint,
+                            passphrase='paulos.l.m.barreto',
+                            detach=True,
+                            clearsign=False)
 
-            if key.fingerprint != verified.fingerprint:
-                log.warn("key fingerprint:      %r", key.fingerprint)
-                log.warn("verified fingerprint: %r", verified.fingerprint)
-            self.assertEqual(key.fingerprint, verified.fingerprint)
+        self.assertTrue(sig.data, "File signing should succeed")
 
-            if os.path.isfile(sigfilename):
-                os.unlink(sigfilename)
+        sigfd = open(sigfn, 'w')
+        sigfd.write(sig.data)
+        sigfd.flush()
+
+        datafd.seek(0)
+        sigfd.seek(0)
+
+        verified = self.gpg.verify_file(datafn, sigfn)
+
+        if key.fingerprint != verified.fingerprint:
+            log.warn("key fingerprint:      %r", key.fingerprint)
+            log.warn("verified fingerprint: %r", verified.fingerprint)
+        self.assertEqual(key.fingerprint, verified.fingerprint)
+
+        if os.path.isfile(sigfn):
+            os.unlink(sigfn)
 
     def test_signature_verification_detached_binary(self):
         """Test that detached signature verification in binary mode fails."""
+
         key = self.generate_key("Adi Shamir", "rsa.com")
-        datafile = os.path.join(_files, 'cypherpunk_manifesto')
-        with open(datafile, 'rb') as cm:
-            sig = self.gpg.sign(cm, default_key=key.fingerprint,
-                                passphrase='adishamir',
-                                detach=True, binary=True, clearsign=False)
-            self.assertTrue(sig.data, "File signing should succeed")
-            with open(datafile+'.sig', 'w') as bs:
-                bs.write(sig.data)
-                bs.flush()
-            with self.assertRaises(UnicodeDecodeError):
-                print("SIG=%s" % sig)
-        with open(datafile+'.sig', 'rb') as fsig:
-            with open(datafile, 'rb') as fdata:
-                self.gpg.verify_file(fdata, fsig)
+        datafn = os.path.join(_files, 'cypherpunk_manifesto')
+        sigfn = os.path.extsep.join([datafn, 'sig'])
+
+        datafd = open(datafn, 'rb')
+        data = datafd.read()
+        datafd.close()
+
+        sig = self.gpg.sign(data, default_key=key.fingerprint,
+                            passphrase='adishamir',
+                            detach=True,
+                            binary=True,
+                            clearsign=False)
+
+        self.assertTrue(sig.data, "File signing should succeed")
+
+        sigfd = open(sigfn, 'wb')
+        sigfd.write(sig.data)
+        sigfd.flush()
+        sigfd.close()
+
+        self.assertTrue(sigfd.closed, "Sigfile '%s' should be closed" % sigfn)
+        with self.assertRaises(UnicodeDecodeError):
+            print("SIG=%s" % sig)
+
+        verifysig = open(sigfn, 'rb')
+        verification = self.gpg.verify_file(data, verifysig)
+
+        self.assertTrue(isinstance(verification, gnupg._parsers.Verify))
+        self.assertFalse(verification.valid)
+
+        if os.path.isfile(sigfn):
+            os.unlink(sigfn)
 
     def test_deletion(self):
         """Test that key deletion works."""

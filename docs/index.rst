@@ -21,7 +21,7 @@ Contents:
 Source, license, & bug reports
 ==============================
 The source code which was used to generate this documentation is accessible by
-clicking the little [source]_ links next to the docs. Current source code can
+clicking the little `source` links next to the docs. Current source code can
 be found in this github repository_. The **master** branch always reflects the
 latest release, all releases are tagged with signed, annotated git tags, and
 the **develop** branch represents the state of the next release.
