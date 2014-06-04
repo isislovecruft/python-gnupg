@@ -55,7 +55,7 @@ def export_ownertrust(cls, trustdb=None):
     try:
         os.rename(trustdb, trustdb + '.bak')
     except (OSError, IOError) as err:
-        log.debug(err.message)
+        log.debug(str(err))
 
     export_proc = cls._open_subprocess('--export-ownertrust')
     tdb = open(trustdb, 'wb')
