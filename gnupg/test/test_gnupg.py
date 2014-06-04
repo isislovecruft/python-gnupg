@@ -47,8 +47,8 @@ import tempfile
 ## these dependencies require Python>=2.6 in order to have proper SSL support.
 ##
 ## Use unittest2 if we're on Python2.6 or less:
-if sys.version_info.major == 2 and sys.version_info.minor <= 6:
-    unittest = __import__(unittest2)
+if sys.version_info[0] == 2 and sys.version_info[1] <= 6:
+    import unittest2 as unittest
 else:
     import unittest
 
@@ -820,14 +820,14 @@ authentication."""
         riggio_input = self.gpg.gen_key_input(separate_keyring=True, **riggio)
         log.info("Key stored in separate keyring: %s" % self.gpg.temp_keyring)
         riggio = self.gpg.gen_key(riggio_input)
-        self.gpg.options = ['--keyring {}'.format(riggio.keyring)]
+        self.gpg.options = ['--keyring {0}'.format(riggio.keyring)]
         riggio_key = self.gpg.export_keys(riggio.fingerprint)
         self.gpg.import_keys(riggio_key)
 
         sicari_input = self.gpg.gen_key_input(separate_keyring=True, **sicari)
         log.info("Key stored in separate keyring: %s" % self.gpg.temp_keyring)
         sicari = self.gpg.gen_key(sicari_input)
-        self.gpg.options.append('--keyring {}'.format(sicari.keyring))
+        self.gpg.options.append('--keyring {0}'.format(sicari.keyring))
         sicari_key = self.gpg.export_keys(sicari.fingerprint)
         self.gpg.import_keys(sicari_key)
 

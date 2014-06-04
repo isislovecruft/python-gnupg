@@ -78,13 +78,13 @@ def create_logger(level=logging.NOTSET):
     if level > logging.NOTSET:
         logging.basicConfig(level=level, filename=_fn,
                             filemode="a", format=_fmt)
-        logging.captureWarnings(True)
         logging.logThreads = True
-
+        if hasattr(logging,'captureWarnings'):
+            logging.captureWarnings(True)
         colouriser = _ansistrm.ColorizingStreamHandler
         colouriser.level_map[9]  = (None, 'blue', False)
         colouriser.level_map[10] = (None, 'cyan', False)
-        handler = colouriser(stream=sys.stderr)
+        handler = colouriser(sys.stderr)
         handler.setLevel(level)
 
         formatr = logging.Formatter(_fmt)
