@@ -241,7 +241,7 @@ class GPG(GPGBase):
             :command:`$ gpg --with-colons --list-config digestname`.
             The default, if unspecified, is ``'SHA512'``.
         """
-        if 'default_key' in kwargs.items():
+        if 'default_key' in kwargs:
             log.info("Signing message '%r' with keyid: %s"
                      % (data, kwargs['default_key']))
         else:
