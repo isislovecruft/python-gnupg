@@ -7,19 +7,17 @@
 #           © 2008-2012 Vinay Sajip
 #           © 2005 Steve Traugott
 #           © 2004 A.M. Kuchling
-# 
+#
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option)
 # any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
 
-'''trust.py
------------
-Functions for handling trustdb and trust calculations.
+'''Functions for handling trustdb and trust calculations.
 
 The functions within this module take an instance of :class:`gnupg.GPGBase` or
 a suitable subclass as their first argument.
@@ -44,11 +42,12 @@ def _create_trustdb(cls):
 def export_ownertrust(cls, trustdb=None):
     """Export ownertrust to a trustdb file.
 
-    If there is already a file named 'trustdb.gpg' in the current GnuPG
-    homedir, it will be renamed to 'trustdb.gpg.bak'.
+    If there is already a file named :file:`trustdb.gpg` in the current GnuPG
+    homedir, it will be renamed to :file:`trustdb.gpg.bak`.
 
     :param string trustdb: The path to the trustdb.gpg file. If not given,
-        defaults to 'trustdb.gpg' in the current GnuPG homedir.
+                           defaults to ``'trustdb.gpg'`` in the current GnuPG
+                           homedir.
     """
     if trustdb is None:
         trustdb = os.path.join(cls.homedir, 'trustdb.gpg')
@@ -56,7 +55,7 @@ def export_ownertrust(cls, trustdb=None):
     try:
         os.rename(trustdb, trustdb + '.bak')
     except (OSError, IOError) as err:
-        log.debug(err.message)
+        log.debug(str(err))
 
     export_proc = cls._open_subprocess('--export-ownertrust')
     tdb = open(trustdb, 'wb')
@@ -65,8 +64,9 @@ def export_ownertrust(cls, trustdb=None):
 def import_ownertrust(self, trustdb=None):
     """Import ownertrust from a trustdb file.
 
-    :param string trustdb: The path to the trustdb.gpg file. If not given,
-        defaults to 'trustdb.gpg' in the current GnuPG homedir.
+    :param str trustdb: The path to the trustdb.gpg file. If not given,
+                        defaults to :file:`trustdb.gpg` in the current GnuPG
+                        homedir.
     """
     if trustdb is None:
         trustdb = os.path.join(cls.homedir, 'trustdb.gpg')
@@ -78,22 +78,23 @@ def import_ownertrust(self, trustdb=None):
 def fix_trustdb(cls, trustdb=None):
     """Attempt to repair a broken trustdb.gpg file.
 
-    GnuPG>=2.0.x has this magical-seeming flag: '--fix-trustdb'. You'd think
+    GnuPG>=2.0.x has this magical-seeming flag: `--fix-trustdb`. You'd think
     it would fix the the trustdb. Hah! It doesn't. Here's what it does
-    instead:
+    instead::
 
-    (python-gnupg)∃!isisⒶwintermute:(testing/digest-algo *$=)~/code/python-gnupg ∴ gpg2 --fix-trustdb
-    gpg: You may try to re-create the trustdb using the commands:
-    gpg:   cd ~/.gnupg
-    gpg:   gpg2 --export-ownertrust > otrust.tmp
-    gpg:   rm trustdb.gpg
-    gpg:   gpg2 --import-ownertrust < otrust.tmp
-    gpg: If that does not work, please consult the manual
+      (gpg)~/code/python-gnupg $ gpg2 --fix-trustdb
+      gpg: You may try to re-create the trustdb using the commands:
+      gpg:   cd ~/.gnupg
+      gpg:   gpg2 --export-ownertrust > otrust.tmp
+      gpg:   rm trustdb.gpg
+      gpg:   gpg2 --import-ownertrust < otrust.tmp
+      gpg: If that does not work, please consult the manual
 
     Brilliant piece of software engineering right there.
 
-    :param string trustdb: The path to the trustdb.gpg file. If not given,
-        defaults to 'trustdb.gpg' in the current GnuPG homedir.
+    :param str trustdb: The path to the trustdb.gpg file. If not given,
+                        defaults to :file:`trustdb.gpg` in the current GnuPG
+                        homedir.
     """
     if trustdb is None:
         trustdb = os.path.join(cls.homedir, 'trustdb.gpg')

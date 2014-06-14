@@ -47,8 +47,8 @@ import tempfile
 ## these dependencies require Python>=2.6 in order to have proper SSL support.
 ##
 ## Use unittest2 if we're on Python2.6 or less:
-if sys.version_info.major == 2 and sys.version_info.minor <= 6:
-    unittest = __import__(unittest2)
+if sys.version_info[0] == 2 and sys.version_info[1] <= 6:
+    import unittest2 as unittest
 else:
     import unittest
 
@@ -62,7 +62,7 @@ try:
     import gnupg._parsers as _parsers
     import gnupg._logger  as _logger
 except (ImportError, ValueError) as ierr:
-    raise SystemExit(ierr.message)
+    raise SystemExit(str(ierr))
 
 
 log = _util.log
@@ -173,7 +173,6 @@ class GPGTestCase(unittest.TestCase):
         self.keyring = self.gpg.keyring
         self.secring = self.gpg.secring
         self.insecure_prng = False
-        self.gpg._keys_dir = os.path.join(_files, 'generated-keys')
 
     def tearDown(self):
         """This is called once per self.test_* method after the test run."""
@@ -326,15 +325,19 @@ class GPGTestCase(unittest.TestCase):
 
     def test_copy_data_bytesio(self):
         """Test that _copy_data() is able to duplicate byte streams."""
-        message = "This is a BytesIO string."
+        message = b"This is a BytesIO string."
         instream = io.BytesIO(message)
-        self.assertEqual(unicode(message), instream.getvalue())
+        self.assertEqual(message, instream.getvalue())
 
         out_filename = 'test-copy-data-bytesio'
 
         # Create the test file:
-        outfile = os.path.join(os.getcwdu(), out_filename)
-        outstream = open(outfile, 'w+')
+        try:
+            cwd = os.getcwdu()
+        except AttributeError:
+            cwd = os.getcwd() # not present in Python 3
+        outfile = os.path.join(cwd, out_filename)
+        outstream = open(outfile, 'wb+')
 
         # _copy_data() will close both file descriptors
         _util._copy_data(instream, outstream)
@@ -523,7 +526,7 @@ class GPGTestCase(unittest.TestCase):
         self.assertIsNotNone(key)
         self.assertNotEquals(key, "")
         self.assertGreater(len(str(key)), 0)
-        keyfile = os.path.join(self.gpg._keys_dir, 'test_key_3.pub')
+        keyfile = os.path.join(_files, 'test_key_3.pub')
         log.debug("Storing downloaded key as %s" % keyfile)
         with open(keyfile, 'w') as fh:
             fh.write(str(key))
@@ -673,44 +676,72 @@ class GPGTestCase(unittest.TestCase):
 
     def test_signature_verification_detached(self):
         """Test that verification of a detached signature of a file works."""
+
         key = self.generate_key("Paulo S.L.M. Barreto", "anub.is")
-        with open(os.path.join(_files, 'cypherpunk_manifesto'), 'rb') as cm:
-            sig = self.gpg.sign(cm, default_key=key.fingerprint,
-                                passphrase='paulos.l.m.barreto',
-                                detach=True, clearsign=False)
-            self.assertTrue(sig.data, "File signing should succeed")
-            sigfilename = os.path.join(_files, 'cypherpunk_manifesto.sig')
-            with open(sigfilename,'w') as sigfile:
-                sigfile.write(sig.data)
-                sigfile.seek(0)
+        datafn = os.path.join(_files, 'cypherpunk_manifesto')
+        sigfn = os.path.extsep.join([datafn, 'sig'])
 
-            verified = self.gpg.verify_file(cm, sigfilename)
+        datafd = open(datafn, 'rb')
+        sig = self.gpg.sign(datafd, default_key=key.fingerprint,
+                            passphrase='paulos.l.m.barreto',
+                            detach=True,
+                            clearsign=False)
 
-            if key.fingerprint != verified.fingerprint:
-                log.warn("key fingerprint:      %r", key.fingerprint)
-                log.warn("verified fingerprint: %r", verified.fingerprint)
-            self.assertEqual(key.fingerprint, verified.fingerprint)
+        self.assertTrue(sig.data, "File signing should succeed")
 
-            if os.path.isfile(sigfilename):
-                os.unlink(sigfilename)
+        sigfd = open(sigfn, 'wb')
+        sigfd.write(sig.data)
+        sigfd.flush()
+
+        datafd.seek(0)
+        sigfd.seek(0)
+
+        verified = self.gpg.verify_file(datafn, sigfn)
+
+        if key.fingerprint != verified.fingerprint:
+            log.warn("key fingerprint:      %r", key.fingerprint)
+            log.warn("verified fingerprint: %r", verified.fingerprint)
+        self.assertEqual(key.fingerprint, verified.fingerprint)
+
+        if os.path.isfile(sigfn):
+            os.unlink(sigfn)
 
     def test_signature_verification_detached_binary(self):
         """Test that detached signature verification in binary mode fails."""
+
         key = self.generate_key("Adi Shamir", "rsa.com")
-        datafile = os.path.join(_files, 'cypherpunk_manifesto')
-        with open(datafile, 'rb') as cm:
-            sig = self.gpg.sign(cm, default_key=key.fingerprint,
-                                passphrase='adishamir',
-                                detach=True, binary=True, clearsign=False)
-            self.assertTrue(sig.data, "File signing should succeed")
-            with open(datafile+'.sig', 'w') as bs:
-                bs.write(sig.data)
-                bs.flush()
-            with self.assertRaises(UnicodeDecodeError):
-                print("SIG=%s" % sig)
-        with open(datafile+'.sig', 'rb') as fsig:
-            with open(datafile, 'rb') as fdata:
-                self.gpg.verify_file(fdata, fsig)
+        datafn = os.path.join(_files, 'cypherpunk_manifesto')
+        sigfn = os.path.extsep.join([datafn, 'sig'])
+
+        datafd = open(datafn, 'rb')
+        data = datafd.read()
+        datafd.close()
+
+        sig = self.gpg.sign(data, default_key=key.fingerprint,
+                            passphrase='adishamir',
+                            detach=True,
+                            binary=True,
+                            clearsign=False)
+
+        self.assertTrue(sig.data, "File signing should succeed")
+
+        sigfd = open(sigfn, 'wb')
+        sigfd.write(sig.data)
+        sigfd.flush()
+        sigfd.close()
+
+        self.assertTrue(sigfd.closed, "Sigfile '%s' should be closed" % sigfn)
+        with self.assertRaises(UnicodeDecodeError):
+            print("SIG=%s" % sig)
+
+        verifysig = open(sigfn, 'rb')
+        verification = self.gpg.verify_file(data, verifysig)
+
+        self.assertTrue(isinstance(verification, gnupg._parsers.Verify))
+        self.assertFalse(verification.valid)
+
+        if os.path.isfile(sigfn):
+            os.unlink(sigfn)
 
     def test_deletion(self):
         """Test that key deletion works."""
@@ -793,14 +824,14 @@ authentication."""
         riggio_input = self.gpg.gen_key_input(separate_keyring=True, **riggio)
         log.info("Key stored in separate keyring: %s" % self.gpg.temp_keyring)
         riggio = self.gpg.gen_key(riggio_input)
-        self.gpg.options = ['--keyring {}'.format(riggio.keyring)]
+        self.gpg.options = ['--keyring {0}'.format(riggio.keyring)]
         riggio_key = self.gpg.export_keys(riggio.fingerprint)
         self.gpg.import_keys(riggio_key)
 
         sicari_input = self.gpg.gen_key_input(separate_keyring=True, **sicari)
         log.info("Key stored in separate keyring: %s" % self.gpg.temp_keyring)
         sicari = self.gpg.gen_key(sicari_input)
-        self.gpg.options.append('--keyring {}'.format(sicari.keyring))
+        self.gpg.options.append('--keyring {0}'.format(sicari.keyring))
         sicari_key = self.gpg.export_keys(sicari.fingerprint)
         self.gpg.import_keys(sicari_key)
 
@@ -898,15 +929,15 @@ analysis of different kinds of data (temperature, humidity, etc.)  coming from
 a WSN while ensuring both end-to-end encryption and hop-by-hop
 authentication."""
         enc = self.gpg.encrypt(message, alice_pfpr, bob_pfpr)
-        encrypted = str(enc.data)
+        encrypted = str(enc)
         log.debug("encryption_decryption_multi_recipient() Ciphertext = %s"
                   % encrypted)
 
         self.assertNotEquals(message, encrypted)
         dec_alice = self.gpg.decrypt(encrypted, passphrase="test")
-        self.assertEquals(message, str(dec_alice.data))
+        self.assertEquals(message, str(dec_alice))
         dec_bob = self.gpg.decrypt(encrypted, passphrase="test")
-        self.assertEquals(message, str(dec_bob.data))
+        self.assertEquals(message, str(dec_bob))
 
     def test_symmetric_encryption_and_decryption(self):
         """Test symmetric encryption and decryption"""
@@ -916,7 +947,7 @@ know, maybe you shouldn't be doing it in the first place.
         encrypted = str(self.gpg.encrypt(msg, passphrase='quiscustodiet',
                                          symmetric=True, encrypt=False))
         decrypt = self.gpg.decrypt(encrypted, passphrase='quiscustodiet')
-        decrypted = str(decrypt.data)
+        decrypted = str(decrypt)
 
         log.info("Symmetrically encrypted data:\n%s" % encrypted)
         log.info("Symmetrically decrypted data:\n%s" % decrypted)
@@ -948,9 +979,8 @@ know, maybe you shouldn't be doing it in the first place.
 
             with open(enc_outf) as enc2:
                 fdata = enc2.read()
-                ddata = str(self.gpg.decrypt(fdata, passphrase="overalls"))
+                ddata = self.gpg.decrypt(fdata, passphrase="overalls").data
 
-                data = data.encode(self.gpg._encoding)
                 if ddata != data:
                     log.debug("data was: %r" % data)
                     log.debug("new (from filehandle): %r" % fdata)

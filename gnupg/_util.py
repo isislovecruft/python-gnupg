@@ -17,10 +17,7 @@
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
 
-'''util.py
-----------
-Extra utilities for python-gnupg.
-'''
+'''Extra utilities for python-gnupg.'''
 
 from __future__ import absolute_import
 from datetime   import datetime
@@ -31,6 +28,7 @@ from time       import mktime
 import codecs
 import encodings
 import os
+import psutil
 import threading
 import random
 import re
@@ -150,7 +148,7 @@ def _copy_data(instream, outstream):
                 break
         except IOError as ioe:
             # Can get 'broken pipe' errors even when all data was sent
-            if 'Broken pipe' in ioe.message:
+            if 'Broken pipe' in str(ioe):
                 log.error('Error sending data: Broken pipe')
             else:
                 log.exception(ioe)
@@ -254,7 +252,8 @@ def _find_binary(binary=None):
     our process real uid has exec permissions.
 
     :param str binary: The path to the GnuPG binary.
-    :raises: :exc:RuntimeError if it appears that GnuPG is not installed.
+    :raises: :exc:`~exceptions.RuntimeError` if it appears that GnuPG is not
+             installed.
     :rtype: str
     :returns: The absolute path to the GnuPG binary to use, if no exceptions
               occur.
@@ -272,6 +271,8 @@ def _find_binary(binary=None):
             except IndexError as ie:
                 log.info("Could not determine absolute path of binary: '%s'"
                           % binary)
+        elif os.access(binary, os.X_OK):
+            found = binary
     if found is None:
         try: found = _which('gpg')[0]
         except IndexError as ie:
@@ -287,7 +288,7 @@ def _find_binary(binary=None):
         assert not os.path.islink(found), "Path to gpg binary is symlink"
         assert os.access(found, os.X_OK), "Lacking +x perms for gpg binary"
     except (AssertionError, AttributeError) as ae:
-        log.error(ae.message)
+        log.error(str(ae))
     else:
         return found
 
@@ -303,22 +304,31 @@ def _has_readwrite(path):
     """
     return os.access(path, os.R_OK ^ os.W_OK)
 
-def _is_file(input):
+def _is_file(filename):
     """Check that the size of the thing which is supposed to be a filename has
     size greater than zero, without following symbolic links or using
     :func:os.path.isfile.
 
-    :param input: An object to check.
+    :param filename: An object to check.
     :rtype: bool
-    :returns: True if :param:input is file-like, False otherwise.
+    :returns: True if **filename** is file-like, False otherwise.
     """
     try:
-        assert os.lstat(input).st_size > 0, "not a file: %s" % input
-    except (AssertionError, TypeError, IOError, OSError) as err:
-        log.error(err.message, exc_info=1)
-        return False
+        statinfo = os.lstat(filename)
+        log.debug("lstat(%r) with type=%s gave us %r"
+                  % (repr(filename), type(filename), repr(statinfo)))
+        if not (statinfo.st_size > 0):
+            raise ValueError("'%s' appears to be an empty file!" % filename)
+    except OSError as oserr:
+        log.error(oserr)
+        if filename == '-':
+            log.debug("Got '-' for filename, assuming sys.stdin...")
+            return True
+    except (ValueError, TypeError, IOError) as err:
+        log.error(err)
     else:
         return True
+    return False
 
 def _is_stream(input):
     """Check that the input is a byte stream.
@@ -395,7 +405,7 @@ def _make_passphrase(length=None, save=False, file=None):
     passphrase = _make_random_string(length)
 
     if save:
-        ruid, euid, suid = os.getresuid()
+        ruid, euid, suid = psutil.Process(os.getpid()).uids
         gid = os.getgid()
         now = mktime(localtime())
 
@@ -518,7 +528,7 @@ def _which(executable, flags=os.X_OK):
 def _write_passphrase(stream, passphrase, encoding):
     """Write the passphrase from memory to the GnuPG process' stdin.
 
-    :type stream: file, :class:BytesIO, or :class:StringIO
+    :type stream: file, :class:`~io.BytesIO`, or :class:`~io.StringIO`
     :param stream: The input file descriptor to write the password to.
     :param str passphrase: The passphrase for the secret key material.
     :param str encoding: The data encoding expected by GnuPG. Usually, this
@@ -531,39 +541,40 @@ def _write_passphrase(stream, passphrase, encoding):
 
 
 class InheritableProperty(object):
-  """Based on the emulation of PyProperty_Type() in Objects/descrobject.c"""
+    """Based on the emulation of PyProperty_Type() in Objects/descrobject.c"""
 
-  def __init__(self, fget=None, fset=None, fdel=None, doc=None):
-    self.fget = fget
-    self.fset = fset
-    self.fdel = fdel
-    self.__doc__ = doc
+    def __init__(self, fget=None, fset=None, fdel=None, doc=None):
+        self.fget = fget
+        self.fset = fset
+        self.fdel = fdel
+        self.__doc__ = doc
 
-  def __get__(self, obj, objtype=None):
-    if obj is None:
-      return self
-    if self.fget is None:
-      raise AttributeError("unreadable attribute")
-    if self.fget.__name__ == '<lambda>' or not self.fget.__name__:
-      return self.fget(obj)
-    else:
-      return getattr(obj, self.fget.__name__)()
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        if self.fget is None:
+            raise AttributeError("unreadable attribute")
+        if self.fget.__name__ == '<lambda>' or not self.fget.__name__:
+            return self.fget(obj)
+        else:
+            return getattr(obj, self.fget.__name__)()
 
-  def __set__(self, obj, value):
-    if self.fset is None:
-      raise AttributeError("can't set attribute")
-    if self.fset.__name__ == '<lambda>' or not self.fset.__name__:
-      self.fset(obj, value)
-    else:
-      getattr(obj, self.fset.__name__)(value)
+    def __set__(self, obj, value):
+        if self.fset is None:
+            raise AttributeError("can't set attribute")
+        if self.fset.__name__ == '<lambda>' or not self.fset.__name__:
+            self.fset(obj, value)
+        else:
+            getattr(obj, self.fset.__name__)(value)
 
-  def __delete__(self, obj):
-    if self.fdel is None:
-      raise AttributeError("can't delete attribute")
-    if self.fdel.__name__ == '<lambda>' or not self.fdel.__name__:
-      self.fdel(obj)
-    else:
-      getattr(obj, self.fdel.__name__)()
+    def __delete__(self, obj):
+        if self.fdel is None:
+            raise AttributeError("can't delete attribute")
+        if self.fdel.__name__ == '<lambda>' or not self.fdel.__name__:
+            self.fdel(obj)
+        else:
+            getattr(obj, self.fdel.__name__)()
+
 
 class Storage(dict):
     """A dictionary where keys are stored as class attributes.
@@ -595,7 +606,7 @@ class Storage(dict):
         try:
             del self[key]
         except KeyError as k:
-            raise AttributeError(k.message)
+            raise AttributeError(k.args[0])
 
     def __repr__(self):
         return '<Storage ' + dict.__repr__(self) + '>'

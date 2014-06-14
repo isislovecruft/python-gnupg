@@ -25,6 +25,16 @@ div.header-wrapper {
   border-bottom: 3px solid #2e3436;
 }
 
+div.headertitle a {
+  font-family: "Georgia", "Times New Roman", serif;
+  font-size: 2em;
+  color: rgb(252, 175, 62);
+  font-weight: normal;
+}
+
+h1 {
+  color: #204a87;
+}
 
 /* Default body styles */
 a {
