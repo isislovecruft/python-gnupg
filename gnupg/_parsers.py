@@ -514,6 +514,7 @@ def _get_options_group(group=None):
                                       '--import',
                                       '--verify',
                                       '--verify-files',
+                                      '--output'
                                       ])
     #: These options expect a string. see :func:`_check_preferences`.
     pref_options = frozenset(['--digest-algo',

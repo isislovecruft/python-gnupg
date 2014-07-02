@@ -714,10 +714,12 @@ class GPGBase(object):
                  compress_algo='ZLIB'):
         """Encrypt the message read from the file-like object **data**.
 
-        :param str data: The file or bytestream to encrypt.
+        :param str data: The file handle or bytestream to encrypt.
 
-        :param str recipients: The recipients to encrypt to. Recipients must
-                               be specified keyID/fingerprint.
+        :param recipients: The recipient(s) to encrypt to. Recipient(s)
+                               must be specified keyID/fingerprint.
+
+        :type recipients: string or list of strings
 
         .. warning:: Care should be taken in Python2 to make sure that the
                      given fingerprints for **recipients** are in fact strings
@@ -773,7 +775,7 @@ class GPGBase(object):
         ...                                  passphrase='foo')
         >>> key = gpg.gen_key(key_settings)
         >>> message = "The crow flies at midnight."
-        >>> encrypted = str(gpg.encrypt(message, key.printprint))
+        >>> encrypted = str(gpg.encrypt(message, key.fingerprint))
         >>> assert encrypted != message
         >>> assert not encrypted.isspace()
         >>> decrypted = str(gpg.decrypt(encrypted))
@@ -800,16 +802,9 @@ class GPGBase(object):
         args = []
 
         if output:
-            if getattr(output, 'fileno', None) is not None:
-                ## avoid overwrite confirmation message
-                if getattr(output, 'name', None) is None:
-                    if os.path.exists(output):
-                        os.remove(output)
-                    args.append('--output %s' % output)
-                else:
-                    if os.path.exists(output.name):
-                        os.remove(output.name)
-                    args.append('--output %s' % output.name)
+            if os.path.exists(output):
+                os.remove(output)
+            args.append('--output %s' % output)
 
         if armor: args.append('--armor')
         if always_trust: args.append('--always-trust')
@@ -849,11 +844,11 @@ class GPGBase(object):
                     if isinstance(recp, str):
                         args.append('--recipient %s' % recp)
 
-            elif (not _util._py3k) and isinstance(recp, basestring):
+            elif (not _util._py3k) and isinstance(recipients, basestring):
                 for recp in recipients.split('\x20'):
                     args.append('--recipient %s' % recp)
 
-            elif _util._py3k and isinstance(recp, str):
+            elif _util._py3k and isinstance(recipients, str):
                 for recp in recipients.split(' '):
                     args.append('--recipient %s' % recp)
                     ## ...and now that we've proven py3k is better...
