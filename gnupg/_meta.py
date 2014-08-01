@@ -31,7 +31,9 @@ import encodings
 ## See https://code.patternsinthevoid.net/?p=android-locale-hack.git
 import locale
 import os
+import platform
 import psutil
+import shlex
 import subprocess
 import sys
 import threading
@@ -505,9 +507,16 @@ class GPGBase(object):
         """
         ## see http://docs.python.org/2/library/subprocess.html#converting-an\
         ##    -argument-sequence-to-a-string-on-windows
-        cmd = ' '.join(self._make_args(args, passphrase))
+        cmd = shlex.split(' '.join(self._make_args(args, passphrase)))
         log.debug("Sending command to GnuPG process:%s%s" % (os.linesep, cmd))
-        return subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
+
+        if platform.system() == "Windows":
+            # TODO figure out what the hell is going on there.
+            expand_shell = True
+        else:
+            expand_shell = False
+
+        return subprocess.Popen(cmd, shell=expand_shell, stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                 env={'LANGUAGE': 'en'})
 
