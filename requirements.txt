@@ -1,3 +1,3 @@
 # sha256: UI5KRMglOjhqD4bZyb1KG0y7L5TojUmhnBUTZTymbEU
-psutil==1.2.1
+psutil>=1.2.1
 
