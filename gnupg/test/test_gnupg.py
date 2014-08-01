@@ -8,12 +8,12 @@
 #           © 2008-2012 Vinay Sajip
 #           © 2005 Steve Traugott
 #           © 2004 A.M. Kuchling
-# 
+#
 # This program is free software: you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the Free
 # Software Foundation, either version 3 of the License, or (at your option)
 # any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
@@ -612,14 +612,13 @@ class GPGTestCase(unittest.TestCase):
         self.assertTrue(os.path.isfile(keyfile))
 
     def test_signature_string_bad_passphrase(self):
-        """Test that signing and verification works."""
-        keyfile = os.path.join(_files, 'test_key_1.sec')
-        key = open(keyfile).read()
-        self.gpg.import_keys(key)
-        key = self.gpg.list_keys()[0]
-        fpr = key['fingerprint']
+        """Test that a signing attempt with a bad passphrase fails."""
+        key = self.generate_key("Bruce Schneier", "schneier.com",
+                                passphrase="correct horse battery staple")
+        fpr = key.fingerprint
         message = 'أصحاب المصالح لا يحبون الثوراتز'
-        sig = self.gpg.sign(message, default_key=fpr, passphrase='foo')
+        sig = self.gpg.sign(message, default_key=fpr,
+                            passphrase='wrong horse battery staple')
         self.assertFalse(sig, "Bad passphrase should fail")
 
     def test_signature_file(self):
@@ -633,11 +632,12 @@ class GPGTestCase(unittest.TestCase):
 
     def test_signature_string_verification(self):
         """Test verification of a signature from a message string."""
-        key = self.generate_key("Bruce Schneier", "schneier.com")
+        key = self.generate_key("Bruce Schneier", "schneier.com",
+                                passphrase="bruceschneier")
         message  = '...the government uses the general fear of '
         message += '[hackers in popular culture] to push for more power'
         sig = self.gpg.sign(message, default_key=key.fingerprint,
-                            passphrase='bruceschneier')
+                            passphrase="bruceschneier")
         now = mktime(localtime())
         self.assertTrue(sig, "Good passphrase should succeed")
         verified = self.gpg.verify(sig.data)
@@ -935,6 +935,7 @@ authentication."""
 
         self.assertNotEquals(message, encrypted)
         dec_alice = self.gpg.decrypt(encrypted, passphrase="test")
+
         self.assertEquals(message, str(dec_alice))
         dec_bob = self.gpg.decrypt(encrypted, passphrase="test")
         self.assertEquals(message, str(dec_bob))
@@ -967,7 +968,9 @@ know, maybe you shouldn't be doing it in the first place.
         kat = self.gpg.list_keys('kat')[0]['fingerprint']
 
         enc_outf = os.path.join(self.gpg.homedir, 'to-b.gpg')
-        dec_outf = os.path.join(self.gpg.homedir, 'to-b.txt')
+
+        # XXX not used atm
+        # dec_outf = os.path.join(self.gpg.homedir, 'to-b.txt')
 
         message_file = os.path.join(_files, 'cypherpunk_manifesto')
         with open(message_file) as msg:
