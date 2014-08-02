@@ -72,7 +72,7 @@ py3k-install:
 
 uninstall:
 	touch installed-files.txt
-	cat installed-files.txt | sudo xargs rm -rf
+	cat installed-files.txt | xargs rm -rf
 py3k-uninstall: uninstall
 
 reinstall: uninstall install
