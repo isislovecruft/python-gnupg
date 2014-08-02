@@ -990,6 +990,49 @@ know, maybe you shouldn't be doing it in the first place.
                     log.debug("new (from decryption): %r" % ddata)
                     self.assertEqual(data, ddata)
 
+    def test_encryption_to_filename(self):
+        """Test that ``encrypt(..., output='somefile.gpg')`` is successful."""
+        with open(os.path.join(_files, 'kat.sec')) as katsec:
+            self.gpg.import_keys(katsec.read())
+        fpr = self.gpg.list_keys('kat')[0]['fingerprint']
+        output = os.path.join(self.gpg.homedir, 'test-encryption-to-filename.gpg')
+
+        message_filename = os.path.join(_files, 'cypherpunk_manifesto')
+        message_file = open(message_filename)
+        message = message_file.read()
+        message_file.close()
+
+        encrypted = self.gpg.encrypt(message, fpr, output=output)
+        self.assertTrue(encrypted.ok)
+        self.assertTrue(os.path.isfile(output))
+
+        # Check the contents:
+        with open(output) as fh:
+            encrypted_message = fh.read()
+            log.debug("Encrypted file contains:\n\n%s\n" % encrypted_message)
+
+    def test_encryption_to_filehandle(self):
+        """Test that ``encrypt(..., output=filelikething)`` is successful."""
+        with open(os.path.join(_files, 'kat.sec')) as katsec:
+            self.gpg.import_keys(katsec.read())
+        fpr = self.gpg.list_keys('kat')[0]['fingerprint']
+        output = os.path.join(self.gpg.homedir, 'test-encryption-to-filehandle.gpg')
+        output_file = open(output, 'w+')
+
+        message_filename = os.path.join(_files, 'cypherpunk_manifesto')
+        message_file = open(message_filename)
+        message = message_file.read()
+        message_file.close()
+
+        encrypted = self.gpg.encrypt(message, fpr, output=output_file)
+        self.assertTrue(encrypted.ok)
+        self.assertTrue(os.path.isfile(output))
+
+        # Check the contents:
+        with open(output) as fh:
+            encrypted_message = fh.read()
+            log.debug("Encrypted file contains:\n\n%s\n" % encrypted_message)
+
 
 suites = { 'parsers': set(['test_parsers_fix_unsafe',
                            'test_parsers_fix_unsafe_semicolon',
@@ -1034,7 +1077,9 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                          'test_encryption_decryption_multi_recipient',
                          'test_decryption',
                          'test_symmetric_encryption_and_decryption',
-                         'test_file_encryption_and_decryption']),
+                         'test_file_encryption_and_decryption',
+                         'test_encryption_to_filename',
+                         'test_encryption_to_filehandle',]),
            'listkeys': set(['test_list_keys_after_generation']),
            'keyrings': set(['test_public_keyring',
                             'test_secret_keyring',
