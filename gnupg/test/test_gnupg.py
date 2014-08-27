@@ -33,10 +33,8 @@ from glob       import glob
 from time       import localtime
 from time       import mktime
 
-import encodings
 import doctest
 import io
-import logging
 import os
 import shutil
 import sys
@@ -192,7 +190,9 @@ class GPGTestCase(unittest.TestCase):
         print(fixed)
         test_file = os.path.join(_files, 'cypherpunk_manifesto')
         self.assertTrue(os.path.isfile(test_file))
-        has_shell = self.gpg.verify_file(test_file, fixed)
+        datafd = open(test_file, 'rb')
+        has_shell = self.gpg.verify_file(datafd, sig_file=fixed)
+        datafd.close()
         self.assertFalse(has_shell.valid)
 
     def test_parsers_fix_unsafe_semicolon(self):
@@ -664,6 +664,7 @@ class GPGTestCase(unittest.TestCase):
         sig = self.gpg.sign(message, default_key=key.fingerprint,
                             passphrase='johanborst')
         self.assertTrue(sig, "Good passphrase should succeed")
+
         try:
             file = _util._make_binary_stream(sig.data, self.gpg._encoding)
             verified = self.gpg.verify_file(file)
@@ -696,7 +697,7 @@ class GPGTestCase(unittest.TestCase):
         datafd.seek(0)
         sigfd.seek(0)
 
-        verified = self.gpg.verify_file(datafn, sigfn)
+        verified = self.gpg.verify_file(datafd, sig_file=sigfn)
 
         if key.fingerprint != verified.fingerprint:
             log.warn("key fingerprint:      %r", key.fingerprint)
@@ -707,7 +708,7 @@ class GPGTestCase(unittest.TestCase):
             os.unlink(sigfn)
 
     def test_signature_verification_detached_binary(self):
-        """Test that detached signature verification in binary mode fails."""
+        """Test that detached signature verification in binary mode works."""
 
         key = self.generate_key("Adi Shamir", "rsa.com")
         datafn = os.path.join(_files, 'cypherpunk_manifesto')
@@ -715,7 +716,6 @@ class GPGTestCase(unittest.TestCase):
 
         datafd = open(datafn, 'rb')
         data = datafd.read()
-        datafd.close()
 
         sig = self.gpg.sign(data, default_key=key.fingerprint,
                             passphrase='adishamir',
@@ -734,11 +734,13 @@ class GPGTestCase(unittest.TestCase):
         with self.assertRaises(UnicodeDecodeError):
             print("SIG=%s" % sig)
 
-        verifysig = open(sigfn, 'rb')
-        verification = self.gpg.verify_file(data, verifysig)
+        datafd.seek(0)
+        verification = self.gpg.verify_file(datafd, sig_file=sigfn)
 
         self.assertTrue(isinstance(verification, gnupg._parsers.Verify))
-        self.assertFalse(verification.valid)
+        self.assertTrue(verification.valid)
+
+        datafd.close()
 
         if os.path.isfile(sigfn):
             os.unlink(sigfn)
