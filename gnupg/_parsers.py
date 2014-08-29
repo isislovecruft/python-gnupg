@@ -1048,7 +1048,7 @@ class ImportResult(object):
         :rtype: bool
         :returns: True if we have immport some keys, False otherwise.
         """
-        if self.counts.not_imported > 0: return False
+        if self.counts['not_imported'] > 0: return False
         if len(self.fingerprints) == 0: return False
         return True
     __bool__ = __nonzero__
