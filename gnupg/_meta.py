@@ -135,7 +135,7 @@ class GPGBase(object):
                            file for secret keys.
         """
         self.binary  = _util._find_binary(binary)
-        self.homedir = home if home else _util._conf
+        self.homedir = os.path.expanduser(home) if home else _util._conf
         pub = _parsers._fix_unsafe(keyring) if keyring else 'pubring.gpg'
         sec = _parsers._fix_unsafe(secring) if secring else 'secring.gpg'
         self.keyring = os.path.join(self._homedir, pub)
