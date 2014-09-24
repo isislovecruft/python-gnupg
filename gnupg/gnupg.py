@@ -36,13 +36,7 @@ import os
 import re
 import textwrap
 
-try:
-    from io import StringIO
-except ImportError:
-    from cStringIO import StringIO
-
 #: see :pep:`328` http://docs.python.org/2.5/whatsnew/pep-328.html
-from .         import _parsers
 from .         import _util
 from .         import _trust
 from ._meta    import GPGBase
@@ -284,15 +278,13 @@ class GPG(GPGBase):
         signatures. If using detached signatures, the file containing the
         detached signature should be specified as the ``sig_file``.
 
-        :param file file: A file descriptor object. Its type will be checked
-            with :func:`_util._is_file`.
+        :param file file: A file descriptor object.
 
         :param str sig_file: A file containing the GPG signature data for
             ``file``. If given, ``file`` is verified via this detached
-            signature.
+            signature. Its type will be checked with :func:`_util._is_file`.
         """
 
-        fn = None
         result = self._result_map['verify'](self)
 
         if sig_file is None:
@@ -307,19 +299,15 @@ class GPG(GPGBase):
                 return result
             log.debug('verify_file(): Handling detached verification')
             sig_fh = None
-            data_fh = None
             try:
                 sig_fh = open(sig_file, 'rb')
-                data_fh = open(file, 'rb')
                 args = ["--verify %s -" % sig_fh.name]
                 proc = self._open_subprocess(args)
-                writer = _util._threaded_copy_data(data_fh, proc.stdin)
+                writer = _util._threaded_copy_data(file, proc.stdin)
                 self._collect_output(proc, result, writer, stdin=proc.stdin)
             finally:
                 if sig_fh and not sig_fh.closed:
                     sig_fh.close()
-                if data_fh and not data_fh.closed:
-                    data_fh.close()
         return result
 
     def import_keys(self, key_data):
