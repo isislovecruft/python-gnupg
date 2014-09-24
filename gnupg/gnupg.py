@@ -156,7 +156,7 @@ class GPG(GPGBase):
         self.binary_version = version_line.split('\n')[0]
         log.debug("Using GnuPG version %s" % self.binary_version)
 
-        if _util._is_gpg2:
+        if self.is_gpg2():
             # Make GnuPG>=2.0.0-only methods public:
             self.fix_trustdb       = self._fix_trustdb
             self.import_ownertrust = self._import_ownertrust
