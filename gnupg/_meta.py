@@ -482,7 +482,7 @@ class GPGBase(object):
             cmd.append('--debug-all')
             if ((isinstance(self.verbose, str) and
                  self.verbose in ['basic', 'advanced', 'expert', 'guru'])
-                or (isinstance(self.verbose, int) and (1<=self.verbose<=9))):
+                or (isinstance(self.verbose, int) and (self.verbose>=1))):
                 cmd.append('--debug-level %s' % self.verbose)
 
         return cmd
