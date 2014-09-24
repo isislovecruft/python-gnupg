@@ -483,7 +483,7 @@ class GPGBase(object):
             if ((isinstance(self.verbose, str) and
                  self.verbose in ['basic', 'advanced', 'expert', 'guru'])
                 or (isinstance(self.verbose, int) and (self.verbose>=1))):
-                cmd.append('--debug-level %s' % self.verbose)
+                cmd.append('--debug-level=%s' % self.verbose)
 
         return cmd
 
