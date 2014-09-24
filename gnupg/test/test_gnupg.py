@@ -564,7 +564,7 @@ class GPGTestCase(unittest.TestCase):
     def test_import_only(self):
         """Test that key import works."""
         self.test_list_keys_initial_public()
-        self.gpg.import_keys(KEYS_TO_IMPORT)
+        self.assertTrue(self.gpg.import_keys(KEYS_TO_IMPORT))
         public_keys = self.gpg.list_keys()
         self.assertTrue(is_list_with_len(public_keys, 2),
                         "2-element list expected")
