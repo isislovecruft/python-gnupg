@@ -1245,11 +1245,11 @@ class Verify(object):
             self.valid = False
             self.key_id = value
             self.status = 'no public key'
-        elif key in ("KEYEXPIRED", "SIGEXPIRED"):
+        elif key in ("KEYEXPIRED", "SIGEXPIRED", "KEYREVOKED"):
             # these are useless in verify, since they are spit out for any
             # pub/subkeys on the key, not just the one doing the signing.
             # if we want to check for signatures with expired key,
-            # the relevant flag is EXPKEYSIG.
+            # the relevant flag is EXPKEYSIG or REVKEYSIG.
             pass
         elif key in ("EXPKEYSIG", "REVKEYSIG"):
             # signed with expired or revoked key
