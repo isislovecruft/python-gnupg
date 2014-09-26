@@ -156,43 +156,45 @@ class GPG(GPGBase):
         self.binary_version = version_line.split('\n')[0]
         log.debug("Using GnuPG version %s" % self.binary_version)
 
-        if self.is_gpg2():
-            # Make GnuPG>=2.0.0-only methods public:
-            self.fix_trustdb       = self._fix_trustdb
-            self.import_ownertrust = self._import_ownertrust
-            self.export_ownertrust = self._export_ownertrust
-
-            # Make sure that the trustdb exists, or else GnuPG will exit with
-            # a fatal error (at least it does with GnuPG>=2.0.0):
-            self._create_trustdb()
+        # Make sure that the trustdb exists, or else GnuPG will exit with a
+        # fatal error (at least it does with GnuPG>=2.0.0):
+        self.create_trustdb()
 
     @functools.wraps(_trust._create_trustdb)
-    def _create_trustdb(self):
+    def create_trustdb(self):
         if self.is_gpg2():
             _trust._create_trustdb(self)
         else:
             log.info("Creating the trustdb is only available with GnuPG>=2.x")
+    # For backward compatibility with python-gnupg<=1.3.1:
+    _create_trustdb = create_trustdb
 
     @functools.wraps(_trust.fix_trustdb)
-    def _fix_trustdb(self, trustdb=None):
+    def fix_trustdb(self, trustdb=None):
         if self.is_gpg2():
             _trust.fix_trustdb(self)
         else:
             log.info("Fixing the trustdb is only available with GnuPG>=2.x")
+    # For backward compatibility with python-gnupg<=1.3.1:
+    _fix_trustdb = fix_trustdb
 
     @functools.wraps(_trust.import_ownertrust)
-    def _import_ownertrust(self, trustdb=None):
+    def import_ownertrust(self, trustdb=None):
         if self.is_gpg2():
             _trust.import_ownertrust(self)
         else:
             log.info("Importing ownertrust is only available with GnuPG>=2.x")
+    # For backward compatibility with python-gnupg<=1.3.1:
+    _import_ownertrust = import_ownertrust
 
     @functools.wraps(_trust.export_ownertrust)
-    def _export_ownertrust(self, trustdb=None):
+    def export_ownertrust(self, trustdb=None):
         if self.is_gpg2():
             _trust.export_ownertrust(self)
         else:
             log.info("Exporting ownertrust is only available with GnuPG>=2.x")
+    # For backward compatibility with python-gnupg<=1.3.1:
+    _export_ownertrust = export_ownertrust
 
     def is_gpg1(self):
         """Returns true if using GnuPG <= 1.x."""
