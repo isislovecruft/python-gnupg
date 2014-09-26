@@ -497,10 +497,15 @@ class GPGBase(object):
 
         if self.verbose:
             cmd.append('--debug-all')
-            if ((isinstance(self.verbose, str) and
-                 self.verbose in ['basic', 'advanced', 'expert', 'guru'])
-                or (isinstance(self.verbose, int) and (self.verbose>=1))):
-                cmd.append('--debug-level=%s' % self.verbose)
+
+            if (isinstance(self.verbose, str) or
+                (isinstance(self.verbose, int) and (self.verbose >= 1))):
+                # GnuPG<=1.4.18 parses the `--debug-level` command in a way
+                # that is incompatible with all other GnuPG versions. :'(
+                if self.binary_version and (self.binary_version <= '1.4.18'):
+                    cmd.append('--debug-level=%s' % self.verbose)
+                else:
+                    cmd.append('--debug-level %s' % self.verbose)
 
         return cmd
 
