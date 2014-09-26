@@ -144,6 +144,7 @@ class GPGBase(object):
 
         #: The version string of our GnuPG binary
         self.binary_version = '0.0.0'
+        self.verbose = False
 
         if default_preference_list:
             self._prefs = _check_preferences(default_preference_list, 'all')
@@ -172,13 +173,7 @@ class GPGBase(object):
             log.error("GPGBase.__init__(): %s" % str(ae))
             raise RuntimeError(str(ae))
         else:
-            if verbose is True:
-                # The caller wants logging, but we need a valid --debug-level
-                # for gpg. Default to "basic", and warn about the ambiguity.
-                # (garrettr)
-                verbose = "basic"
-                log.warning('GPG(verbose=True) is ambiguous, defaulting to "basic" logging')
-            self.verbose = verbose
+            self._set_verbose(verbose)
             self.use_agent = use_agent
 
         if hasattr(self, '_agent_proc') \
@@ -613,6 +608,36 @@ class GPGBase(object):
         result.data = type(data)().join(chunks)
         log.debug("Finishing reading from stream %r..." % stream.__repr__())
         log.debug("Read %4d bytes total" % len(result.data))
+
+    def _set_verbose(self, verbose):
+        """Check and set our :data:`verbose` attribute.
+        The debug-level must be a string or an integer. If it is one of
+        the allowed strings, GnuPG will translate it internally to it's
+        corresponding integer level:
+
+        basic     = 1-2
+        advanced  = 3-5
+        expert    = 6-8
+        guru      = 9+
+
+        If it's not one of the recognised string levels, then then
+        entire argument is ignored by GnuPG. :(
+
+        To fix that stupid behaviour, if they wanted debugging but typo'd
+        the string level (or specified ``verbose=True``), we'll default to
+        'basic' logging.
+        """
+        string_levels = ('basic', 'advanced', 'expert', 'guru')
+
+        if verbose is True:
+            # The caller wants logging, but we need a valid --debug-level
+            # for gpg. Default to "basic", and warn about the ambiguity.
+            verbose = 'basic'
+
+        if (isinstance(verbose, str) and not (verbose in string_levels)):
+            verbose = 'basic'
+
+        self.verbose = verbose
 
     def _collect_output(self, process, result, writer=None, stdin=None):
         """Drain the subprocesses output streams, writing the collected output
