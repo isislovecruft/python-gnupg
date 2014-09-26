@@ -142,6 +142,9 @@ class GPGBase(object):
         self.secring = os.path.join(self._homedir, sec)
         self.options = _parsers._sanitise(options) if options else None
 
+        #: The version string of our GnuPG binary
+        self.binary_version = '0.0.0'
+
         if default_preference_list:
             self._prefs = _check_preferences(default_preference_list, 'all')
         else:
@@ -182,6 +185,9 @@ class GPGBase(object):
                 and getattr(self, '_remove_agent', None) is True:
             if hasattr(self, '__remove_path__'):
                 self.__remove_path__('pinentry')
+
+        # Assign our self.binary_version attribute:
+        self._check_sane_and_get_gpg_version()
 
     def __remove_path__(self, prog=None, at_exit=True):
         """Remove the directories containing a program from the system's
@@ -435,6 +441,22 @@ class GPGBase(object):
 
     _generated_keys = _util.InheritableProperty(_generated_keys_getter,
                                                 _generated_keys_setter)
+
+    def _check_sane_and_get_gpg_version(self):
+        """Check that everything runs alright, and grab the gpg binary's
+        version number while we're at it, storing it as :data:`binary_version`.
+
+        :raises RuntimeError: if we cannot invoke the gpg binary.
+        """
+        proc = self._open_subprocess(["--list-config", "--with-colons"])
+        result = self._result_map['list'](self)
+        self._read_data(proc.stdout, result)
+        if proc.returncode:
+            raise RuntimeError("Error invoking gpg: %s" % result.data)
+
+        version_line = str(result.data).partition(':version:')[2]
+        self.binary_version = version_line.split('\n')[0]
+        log.debug("Using GnuPG version %s" % self.binary_version)
 
     def _make_args(self, args, passphrase=False):
         """Make a list of command line elements for GPG.

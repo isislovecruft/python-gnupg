@@ -122,6 +122,7 @@ class GPG(GPGBase):
         log.info(textwrap.dedent("""
         Initialised settings:
         binary: %s
+        binary version: %s
         homedir: %s
         keyring: %s
         secring: %s
@@ -130,9 +131,15 @@ class GPG(GPGBase):
         options: %s
         verbose: %s
         use_agent: %s
-        """ % (self.binary, self.homedir, self.keyring, self.secring,
-               self.default_preference_list, self.keyserver, self.options,
-               str(self.verbose), str(self.use_agent))))
+        """ % (self.binary,
+               self.binary_version,
+               self.homedir,
+               self.keyring,
+               self.secring,
+               self.default_preference_list,
+               self.keyserver, self.options,
+               str(self.verbose),
+               str(self.use_agent))))
 
         self._batch_dir = os.path.join(self.homedir, 'batch-files')
         self._key_dir  = os.path.join(self.homedir, 'generated-keys')
@@ -141,20 +148,6 @@ class GPG(GPGBase):
         self.temp_keyring = None
         #: The secring used in the most recently created batch file
         self.temp_secring = None
-        #: The version string of our GnuPG binary
-        self.binary_version = str()
-
-        ## check that everything runs alright, and grab the gpg binary's
-        ## version number while we're at it:
-        proc = self._open_subprocess(["--list-config", "--with-colons"])
-        result = self._result_map['list'](self)
-        self._read_data(proc.stdout, result)
-        if proc.returncode:
-            raise RuntimeError("Error invoking gpg: %s" % result.data)
-
-        version_line = str(result.data).partition(':version:')[2]
-        self.binary_version = version_line.split('\n')[0]
-        log.debug("Using GnuPG version %s" % self.binary_version)
 
         # Make sure that the trustdb exists, or else GnuPG will exit with a
         # fatal error (at least it does with GnuPG>=2.0.0):
