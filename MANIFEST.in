@@ -11,3 +11,5 @@ include docs/Makefile
 prune docs/_build
 
 prune private
+
+global-exclude *.log *~
