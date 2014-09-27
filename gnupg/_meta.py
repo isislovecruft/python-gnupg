@@ -448,6 +448,8 @@ class GPGBase(object):
         self._read_data(proc.stdout, result)
         if proc.returncode:
             raise RuntimeError("Error invoking gpg: %s" % result.data)
+        else:
+            proc.terminate()
 
         version_line = str(result.data).partition(':version:')[2]
         self.binary_version = version_line.split('\n')[0]
