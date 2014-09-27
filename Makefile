@@ -37,6 +37,9 @@ cleanup-build:
 	-rm MANIFEST
 	-rm -rf build
 
+cleanup-dist:
+	-rm -rf dist
+
 # it's not strictly necessary that gnupg2, gpg-agent, pinentry, or pip be
 # installed, so ignore error exit statuses for those commands
 test-before: cleanup-src cleanup-tests
