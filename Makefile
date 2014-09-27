@@ -93,3 +93,8 @@ docs-html:
 docs-zipfile: docs-html
 	cd $(DOC_HTML_DIR) && { find . -name '*' | zip -@ -v ../$(DOC_BUILD_ZIP) ;};
 	@echo "Built documentation in $(DOC_BUILD_DIR)/$(DOC_BUILD_ZIP)"
+
+upload: cleanup-build
+	python setup.py bdist_egg upload --sign
+	#python setup.py bdist_wheel upload --sign
+	python setup.py sdist --formats=gztar,zip upload --sign
