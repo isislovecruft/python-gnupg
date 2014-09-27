@@ -34,8 +34,8 @@ cleanup-tests-all: cleanup-tests
 	rm -rf tests/tmp
 
 cleanup-build:
-	mkdir buildnot
-	rm -rf build*
+	-rm MANIFEST
+	-rm -rf build
 
 # it's not strictly necessary that gnupg2, gpg-agent, pinentry, or pip be
 # installed, so ignore error exit statuses for those commands
