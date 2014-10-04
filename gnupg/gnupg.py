@@ -29,6 +29,7 @@ A Python interface to GnuPG.
 
 from __future__ import absolute_import
 from codecs     import open as open
+import codecs
 
 import encodings
 import functools
@@ -188,6 +189,12 @@ class GPG(GPGBase):
             log.info("Exporting ownertrust is only available with GnuPG>=2.x")
     # For backward compatibility with python-gnupg<=1.3.1:
     _export_ownertrust = export_ownertrust
+
+    def _strict_handler(self, exception):
+        return u"", exception.end
+
+    def ignore_dirty_encoding(self):
+        codecs.register_error("strict", self._strict_handler)
 
     def is_gpg1(self):
         """Returns true if using GnuPG <= 1.x."""
