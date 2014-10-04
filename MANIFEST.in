@@ -1,4 +1,15 @@
 include LICENSE
 include requirements.txt
 
-graft docs
+recursive-include examples *.py
+
+recursive-include docs *.rst
+include docs/_static
+include docs/conf.py
+include docs/make.bat
+include docs/Makefile
+prune docs/_build
+
+prune private
+
+global-exclude *.log *~

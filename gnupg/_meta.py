@@ -135,12 +135,16 @@ class GPGBase(object):
                            file for secret keys.
         """
         self.binary  = _util._find_binary(binary)
-        self.homedir = home if home else _util._conf
+        self.homedir = os.path.expanduser(home) if home else _util._conf
         pub = _parsers._fix_unsafe(keyring) if keyring else 'pubring.gpg'
         sec = _parsers._fix_unsafe(secring) if secring else 'secring.gpg'
         self.keyring = os.path.join(self._homedir, pub)
         self.secring = os.path.join(self._homedir, sec)
         self.options = _parsers._sanitise(options) if options else None
+
+        #: The version string of our GnuPG binary
+        self.binary_version = '0.0.0'
+        self.verbose = False
 
         if default_preference_list:
             self._prefs = _check_preferences(default_preference_list, 'all')
@@ -169,19 +173,16 @@ class GPGBase(object):
             log.error("GPGBase.__init__(): %s" % str(ae))
             raise RuntimeError(str(ae))
         else:
-            if verbose is True:
-                # The caller wants logging, but we need a valid --debug-level
-                # for gpg. Default to "basic", and warn about the ambiguity.
-                # (garrettr)
-                verbose = "basic"
-                log.warning('GPG(verbose=True) is ambiguous, defaulting to "basic" logging')
-            self.verbose = verbose
+            self._set_verbose(verbose)
             self.use_agent = use_agent
 
         if hasattr(self, '_agent_proc') \
                 and getattr(self, '_remove_agent', None) is True:
             if hasattr(self, '__remove_path__'):
                 self.__remove_path__('pinentry')
+
+        # Assign our self.binary_version attribute:
+        self._check_sane_and_get_gpg_version()
 
     def __remove_path__(self, prog=None, at_exit=True):
         """Remove the directories containing a program from the system's
@@ -436,6 +437,24 @@ class GPGBase(object):
     _generated_keys = _util.InheritableProperty(_generated_keys_getter,
                                                 _generated_keys_setter)
 
+    def _check_sane_and_get_gpg_version(self):
+        """Check that everything runs alright, and grab the gpg binary's
+        version number while we're at it, storing it as :data:`binary_version`.
+
+        :raises RuntimeError: if we cannot invoke the gpg binary.
+        """
+        proc = self._open_subprocess(["--list-config", "--with-colons"])
+        result = self._result_map['list'](self)
+        self._read_data(proc.stdout, result)
+        if proc.returncode:
+            raise RuntimeError("Error invoking gpg: %s" % result.data)
+        else:
+            proc.terminate()
+
+        version_line = str(result.data).partition(':version:')[2]
+        self.binary_version = version_line.split('\n')[0]
+        log.debug("Using GnuPG version %s" % self.binary_version)
+
     def _make_args(self, args, passphrase=False):
         """Make a list of command line elements for GPG.
 
@@ -480,10 +499,15 @@ class GPGBase(object):
 
         if self.verbose:
             cmd.append('--debug-all')
-            if ((isinstance(self.verbose, str) and
-                 self.verbose in ['basic', 'advanced', 'expert', 'guru'])
-                or (isinstance(self.verbose, int) and (1<=self.verbose<=9))):
-                cmd.append('--debug-level %s' % self.verbose)
+
+            if (isinstance(self.verbose, str) or
+                (isinstance(self.verbose, int) and (self.verbose >= 1))):
+                # GnuPG<=1.4.18 parses the `--debug-level` command in a way
+                # that is incompatible with all other GnuPG versions. :'(
+                if self.binary_version and (self.binary_version <= '1.4.18'):
+                    cmd.append('--debug-level=%s' % self.verbose)
+                else:
+                    cmd.append('--debug-level %s' % self.verbose)
 
         return cmd
 
@@ -591,6 +615,36 @@ class GPGBase(object):
         result.data = type(data)().join(chunks)
         log.debug("Finishing reading from stream %r..." % stream.__repr__())
         log.debug("Read %4d bytes total" % len(result.data))
+
+    def _set_verbose(self, verbose):
+        """Check and set our :data:`verbose` attribute.
+        The debug-level must be a string or an integer. If it is one of
+        the allowed strings, GnuPG will translate it internally to it's
+        corresponding integer level:
+
+        basic     = 1-2
+        advanced  = 3-5
+        expert    = 6-8
+        guru      = 9+
+
+        If it's not one of the recognised string levels, then then
+        entire argument is ignored by GnuPG. :(
+
+        To fix that stupid behaviour, if they wanted debugging but typo'd
+        the string level (or specified ``verbose=True``), we'll default to
+        'basic' logging.
+        """
+        string_levels = ('basic', 'advanced', 'expert', 'guru')
+
+        if verbose is True:
+            # The caller wants logging, but we need a valid --debug-level
+            # for gpg. Default to "basic", and warn about the ambiguity.
+            verbose = 'basic'
+
+        if (isinstance(verbose, str) and not (verbose in string_levels)):
+            verbose = 'basic'
+
+        self.verbose = verbose
 
     def _collect_output(self, process, result, writer=None, stdin=None):
         """Drain the subprocesses output streams, writing the collected output

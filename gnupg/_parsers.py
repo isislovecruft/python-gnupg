@@ -475,6 +475,8 @@ def _get_options_group(group=None):
                              '--export-secret-subkeys',
                              '--fingerprint',
                              '--gen-revoke',
+                             '--hidden-encrypt-to',
+                             '--hidden-recipient',
                              '--list-key',
                              '--list-keys',
                              '--list-public-keys',
@@ -566,6 +568,7 @@ def _get_options_group(group=None):
                               '--quiet',
                               '--sign',
                               '--symmetric',
+                              '--throw-keyids',
                               '--use-agent',
                               '--verbose',
                               '--version',
@@ -1048,7 +1051,7 @@ class ImportResult(object):
         :rtype: bool
         :returns: True if we have immport some keys, False otherwise.
         """
-        if self.counts.not_imported > 0: return False
+        if self.counts['not_imported'] > 0: return False
         if len(self.fingerprints) == 0: return False
         return True
     __bool__ = __nonzero__
@@ -1220,6 +1223,7 @@ class Verify(object):
             self.status = 'signature good'
             self.key_id, self.username = value.split(None, 1)
         elif key == "VALIDSIG":
+            self.valid = True
             (self.fingerprint,
              self.creation_date,
              self.sig_timestamp,
@@ -1245,17 +1249,47 @@ class Verify(object):
             self.valid = False
             self.key_id = value
             self.status = 'no public key'
+        # These are useless in Verify, since they are spit out for any
+        # pub/subkeys on the key, not just the one doing the signing.
+        # if we want to check for signatures make with expired key,
+        # the relevant flags are REVKEYSIG and KEYREVOKED.
         elif key in ("KEYEXPIRED", "SIGEXPIRED"):
-            # these are useless in verify, since they are spit out for any
-            # pub/subkeys on the key, not just the one doing the signing.
-            # if we want to check for signatures with expired key,
-            # the relevant flag is EXPKEYSIG.
             pass
+        # The signature has an expiration date which has already passed
+        # (EXPKEYSIG), or the signature has been revoked (REVKEYSIG):
         elif key in ("EXPKEYSIG", "REVKEYSIG"):
-            # signed with expired or revoked key
             self.valid = False
             self.key_id = value.split()[0]
             self.status = (('%s %s') % (key[:3], key[3:])).lower()
+        # This is super annoying, and bad design on the part of GnuPG, in my
+        # opinion.
+        #
+        # This flag can get triggered if a valid signature is made, and then
+        # later the key (or subkey) which created the signature is
+        # revoked. When this happens, GnuPG will output:
+        #
+        # REVKEYSIG 075BFD18B365D34C Test Expired Key <test@python-gnupg.git>
+        # VALIDSIG DAB69B05F591640B7F4DCBEA075BFD18B365D34C 2014-09-26 1411700539 0 4 0 1 2 00 4BA800F77452A6C29447FF20F4AF76ACBBE22CE2
+        # KEYREVOKED
+        #
+        # Meaning that we have a timestamp for when the signature was created,
+        # and we know that the signature is valid, but since GnuPG gives us no
+        # timestamp for when the key was revoked... we have no ability to
+        # determine if the valid signature was made *before* the signing key
+        # was revoked or *after*. Meaning that if you are like me and you sign
+        # all your software releases and git commits, and you also practice
+        # good opsec by doing regular key rotations, your old signatures made
+        # by your expired/revoked keys (even though they were created when the
+        # key was still good) are considered bad because GnuPG is a
+        # braindamaged piece of shit.
+        #
+        # Software engineering, motherfuckers, DO YOU SPEAK IT?
+        #
+        # The signing key which created the signature has since been revoked
+        # (KEYREVOKED), and we're going to ignore it (but add something to the
+        # status message):
+        elif key in ("KEYREVOKED"):
+            self.status = '\n'.join([self.status, "key revoked"])
         else:
             raise ValueError("Unknown status message: %r" % key)
 

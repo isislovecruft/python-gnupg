@@ -70,6 +70,9 @@ _conf = os.path.join(os.path.join(_user, '.config'), 'python-gnupg')
 ## Logger is disabled by default
 log = _logger.create_logger(0)
 
+#: Compiled regex for determining a GnuPG binary's version:
+_VERSION_STRING_REGEX = re.compile('(\d)*(\.)*(\d)*(\.)*(\d)*')
+
 
 def find_encodings(enc=None, system=False):
     """Find functions for encoding translations for a specific codec.
@@ -260,6 +263,8 @@ def _find_binary(binary=None):
     """
     found = None
     if binary is not None:
+        if os.path.isabs(binary) and os.path.isfile(binary):
+            return binary
         if not os.path.isabs(binary):
             try:
                 found = _which(binary)
@@ -434,8 +439,7 @@ def _match_version_string(version):
 
     :param str version: A version string in the form x.x.x
     """
-    regex = re.compile('(\d)*(\.)*(\d)*(\.)*(\d)*')
-    matched = regex.match(version)
+    matched = _VERSION_STRING_REGEX.match(version)
     g = matched.groups()
     major, minor, micro = int(g[0]), int(g[2]), int(g[4])
     return (major, minor, micro)

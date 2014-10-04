@@ -34,8 +34,11 @@ cleanup-tests-all: cleanup-tests
 	rm -rf tests/tmp
 
 cleanup-build:
-	mkdir buildnot
-	rm -rf build*
+	-rm MANIFEST
+	-rm -rf build
+
+cleanup-dist:
+	-rm -rf dist
 
 # it's not strictly necessary that gnupg2, gpg-agent, pinentry, or pip be
 # installed, so ignore error exit statuses for those commands
@@ -90,3 +93,8 @@ docs-html:
 docs-zipfile: docs-html
 	cd $(DOC_HTML_DIR) && { find . -name '*' | zip -@ -v ../$(DOC_BUILD_ZIP) ;};
 	@echo "Built documentation in $(DOC_BUILD_DIR)/$(DOC_BUILD_ZIP)"
+
+upload: cleanup-build
+	python setup.py bdist_egg upload --sign
+	#python setup.py bdist_wheel upload --sign
+	python setup.py sdist --formats=gztar,zip upload --sign
