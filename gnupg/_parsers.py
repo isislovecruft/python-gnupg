@@ -367,7 +367,7 @@ def _sanitise(*args):
                         checked += (val + " ")
                         log.debug("_check_option(): No checks for %s" % val)
 
-        return checked
+        return checked.rstrip(' ')
 
     is_flag = lambda x: x.startswith('--')
 
@@ -557,6 +557,9 @@ def _get_options_group(group=None):
                               '--list-public-keys',
                               '--list-secret-keys',
                               '--list-sigs',
+                              '--lock-multiple',
+                              '--lock-never',
+                              '--lock-once',
                               '--no-default-keyring',
                               '--no-default-recipient',
                               '--no-emit-version',
