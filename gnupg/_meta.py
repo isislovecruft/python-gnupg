@@ -132,7 +132,7 @@ class GPGBase(object):
 
     def __init__(self, binary=None, home=None, keyring=None, secring=None,
                  use_agent=False, default_preference_list=None,
-                 verbose=False, options=None):
+                 ignore_homedir_permissions=False, verbose=False, options=None):
         """Create a ``GPGBase``.
 
         This class is used to set up properties for controlling the behaviour
@@ -155,6 +155,7 @@ class GPGBase(object):
         :ivar str secring: The filename in **homedir** to use as the keyring
                            file for secret keys.
         """
+        self.ignore_homedir_permissions = ignore_homedir_permissions
         self.binary  = _util._find_binary(binary)
         self.homedir = os.path.expanduser(home) if home else _util._conf
         pub = _parsers._fix_unsafe(keyring) if keyring else 'pubring.gpg'
@@ -398,18 +399,21 @@ class GPGBase(object):
             log.debug("GPGBase._homedir_setter(): Check existence of '%s'" % hd)
             _util._create_if_necessary(hd)
 
-        try:
-            log.debug("GPGBase._homedir_setter(): checking permissions")
-            assert _util._has_readwrite(hd), \
-                "Homedir '%s' needs read/write permissions" % hd
-        except AssertionError as ae:
-            msg = ("Unable to set '%s' as GnuPG homedir" % directory)
-            log.debug("GPGBase.homedir.setter(): %s" % msg)
-            log.debug(str(ae))
-            raise RuntimeError(str(ae))
-        else:
-            log.info("Setting homedir to '%s'" % hd)
+        if self.ignore_homedir_permissions:
             self._homedir = hd
+        else:
+            try:
+                log.debug("GPGBase._homedir_setter(): checking permissions")
+                assert _util._has_readwrite(hd), \
+                    "Homedir '%s' needs read/write permissions" % hd
+            except AssertionError as ae:
+                msg = ("Unable to set '%s' as GnuPG homedir" % directory)
+                log.debug("GPGBase.homedir.setter(): %s" % msg)
+                log.debug(str(ae))
+                raise RuntimeError(str(ae))
+            else:
+                log.info("Setting homedir to '%s'" % hd)
+                self._homedir = hd
 
     homedir = _util.InheritableProperty(_homedir_getter, _homedir_setter)
 
