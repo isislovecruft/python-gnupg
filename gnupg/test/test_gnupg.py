@@ -288,8 +288,8 @@ class GPGTestCase(unittest.TestCase):
         self.assertTrue(os.path.isabs(self.gpg.binary))
 
     def test_make_args_drop_protected_options(self):
-        """Test that unsupported gpg options are dropped."""
-        self.gpg.options = ['--tyrannosaurus-rex', '--stegosaurus']
+        """Test that unsupported gpg options are dropped, and supported ones remain."""
+        self.gpg.options = ['--tyrannosaurus-rex', '--stegosaurus', '--lock-never']
         gpg_binary_path = _util._find_binary('gpg')
         cmd = self.gpg._make_args(None, False)
         expected = [gpg_binary_path,
@@ -297,7 +297,8 @@ class GPGTestCase(unittest.TestCase):
                     '--homedir "%s"' % self.homedir,
                     '--no-default-keyring --keyring %s' % self.keyring,
                     '--secret-keyring %s' % self.secring,
-                    '--no-use-agent']
+                    '--no-use-agent',
+                    '--lock-never']
         self.assertListEqual(cmd, expected)
 
     def test_make_args(self):
