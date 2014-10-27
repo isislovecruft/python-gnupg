@@ -956,7 +956,6 @@ class ListKeys(list):
     |  crs = X.509 certificate and private key available
     |  ssb = secret subkey (secondary key)
     |  uat = user attribute (same as user id except for field 10).
-    |  sig = signature
     |  rev = revocation signature
     |  pkd = public key data (special field format, see below)
     |  grp = reserved for gpgsm
@@ -967,8 +966,10 @@ class ListKeys(list):
         super(ListKeys, self).__init__()
         self._gpg = gpg
         self.curkey = None
+        self.curuid = None
         self.fingerprints = []
         self.uids = []
+        self.sigs = {}
 
     def key(self, args):
         vars = ("""
@@ -978,8 +979,12 @@ class ListKeys(list):
         for i in range(len(vars)):
             self.curkey[vars[i]] = args[i]
         self.curkey['uids'] = []
+        self.curkey['sigs'] = {}
         if self.curkey['uid']:
-            self.curkey['uids'].append(self.curkey['uid'])
+            self.curuid = self.curkey['uid']
+            self.curkey['uids'].append(self.curuid)
+            self.sigs[self.curuid] = set()
+            self.curkey['sigs'][self.curuid] = []
         del self.curkey['uid']
         self.curkey['subkeys'] = []
         self.append(self.curkey)
@@ -994,7 +999,20 @@ class ListKeys(list):
         uid = args[9]
         uid = ESCAPE_PATTERN.sub(lambda m: chr(int(m.group(1), 16)), uid)
         self.curkey['uids'].append(uid)
+        self.curuid = uid
+        self.curkey['sigs'][uid] = []
+        self.sigs[uid] = set()
         self.uids.append(uid)
+
+    def sig(self, args):
+        vars = ("""
+            type trust length algo keyid date expires dummy ownertrust uid
+        """).split()
+        sig = {}
+        for i in range(len(vars)):
+            sig[vars[i]] = args[i]
+        self.curkey['sigs'][self.curuid].append(sig)
+        self.sigs[self.curuid].add(sig['keyid'])
 
     def sub(self, args):
         subkey = [args[4], args[11]]

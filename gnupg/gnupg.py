@@ -488,19 +488,7 @@ class GPG(GPGBase):
         self._collect_output(p, result, stdin=p.stdin)
         lines = result.data.decode(self._encoding,
                                    self._decode_errors).splitlines()
-        valid_keywords = 'pub uid sec fpr sub'.split()
-        for line in lines:
-            if self.verbose:
-                print(line)
-            log.debug("%r", line.rstrip())
-            if not line:
-                break
-            L = line.strip().split(':')
-            if not L:
-                continue
-            keyword = L[0]
-            if keyword in valid_keywords:
-                getattr(result, keyword)(L)
+        self._parse_keys(result)
         return result
 
     def list_packets(self, raw_data):
@@ -521,8 +509,8 @@ class GPG(GPGBase):
         >>> assert key.fingerprint
 
         :rtype: dict
-        :returns: A dictionary whose keys are the original keyid parameters,
-            and whose values are lists of signatures.
+        :returns: res.sigs is a dictionary whose keys are the uids and whose
+                values are a set of signature keyids.
         """
         if len(keyids) > self._batch_limit:
             raise ValueError(
@@ -537,7 +525,25 @@ class GPG(GPGBase):
         proc = self._open_subprocess(args)
         result = self._result_map['list'](self)
         self._collect_output(proc, result, stdin=proc.stdin)
+        self._parse_keys(result)
         return result
+
+    def _parse_keys(self, result):
+        lines = result.data.decode(self._encoding,
+                                   self._decode_errors).splitlines()
+        valid_keywords = 'pub uid sec fpr sub sig'.split()
+        for line in lines:
+            if self.verbose:
+                print(line)
+            log.debug("%r", line.rstrip())
+            if not line:
+                break
+            L = line.strip().split(':')
+            if not L:
+                continue
+            keyword = L[0]
+            if keyword in valid_keywords:
+                getattr(result, keyword)(L)
 
     def gen_key(self, input):
         """Generate a GnuPG key through batch file key generation. See
