@@ -911,7 +911,7 @@ class GPGBase(object):
                                 log.info("Can't accept recipient string: %s"
                                          % recp)
                             else:
-                                self._add_recipient_string(args, hidden_recipients, recp)
+                                self._add_recipient_string(args, hidden_recipients, str(recp))
                                 continue
                             ## will give unicode in 2.x as '\uXXXX\uXXXX'
                             if isinstance(hidden_recipients, (list, tuple)):

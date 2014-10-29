@@ -887,7 +887,7 @@ authentication."""
 
         self.assertEqual(message, decrypted)
 
-def test_encryption_hidden_recipient(self):
+    def test_encryption_hidden_recipient(self):
         """Test to ensure hidden recipient isn't detailed in packet info"""
 
         alice = open(os.path.join(_files, 'test_key_1.pub'))
@@ -896,7 +896,7 @@ def test_encryption_hidden_recipient(self):
         res = alice_public.results[-1:][0]
         alice_pfpr = str(res['fingerprint'])
         alice.close()
-        
+
         message = """
 In 2010 Riggio and Sicari presented a practical application of homomorphic
 encryption to a hybrid wireless sensor/mesh network. The system enables
@@ -1102,6 +1102,7 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                          'test_encryption_alt_encoding',
                          'test_encryption_multi_recipient',
                          'test_encryption_decryption_multi_recipient',
+                         'test_encryption_hidden_recipient',
                          'test_decryption',
                          'test_symmetric_encryption_and_decryption',
                          'test_file_encryption_and_decryption',
