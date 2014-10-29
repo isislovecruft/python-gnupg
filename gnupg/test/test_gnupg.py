@@ -887,6 +887,31 @@ authentication."""
 
         self.assertEqual(message, decrypted)
 
+def test_encryption_hidden_recipient(self):
+        """Test to ensure hidden recipient isn't detailed in packet info"""
+
+        alice = open(os.path.join(_files, 'test_key_1.pub'))
+        alice_pub = alice.read()
+        alice_public = self.gpg.import_keys(alice_pub)
+        res = alice_public.results[-1:][0]
+        alice_pfpr = str(res['fingerprint'])
+        alice.close()
+        
+        message = """
+In 2010 Riggio and Sicari presented a practical application of homomorphic
+encryption to a hybrid wireless sensor/mesh network. The system enables
+transparent multi-hop wireless backhauls that are able to perform statistical
+analysis of different kinds of data (temperature, humidity, etc.)  coming from
+a WSN while ensuring both end-to-end encryption and hop-by-hop
+authentication."""
+        enc = self.gpg.encrypt(message, alice_pfpr, hidden_recipients=[alice_pfpr])
+        encrypted = str(enc)
+        log.debug("keyid = %s"
+                  % alice_pfpr)
+
+        self.assertNotEquals(message, encrypted)
+        self.assertEquals("0000000000000000", self.gpg.list_packets(encrypted).key)
+
     def test_encryption_decryption_multi_recipient(self):
         """Test decryption of an encrypted string for multiple users"""
 

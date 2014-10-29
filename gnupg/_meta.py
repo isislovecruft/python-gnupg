@@ -772,6 +772,7 @@ class GPGBase(object):
                  symmetric=False,
                  always_trust=True,
                  output=None,
+                 hidden_recipients=None,
                  cipher_algo='AES256',
                  digest_algo='SHA512',
                  compress_algo='ZLIB'):
@@ -895,7 +896,7 @@ class GPGBase(object):
         ## is decryptable with a passphrase or secretkey.
         if symmetric: args.append('--symmetric')
         if encrypt: args.append('--encrypt')
-
+        
         if len(recipients) >= 1:
             log.debug("GPG.encrypt() called for recipients '%s' with type '%s'"
                       % (recipients, type(recipients)))
@@ -910,21 +911,27 @@ class GPGBase(object):
                                 log.info("Can't accept recipient string: %s"
                                          % recp)
                             else:
-                                args.append('--recipient %s' % str(recp))
+                                self._add_recipient_string(args, hidden_recipients, recp)
                                 continue
                             ## will give unicode in 2.x as '\uXXXX\uXXXX'
-                            args.append('--recipient %r' % recp)
+                            if isinstance(hidden_recipients, (list, tuple)):
+                                if [s for s in hidden_recipients if recp in str(s)]:
+                                    args.append('--hidden-recipient %r' % recp)
+                                else:
+                                    args.append('--recipient %r' % recp)
+                            else:
+                                args.append('--recipient %r' % recp)
                             continue
                     if isinstance(recp, str):
-                        args.append('--recipient %s' % recp)
+                        self._add_recipient_string(args, hidden_recipients, recp)
 
             elif (not _util._py3k) and isinstance(recp, basestring):
                 for recp in recipients.split('\x20'):
-                    args.append('--recipient %s' % recp)
+                    self._add_recipient_string(args, hidden_recipients, recp)
 
             elif _util._py3k and isinstance(recp, str):
                 for recp in recipients.split(' '):
-                    args.append('--recipient %s' % recp)
+                    self._add_recipient_string(args, hidden_recipients, recp)
                     ## ...and now that we've proven py3k is better...
 
             else:
@@ -946,3 +953,12 @@ class GPGBase(object):
                 log.info("Encrypted output written successfully.")
 
         return result
+    
+    def _add_recipient_string(self, args, hidden_recipients, recipient):
+        if isinstance(hidden_recipients, (list, tuple)):
+            if [s for s in hidden_recipients if recipient in str(s)]:
+                args.append('--hidden-recipient %s' % recipient)
+            else:
+                args.append('--recipient %s' % recipient)
+        else:
+            args.append('--recipient %s' % recipient)
