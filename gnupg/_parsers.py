@@ -1394,6 +1394,8 @@ class ListPackets(object):
         self.need_passphrase_sym = None
         #: The keyid and uid which this data is encrypted to.
         self.userid_hint = None
+        #: A list of keyid's that the message has been encrypted to.
+        self.key = []
 
     def _handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
@@ -1403,9 +1405,8 @@ class ListPackets(object):
         if key == 'NODATA':
             self.status = nodata(value)
         elif key == 'ENC_TO':
-            # This will only capture keys in our keyring. In the future we
-            # may want to include multiple unknown keys in this list.
-            self.key, _, _ = value.split()
+            key_to_add, _, _ = value.split()
+            self.key.append(key_to_add)
         elif key == 'NEED_PASSPHRASE':
             self.need_passphrase = True
         elif key == 'NEED_PASSPHRASE_SYM':
