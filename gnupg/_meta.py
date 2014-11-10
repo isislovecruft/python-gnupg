@@ -845,6 +845,10 @@ class GPGBase(object):
         >>> decrypted
         'The crow flies at midnight.'
 
+        :param list hidden_recipients: A list of recipients that should
+                                have their keyid zero'd out in packet 
+                                information.
+                                
         :param str cipher_algo: The cipher algorithm to use. To see available
                                 algorithms with your version of GnuPG, do:
                                 :command:`$ gpg --with-colons --list-config
