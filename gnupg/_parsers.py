@@ -1212,7 +1212,7 @@ class Verify(object):
             self.trust_level = self.TRUST_LEVELS[key]
         elif key in ("RSA_OR_IDEA", "NODATA", "IMPORT_RES", "PLAINTEXT",
                      "PLAINTEXT_LENGTH", "POLICY_URL", "DECRYPTION_INFO",
-                     "DECRYPTION_OKAY", "INV_SGNR"):
+                     "DECRYPTION_OKAY", "INV_SGNR", "PROGRESS"):
             pass
         elif key == "BADSIG":
             self.valid = False
