@@ -500,11 +500,9 @@ class GPGBase(object):
         if self.use_agent: cmd.append('--use-agent')
         else: cmd.append('--no-use-agent')
 
-        if self.options:
-            [cmd.append(opt) for opt in iter(_sanitise_list(self.options))]
-        if args:
-            [cmd.append(arg) for arg in iter(_sanitise_list(args))]
-
+        # The arguments for debugging and verbosity should be placed into the
+        # cmd list before the options/args in order to resolve Issue #76:
+        # https://github.com/isislovecruft/python-gnupg/issues/76
         if self.verbose:
             cmd.append('--debug-all')
 
@@ -516,6 +514,11 @@ class GPGBase(object):
                     cmd.append('--debug-level=%s' % self.verbose)
                 else:
                     cmd.append('--debug-level %s' % self.verbose)
+
+        if self.options:
+            [cmd.append(opt) for opt in iter(_sanitise_list(self.options))]
+        if args:
+            [cmd.append(arg) for arg in iter(_sanitise_list(args))]
 
         return cmd
 
