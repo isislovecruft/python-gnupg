@@ -185,13 +185,9 @@ versionfile_source = "src/_version.py"
 
 def get_versions(default={"version": "unknown", "full": ""}, verbose=False):
     variables = { "refnames": git_refnames, "full": git_full }
-    ver = versions_from_expanded_variables(variables, tag_prefix, verbose)
-    if not ver:
-        ver = versions_from_vcs(tag_prefix, versionfile_source, verbose)
-    if not ver:
-        ver = versions_from_parentdir(parentdir_prefix, versionfile_source,
-                                      verbose)
-    if not ver:
-        ver = default
-    return ver
-
+    return (versions_from_expanded_variables(variables, tag_prefix, verbose) or
+	   versions_from_vcs(tag_prefix, versionfile_source, verbose) or
+	   versions_from_parentdir(parentdir_prefix, versionfile_source, verbose) or
+	   versions_from_parentdir('gnupg-', versionfile_source, verbose) or # easy_install / setup.py
+           versions_from_vcs('', versionfile_source, verbose) or # cloned repository
+           default)
