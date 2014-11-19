@@ -63,6 +63,20 @@ except NameError:
 _here = os.path.join(os.getcwd(), 'gnupg')                   ## current dir
 _test = os.path.join(os.path.join(_here, 'test'), 'tmp')     ## ./tests/tmp
 _user = os.environ.get('HOME')                               ## $HOME
+
+# Fix for Issue #74: we shouldn't expect that a $HOME directory is set in all
+# environs. https://github.com/isislovecruft/python-gnupg/issues/74
+if not _user:
+    _user = '/tmp/python-gnupg'
+    try:
+        os.makedirs(_user)
+    except (OSError, IOError):
+        _user = os.getcwd()
+    # If we can't use $HOME, but we have (or can create) a
+    # /tmp/python-gnupg/gnupghome directory, then we'll default to using
+    # that. Otherwise, we'll use the current directory + /gnupghome.
+    _user = os.path.sep.join([_user, 'gnupghome'])
+
 _ugpg = os.path.join(_user, '.gnupg')                        ## $HOME/.gnupg
 _conf = os.path.join(os.path.join(_user, '.config'), 'python-gnupg')
                                      ## $HOME/.config/python-gnupg
