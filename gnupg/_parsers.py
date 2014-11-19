@@ -1192,6 +1192,13 @@ class Verify(object):
         self.trust_level = None
         #: The string corresponding to the ``trust_level`` number.
         self.trust_text = None
+        #: The subpackets. These are stored as a dictionary, in the following
+        #: form:
+        #:     Verify.subpackets = {'SUBPACKET_NUMBER': {'flags': FLAGS,
+        #:                                               'length': LENGTH,
+        #:                                               'data': DATA},
+        #:                          'ANOTHER_SUBPACKET_NUMBER': {...}}
+        self.subpackets = {}
 
     def __nonzero__(self):
         """Override the determination for truthfulness evaluation.
@@ -1290,6 +1297,45 @@ class Verify(object):
         # status message):
         elif key in ("KEYREVOKED"):
             self.status = '\n'.join([self.status, "key revoked"])
+        # SIG_SUBPACKET <type> <flags> <len> <data>
+        # This indicates that a signature subpacket was seen.  The format is
+        # the same as the "spk" record above.
+        #
+        # [...]
+        #
+        # SPK - Signature subpacket records
+        #
+        # - Field 2 :: Subpacket number as per RFC-4880 and later.
+        # - Field 3 :: Flags in hex.  Currently the only two bits assigned
+        #              are 1, to indicate that the subpacket came from the
+        #              hashed part of the signature, and 2, to indicate the
+        #              subpacket was marked critical.
+        # - Field 4 :: Length of the subpacket.  Note that this is the
+        #              length of the subpacket, and not the length of field
+        #              5 below.  Due to the need for %-encoding, the length
+        #              of field 5 may be up to 3x this value.
+        # - Field 5 :: The subpacket data.  Printable ASCII is shown as
+        #              ASCII, but other values are rendered as %XX where XX
+        #              is the hex value for the byte.
+        elif key in ("SIG_SUBPACKET"):
+            fields = value.split()
+            try:
+                subpacket_number = fields[0]
+                self.subpackets[subpacket_number] = {'flags': None,
+                                                     'length': None,
+                                                     'data': None}
+            except IndexError:
+                # We couldn't parse the subpacket type (an RFC4880
+                # identifier), so we shouldn't continue parsing.
+                pass
+            else:
+                # Pull as much data as we can parse out of the subpacket:
+                try:
+                    self.subpackets[subpacket_number]['flags'] = fields[1]
+                    self.subpackets[subpacket_number]['length'] = fields[2]
+                    self.subpackets[subpacket_number]['data'] = fields[3]
+                except IndexError:
+                    pass
         else:
             raise ValueError("Unknown status message: %r" % key)
 
