@@ -302,7 +302,7 @@ def _find_binary(binary=None):
 
     try:
         assert os.path.isabs(found), "Path to gpg binary not absolute"
-        assert not os.path.islink(found), "Path to gpg binary is symlink"
+        found = os.path.realpath(found)
         assert os.access(found, os.X_OK), "Lacking +x perms for gpg binary"
     except (AssertionError, AttributeError) as ae:
         log.error(str(ae))
