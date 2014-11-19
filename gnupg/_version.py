@@ -179,9 +179,9 @@ def versions_from_parentdir(parentdir_prefix, versionfile_source, verbose=False)
         return None
     return {"version": dirname[len(parentdir_prefix):], "full": ""}
 
-tag_prefix = "python-gnupg-"
-parentdir_prefix = "python-gnupg-"
-versionfile_source = "src/_version.py"
+tag_prefix = ""
+parentdir_prefix = "gnupg-"
+versionfile_source = "gnupg/_version.py"
 
 def get_versions(default={"version": "unknown", "full": ""}, verbose=False):
     variables = { "refnames": git_refnames, "full": git_full }
