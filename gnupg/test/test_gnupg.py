@@ -731,8 +731,6 @@ class GPGTestCase(unittest.TestCase):
         sigfd.close()
 
         self.assertTrue(sigfd.closed, "Sigfile '%s' should be closed" % sigfn)
-        with self.assertRaises(UnicodeDecodeError):
-            print("SIG=%s" % sig)
 
         datafd.seek(0)
         verification = self.gpg.verify_file(datafd, sig_file=sigfn)
