@@ -1199,6 +1199,30 @@ class Verify(object):
         #:                                               'data': DATA},
         #:                          'ANOTHER_SUBPACKET_NUMBER': {...}}
         self.subpackets = {}
+        #: The signature or key notations. These are also stored as a
+        #: dictionary, in the following form:
+        #:
+        #:     Verify.notations = {NOTATION_NAME: NOTATION_DATA}
+        #:
+        #: For example, the Bitcoin core developer, Peter Todd, encodes in
+        #: every signature the header of the latest block on the Bitcoin
+        #: blockchain (to prove that a GnuPG signature that Peter made was made
+        #: *after* a specific point in time). These look like:
+        #:
+        #: gpg: Signature notation: blockhash@bitcoin.org=000000000000000006f793d4461ee3e756ff04cc62581c96a42ed67dc233da3a
+        #:
+        #: Which python-gnupg would store as:
+        #:
+        #:     Verify.notations['blockhash@bitcoin.org'] = '000000000000000006f793d4461ee3e756ff04cc62581c96a42ed67dc233da3a'
+        self.notations = {}
+
+        #: This will be a str or None. If not None, it is the last
+        #: ``NOTATION_NAME`` we stored in the ``notations`` dict. Because we're
+        #: not assured that a ``NOTATION_DATA`` status will arrive *immediately*
+        #: after its corresponding ``NOTATION_NAME``, we store the latest
+        #: ``NOTATION_NAME`` here until we get its corresponding
+        #: ``NOTATION_DATA``.
+        self._last_notation_name = None
 
     def __nonzero__(self):
         """Override the determination for truthfulness evaluation.
@@ -1335,6 +1359,26 @@ class Verify(object):
                     self.subpackets[subpacket_number]['length'] = fields[2]
                     self.subpackets[subpacket_number]['data'] = fields[3]
                 except IndexError:
+                    pass
+        # NOTATION_
+        # There are actually two related status codes to convey notation
+        # data:
+        #
+        # - NOTATION_NAME <name>
+        # - NOTATION_DATA <string>
+        #
+        # <name> and <string> are %XX escaped; the data may be split among
+        # several NOTATION_DATA lines.
+        elif key.startswith("NOTATION_"):
+            if key.endswith("NAME"):
+                self.notations[value] = str()
+                self._last_notation_name = value
+            elif key.endswith("DATA"):
+                if self._last_notation_name is not None:
+                    # Append the NOTATION_DATA to any previous data we
+                    # received for that NOTATION_NAME:
+                    self.notations[self._last_notation_name] += value
+                else:
                     pass
         else:
             raise ValueError("Unknown status message: %r" % key)
