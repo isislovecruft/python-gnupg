@@ -918,7 +918,7 @@ authentication."""
         ## We expect Alice's key to be hidden (returned as zero's) and Bob's 
         ## key to be there.
         expected_values = ["0000000000000000", "E0ED97345F2973D6"]
-        self.assertEquals(expected_values, self.gpg.list_packets(encrypted).key)
+        self.assertEquals(expected_values, self.gpg.list_packets(encrypted).encrypted_to)
 
     def test_encryption_throw_keyids(self):
         """Test to ensure throw-keyids=True causes all recipients to be hidden.
@@ -957,7 +957,7 @@ boolean circuit causes a considerable overhead."""
         ## We expect Alice's key to be hidden (returned as zero's) and Bob's
         ## key to be there.
         expected_values = ["0000000000000000", "0000000000000000"]
-        self.assertEquals(expected_values, self.gpg.list_packets(encrypted).key)
+        self.assertEquals(expected_values, self.gpg.list_packets(encrypted).encrypted_to)
 
     def test_encryption_decryption_multi_recipient(self):
         """Test decryption of an encrypted string for multiple users"""
