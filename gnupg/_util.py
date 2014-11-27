@@ -56,6 +56,9 @@ try:
 except NameError:
     _py3k = True
 
+_running_windows = False
+if "win" in sys.platform:
+    _running_windows = True
 
 ## Directory shortcuts:
 ## we don't want to use this one because it writes to the install dir:
@@ -63,6 +66,20 @@ except NameError:
 _here = os.path.join(os.getcwd(), 'gnupg')                   ## current dir
 _test = os.path.join(os.path.join(_here, 'test'), 'tmp')     ## ./tests/tmp
 _user = os.environ.get('HOME')                               ## $HOME
+
+# Fix for Issue #74: we shouldn't expect that a $HOME directory is set in all
+# environs. https://github.com/isislovecruft/python-gnupg/issues/74
+if not _user:
+    _user = '/tmp/python-gnupg'
+    try:
+        os.makedirs(_user)
+    except (OSError, IOError):
+        _user = os.getcwd()
+    # If we can't use $HOME, but we have (or can create) a
+    # /tmp/python-gnupg/gnupghome directory, then we'll default to using
+    # that. Otherwise, we'll use the current directory + /gnupghome.
+    _user = os.path.sep.join([_user, 'gnupghome'])
+
 _ugpg = os.path.join(_user, '.gnupg')                        ## $HOME/.gnupg
 _conf = os.path.join(os.path.join(_user, '.config'), 'python-gnupg')
                                      ## $HOME/.config/python-gnupg
@@ -277,7 +294,7 @@ def _find_binary(binary=None):
         elif os.access(binary, os.X_OK):
             found = binary
     if found is None:
-        try: found = _which('gpg')[0]
+        try: found = _which('gpg', abspath_only=True, disallow_symlinks=True)[0]
         except IndexError as ie:
             log.error("Could not find binary for 'gpg'.")
             try: found = _which('gpg2')[0]
@@ -286,14 +303,7 @@ def _find_binary(binary=None):
     if found is None:
         raise RuntimeError("GnuPG is not installed!")
 
-    try:
-        assert os.path.isabs(found), "Path to gpg binary not absolute"
-        assert not os.path.islink(found), "Path to gpg binary is symlink"
-        assert os.access(found, os.X_OK), "Lacking +x perms for gpg binary"
-    except (AssertionError, AttributeError) as ae:
-        log.error(str(ae))
-    else:
-        return found
+    return found
 
 def _has_readwrite(path):
     """
@@ -489,7 +499,7 @@ def _utc_epoch():
     """Get the seconds since epoch."""
     return int(mktime(localtime()))
 
-def _which(executable, flags=os.X_OK):
+def _which(executable, flags=os.X_OK, abspath_only=False, disallow_symlinks=False):
     """Borrowed from Twisted's :mod:twisted.python.proutils .
 
     Search PATH for executable files with the given name.
@@ -512,6 +522,17 @@ def _which(executable, flags=os.X_OK):
     :returns: A list of the full paths to files found, in the order in which
               they were found.
     """
+    def _can_allow(p):
+        if not os.access(p, flags):
+            return False
+        if abspath_only and not os.path.abspath(p):
+            log.warn('Ignoring %r (path is not absolute)', p)
+            return False
+        if disallow_symlinks and os.path.islink(p):
+            log.warn('Ignoring %r (path is a symlink)', p)
+            return False
+        return True
+
     result = []
     exts = filter(None, os.environ.get('PATHEXT', '').split(os.pathsep))
     path = os.environ.get('PATH', None)
@@ -519,11 +540,11 @@ def _which(executable, flags=os.X_OK):
         return []
     for p in os.environ.get('PATH', '').split(os.pathsep):
         p = os.path.join(p, executable)
-        if os.access(p, flags):
+        if _can_allow(p):
             result.append(p)
         for e in exts:
             pext = p + e
-            if os.access(pext, flags):
+            if _can_allow(pext):
                 result.append(pext)
     return result
 

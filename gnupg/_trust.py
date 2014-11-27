@@ -57,7 +57,7 @@ def export_ownertrust(cls, trustdb=None):
     except (OSError, IOError) as err:
         log.debug(str(err))
 
-    export_proc = cls._open_subprocess('--export-ownertrust')
+    export_proc = cls._open_subprocess(['--export-ownertrust'])
     tdb = open(trustdb, 'wb')
     _util._threaded_copy_data(export_proc.stdout, tdb)
 
@@ -71,7 +71,7 @@ def import_ownertrust(self, trustdb=None):
     if trustdb is None:
         trustdb = os.path.join(cls.homedir, 'trustdb.gpg')
 
-    import_proc = cls._open_subprocess('--import-ownertrust')
+    import_proc = cls._open_subprocess(['--import-ownertrust'])
     tdb = open(trustdb, 'rb')
     _util._threaded_copy_data(tdb, import_proc.stdin)
 
@@ -98,6 +98,6 @@ def fix_trustdb(cls, trustdb=None):
     """
     if trustdb is None:
         trustdb = os.path.join(cls.homedir, 'trustdb.gpg')
-    export_proc = cls._open_subprocess('--export-ownertrust')
-    import_proc = cls._open_subprocess('--import-ownertrust')
+    export_proc = cls._open_subprocess(['--export-ownertrust'])
+    import_proc = cls._open_subprocess(['--import-ownertrust'])
     _util._threaded_copy_data(export_proc.stdout, import_proc.stdin)

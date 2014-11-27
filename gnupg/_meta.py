@@ -75,19 +75,40 @@ class GPGMeta(type):
         instance containing the gpg-agent process' information to
         ``cls._agent_proc``.
 
+        For Unix systems, we check that the effective UID of this
+        ``python-gnupg`` process is also the owner of the gpg-agent
+        process. For Windows, we check that the usernames of the owners are
+        the same. (Sorry Windows users; maybe you should switch to anything
+        else.)
+
         :returns: True if there exists a gpg-agent process running under the
                   same effective user ID as that of this program. Otherwise,
-                  returns None.
+                  returns False.
         """
-        identity = psutil.Process(os.getpid()).uids
+        this_process = psutil.Process(os.getpid())
+        ownership_match = False
+
+        if _util._running_windows:
+            identity = this_process.username()
+        else:
+            identity = this_process.uids
+
         for proc in psutil.process_iter():
             if (proc.name == "gpg-agent") and proc.is_running:
                 log.debug("Found gpg-agent process with pid %d" % proc.pid)
-                if proc.uids == identity:
-                    log.debug(
-                        "Effective UIDs of this process and gpg-agent match")
-                    setattr(cls, '_agent_proc', proc)
-                    return True
+                if _util._running_windows:
+                    if proc.username() == identity:
+                        ownership_match = True
+                else:
+                    if proc.uids == identity:
+                        ownership_match = True
+
+        if ownership_match:
+            log.debug("Effective UIDs of this process and gpg-agent match")
+            setattr(cls, '_agent_proc', proc)
+            return True
+
+        return False
 
 
 class GPGBase(object):
@@ -158,6 +179,14 @@ class GPGBase(object):
         self._encoding = encoding.lower().replace('-', '_')
         self._filesystemencoding = encodings.normalize_encoding(
             sys.getfilesystemencoding().lower())
+
+        # Issue #49: https://github.com/isislovecruft/python-gnupg/issues/49
+        #
+        # During `line = stream.readline()` in `_read_response()`, the Python
+        # codecs module will choke on Unicode data, so we globally monkeypatch
+        # the "strict" error handler to use the builtin `replace_errors`
+        # handler:
+        codecs.register_error('strict', codecs.replace_errors)
 
         self._keyserver = 'hkp://wwwkeys.pgp.net'
         self.__generated_keys = os.path.join(self.homedir, 'generated-keys')
@@ -492,11 +521,9 @@ class GPGBase(object):
         if self.use_agent: cmd.append('--use-agent')
         else: cmd.append('--no-use-agent')
 
-        if self.options:
-            [cmd.append(opt) for opt in iter(_sanitise_list(self.options))]
-        if args:
-            [cmd.append(arg) for arg in iter(_sanitise_list(args))]
-
+        # The arguments for debugging and verbosity should be placed into the
+        # cmd list before the options/args in order to resolve Issue #76:
+        # https://github.com/isislovecruft/python-gnupg/issues/76
         if self.verbose:
             cmd.append('--debug-all')
 
@@ -508,6 +535,11 @@ class GPGBase(object):
                     cmd.append('--debug-level=%s' % self.verbose)
                 else:
                     cmd.append('--debug-level %s' % self.verbose)
+
+        if self.options:
+            [cmd.append(opt) for opt in iter(_sanitise_list(self.options))]
+        if args:
+            [cmd.append(arg) for arg in iter(_sanitise_list(args))]
 
         return cmd
 
@@ -772,6 +804,8 @@ class GPGBase(object):
                  symmetric=False,
                  always_trust=True,
                  output=None,
+                 throw_keyids=False,
+                 hidden_recipients=None,
                  cipher_algo='AES256',
                  digest_algo='SHA512',
                  compress_algo='ZLIB'):
@@ -844,6 +878,14 @@ class GPGBase(object):
         >>> decrypted
         'The crow flies at midnight.'
 
+
+        :param bool throw_keyids: If True, make all **recipients** keyids be
+            zero'd out in packet information. This is the same as using
+            **hidden_recipients** for all **recipients**. (Default: False).
+
+        :param list hidden_recipients: A list of recipients that should have
+            their keyids zero'd out in packet information.
+                                
         :param str cipher_algo: The cipher algorithm to use. To see available
                                 algorithms with your version of GnuPG, do:
                                 :command:`$ gpg --with-colons --list-config
@@ -895,6 +937,7 @@ class GPGBase(object):
         ## is decryptable with a passphrase or secretkey.
         if symmetric: args.append('--symmetric')
         if encrypt: args.append('--encrypt')
+        if throw_keyids: args.append('--throw-keyids')
 
         if len(recipients) >= 1:
             log.debug("GPG.encrypt() called for recipients '%s' with type '%s'"
@@ -910,21 +953,27 @@ class GPGBase(object):
                                 log.info("Can't accept recipient string: %s"
                                          % recp)
                             else:
-                                args.append('--recipient %s' % str(recp))
+                                self._add_recipient_string(args, hidden_recipients, str(recp))
                                 continue
                             ## will give unicode in 2.x as '\uXXXX\uXXXX'
-                            args.append('--recipient %r' % recp)
+                            if isinstance(hidden_recipients, (list, tuple)):
+                                if [s for s in hidden_recipients if recp in str(s)]:
+                                    args.append('--hidden-recipient %r' % recp)
+                                else:
+                                    args.append('--recipient %r' % recp)
+                            else:
+                                args.append('--recipient %r' % recp)
                             continue
                     if isinstance(recp, str):
-                        args.append('--recipient %s' % recp)
+                        self._add_recipient_string(args, hidden_recipients, recp)
 
             elif (not _util._py3k) and isinstance(recp, basestring):
                 for recp in recipients.split('\x20'):
-                    args.append('--recipient %s' % recp)
+                    self._add_recipient_string(args, hidden_recipients, recp)
 
             elif _util._py3k and isinstance(recp, str):
                 for recp in recipients.split(' '):
-                    args.append('--recipient %s' % recp)
+                    self._add_recipient_string(args, hidden_recipients, recp)
                     ## ...and now that we've proven py3k is better...
 
             else:
@@ -946,3 +995,12 @@ class GPGBase(object):
                 log.info("Encrypted output written successfully.")
 
         return result
+    
+    def _add_recipient_string(self, args, hidden_recipients, recipient):
+        if isinstance(hidden_recipients, (list, tuple)):
+            if [s for s in hidden_recipients if recipient in str(s)]:
+                args.append('--hidden-recipient %s' % recipient)
+            else:
+                args.append('--recipient %s' % recipient)
+        else:
+            args.append('--recipient %s' % recipient)
