@@ -1026,42 +1026,52 @@ class ListKeys(list):
 
 
 class ImportResult(object):
-    """Parse GnuPG status messages for key import operations.
-
-    :type gpg: :class:`gnupg.GPG`
-    :param gpg: An instance of :class:`gnupg.GPG`.
-    """
-    _ok_reason = {'0': 'Not actually changed',
-                  '1': 'Entirely new key',
-                  '2': 'New user IDs',
-                  '4': 'New signatures',
-                  '8': 'New subkeys',
-                  '16': 'Contains private key',
-                  '17': 'Contains private key',}
-
-    _problem_reason = { '0': 'No specific reason given',
-                        '1': 'Invalid Certificate',
-                        '2': 'Issuer Certificate missing',
-                        '3': 'Certificate Chain too long',
-                        '4': 'Error storing certificate', }
-
-    _fields = '''count no_user_id imported imported_rsa unchanged
-    n_uids n_subk n_sigs n_revoc sec_read sec_imported sec_dups
-    not_imported'''.split()
-    _counts = OrderedDict(
-        zip(_fields, [int(0) for x in range(len(_fields))]) )
-
-    #: A list of strings containing the fingerprints of the GnuPG keyIDs
-    #: imported.
-    fingerprints = list()
-
-    #: A list containing dictionaries with information gathered on keys
-    #: imported.
-    results = list()
+    """Parse GnuPG status messages for key import operations."""
 
     def __init__(self, gpg):
+        """Start parsing the results of a key import operation.
+
+        :type gpg: :class:`gnupg.GPG`
+        :param gpg: An instance of :class:`gnupg.GPG`.
+        """
         self._gpg = gpg
-        self.counts = self._counts
+
+        #: A map from GnuPG codes shown with the ``IMPORT_OK`` status message
+        #: to their human-meaningful English equivalents.
+        self._ok_reason = {'0': 'Not actually changed',
+                           '1': 'Entirely new key',
+                           '2': 'New user IDs',
+                           '4': 'New signatures',
+                           '8': 'New subkeys',
+                           '16': 'Contains private key',
+                           '17': 'Contains private key',}
+
+        #: A map from GnuPG codes shown with the ``IMPORT_PROBLEM`` status
+        #: message to their human-meaningful English equivalents.
+        self._problem_reason = { '0': 'No specific reason given',
+                                 '1': 'Invalid Certificate',
+                                 '2': 'Issuer Certificate missing',
+                                 '3': 'Certificate Chain too long',
+                                 '4': 'Error storing certificate', }
+
+        #: All the possible status messages pertaining to actions taken while
+        #: importing a key.
+        self._fields = '''count no_user_id imported imported_rsa unchanged
+        n_uids n_subk n_sigs n_revoc sec_read sec_imported sec_dups
+        not_imported'''.split()
+
+        #: Counts of all the status message results, :data:`_fields` which
+        #: have appeared.
+        self.counts = OrderedDict(
+            zip(self._fields, [int(0) for x in range(len(self._fields))]))
+
+        #: A list of strings containing the fingerprints of the GnuPG keyIDs
+        #: imported.
+        self.fingerprints = list()
+
+        #: A list containing dictionaries with information gathered on keys
+        #: imported.
+        self.results = list()
 
     def __nonzero__(self):
         """Override the determination for truthfulness evaluation.
@@ -1077,7 +1087,7 @@ class ImportResult(object):
     def _handle_status(self, key, value):
         """Parse a status code from the attached GnuPG process.
 
-        :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
+        :raises ValueError: if the status message is unknown.
         """
         if key == "IMPORTED":
             # this duplicates info we already see in import_ok & import_problem
