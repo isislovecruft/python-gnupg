@@ -920,6 +920,45 @@ authentication."""
         expected_values = ["0000000000000000", "E0ED97345F2973D6"]
         self.assertEquals(expected_values, self.gpg.list_packets(encrypted).key)
 
+    def test_encryption_throw_keyids(self):
+        """Test to ensure throw-keyids=True causes all recipients to be hidden.
+        """
+        alice = open(os.path.join(_files, 'test_key_1.pub'))
+        alice_pub = alice.read()
+        alice_public = self.gpg.import_keys(alice_pub)
+        res = alice_public.results[-1:][0]
+        alice_pfpr = str(res['fingerprint'])
+        alice.close()
+
+        bob = open(os.path.join(_files, 'test_key_2.pub'))
+        bob_pub = bob.read()
+        bob_public = self.gpg.import_keys(bob_pub)
+        res = bob_public.results[-1:][0]
+        bob_pfpr = str(res['fingerprint'])
+        bob.close()
+
+        message = """
+Pairing-based cryptography has led to several cryptographic advancements. One
+of these advancements is more powerful and more efficient non-interactive
+zero-knowledge proofs. The seminal idea was to hide the values for the
+evaluation of the pairing in a commitment. Using different commitment schemes,
+this idea was used to build zero-knowledge proof systems under the sub-group
+hiding and under the decisional linear assumption. These proof systems prove
+circuit satisfiability, and thus by the Cook–Levin theorem allow to prove
+membership for every language in NP. The size of the common reference string
+and the proofs is relatively small, however transforming a statement into a
+boolean circuit causes a considerable overhead."""
+        enc = self.gpg.encrypt(message, alice_pfpr, bob_pfpr, throw_keyids=True)
+        encrypted = str(enc)
+        log.debug("keyid = %s"
+                  % alice_pfpr)
+
+        self.assertNotEquals(message, encrypted)
+        ## We expect Alice's key to be hidden (returned as zero's) and Bob's
+        ## key to be there.
+        expected_values = ["0000000000000000", "0000000000000000"]
+        self.assertEquals(expected_values, self.gpg.list_packets(encrypted).key)
+
     def test_encryption_decryption_multi_recipient(self):
         """Test decryption of an encrypted string for multiple users"""
 
@@ -1111,6 +1150,7 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                          'test_encryption_multi_recipient',
                          'test_encryption_decryption_multi_recipient',
                          'test_encryption_one_hidden_recipient_one_not',
+                         'test_encryption_throw_keyids',
                          'test_decryption',
                          'test_symmetric_encryption_and_decryption',
                          'test_file_encryption_and_decryption',

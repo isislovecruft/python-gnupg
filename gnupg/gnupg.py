@@ -930,6 +930,13 @@ generate keys. Please see
         'The crow flies at midnight.'
 
 
+        :param bool throw_keyids: If True, make all **recipients** keyids be
+            zero'd out in packet information. This is the same as using
+            **hidden_recipients** for all **recipients**. (Default: False).
+
+        :param list hidden_recipients: A list of recipients that should have
+            their keyids zero'd out in packet information.
+
         :param str cipher_algo: The cipher algorithm to use. To see available
             algorithms with your version of GnuPG, do:
             :command:`$ gpg --with-colons --list-config ciphername`.

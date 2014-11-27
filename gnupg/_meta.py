@@ -804,6 +804,7 @@ class GPGBase(object):
                  symmetric=False,
                  always_trust=True,
                  output=None,
+                 throw_keyids=False,
                  hidden_recipients=None,
                  cipher_algo='AES256',
                  digest_algo='SHA512',
@@ -877,9 +878,13 @@ class GPGBase(object):
         >>> decrypted
         'The crow flies at midnight.'
 
-        :param list hidden_recipients: A list of recipients that should
-                                have their keyid zero'd out in packet 
-                                information.
+
+        :param bool throw_keyids: If True, make all **recipients** keyids be
+            zero'd out in packet information. This is the same as using
+            **hidden_recipients** for all **recipients**. (Default: False).
+
+        :param list hidden_recipients: A list of recipients that should have
+            their keyids zero'd out in packet information.
                                 
         :param str cipher_algo: The cipher algorithm to use. To see available
                                 algorithms with your version of GnuPG, do:
@@ -932,7 +937,8 @@ class GPGBase(object):
         ## is decryptable with a passphrase or secretkey.
         if symmetric: args.append('--symmetric')
         if encrypt: args.append('--encrypt')
-        
+        if throw_keyids: args.append('--throw-keyids')
+
         if len(recipients) >= 1:
             log.debug("GPG.encrypt() called for recipients '%s' with type '%s'"
                       % (recipients, type(recipients)))
