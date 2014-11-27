@@ -75,19 +75,40 @@ class GPGMeta(type):
         instance containing the gpg-agent process' information to
         ``cls._agent_proc``.
 
+        For Unix systems, we check that the effective UID of this
+        ``python-gnupg`` process is also the owner of the gpg-agent
+        process. For Windows, we check that the usernames of the owners are
+        the same. (Sorry Windows users; maybe you should switch to anything
+        else.)
+
         :returns: True if there exists a gpg-agent process running under the
                   same effective user ID as that of this program. Otherwise,
-                  returns None.
+                  returns False.
         """
-        identity = psutil.Process(os.getpid()).uids
+        this_process = psutil.Process(os.getpid())
+        ownership_match = False
+
+        if _util._running_windows:
+            identity = this_process.username()
+        else:
+            identity = this_process.uids
+
         for proc in psutil.process_iter():
             if (proc.name == "gpg-agent") and proc.is_running:
                 log.debug("Found gpg-agent process with pid %d" % proc.pid)
-                if proc.uids == identity:
-                    log.debug(
-                        "Effective UIDs of this process and gpg-agent match")
-                    setattr(cls, '_agent_proc', proc)
-                    return True
+                if _util._running_windows:
+                    if proc.username() == identity:
+                        ownership_match = True
+                else:
+                    if proc.uids == identity:
+                        ownership_match = True
+
+        if ownership_match:
+            log.debug("Effective UIDs of this process and gpg-agent match")
+            setattr(cls, '_agent_proc', proc)
+            return True
+
+        return False
 
 
 class GPGBase(object):

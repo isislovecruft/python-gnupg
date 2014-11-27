@@ -56,6 +56,9 @@ try:
 except NameError:
     _py3k = True
 
+_running_windows = False
+if "win" in sys.platform:
+    _running_windows = True
 
 ## Directory shortcuts:
 ## we don't want to use this one because it writes to the install dir:
