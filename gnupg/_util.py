@@ -41,6 +41,17 @@ try:
 except ImportError:
     from cStringIO import StringIO
 
+# Import the StringIO class from the StringIO module since it is a
+# commonly used stream class. It is distinct from either of the
+# StringIO's that may be loaded in the above try/except clause, so the
+# name is prefixed with an underscore to distinguish it.
+from StringIO import StringIO as _StringIO
+
+# Import the cStringIO module to test for the cStringIO stream types,
+# InputType and OutputType. See
+# http://stackoverflow.com/questions/14735295/to-check-an-instance-is-stringio
+import cStringIO
+
 from . import _logger
 
 
@@ -350,7 +361,8 @@ def _is_stream(input):
     :rtype: bool
     :returns: True if :param:input is a stream, False if otherwise.
     """
-    return isinstance(input, BytesIO) or isinstance(input, StringIO)
+    return isinstance(input, (BytesIO, StringIO, _StringIO,
+                              cStringIO.InputType, cStringIO.OutputType))
 
 def _is_list_or_tuple(instance):
     """Check that ``instance`` is a list or tuple.
