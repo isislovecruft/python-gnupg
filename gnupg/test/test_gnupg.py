@@ -776,7 +776,47 @@ authentication."""
         log.debug("Encrypted: %s" % encrypted)
         self.assertNotEquals(message, encrypted)
 
+    def test_encryption_of_file_like_objects(self):
+        """Test encryption of file-like objects"""
+        key = self.generate_key("Craig Gentry", "xorr.ox",
+                                passphrase="craiggentry")
+        gentry_fpr = str(key.fingerprint)
+        gentry = self.gpg.export_keys(key.fingerprint)
+        self.gpg.import_keys(gentry)
+
+        message = """
+In 2010 Riggio and Sicari presented a practical application of homomorphic
+encryption to a hybrid wireless sensor/mesh network. The system enables
+transparent multi-hop wireless backhauls that are able to perform statistical
+analysis of different kinds of data (temperature, humidity, etc.)  coming from
+a WSN while ensuring both end-to-end encryption and hop-by-hop
+authentication."""
+
+        def _encryption_test_wrapper(stream_type, message):
+            stream = stream_type(message)
+            encrypted = str(self.gpg.encrypt(stream, gentry_fpr))
+            decrypted = str(self.gpg.decrypt(encrypted,
+                                             passphrase="craiggentry"))
+            self.assertEqual(message, decrypted)
+
+        # Test io.StringIO and io.BytesIO (Python 2.6+)
+        try:
+            from io import StringIO, BytesIO
+            _encryption_test_wrapper(StringIO, unicode(message))
+            _encryption_test_wrapper(BytesIO, message)
+        except ImportError:
+            pass
+
+        # Test StringIO.StringIO
+        from StringIO import StringIO
+        _encryption_test_wrapper(StringIO, message)
+
+        # Test cStringIO.StringIO
+        from cStringIO import StringIO
+        _encryption_test_wrapper(StringIO, message)
+
     def test_encryption_alt_encoding(self):
+
         """Test encryption with latin-1 encoding"""
         key = self.generate_key("Craig Gentry", "xorr.ox",
                                 passphrase="craiggentry")
@@ -1146,6 +1186,7 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                         'test_signature_string_verification',
                         'test_signature_string_algorithm_encoding']),
            'crypt': set(['test_encryption',
+                         'test_encryption_of_file_like_objects',
                          'test_encryption_alt_encoding',
                          'test_encryption_multi_recipient',
                          'test_encryption_decryption_multi_recipient',
