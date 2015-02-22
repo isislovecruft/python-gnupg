@@ -22,10 +22,18 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
+import platform
 import setuptools
 import sys
 import os
 import versioneer
+
+try:
+    import __pypy__
+except ImportError:
+    _isPyPy = False
+else:
+    _isPyPy = True
 
 
 versioneer.versionfile_source = 'gnupg/_version.py'
@@ -75,6 +83,13 @@ def get_requirements():
         # Required to make `collections.OrderedDict` available on Python<=2.6
         requirements.append('ordereddict==1.1#a0ed854ee442051b249bfad0f638bbec')
 
+    # Don't try to install psutil on PyPy:
+    if _isPyPy:
+        for line in requirements[:]:
+            if line.startswith('psutil'):
+                print("Not installing %s on PyPy..." % line)
+                requirements.remove(line)
+
     return requirements, links
 
 
@@ -89,8 +104,8 @@ This module allows easy access to GnuPG's key management, encryption and \
 signature functionality from Python programs, by interacting with GnuPG \
 through file descriptors. Input arguments are strictly checked and sanitised, \
 and therefore this module should be safe to use in networked applications \
-requiring direct user input. It is intended for use with Python 2.6 or \
-greater.
+requiring direct user input. It is intended for use on Windows, MacOS X, BSD, \
+or Linux, with Python 2.6, Python 2.7, Python 3.3, Python 3.4, or PyPy.
 """,
     license="GPLv3+",
 
@@ -119,7 +134,13 @@ greater.
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
+        "Intended Audience :: System Administrators",
         "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+        "Operating System :: Android",
+        "Operating System :: MacOS :: MacOS X",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: POSIX :: BSD",
+        "Operating System :: POSIX :: Linux",
         "Programming Language :: Python",
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",
@@ -127,6 +148,8 @@ greater.
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
+        "Programming Language :: Python :: Implementation :: CPython",
+        "Programming Language :: Python :: Implementation :: PyPy",
         "Topic :: Security :: Cryptography",
         "Topic :: Software Development :: Libraries :: Python Modules",
         "Topic :: Utilities",]

@@ -32,11 +32,17 @@ import encodings
 import locale
 import os
 import platform
-import psutil
 import shlex
 import subprocess
 import sys
 import threading
+
+## Using psutil is recommended, but since the extension doesn't run with the
+## PyPy interpreter, we'll run even if it's not present.
+try:
+    import psutil
+except ImportError:
+    psutil = None
 
 from . import _parsers
 from . import _util
@@ -81,10 +87,19 @@ class GPGMeta(type):
         the same. (Sorry Windows users; maybe you should switch to anything
         else.)
 
+        .. note: This function will only run if the psutil_ Python extension
+            is installed. Because psutil won't run with the PyPy interpreter,
+            use of it is optional (although highly recommended).
+
+        .. _psutil: https://pypi.python.org/pypi/psutil
+
         :returns: True if there exists a gpg-agent process running under the
                   same effective user ID as that of this program. Otherwise,
                   returns False.
         """
+        if not psutil:
+            return False
+
         this_process = psutil.Process(os.getpid())
         ownership_match = False
 
