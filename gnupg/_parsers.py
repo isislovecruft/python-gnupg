@@ -935,7 +935,7 @@ class Sign(object):
         :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
         if key in ("USERID_HINT", "NEED_PASSPHRASE", "BAD_PASSPHRASE",
-                   "GOOD_PASSPHRASE", "MISSING_PASSPHRASE",
+                   "GOOD_PASSPHRASE", "MISSING_PASSPHRASE", "PINENTRY_LAUNCHED",
                    "BEGIN_SIGNING", "CARDCTRL", "INV_SGNR", "SIGEXPIRED"):
             self.status = key.replace("_", " ").lower()
         elif key == "SIG_CREATED":
@@ -1277,7 +1277,8 @@ class Verify(object):
             self.trust_level = self.TRUST_LEVELS[key]
         elif key in ("RSA_OR_IDEA", "NODATA", "IMPORT_RES", "PLAINTEXT",
                      "PLAINTEXT_LENGTH", "POLICY_URL", "DECRYPTION_INFO",
-                     "DECRYPTION_OKAY", "INV_SGNR", "PROGRESS"):
+                     "DECRYPTION_OKAY", "INV_SGNR", "PROGRESS",
+                     "PINENTRY_LAUNCHED"):
             pass
         elif key == "BADSIG":
             self.valid = False
