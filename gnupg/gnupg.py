@@ -952,7 +952,10 @@ generate keys. Please see
 
         .. seealso:: :meth:`._encrypt`
         """
-        stream = _make_binary_stream(data, self._encoding)
+        if _is_stream(data):
+            stream = data
+        else:
+            stream = _make_binary_stream(data, self._encoding)
         result = self._encrypt(stream, recipients, **kwargs)
         stream.close()
         return result

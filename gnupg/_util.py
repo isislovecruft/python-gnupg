@@ -34,11 +34,36 @@ import re
 import string
 import sys
 
+# These are all the classes which are stream-like; they are used in
+# :func:`_is_stream`.
+_STREAMLIKE_TYPES = []
+
+# These StringIO classes are actually utilised.
 try:
     from io import StringIO
     from io import BytesIO
 except ImportError:
     from cStringIO import StringIO
+else:
+    _STREAMLIKE_TYPES.append(BytesIO)
+    _STREAMLIKE_TYPES.append(StringIO)
+
+# The remaining StringIO classes which are imported are used to determine if a
+# object is a stream-like in :func:`_is_stream`.
+if sys.version_info.major == 2:
+    # Import the StringIO class from the StringIO module since it is a
+    # commonly used stream class. It is distinct from either of the
+    # StringIO's that may be loaded in the above try/except clause, so the
+    # name is prefixed with an underscore to distinguish it.
+    from StringIO import StringIO as _StringIO_StringIO
+    _STREAMLIKE_TYPES.append(_StringIO_StringIO)
+
+    # Import the cStringIO module to test for the cStringIO stream types,
+    # InputType and OutputType. See
+    # http://stackoverflow.com/questions/14735295/to-check-an-instance-is-stringio
+    import cStringIO as _cStringIO
+    _STREAMLIKE_TYPES.append(_cStringIO.InputType)
+    _STREAMLIKE_TYPES.append(_cStringIO.OutputType)
 
 from . import _logger
 
@@ -349,7 +374,7 @@ def _is_stream(input):
     :rtype: bool
     :returns: True if :param:input is a stream, False if otherwise.
     """
-    return isinstance(input, BytesIO) or isinstance(input, StringIO)
+    return isinstance(input, tuple(_STREAMLIKE_TYPES))
 
 def _is_list_or_tuple(instance):
     """Check that ``instance`` is a list or tuple.
