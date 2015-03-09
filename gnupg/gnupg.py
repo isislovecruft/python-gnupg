@@ -161,6 +161,12 @@ class GPG(GPGBase):
         # fatal error (at least it does with GnuPG>=2.0.0):
         self.create_trustdb()
 
+        # The --no-use-agent and --use-agent options were deprecated in GnuPG
+        # 2.x, so we should set use_agent to None here to avoid having
+        # GPGBase._make_args() add either one.
+        if self.is_gpg2():
+            self.use_agent = None
+
     @functools.wraps(_trust._create_trustdb)
     def create_trustdb(self):
         if self.is_gpg2():
