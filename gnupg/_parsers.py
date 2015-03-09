@@ -912,6 +912,7 @@ class Sign(object):
     timestamp = None
     #: xxx fill me in
     what = None
+    status = None
 
     def __init__(self, gpg):
         self._gpg = gpg
@@ -934,9 +935,9 @@ class Sign(object):
         :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
         if key in ("USERID_HINT", "NEED_PASSPHRASE", "BAD_PASSPHRASE",
-                   "GOOD_PASSPHRASE", "BEGIN_SIGNING", "CARDCTRL",
-                   "INV_SGNR", "SIGEXPIRED"):
-            pass
+                   "GOOD_PASSPHRASE", "MISSING_PASSPHRASE",
+                   "BEGIN_SIGNING", "CARDCTRL", "INV_SGNR", "SIGEXPIRED"):
+            self.status = key.replace("_", " ").lower()
         elif key == "SIG_CREATED":
             (self.sig_type, self.sig_algo, self.sig_hash_algo,
              self.what, self.timestamp, self.fingerprint) = value.split()
@@ -952,6 +953,7 @@ class Sign(object):
             self.status = nodata(value)
         else:
             raise ValueError("Unknown status message: %r" % key)
+
 
 class ListKeys(list):
     """Handle status messages for --list-keys.
