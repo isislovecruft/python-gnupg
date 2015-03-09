@@ -176,7 +176,7 @@ class GPGBase(object):
         sec = _parsers._fix_unsafe(secring) if secring else 'secring.gpg'
         self.keyring = os.path.join(self._homedir, pub)
         self.secring = os.path.join(self._homedir, sec)
-        self.options = _parsers._sanitise(options) if options else None
+        self.options = list(_parsers._sanitise_list(options)) if options else None
 
         #: The version string of our GnuPG binary
         self.binary_version = '0.0.0'
@@ -212,7 +212,7 @@ class GPGBase(object):
                 "'verbose' must be boolean, string, or 0 <= n <= 9"
             assert isinstance(use_agent, bool), "'use_agent' must be boolean"
             if self.options is not None:
-                assert isinstance(self.options, str), "options not string"
+                assert isinstance(self.options, list), "options not list"
         except (AssertionError, AttributeError) as ae:
             log.error("GPGBase.__init__(): %s" % str(ae))
             raise RuntimeError(str(ae))
