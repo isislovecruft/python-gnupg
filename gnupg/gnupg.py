@@ -60,7 +60,7 @@ class GPG(GPGBase):
 
     def __init__(self, binary=None, homedir=None, verbose=False,
                  use_agent=False, keyring=None, secring=None,
-                 options=None):
+                 ignore_homedir_permissions=False, options=None):
         """Initialize a GnuPG process wrapper.
 
         :param str binary: Name for GnuPG binary executable. If the absolute
@@ -72,6 +72,10 @@ class GPG(GPGBase):
         :param str homedir: Full pathname to directory containing the public
                             and private keyrings. Default is whatever GnuPG
                             defaults to.
+
+        :type ignore_homedir_permissions: :obj:`bool`
+        :param ignore_homedir_permissions: If true, bypass check that homedir
+                                           be writable.
 
         :type verbose: :obj:`str` or :obj:`int` or :obj:`bool`
         :param verbose: String or numeric value to pass to GnuPG's
@@ -117,13 +121,16 @@ class GPG(GPGBase):
             secring=secring,
             options=options,
             verbose=verbose,
-            use_agent=use_agent,)
+            use_agent=use_agent,
+            ignore_homedir_permissions=ignore_homedir_permissions,
+        )
 
         log.info(textwrap.dedent("""
         Initialised settings:
         binary: %s
         binary version: %s
         homedir: %s
+        ignore_homedir_permissions: %s
         keyring: %s
         secring: %s
         default_preference_list: %s
@@ -134,6 +141,7 @@ class GPG(GPGBase):
         """ % (self.binary,
                self.binary_version,
                self.homedir,
+               self.ignore_homedir_permissions,
                self.keyring,
                self.secring,
                self.default_preference_list,
