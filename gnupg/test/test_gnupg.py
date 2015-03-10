@@ -26,6 +26,7 @@ A test harness and unittests for gnupg.py.
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import with_statement
+
 from argparse   import ArgumentParser
 from codecs     import open as open
 from functools  import wraps
@@ -389,7 +390,10 @@ class GPGTestCase(unittest.TestCase):
     def test_gen_key_input(self):
         """Test that GnuPG batch file creation is successful."""
         key_input = self.generate_key_input("Francisco Ferrer", "an.ok")
-        self.assertIsInstance(key_input, str)
+        if _util._py3k:
+            self.assertIsInstance(key_input, str)
+        else:
+            self.assertIsInstance(key_input, basestring)
         self.assertGreater(key_input.find('Francisco Ferrer'), 0)
 
     def test_rsa_key_generation(self):
@@ -794,8 +798,14 @@ authentication."""
 
     def _encryption_test(self, stream_type, message, fingerprint, passphrase):
         stream = stream_type(message)
-        encrypted = str(self.gpg.encrypt(stream, fingerprint))
-        decrypted = str(self.gpg.decrypt(encrypted, passphrase=passphrase))
+        encrypted = self.gpg.encrypt(stream, fingerprint).data
+        decrypted = self.gpg.decrypt(encrypted, passphrase=passphrase).data
+
+        if isinstance(decrypted, bytes):
+            decrypted = decrypted.decode()
+        if isinstance(message, bytes):
+            message = message.decode()
+
         self.assertEqual(message, decrypted)
 
     def test_encryption_of_file_like_objects_io_StringIO(self):
@@ -804,7 +814,10 @@ authentication."""
 
         try:
             from io import StringIO
-            self._encryption_test(StringIO, message, fpr, passphrase)
+            if _util._py3k:
+                self._encryption_test(StringIO, message, fpr, passphrase)
+            else:
+                self._encryption_test(StringIO, unicode(message), fpr, passphrase)
         except ImportError:
             pass
 
@@ -817,7 +830,7 @@ authentication."""
             if _util._py3k:
                 self._encryption_test(BytesIO, bytes(message, 'utf-8'), fpr, passphrase)
             else:
-                self._encryption_test(BytesIO, str(message), fpr, passphrase)
+                self._encryption_test(BytesIO, message, fpr, passphrase)
         except ImportError:
             pass
 
@@ -845,11 +858,7 @@ authentication."""
         key = self.generate_key("Marten van Dijk", "xorr.ox")
         dijk = str(key.fingerprint)
         self.gpg._encoding = 'latin-1'
-        if _util._py3k:
-            data = 'Hello, André!'
-        else:
-            data = unicode('Hello, André', self.gpg._encoding)
-        data = data.encode(self.gpg._encoding)
+        data = u'Hello, André!'.encode(self.gpg._encoding)
         encrypted = self.gpg.encrypt(data, gentry)
         edata = str(encrypted.data)
         self.assertNotEqual(data, edata)
