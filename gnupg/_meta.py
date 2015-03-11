@@ -1005,7 +1005,7 @@ class GPGBase(object):
 
         if output_filename:
             log.info("Writing encrypted output to file: %s" % output_filename)
-            with open(output_filename, 'w+') as fh:
+            with open(output_filename, 'wb') as fh:
                 fh.write(result.data)
                 fh.flush()
                 log.info("Encrypted output written successfully.")
