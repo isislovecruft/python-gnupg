@@ -1531,21 +1531,21 @@ class ListPackets(object):
 
         :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
-        if key == 'NODATA':
+        if key in ('NO_SECKEY', 'BEGIN_DECRYPTION', 'DECRYPTION_FAILED',
+                   'END_DECRYPTION', 'GOOD_PASSPHRASE', 'BAD_PASSPHRASE'):
+            pass
+        elif key == 'NODATA':
             self.status = nodata(value)
         elif key == 'ENC_TO':
             key, _, _ = value.split()
             if not self.key:
                 self.key = key
             self.encrypted_to.append(key)
-        elif key == 'NEED_PASSPHRASE':
+        elif key == ('NEED_PASSPHRASE', 'MISSING_PASSPHRASE'):
             self.need_passphrase = True
         elif key == 'NEED_PASSPHRASE_SYM':
             self.need_passphrase_sym = True
         elif key == 'USERID_HINT':
             self.userid_hint = value.strip().split()
-        elif key in ('NO_SECKEY', 'BEGIN_DECRYPTION', 'DECRYPTION_FAILED',
-                     'END_DECRYPTION'):
-            pass
         else:
             raise ValueError("Unknown status message: %r" % key)
