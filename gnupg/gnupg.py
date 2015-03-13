@@ -60,7 +60,7 @@ class GPG(GPGBase):
 
     def __init__(self, binary=None, homedir=None, verbose=False,
                  use_agent=False, keyring=None, secring=None,
-                 options=None):
+                 ignore_homedir_permissions=False, options=None):
         """Initialize a GnuPG process wrapper.
 
         :param str binary: Name for GnuPG binary executable. If the absolute
@@ -72,6 +72,10 @@ class GPG(GPGBase):
         :param str homedir: Full pathname to directory containing the public
                             and private keyrings. Default is whatever GnuPG
                             defaults to.
+
+        :type ignore_homedir_permissions: :obj:`bool`
+        :param ignore_homedir_permissions: If true, bypass check that homedir
+                                           be writable.
 
         :type verbose: :obj:`str` or :obj:`int` or :obj:`bool`
         :param verbose: String or numeric value to pass to GnuPG's
@@ -117,13 +121,16 @@ class GPG(GPGBase):
             secring=secring,
             options=options,
             verbose=verbose,
-            use_agent=use_agent,)
+            use_agent=use_agent,
+            ignore_homedir_permissions=ignore_homedir_permissions,
+        )
 
         log.info(textwrap.dedent("""
         Initialised settings:
         binary: %s
         binary version: %s
         homedir: %s
+        ignore_homedir_permissions: %s
         keyring: %s
         secring: %s
         default_preference_list: %s
@@ -134,6 +141,7 @@ class GPG(GPGBase):
         """ % (self.binary,
                self.binary_version,
                self.homedir,
+               self.ignore_homedir_permissions,
                self.keyring,
                self.secring,
                self.default_preference_list,
@@ -152,6 +160,12 @@ class GPG(GPGBase):
         # Make sure that the trustdb exists, or else GnuPG will exit with a
         # fatal error (at least it does with GnuPG>=2.0.0):
         self.create_trustdb()
+
+        # The --no-use-agent and --use-agent options were deprecated in GnuPG
+        # 2.x, so we should set use_agent to None here to avoid having
+        # GPGBase._make_args() add either one.
+        if self.is_gpg2():
+            self.use_agent = None
 
     @functools.wraps(_trust._create_trustdb)
     def create_trustdb(self):
@@ -787,7 +801,7 @@ class GPG(GPGBase):
             key = key.replace('_','-').title()
             ## to set 'cert', 'Key-Usage' must be blank string
             if not key in ('Key-Usage', 'Subkey-Usage'):
-                if str(val).strip():
+                if type(u'')(val).strip():
                     parms[key] = val
 
         ## if Key-Type is 'default', make Subkey-Type also be 'default'
@@ -952,7 +966,10 @@ generate keys. Please see
 
         .. seealso:: :meth:`._encrypt`
         """
-        stream = _make_binary_stream(data, self._encoding)
+        if _is_stream(data):
+            stream = data
+        else:
+            stream = _make_binary_stream(data, self._encoding)
         result = self._encrypt(stream, recipients, **kwargs)
         stream.close()
         return result

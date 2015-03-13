@@ -367,7 +367,7 @@ def _sanitise(*args):
                         checked += (val + " ")
                         log.debug("_check_option(): No checks for %s" % val)
 
-        return checked
+        return checked.rstrip(' ')
 
     is_flag = lambda x: x.startswith('--')
 
@@ -516,6 +516,7 @@ def _get_options_group(group=None):
                                       '--import',
                                       '--verify',
                                       '--verify-files',
+                                      '--output',
                                       ])
     #: These options expect a string. see :func:`_check_preferences`.
     pref_options = frozenset(['--digest-algo',
@@ -557,6 +558,9 @@ def _get_options_group(group=None):
                               '--list-public-keys',
                               '--list-secret-keys',
                               '--list-sigs',
+                              '--lock-multiple',
+                              '--lock-never',
+                              '--lock-once',
                               '--no-default-keyring',
                               '--no-default-recipient',
                               '--no-emit-version',
@@ -908,6 +912,7 @@ class Sign(object):
     timestamp = None
     #: xxx fill me in
     what = None
+    status = None
 
     def __init__(self, gpg):
         self._gpg = gpg
@@ -930,9 +935,9 @@ class Sign(object):
         :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
         if key in ("USERID_HINT", "NEED_PASSPHRASE", "BAD_PASSPHRASE",
-                   "GOOD_PASSPHRASE", "BEGIN_SIGNING", "CARDCTRL",
-                   "INV_SGNR", "SIGEXPIRED"):
-            pass
+                   "GOOD_PASSPHRASE", "MISSING_PASSPHRASE", "PINENTRY_LAUNCHED",
+                   "BEGIN_SIGNING", "CARDCTRL", "INV_SGNR", "SIGEXPIRED"):
+            self.status = key.replace("_", " ").lower()
         elif key == "SIG_CREATED":
             (self.sig_type, self.sig_algo, self.sig_hash_algo,
              self.what, self.timestamp, self.fingerprint) = value.split()
@@ -948,6 +953,7 @@ class Sign(object):
             self.status = nodata(value)
         else:
             raise ValueError("Unknown status message: %r" % key)
+
 
 class ListKeys(list):
     """Handle status messages for --list-keys.
@@ -1271,7 +1277,8 @@ class Verify(object):
             self.trust_level = self.TRUST_LEVELS[key]
         elif key in ("RSA_OR_IDEA", "NODATA", "IMPORT_RES", "PLAINTEXT",
                      "PLAINTEXT_LENGTH", "POLICY_URL", "DECRYPTION_INFO",
-                     "DECRYPTION_OKAY", "INV_SGNR", "PROGRESS"):
+                     "DECRYPTION_OKAY", "INV_SGNR", "PROGRESS",
+                     "PINENTRY_LAUNCHED"):
             pass
         elif key == "BADSIG":
             self.valid = False
@@ -1524,21 +1531,21 @@ class ListPackets(object):
 
         :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
-        if key == 'NODATA':
+        if key in ('NO_SECKEY', 'BEGIN_DECRYPTION', 'DECRYPTION_FAILED',
+                   'END_DECRYPTION', 'GOOD_PASSPHRASE', 'BAD_PASSPHRASE'):
+            pass
+        elif key == 'NODATA':
             self.status = nodata(value)
         elif key == 'ENC_TO':
             key, _, _ = value.split()
             if not self.key:
                 self.key = key
             self.encrypted_to.append(key)
-        elif key == 'NEED_PASSPHRASE':
+        elif key == ('NEED_PASSPHRASE', 'MISSING_PASSPHRASE'):
             self.need_passphrase = True
         elif key == 'NEED_PASSPHRASE_SYM':
             self.need_passphrase_sym = True
         elif key == 'USERID_HINT':
             self.userid_hint = value.strip().split()
-        elif key in ('NO_SECKEY', 'BEGIN_DECRYPTION', 'DECRYPTION_FAILED',
-                     'END_DECRYPTION'):
-            pass
         else:
             raise ValueError("Unknown status message: %r" % key)

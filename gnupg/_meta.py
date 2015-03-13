@@ -147,7 +147,7 @@ class GPGBase(object):
 
     def __init__(self, binary=None, home=None, keyring=None, secring=None,
                  use_agent=False, default_preference_list=None,
-                 verbose=False, options=None):
+                 ignore_homedir_permissions=False, verbose=False, options=None):
         """Create a ``GPGBase``.
 
         This class is used to set up properties for controlling the behaviour
@@ -170,13 +170,14 @@ class GPGBase(object):
         :ivar str secring: The filename in **homedir** to use as the keyring
                            file for secret keys.
         """
+        self.ignore_homedir_permissions = ignore_homedir_permissions
         self.binary  = _util._find_binary(binary)
         self.homedir = os.path.expanduser(home) if home else _util._conf
         pub = _parsers._fix_unsafe(keyring) if keyring else 'pubring.gpg'
         sec = _parsers._fix_unsafe(secring) if secring else 'secring.gpg'
         self.keyring = os.path.join(self._homedir, pub)
         self.secring = os.path.join(self._homedir, sec)
-        self.options = _parsers._sanitise(options) if options else None
+        self.options = list(_parsers._sanitise_list(options)) if options else None
 
         #: The version string of our GnuPG binary
         self.binary_version = '0.0.0'
@@ -212,7 +213,7 @@ class GPGBase(object):
                 "'verbose' must be boolean, string, or 0 <= n <= 9"
             assert isinstance(use_agent, bool), "'use_agent' must be boolean"
             if self.options is not None:
-                assert isinstance(self.options, str), "options not string"
+                assert isinstance(self.options, list), "options not list"
         except (AssertionError, AttributeError) as ae:
             log.error("GPGBase.__init__(): %s" % str(ae))
             raise RuntimeError(str(ae))
@@ -413,18 +414,21 @@ class GPGBase(object):
             log.debug("GPGBase._homedir_setter(): Check existence of '%s'" % hd)
             _util._create_if_necessary(hd)
 
-        try:
-            log.debug("GPGBase._homedir_setter(): checking permissions")
-            assert _util._has_readwrite(hd), \
-                "Homedir '%s' needs read/write permissions" % hd
-        except AssertionError as ae:
-            msg = ("Unable to set '%s' as GnuPG homedir" % directory)
-            log.debug("GPGBase.homedir.setter(): %s" % msg)
-            log.debug(str(ae))
-            raise RuntimeError(str(ae))
-        else:
-            log.info("Setting homedir to '%s'" % hd)
+        if self.ignore_homedir_permissions:
             self._homedir = hd
+        else:
+            try:
+                log.debug("GPGBase._homedir_setter(): checking permissions")
+                assert _util._has_readwrite(hd), \
+                    "Homedir '%s' needs read/write permissions" % hd
+            except AssertionError as ae:
+                msg = ("Unable to set '%s' as GnuPG homedir" % directory)
+                log.debug("GPGBase.homedir.setter(): %s" % msg)
+                log.debug(str(ae))
+                raise RuntimeError(str(ae))
+            else:
+                log.info("Setting homedir to '%s'" % hd)
+                self._homedir = hd
 
     homedir = _util.InheritableProperty(_homedir_getter, _homedir_setter)
 
@@ -533,8 +537,8 @@ class GPGBase(object):
 
         if passphrase: cmd.append('--batch --passphrase-fd 0')
 
-        if self.use_agent: cmd.append('--use-agent')
-        else: cmd.append('--no-use-agent')
+        if self.use_agent is True: cmd.append('--use-agent')
+        elif self.use_agent is False: cmd.append('--no-use-agent')
 
         # The arguments for debugging and verbosity should be placed into the
         # cmd list before the options/args in order to resolve Issue #76:
@@ -990,21 +994,18 @@ class GPGBase(object):
                 for recp in recipients.split(' '):
                     self._add_recipient_string(args, hidden_recipients, recp)
                     ## ...and now that we've proven py3k is better...
-
             else:
-                log.debug("Don't know what to do with recipients: '%s'"
+                log.debug("Don't know what to do with recipients: %r"
                           % recipients)
 
         result = self._result_map['crypt'](self)
-        log.debug("Got data '%s' with type '%s'."
-                  % (data, type(data)))
-        self._handle_io(args, data, result,
-                        passphrase=passphrase, binary=True)
+        log.debug("Got data '%s' with type '%s'." % (data, type(data)))
+        self._handle_io(args, data, result, passphrase=passphrase, binary=True)
         log.debug("\n%s" % result.data)
 
         if output_filename:
             log.info("Writing encrypted output to file: %s" % output_filename)
-            with open(output_filename, 'w+') as fh:
+            with open(output_filename, 'wb') as fh:
                 fh.write(result.data)
                 fh.flush()
                 log.info("Encrypted output written successfully.")

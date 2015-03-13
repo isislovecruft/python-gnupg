@@ -34,11 +34,52 @@ import re
 import string
 import sys
 
+# These are all the classes which are stream-like; they are used in
+# :func:`_is_stream`.
+_STREAMLIKE_TYPES = []
+
+# These StringIO classes are actually utilised.
 try:
+    import io
     from io import StringIO
     from io import BytesIO
 except ImportError:
     from cStringIO import StringIO
+else:
+    # The io.IOBase type covers the above example for an open file handle in
+    # Python3, as well as both io.BytesIO and io.StringIO.
+    _STREAMLIKE_TYPES.append(io.IOBase)
+
+# The remaining StringIO classes which are imported are used to determine if a
+# object is a stream-like in :func:`_is_stream`.
+if sys.version_info.major == 2:
+    # Import the StringIO class from the StringIO module since it is a
+    # commonly used stream class. It is distinct from either of the
+    # StringIO's that may be loaded in the above try/except clause, so the
+    # name is prefixed with an underscore to distinguish it.
+    from StringIO import StringIO as _StringIO_StringIO
+    _STREAMLIKE_TYPES.append(_StringIO_StringIO)
+
+    # Import the cStringIO module to test for the cStringIO stream types,
+    # InputType and OutputType. See
+    # http://stackoverflow.com/questions/14735295/to-check-an-instance-is-stringio
+    import cStringIO as _cStringIO
+    _STREAMLIKE_TYPES.append(_cStringIO.InputType)
+    _STREAMLIKE_TYPES.append(_cStringIO.OutputType)
+
+    # In Python2:
+    #
+    #     >>> type(open('README.md', 'rb'))
+    #     <open file 'README.md', mode 'rb' at 0x7f9493951d20>
+    #
+    # whereas, in Python3, the `file` builtin doesn't exist and instead we get:
+    #
+    #     >>> type(open('README.md', 'rb'))
+    #     <_io.BufferedReader name='README.md'>
+    #
+    # which is covered by the above addition of io.IOBase.
+    _STREAMLIKE_TYPES.append(file)
+
 
 from . import _logger
 
@@ -142,7 +183,6 @@ def _copy_data(instream, outstream):
     :param file outstream: The file descriptor of a tmpfile to write to.
     """
     sent = 0
-
     coder = find_encodings()
 
     while True:
@@ -154,24 +194,73 @@ def _copy_data(instream, outstream):
             data = instream.read(1024)
         if len(data) == 0:
             break
+
         sent += len(data)
-        log.debug("Sending chunk %d bytes:\n%s"
-                  % (sent, data))
-        try:
-            outstream.write(data)
-        except UnicodeError:
+        log.debug("Sending chunk %d bytes:\n%s" % (sent, data))
+
+        if _py3k and isinstance(data, bytes):
+            encoded = coder.encode(data.decode(coder.name))[0]
+        elif _py3k and isinstance(data, str):
+            encoded = coder.encode(data)[0]
+        elif not _py3k and type(data) is not str:
+            encoded = coder.encode(data)[0]
+        else:
+            encoded = data
+        log.debug("Writing encoded data with type %s to outstream... "
+                  % type(encoded))
+
+        if not _py3k:
             try:
-                outstream.write(coder.encode(data))
-            except IOError:
-                log.exception("Error sending data: Broken pipe")
+                outstream.write(encoded)
+            except IOError as ioe:
+                # Can get 'broken pipe' errors even when all data was sent
+                if 'Broken pipe' in str(ioe):
+                    log.error('Error sending data: Broken pipe')
+                else:
+                    log.exception(ioe)
                 break
-        except IOError as ioe:
-            # Can get 'broken pipe' errors even when all data was sent
-            if 'Broken pipe' in str(ioe):
-                log.error('Error sending data: Broken pipe')
             else:
-                log.exception(ioe)
-            break
+                log.debug("Wrote data type <type 'str'> to outstream.")
+        else:
+            try:
+                outstream.write(bytes(encoded))
+            except TypeError as te:
+                # XXX FIXME This appears to happen because
+                # _threaded_copy_data() sometimes passes the `outstream` as an
+                # object with type <_io.BufferredWriter> and at other times
+                # with type <encodings.utf_8.StreamWriter>.  We hit the
+                # following error when the `outstream` has type
+                # <encodings.utf_8.StreamWriter>.
+                if not "convert 'bytes' object to str implicitly" in str(te):
+                    log.error(str(te))
+                try:
+                    outstream.write(encoded.decode())
+                except TypeError as yate:
+                    # We hit the "'str' does not support the buffer interface"
+                    # error in Python3 when the `outstream` is an io.BytesIO and
+                    # we try to write a str to it.  We don't care about that
+                    # error, we'll just try again with bytes.
+                    if not "does not support the buffer interface" in str(yate):
+                        log.error(str(yate))
+                except IOError as ioe:
+                    # Can get 'broken pipe' errors even when all data was sent
+                    if 'Broken pipe' in str(ioe):
+                        log.error('Error sending data: Broken pipe')
+                    else:
+                        log.exception(ioe)
+                    break
+                else:
+                    log.debug("Wrote data type <class 'str'> outstream.")
+            except IOError as ioe:
+                # Can get 'broken pipe' errors even when all data was sent
+                if 'Broken pipe' in str(ioe):
+                    log.error('Error sending data: Broken pipe')
+                else:
+                    log.exception(ioe)
+                break
+            else:
+                log.debug("Wrote data type <class 'bytes'> to outstream.")
+
     try:
         outstream.close()
     except IOError as ioe:
@@ -349,7 +438,7 @@ def _is_stream(input):
     :rtype: bool
     :returns: True if :param:input is a stream, False if otherwise.
     """
-    return isinstance(input, BytesIO) or isinstance(input, StringIO)
+    return isinstance(input, tuple(_STREAMLIKE_TYPES))
 
 def _is_list_or_tuple(instance):
     """Check that ``instance`` is a list or tuple.
