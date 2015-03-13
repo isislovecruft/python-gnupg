@@ -26,6 +26,7 @@ A test harness and unittests for gnupg.py.
 from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import with_statement
+
 from argparse   import ArgumentParser
 from codecs     import open as open
 from functools  import wraps
@@ -389,7 +390,10 @@ class GPGTestCase(unittest.TestCase):
     def test_gen_key_input(self):
         """Test that GnuPG batch file creation is successful."""
         key_input = self.generate_key_input("Francisco Ferrer", "an.ok")
-        self.assertIsInstance(key_input, str)
+        if _util._py3k:
+            self.assertIsInstance(key_input, str)
+        else:
+            self.assertIsInstance(key_input, basestring)
         self.assertGreater(key_input.find('Francisco Ferrer'), 0)
 
     def test_rsa_key_generation(self):
@@ -777,14 +781,12 @@ authentication."""
         log.debug("Encrypted: %s" % encrypted)
         self.assertNotEquals(message, encrypted)
 
-    def test_encryption_of_file_like_objects(self):
-        """Test encryption of file-like objects"""
-        key = self.generate_key("Craig Gentry", "xorr.ox",
-                                passphrase="craiggentry")
-        gentry_fpr = str(key.fingerprint)
+    def _encryption_test_setup(self):
+        passphrase = "craiggentry"
+        key = self.generate_key("Craig Gentry", "xorr.ox", passphrase=passphrase)
+        fpr = str(key.fingerprint)
         gentry = self.gpg.export_keys(key.fingerprint)
         self.gpg.import_keys(gentry)
-
         message = """
 In 2010 Riggio and Sicari presented a practical application of homomorphic
 encryption to a hybrid wireless sensor/mesh network. The system enables
@@ -792,32 +794,63 @@ transparent multi-hop wireless backhauls that are able to perform statistical
 analysis of different kinds of data (temperature, humidity, etc.)  coming from
 a WSN while ensuring both end-to-end encryption and hop-by-hop
 authentication."""
+        return (message, fpr, passphrase)
 
-        def _encryption_test_wrapper(stream_type, message):
-            stream = stream_type(message)
-            encrypted = str(self.gpg.encrypt(stream, gentry_fpr))
-            decrypted = str(self.gpg.decrypt(encrypted,
-                                             passphrase="craiggentry"))
-            self.assertEqual(message, decrypted)
+    def _encryption_test(self, stream_type, message, fingerprint, passphrase):
+        stream = stream_type(message)
+        encrypted = self.gpg.encrypt(stream, fingerprint).data
+        decrypted = self.gpg.decrypt(encrypted, passphrase=passphrase).data
 
-        # Test io.StringIO and io.BytesIO (Python 2.6+)
+        if isinstance(decrypted, bytes):
+            decrypted = decrypted.decode()
+        if isinstance(message, bytes):
+            message = message.decode()
+
+        self.assertEqual(message, decrypted)
+
+    def test_encryption_of_file_like_objects_io_StringIO(self):
+        """Test encryption of file-like object io.StringIO."""
+        message, fpr, passphrase = self._encryption_test_setup()
+
         try:
-            from io import StringIO, BytesIO
-            _encryption_test_wrapper(StringIO, unicode(message))
-            _encryption_test_wrapper(BytesIO, message)
+            from io import StringIO
+            if _util._py3k:
+                self._encryption_test(StringIO, message, fpr, passphrase)
+            else:
+                self._encryption_test(StringIO, unicode(message), fpr, passphrase)
         except ImportError:
             pass
 
-        # Test StringIO.StringIO
-        from StringIO import StringIO
-        _encryption_test_wrapper(StringIO, message)
+    def test_encryption_of_file_like_objects_io_BytesIO(self):
+        """Test encryption of file-like object io.BytesIO."""
+        message, fpr, passphrase = self._encryption_test_setup()
 
-        # Test cStringIO.StringIO
-        from cStringIO import StringIO
-        _encryption_test_wrapper(StringIO, message)
+        try:
+            from io import BytesIO
+            if _util._py3k:
+                self._encryption_test(BytesIO, bytes(message, 'utf-8'), fpr, passphrase)
+            else:
+                self._encryption_test(BytesIO, message, fpr, passphrase)
+        except ImportError:
+            pass
+
+    def test_encryption_of_file_like_objects_StringIO_StringIO(self):
+        """Test encryption of file-like object StringIO.StringIO (Python2 only)."""
+        message, fpr, passphrase = self._encryption_test_setup()
+
+        if not _util._py3k:
+            from StringIO import StringIO
+            self._encryption_test(StringIO, message, fpr, passphrase)
+
+    def test_encryption_of_file_like_objects_cStringIO_StringIO(self):
+        """Test encryption of file-like object cStringIO.StringIO (Python2 only)."""
+        message, fpr, passphrase = self._encryption_test_setup()
+
+        if not _util._py3k:
+            from cStringIO import StringIO
+            self._encryption_test(StringIO, message, fpr, passphrase)
 
     def test_encryption_alt_encoding(self):
-
         """Test encryption with latin-1 encoding"""
         key = self.generate_key("Craig Gentry", "xorr.ox",
                                 passphrase="craiggentry")
@@ -825,11 +858,7 @@ authentication."""
         key = self.generate_key("Marten van Dijk", "xorr.ox")
         dijk = str(key.fingerprint)
         self.gpg._encoding = 'latin-1'
-        if _util._py3k:
-            data = 'Hello, André!'
-        else:
-            data = unicode('Hello, André', self.gpg._encoding)
-        data = data.encode(self.gpg._encoding)
+        data = u'Hello, André!'.encode(self.gpg._encoding)
         encrypted = self.gpg.encrypt(data, gentry)
         edata = str(encrypted.data)
         self.assertNotEqual(data, edata)
@@ -998,7 +1027,8 @@ boolean circuit causes a considerable overhead."""
         ## We expect Alice's key to be hidden (returned as zero's) and Bob's
         ## key to be there.
         expected_values = ["0000000000000000", "0000000000000000"]
-        self.assertEquals(expected_values, self.gpg.list_packets(encrypted).encrypted_to)
+        packets = self.gpg.list_packets(encrypted)
+        self.assertEquals(expected_values, packets.encrypted_to)
 
     def test_encryption_decryption_multi_recipient(self):
         """Test decryption of an encrypted string for multiple users"""
@@ -1187,7 +1217,10 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                         'test_signature_string_verification',
                         'test_signature_string_algorithm_encoding']),
            'crypt': set(['test_encryption',
-                         'test_encryption_of_file_like_objects',
+                         'test_encryption_of_file_like_objects_io_StringIO',
+                         'test_encryption_of_file_like_objects_io_BytesIO',
+                         'test_encryption_of_file_like_objects_StringIO_StringIO',
+                         'test_encryption_of_file_like_objects_cStringIO_StringIO',
                          'test_encryption_alt_encoding',
                          'test_encryption_multi_recipient',
                          'test_encryption_decryption_multi_recipient',

@@ -801,7 +801,7 @@ class GPG(GPGBase):
             key = key.replace('_','-').title()
             ## to set 'cert', 'Key-Usage' must be blank string
             if not key in ('Key-Usage', 'Subkey-Usage'):
-                if str(val).strip():
+                if type(u'')(val).strip():
                     parms[key] = val
 
         ## if Key-Type is 'default', make Subkey-Type also be 'default'
