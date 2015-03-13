@@ -995,7 +995,7 @@ class GPGBase(object):
                     self._add_recipient_string(args, hidden_recipients, recp)
                     ## ...and now that we've proven py3k is better...
             else:
-                log.debug("Don't know what to do with recipients: '%s'"
+                log.debug("Don't know what to do with recipients: %r"
                           % recipients)
 
         result = self._result_map['crypt'](self)
