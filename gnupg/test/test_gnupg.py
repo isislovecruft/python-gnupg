@@ -1152,9 +1152,9 @@ know, maybe you shouldn't be doing it in the first place.
         self.assertTrue(os.path.isfile(output))
 
         # Check the contents:
-        with open(output) as fh:
+        with open(output, 'rb') as fh:
             encrypted_message = fh.read()
-            log.debug("Encrypted file contains:\n\n%s\n" % encrypted_message)
+            self.assertTrue(b"-----BEGIN PGP MESSAGE-----" in encrypted_message)
 
     def test_encryption_to_filehandle(self):
         """Test that ``encrypt(..., output=filelikething)`` is successful."""
@@ -1174,9 +1174,9 @@ know, maybe you shouldn't be doing it in the first place.
         self.assertTrue(os.path.isfile(output))
 
         # Check the contents:
-        with open(output) as fh:
+        with open(output, 'rb') as fh:
             encrypted_message = fh.read()
-            log.debug("Encrypted file contains:\n\n%s\n" % encrypted_message)
+            self.assertTrue(b"-----BEGIN PGP MESSAGE-----" in encrypted_message)
 
     def test_encryption_from_filehandle(self):
         """Test that ``encrypt(open('foo'), ...)`` is successful."""
@@ -1191,6 +1191,28 @@ know, maybe you shouldn't be doing it in the first place.
             encrypted = self.gpg.encrypt(f, None, **kwargs)
             self.assertTrue(encrypted.ok)
             self.assertGreater(len(encrypted.data), 0)
+
+    def test_encryption_with_output(self):
+        """Test that ``encrypt('foo', ..., output='/foo/bar/baz')`` is successful."""
+        message_filename = os.path.join(_files, 'cypherpunk_manifesto')
+        with open (message_filename, 'rb') as f:
+            data = f.read()
+
+        output = os.path.join(self.gpg.homedir, 'test-encryption-with-output.gpg')
+        kwargs = dict(passphrase='speedtest',
+                      symmetric=True,
+                      cipher_algo='AES256',
+                      encrypt=False,
+                      output=output)
+        encrypted = self.gpg.encrypt(data, None, **kwargs)
+        self.assertTrue(encrypted.ok)
+        self.assertGreater(len(encrypted.data), 0)
+        self.assertTrue(os.path.isfile(output))
+
+        # Check the contents:
+        with open(output, 'rb') as fh:
+            encrypted_message = fh.read()
+            self.assertTrue(b"-----BEGIN PGP MESSAGE-----" in encrypted_message)
 
 
 suites = { 'parsers': set(['test_parsers_fix_unsafe',
@@ -1245,7 +1267,8 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                          'test_file_encryption_and_decryption',
                          'test_encryption_to_filename',
                          'test_encryption_to_filehandle',
-                         'test_encryption_from_filehandle',]),
+                         'test_encryption_from_filehandle',
+                         'test_encryption_with_output',]),
            'listkeys': set(['test_list_keys_after_generation']),
            'keyrings': set(['test_public_keyring',
                             'test_secret_keyring',
