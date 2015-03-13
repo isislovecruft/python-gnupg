@@ -1182,12 +1182,12 @@ know, maybe you shouldn't be doing it in the first place.
         """Test that ``encrypt(open('foo'), ...)`` is successful."""
         message_filename = os.path.join(_files, 'cypherpunk_manifesto')
         with open(message_filename, 'rb') as f:
+            output = os.path.join(self.gpg.homedir, 'test-encryption-from-filehandle.gpg')
             kwargs = dict(passphrase='speedtest',
                           symmetric=True,
                           cipher_algo='AES256',
-                          armor=False,
                           encrypt=False,
-                          output='/tmp/purernd.enc.gnupg')
+                          output=output)
             encrypted = self.gpg.encrypt(f, None, **kwargs)
             self.assertTrue(encrypted.ok)
             self.assertGreater(len(encrypted.data), 0)
