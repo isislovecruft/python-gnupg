@@ -1152,9 +1152,9 @@ know, maybe you shouldn't be doing it in the first place.
         self.assertTrue(os.path.isfile(output))
 
         # Check the contents:
-        with open(output) as fh:
+        with open(output, 'rb') as fh:
             encrypted_message = fh.read()
-            log.debug("Encrypted file contains:\n\n%s\n" % encrypted_message)
+            self.assertTrue(b"-----BEGIN PGP MESSAGE-----" in encrypted_message)
 
     def test_encryption_to_filehandle(self):
         """Test that ``encrypt(..., output=filelikething)`` is successful."""
@@ -1174,9 +1174,9 @@ know, maybe you shouldn't be doing it in the first place.
         self.assertTrue(os.path.isfile(output))
 
         # Check the contents:
-        with open(output) as fh:
+        with open(output, 'rb') as fh:
             encrypted_message = fh.read()
-            log.debug("Encrypted file contains:\n\n%s\n" % encrypted_message)
+            self.assertTrue(b"-----BEGIN PGP MESSAGE-----" in encrypted_message)
 
     def test_encryption_from_filehandle(self):
         """Test that ``encrypt(open('foo'), ...)`` is successful."""
