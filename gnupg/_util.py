@@ -167,7 +167,6 @@ def _copy_data(instream, outstream):
     :param file outstream: The file descriptor of a tmpfile to write to.
     """
     sent = 0
-
     coder = find_encodings()
 
     while True:
@@ -179,24 +178,73 @@ def _copy_data(instream, outstream):
             data = instream.read(1024)
         if len(data) == 0:
             break
+
         sent += len(data)
-        log.debug("Sending chunk %d bytes:\n%s"
-                  % (sent, data))
-        try:
-            outstream.write(data)
-        except UnicodeError:
+        log.debug("Sending chunk %d bytes:\n%s" % (sent, data))
+
+        if _py3k and isinstance(data, bytes):
+            encoded = coder.encode(data.decode(coder.name))[0]
+        elif _py3k and isinstance(data, str):
+            encoded = coder.encode(data)[0]
+        elif not _py3k and type(data) is not str:
+            encoded = coder.encode(data)[0]
+        else:
+            encoded = data
+        log.debug("Writing encoded data with type %s to outstream... "
+                  % type(encoded))
+
+        if not _py3k:
             try:
-                outstream.write(coder.encode(data))
-            except IOError:
-                log.exception("Error sending data: Broken pipe")
+                outstream.write(encoded)
+            except IOError as ioe:
+                # Can get 'broken pipe' errors even when all data was sent
+                if 'Broken pipe' in str(ioe):
+                    log.error('Error sending data: Broken pipe')
+                else:
+                    log.exception(ioe)
                 break
-        except IOError as ioe:
-            # Can get 'broken pipe' errors even when all data was sent
-            if 'Broken pipe' in str(ioe):
-                log.error('Error sending data: Broken pipe')
             else:
-                log.exception(ioe)
-            break
+                log.debug("Wrote data type <type 'str'> to outstream.")
+        else:
+            try:
+                outstream.write(bytes(encoded))
+            except TypeError as te:
+                # XXX FIXME This appears to happen because
+                # _threaded_copy_data() sometimes passes the `outstream` as an
+                # object with type <_io.BufferredWriter> and at other times
+                # with type <encodings.utf_8.StreamWriter>.  We hit the
+                # following error when the `outstream` has type
+                # <encodings.utf_8.StreamWriter>.
+                if not "convert 'bytes' object to str implicitly" in str(te):
+                    log.error(str(te))
+                try:
+                    outstream.write(encoded.decode())
+                except TypeError as yate:
+                    # We hit the "'str' does not support the buffer interface"
+                    # error in Python3 when the `outstream` is an io.BytesIO and
+                    # we try to write a str to it.  We don't care about that
+                    # error, we'll just try again with bytes.
+                    if not "does not support the buffer interface" in str(yate):
+                        log.error(str(yate))
+                except IOError as ioe:
+                    # Can get 'broken pipe' errors even when all data was sent
+                    if 'Broken pipe' in str(ioe):
+                        log.error('Error sending data: Broken pipe')
+                    else:
+                        log.exception(ioe)
+                    break
+                else:
+                    log.debug("Wrote data type <class 'str'> outstream.")
+            except IOError as ioe:
+                # Can get 'broken pipe' errors even when all data was sent
+                if 'Broken pipe' in str(ioe):
+                    log.error('Error sending data: Broken pipe')
+                else:
+                    log.exception(ioe)
+                break
+            else:
+                log.debug("Wrote data type <class 'bytes'> to outstream.")
+
     try:
         outstream.close()
     except IOError as ioe:
