@@ -1178,6 +1178,20 @@ know, maybe you shouldn't be doing it in the first place.
             encrypted_message = fh.read()
             log.debug("Encrypted file contains:\n\n%s\n" % encrypted_message)
 
+    def test_encryption_from_filehandle(self):
+        """Test that ``encrypt(open('foo'), ...)`` is successful."""
+        message_filename = os.path.join(_files, 'cypherpunk_manifesto')
+        with open(message_filename, 'rb') as f:
+            kwargs = dict(passphrase='speedtest',
+                          symmetric=True,
+                          cipher_algo='AES256',
+                          armor=False,
+                          encrypt=False,
+                          output='/tmp/purernd.enc.gnupg')
+            encrypted = self.gpg.encrypt(f, None, **kwargs)
+            self.assertTrue(encrypted.ok)
+            self.assertGreater(len(encrypted.data), 0)
+
 
 suites = { 'parsers': set(['test_parsers_fix_unsafe',
                            'test_parsers_fix_unsafe_semicolon',
@@ -1230,7 +1244,8 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                          'test_symmetric_encryption_and_decryption',
                          'test_file_encryption_and_decryption',
                          'test_encryption_to_filename',
-                         'test_encryption_to_filehandle',]),
+                         'test_encryption_to_filehandle',
+                         'test_encryption_from_filehandle',]),
            'listkeys': set(['test_list_keys_after_generation']),
            'keyrings': set(['test_public_keyring',
                             'test_secret_keyring',
