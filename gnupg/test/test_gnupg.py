@@ -1203,8 +1203,9 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                             'test_secret_keyring',
                             'test_import_and_export',
                             'test_deletion',
-                            'test_import_only',
-                            'test_recv_keys_default',]), }
+                            'test_import_only']),
+           'recvkeys': set(['test_recv_keys_default']),
+}
 
 def main(args):
     if not args.quiet:
