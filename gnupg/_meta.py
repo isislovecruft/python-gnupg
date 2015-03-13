@@ -994,16 +994,13 @@ class GPGBase(object):
                 for recp in recipients.split(' '):
                     self._add_recipient_string(args, hidden_recipients, recp)
                     ## ...and now that we've proven py3k is better...
-
             else:
                 log.debug("Don't know what to do with recipients: '%s'"
                           % recipients)
 
         result = self._result_map['crypt'](self)
-        log.debug("Got data '%s' with type '%s'."
-                  % (data, type(data)))
-        self._handle_io(args, data, result,
-                        passphrase=passphrase, binary=True)
+        log.debug("Got data '%s' with type '%s'." % (data, type(data)))
+        self._handle_io(args, data, result, passphrase=passphrase, binary=True)
         log.debug("\n%s" % result.data)
 
         if output_filename:
