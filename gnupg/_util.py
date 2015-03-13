@@ -40,13 +40,15 @@ _STREAMLIKE_TYPES = []
 
 # These StringIO classes are actually utilised.
 try:
+    import io
     from io import StringIO
     from io import BytesIO
 except ImportError:
     from cStringIO import StringIO
 else:
-    _STREAMLIKE_TYPES.append(BytesIO)
-    _STREAMLIKE_TYPES.append(StringIO)
+    # The io.IOBase type covers the above example for an open file handle in
+    # Python3, as well as both io.BytesIO and io.StringIO.
+    _STREAMLIKE_TYPES.append(io.IOBase)
 
 # The remaining StringIO classes which are imported are used to determine if a
 # object is a stream-like in :func:`_is_stream`.
@@ -64,6 +66,20 @@ if sys.version_info.major == 2:
     import cStringIO as _cStringIO
     _STREAMLIKE_TYPES.append(_cStringIO.InputType)
     _STREAMLIKE_TYPES.append(_cStringIO.OutputType)
+
+    # In Python2:
+    #
+    #     >>> type(open('README.md', 'rb'))
+    #     <open file 'README.md', mode 'rb' at 0x7f9493951d20>
+    #
+    # whereas, in Python3, the `file` builtin doesn't exist and instead we get:
+    #
+    #     >>> type(open('README.md', 'rb'))
+    #     <_io.BufferedReader name='README.md'>
+    #
+    # which is covered by the above addition of io.IOBase.
+    _STREAMLIKE_TYPES.append(file)
+
 
 from . import _logger
 
