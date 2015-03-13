@@ -2,6 +2,8 @@ SHELL=/bin/sh
 TESTDIR=./gnupg/test
 TESTHANDLE=$(TESTDIR)/test_gnupg.py
 FILES=$(SHELL find ./gnupg/ -name "*.py" -printf "%p,")
+PYTHON=$(SHELL which python)
+PYTHON3=$(SHELL which python3)
 PKG_NAME=python-gnupg
 DOC_DIR=docs
 DOC_BUILD_DIR:=$(DOC_DIR)/_build
@@ -50,23 +52,70 @@ test-before: cleanup-src cleanup-tests
 	which python && python --version
 	-which pip && pip --version && pip list
 
-test: test-before
-	python $(TESTHANDLE) basic encodings parsers keyrings listkeys genkey \
-		sign crypt
+test-run: test-before
+	python $(TESTHANDLE) \
+		basic \
+		encodings \
+		parsers \
+		keyrings \
+		listkeys \
+		genkey \
+		sign \
+		crypt
+
+py3k-test-run: test-before
+	python3 $(TESTHANDLE) \
+		basic \
+		encodings \
+		parsers \
+		keyrings \
+		listkeys \
+		genkey \
+		sign \
+		crypt
+
+coverage-run: test-before
+	coverage run --rcfile=".coveragerc" $(PYTHON) $(TESTHANDLE) \
+		basic \
+		encodings \
+		parsers \
+		keyrings \
+		listkeys \
+		genkeys \
+		sign \
+		crypt
+
+py3k-coverage-run: test-before
+	coverage run --rcfile=".coveragerc" $(PYTHON3) $(TESTHANDLE) \
+		basic \
+		encodings \
+		parsers \
+		keyrings \
+		listkeys \
+		genkeys \
+		sign \
+		crypt
+
+coverage-report:
+	coverage report --rcfile=".coveragerc"
+
+coverage-html:
+	coverage html --rcfile=".coveragerc"
+
+clean-test:
 	touch gnupg/test/placeholder.log
 	mv gnupg/test/*.log gnupg/test/logs/
 	rm gnupg/test/logs/placeholder.log
 	touch gnupg/test/random_seed_is_sekritly_pi
 	rm gnupg/test/random_seed*
 
-py3k-test: test-before
-	python3 $(TESTHANDLE) basic encodings parsers keyrings listkeys genkey \
-		sign crypt
-	touch gnupg/test/placeholder.log
-	mv gnupg/test/*.log gnupg/test/logs/
-	rm gnupg/test/logs/placeholder.log
-	touch gnupg/test/random_seed_is_sekritly_pi
-	rm gnupg/test/random_seed*
+test: test-run clean-test
+
+py3k-test: py3k-test-run clean-test
+
+coverage: coverage-run coverage-report coverage-html clean-test
+
+py3k-coverage: py3k-coverage-run coverage-report coverage-html clean-test
 
 install: 
 	python setup.py install --record installed-files.txt
