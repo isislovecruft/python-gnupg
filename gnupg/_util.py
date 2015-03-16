@@ -52,7 +52,7 @@ else:
 
 # The remaining StringIO classes which are imported are used to determine if a
 # object is a stream-like in :func:`_is_stream`.
-if sys.version_info.major == 2:
+if 2 == sys.version_info[0]:
     # Import the StringIO class from the StringIO module since it is a
     # commonly used stream class. It is distinct from either of the
     # StringIO's that may be loaded in the above try/except clause, so the
