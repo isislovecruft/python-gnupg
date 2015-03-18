@@ -773,6 +773,33 @@ class GPGTestCase(unittest.TestCase):
         self.assertTrue(len(public_keys), 1)
         self.assertTrue(len(secret_keys), 2)
 
+    def test_deletion_secret_key(self):
+        """Test that key deletion for secret keys works, and that it leaves the
+        corresponding public key intact.
+        """
+        key1 = None
+        key2 = None
+
+        with open(os.path.join(_files, 'test_key_1.sec')) as fh1:
+            res1 = self.gpg.import_keys(fh1.read())
+            key1 = res1.fingerprints[0]
+
+        with open(os.path.join(_files, 'test_key_2.sec')) as fh2:
+            res2 = self.gpg.import_keys(fh2.read())
+            key2 = res2.fingerprints[0]
+
+        public_keys = self.gpg.list_keys()
+        secret_keys = self.gpg.list_keys(secret=True)
+        self.assertEqual(len(public_keys), 2)
+        self.assertEqual(len(secret_keys), 2)
+
+        self.gpg.delete_keys(key1, secret=True)
+
+        public_keys = self.gpg.list_keys()
+        secret_keys = self.gpg.list_keys(secret=True)
+        self.assertEqual(len(public_keys), 2)
+        self.assertEqual(len(secret_keys), 1)
+
     def test_encryption(self):
         """Test encryption of a message string"""
         key = self.generate_key("Craig Gentry", "xorr.ox",
@@ -1311,6 +1338,7 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                             'test_secret_keyring',
                             'test_import_and_export',
                             'test_deletion_public_key',
+                            'test_deletion_secret_key',
                             'test_import_only']),
            'recvkeys': set(['test_recv_keys_default']),
 }
