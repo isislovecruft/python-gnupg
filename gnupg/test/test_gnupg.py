@@ -626,6 +626,66 @@ class GPGTestCase(unittest.TestCase):
                             passphrase='wrong horse battery staple')
         self.assertFalse(sig, "Bad passphrase should fail")
 
+    def test_signature_string_passphrase_empty_string(self):
+        """Test that a signing attempt with passphrase='' creates a valid
+        signature.
+
+        See Issue #82: https://github.com/isislovecruft/python-gnupg/issues/82
+        """
+        with open(os.path.join(_files, 'test_key_1.sec')) as fh1:
+            res1 = self.gpg.import_keys(fh1.read())
+            key1 = res1.fingerprints[0]
+
+        message = 'abc\ndef\n'
+        sig = self.gpg.sign(message, default_key=key1, passphrase='')
+        self.assertTrue(sig)
+        self.assertTrue(message in str(sig))
+
+    def test_signature_string_passphrase_empty_bytes_literal(self):
+        """Test that a signing attempt with passphrase=b'' creates a valid
+        signature.
+
+        See Issue #82: https://github.com/isislovecruft/python-gnupg/issues/82
+        """
+        with open(os.path.join(_files, 'test_key_1.sec')) as fh1:
+            res1 = self.gpg.import_keys(fh1.read())
+            key1 = res1.fingerprints[0]
+
+        message = 'abc\ndef\n'
+        sig = self.gpg.sign(message, default_key=key1, passphrase=b'')
+        self.assertTrue(sig)
+        print("%r" % str(sig))
+        self.assertTrue(message in str(sig))
+
+    def test_signature_string_passphrase_bytes_literal(self):
+        """Test that a signing attempt with passphrase=b'overalls' creates a
+        valid signature.
+        """
+        with open(os.path.join(_files, 'kat.sec')) as fh1:
+            res1 = self.gpg.import_keys(fh1.read())
+            key1 = res1.fingerprints[0]
+
+        message = 'abc\ndef\n'
+        sig = self.gpg.sign(message, default_key=key1, passphrase=b'overalls')
+        self.assertTrue(sig)
+        print("%r" % str(sig))
+        self.assertTrue(message in str(sig))
+
+    def test_signature_string_passphrase_None(self):
+        """Test that a signing attempt with passphrase=None fails creates a
+        valid signature.
+
+        See Issue #82: https://github.com/isislovecruft/python-gnupg/issues/82
+        """
+        with open(os.path.join(_files, 'test_key_1.sec')) as fh1:
+            res1 = self.gpg.import_keys(fh1.read())
+            key1 = res1.fingerprints[0]
+
+        message = 'abc\ndef\n'
+        sig = self.gpg.sign(message, default_key=key1, passphrase=None)
+        self.assertTrue(sig)
+        self.assertTrue(message in str(sig))
+
     def test_signature_file(self):
         """Test that signing a message file works."""
         key = self.generate_key("Leonard Adleman", "rsa.com")
@@ -1339,6 +1399,10 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                         'test_signature_verification_detached',
                         'test_signature_verification_detached_binary',
                         'test_signature_file',
+                        'test_signature_string_passphrase_empty_string',
+                        'test_signature_string_passphrase_empty_bytes_literal',
+                        'test_signature_string_passphrase_bytes_literal',
+                        'test_signature_string_passphrase_None',
                         'test_signature_string_bad_passphrase',
                         'test_signature_string_verification',
                         'test_signature_string_algorithm_encoding']),
