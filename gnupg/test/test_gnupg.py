@@ -955,6 +955,29 @@ authentication."""
 
         self.assertEqual(message, decrypted)
 
+    def test_decryption_with_bytes_literal(self):
+        """Test that ``decrypt(encrypt(b'foo'), ...)`` is successful."""
+        with open(os.path.join(_files, 'kat.sec')) as katsec:
+            self.gpg.import_keys(katsec.read())
+        kat = self.gpg.list_keys('kat')[0]['fingerprint']
+
+        message_filename = os.path.join(_files, 'cypherpunk_manifesto')
+        with open(message_filename, 'rb') as f:
+            output = os.path.join(self.gpg.homedir, 'test-decryption-with-bytes-literal.gpg')
+            kwargs = dict(compress_algo='Uncompressed')
+            message = b'Dance like a psycho'
+            encrypted = self.gpg.encrypt(message, kat, **kwargs)
+            self.assertTrue(encrypted.ok)
+            self.assertGreater(len(str(encrypted)), 0)
+
+            decrypted = self.gpg.decrypt(encrypted.data, passphrase='overalls')
+            self.assertTrue(decrypted.ok)
+            self.assertGreater(len(str(decrypted)), 0)
+            # Decode the message so that we can easily compare it with the
+            # decrypted version in both Python2 and Python3:
+            decoded = message.decode(self.gpg._encoding, self.gpg._decode_errors)
+            self.assertEqual(str(decrypted), decoded)
+
     def test_encryption_one_hidden_recipient_one_not(self):
         """Test to ensure hidden recipient isn't detailed in packet info"""
 
@@ -1263,6 +1286,7 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                          'test_encryption_one_hidden_recipient_one_not',
                          'test_encryption_throw_keyids',
                          'test_decryption',
+                         'test_decryption_with_bytes_literal',
                          'test_symmetric_encryption_and_decryption',
                          'test_file_encryption_and_decryption',
                          'test_encryption_to_filename',
