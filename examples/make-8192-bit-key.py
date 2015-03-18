@@ -170,7 +170,7 @@ def displayNewKey(key):
     # `result` is a `gnupg._parsers.ListKeys`, which is list-like, so iterate
     # over all the keys and display their info:
     for gpgkey in keylist:
-        for k, v in gpgkey:
+        for k, v in gpgkey.items():
             log.info("%s: %s" % (k.capitalize(), v))
 
     return keylist
