@@ -748,17 +748,84 @@ class GPGTestCase(unittest.TestCase):
         if os.path.isfile(sigfn):
             os.unlink(sigfn)
 
-    def test_deletion(self):
-        """Test that key deletion works."""
-        self.gpg.import_keys(KEYS_TO_IMPORT)
+    def test_deletion_public_key(self):
+        """Test that key deletion for public keys works, and that it leaves the
+        corresponding secret key intact.
+        """
+        key1 = None
+        key2 = None
+
+        with open(os.path.join(_files, 'test_key_1.sec')) as fh1:
+            res1 = self.gpg.import_keys(fh1.read())
+            key1 = res1.fingerprints[0]
+
+        with open(os.path.join(_files, 'test_key_2.sec')) as fh2:
+            res2 = self.gpg.import_keys(fh2.read())
+            key2 = res2.fingerprints[0]
+
         public_keys = self.gpg.list_keys()
-        self.assertTrue(is_list_with_len(public_keys, 2),
-                        "2-element list expected, got %d" % len(public_keys))
-        self.gpg.delete_keys(public_keys[0]['fingerprint'])
+        self.assertTrue(len(public_keys), 2)
+
+        self.gpg.delete_keys(key1)
+
         public_keys = self.gpg.list_keys()
-        self.assertTrue(is_list_with_len(public_keys, 1),
-                        "1-element list expected, got %d" % len(public_keys))
-        log.debug("test_deletion ends")
+        secret_keys = self.gpg.list_keys(secret=True)
+        self.assertTrue(len(public_keys), 1)
+        self.assertTrue(len(secret_keys), 2)
+
+    def test_deletion_secret_key(self):
+        """Test that key deletion for secret keys works, and that it leaves the
+        corresponding public key intact.
+        """
+        key1 = None
+        key2 = None
+
+        with open(os.path.join(_files, 'test_key_1.sec')) as fh1:
+            res1 = self.gpg.import_keys(fh1.read())
+            key1 = res1.fingerprints[0]
+
+        with open(os.path.join(_files, 'test_key_2.sec')) as fh2:
+            res2 = self.gpg.import_keys(fh2.read())
+            key2 = res2.fingerprints[0]
+
+        public_keys = self.gpg.list_keys()
+        secret_keys = self.gpg.list_keys(secret=True)
+        self.assertEqual(len(public_keys), 2)
+        self.assertEqual(len(secret_keys), 2)
+
+        self.gpg.delete_keys(key1, secret=True)
+
+        public_keys = self.gpg.list_keys()
+        secret_keys = self.gpg.list_keys(secret=True)
+        self.assertEqual(len(public_keys), 2)
+        self.assertEqual(len(secret_keys), 1)
+
+    def test_deletion_subkeys(self):
+        """Test that key deletion for subkeys deletes both the public and
+        secret portions of the key.
+        """
+        key1 = None
+        key2 = None
+
+        with open(os.path.join(_files, 'test_key_1.sec')) as fh1:
+            res1 = self.gpg.import_keys(fh1.read())
+            key1 = res1.fingerprints[0]
+
+        with open(os.path.join(_files, 'test_key_2.sec')) as fh2:
+            res2 = self.gpg.import_keys(fh2.read())
+            key2 = res2.fingerprints[0]
+
+        public_keys = self.gpg.list_keys()
+        secret_keys = self.gpg.list_keys(secret=True)
+        self.assertEqual(len(public_keys), 2)
+        self.assertEqual(len(secret_keys), 2)
+
+        self.gpg.delete_keys(key1, subkeys=True)
+
+        public_keys = self.gpg.list_keys()
+        secret_keys = self.gpg.list_keys(secret=True)
+        self.assertEqual(len(public_keys), 1)
+        self.assertEqual(len(secret_keys), 1)
 
     def test_encryption(self):
         """Test encryption of a message string"""
@@ -1297,7 +1364,9 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
            'keyrings': set(['test_public_keyring',
                             'test_secret_keyring',
                             'test_import_and_export',
-                            'test_deletion',
+                            'test_deletion_public_key',
+                            'test_deletion_secret_key',
+                            'test_deletion_subkeys',
                             'test_import_only']),
            'recvkeys': set(['test_recv_keys_default']),
 }
