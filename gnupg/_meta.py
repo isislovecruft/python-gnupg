@@ -46,6 +46,8 @@ except ImportError:
 
 from . import _parsers
 from . import _util
+from ._util import b
+from ._util import s
 
 from ._parsers import _check_preferences
 from ._parsers import _sanitise_list
@@ -804,6 +806,19 @@ class GPGBase(object):
         ## We could use _handle_io here except for the fact that if the
         ## passphrase is bad, gpg bails and you can't write the message.
         result = self._result_map['sign'](self)
+
+        ## If the passphrase is an empty string, the message up to and
+        ## including its first newline will be cut off before making it to the
+        ## GnuPG process. Therefore, if the passphrase='' or passphrase=b'',
+        ## we set passphrase=None.  See Issue #82:
+        ## https://github.com/isislovecruft/python-gnupg/issues/82
+        if _util._is_string(passphrase):
+            passphrase = passphrase if len(passphrase) > 0 else None
+        elif _util._is_bytes(passphrase):
+            passphrase = s(passphrase) if len(passphrase) > 0 else None
+        else:
+            passphrase = None
+
         proc = self._open_subprocess(args, passphrase is not None)
         try:
             if passphrase:
