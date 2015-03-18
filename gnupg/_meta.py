@@ -1001,7 +1001,10 @@ class GPGBase(object):
         result = self._result_map['crypt'](self)
         log.debug("Got data '%s' with type '%s'." % (data, type(data)))
         self._handle_io(args, data, result, passphrase=passphrase, binary=True)
-        log.debug("\n%s" % result.data)
+        # Avoid writing raw encrypted bytes to terminal loggers and breaking
+        # them in that adorable way where they spew hieroglyphics until reset:
+        if armor:
+            log.debug("\n%s" % result.data)
 
         if output_filename:
             log.info("Writing encrypted output to file: %s" % output_filename)
