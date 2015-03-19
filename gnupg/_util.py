@@ -531,25 +531,26 @@ def _is_gpg2(version):
         return True
     return False
 
-def _make_binary_stream(s, encoding=None):
-    """Encode **s**, then make it stream/file-like.
+def _make_binary_stream(thing, encoding=None, armor=True):
+    """Encode **thing**, then make it stream/file-like.
 
-    :param s: The thing to turn into a encoded stream.
+    :param thing: The thing to turn into a encoded stream.
     :rtype: ``io.BytesIO`` or ``io.StringIO``.
     :returns: The encoded **thing**, wrapped in an ``io.BytesIO`` (if
         available), otherwise wrapped in a ``io.StringIO``.
     """
+    if _py3k:
+        if isinstance(thing, str):
+            thing = thing.encode(encoding)
+    else:
+        if type(thing) is not str:
+            thing = thing.encode(encoding)
+
     try:
-        if _py3k:
-            if isinstance(s, str):
-                s = s.encode(encoding)
-        else:
-            if type(s) is not str:
-                s = s.encode(encoding)
-        from io import BytesIO
-        rv = BytesIO(s)
-    except ImportError:
-        rv = StringIO(s)
+        rv = BytesIO(thing)
+    except NameError:
+        rv = StringIO(thing)
+
     return rv
 
 def _make_passphrase(length=None, save=False, file=None):
