@@ -531,9 +531,13 @@ def _is_gpg2(version):
         return True
     return False
 
-def _make_binary_stream(s, encoding):
-    """
-    xxx fill me in
+def _make_binary_stream(s, encoding=None):
+    """Encode **s**, then make it stream/file-like.
+
+    :param s: The thing to turn into a encoded stream.
+    :rtype: ``io.BytesIO`` or ``io.StringIO``.
+    :returns: The encoded **thing**, wrapped in an ``io.BytesIO`` (if
+        available), otherwise wrapped in a ``io.StringIO``.
     """
     try:
         if _py3k:
