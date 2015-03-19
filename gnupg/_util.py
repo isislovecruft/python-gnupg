@@ -169,7 +169,11 @@ def find_encodings(enc=None, system=False):
 if _py3k:
     def b(x):
         """See http://python3porting.com/problems.html#nicer-solutions"""
-        return x
+        coder = find_encodings()
+        if isinstance(x, bytes):
+            return coder.encode(x.decode(coder.name))[0]
+        else:
+            return coder.encode(x)[0]
 
     def s(x):
         if isinstance(x, str):
@@ -181,7 +185,7 @@ if _py3k:
 else:
     def b(x):
         """See http://python3porting.com/problems.html#nicer-solutions"""
-        return find_encodings().encode(x)[0]
+        return x
 
     def s(x):
         if isinstance(x, basestring):
