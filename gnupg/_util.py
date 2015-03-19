@@ -195,6 +195,20 @@ else:
         else:
             raise NotImplemented
 
+def binary(data):
+    coder = find_encodings()
+
+    if _py3k and isinstance(data, bytes):
+        encoded = coder.encode(data.decode(coder.name))[0]
+    elif _py3k and isinstance(data, str):
+        encoded = coder.encode(data)[0]
+    elif not _py3k and type(data) is not str:
+        encoded = coder.encode(data)[0]
+    else:
+        encoded = data
+
+    return encoded
+
 
 def author_info(name, contact=None, public_key=None):
     """Easy object-oriented representation of contributor info.
@@ -214,7 +228,6 @@ def _copy_data(instream, outstream):
     :param file outstream: The file descriptor of a tmpfile to write to.
     """
     sent = 0
-    coder = find_encodings()
 
     while True:
         if ((_py3k and isinstance(instream, str)) or
@@ -227,18 +240,9 @@ def _copy_data(instream, outstream):
             break
 
         sent += len(data)
-        log.debug("Sending chunk %d bytes:\n%s" % (sent, data))
-
-        if _py3k and isinstance(data, bytes):
-            encoded = coder.encode(data.decode(coder.name))[0]
-        elif _py3k and isinstance(data, str):
-            encoded = coder.encode(data)[0]
-        elif not _py3k and type(data) is not str:
-            encoded = coder.encode(data)[0]
-        else:
-            encoded = data
-        log.debug("Writing encoded data with type %s to outstream... "
-                  % type(encoded))
+        encoded = binary(data)
+        log.debug("Sending %d bytes of data..." % sent)
+        log.debug("Encoded data (type %s):\n%s" % (type(encoded), encoded))
 
         if not _py3k:
             try:
