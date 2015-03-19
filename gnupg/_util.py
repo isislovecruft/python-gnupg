@@ -52,7 +52,7 @@ else:
 
 # The remaining StringIO classes which are imported are used to determine if a
 # object is a stream-like in :func:`_is_stream`.
-if sys.version_info.major == 2:
+if 2 == sys.version_info[0]:
     # Import the StringIO class from the StringIO module since it is a
     # commonly used stream class. It is distinct from either of the
     # StringIO's that may be loaded in the above try/except clause, so the
@@ -165,6 +165,51 @@ def find_encodings(enc=None, system=False):
 
     return coder
 
+
+if _py3k:
+    def b(x):
+        """See http://python3porting.com/problems.html#nicer-solutions"""
+        coder = find_encodings()
+        if isinstance(x, bytes):
+            return coder.encode(x.decode(coder.name))[0]
+        else:
+            return coder.encode(x)[0]
+
+    def s(x):
+        if isinstance(x, str):
+            return x
+        elif isinstance(x, (bytes, bytearray)):
+            return x.decode(find_encodings().name)
+        else:
+            raise NotImplemented
+else:
+    def b(x):
+        """See http://python3porting.com/problems.html#nicer-solutions"""
+        return x
+
+    def s(x):
+        if isinstance(x, basestring):
+            return x
+        elif isinstance(x, (bytes, bytearray)):
+            return x.decode(find_encodings().name)
+        else:
+            raise NotImplemented
+
+def binary(data):
+    coder = find_encodings()
+
+    if _py3k and isinstance(data, bytes):
+        encoded = coder.encode(data.decode(coder.name))[0]
+    elif _py3k and isinstance(data, str):
+        encoded = coder.encode(data)[0]
+    elif not _py3k and type(data) is not str:
+        encoded = coder.encode(data)[0]
+    else:
+        encoded = data
+
+    return encoded
+
+
 def author_info(name, contact=None, public_key=None):
     """Easy object-oriented representation of contributor info.
 
@@ -183,7 +228,6 @@ def _copy_data(instream, outstream):
     :param file outstream: The file descriptor of a tmpfile to write to.
     """
     sent = 0
-    coder = find_encodings()
 
     while True:
         if ((_py3k and isinstance(instream, str)) or
@@ -196,18 +240,9 @@ def _copy_data(instream, outstream):
             break
 
         sent += len(data)
-        log.debug("Sending chunk %d bytes:\n%s" % (sent, data))
-
-        if _py3k and isinstance(data, bytes):
-            encoded = coder.encode(data.decode(coder.name))[0]
-        elif _py3k and isinstance(data, str):
-            encoded = coder.encode(data)[0]
-        elif not _py3k and type(data) is not str:
-            encoded = coder.encode(data)[0]
-        else:
-            encoded = data
-        log.debug("Writing encoded data with type %s to outstream... "
-                  % type(encoded))
+        encoded = binary(data)
+        log.debug("Sending %d bytes of data..." % sent)
+        log.debug("Encoded data (type %s):\n%s" % (type(encoded), encoded))
 
         if not _py3k:
             try:
@@ -440,6 +475,31 @@ def _is_stream(input):
     """
     return isinstance(input, tuple(_STREAMLIKE_TYPES))
 
+def _is_string(thing):
+    """Check that **thing** is a string. The definition of the latter depends
+    upon the Python version.
+
+    :param thing: The thing to check if it's a string.
+    :rtype: bool
+    :returns: ``True`` if **thing** is string (or unicode in Python2).
+    """
+    if (_py3k and isinstance(thing, str)):
+        return True
+    if (not _py3k and isinstance(thing, basestring)):
+        return True
+    return False
+
+def _is_bytes(thing):
+    """Check that **thing** is bytes.
+
+    :param thing: The thing to check if it's bytes.
+    :rtype: bool
+    :returns: ``True`` if **thing** is bytes or a bytearray.
+    """
+    if isinstance(thing, (bytes, bytearray)):
+        return True
+    return False
+
 def _is_list_or_tuple(instance):
     """Check that ``instance`` is a list or tuple.
 
@@ -471,21 +531,26 @@ def _is_gpg2(version):
         return True
     return False
 
-def _make_binary_stream(s, encoding):
+def _make_binary_stream(thing, encoding=None, armor=True):
+    """Encode **thing**, then make it stream/file-like.
+
+    :param thing: The thing to turn into a encoded stream.
+    :rtype: ``io.BytesIO`` or ``io.StringIO``.
+    :returns: The encoded **thing**, wrapped in an ``io.BytesIO`` (if
+        available), otherwise wrapped in a ``io.StringIO``.
     """
-    xxx fill me in
-    """
+    if _py3k:
+        if isinstance(thing, str):
+            thing = thing.encode(encoding)
+    else:
+        if type(thing) is not str:
+            thing = thing.encode(encoding)
+
     try:
-        if _py3k:
-            if isinstance(s, str):
-                s = s.encode(encoding)
-        else:
-            if type(s) is not str:
-                s = s.encode(encoding)
-        from io import BytesIO
-        rv = BytesIO(s)
-    except ImportError:
-        rv = StringIO(s)
+        rv = BytesIO(thing)
+    except NameError:
+        rv = StringIO(thing)
+
     return rv
 
 def _make_passphrase(length=None, save=False, file=None):
