@@ -1280,6 +1280,11 @@ class Verify(object):
                      "DECRYPTION_OKAY", "INV_SGNR", "PROGRESS",
                      "PINENTRY_LAUNCHED"):
             pass
+        elif key == "NEWSIG":
+            # Reset
+            self.status = None
+            self.valid = False
+            self.key_id, self.username = None, None
         elif key == "BADSIG":
             self.valid = False
             self.status = 'signature bad'
