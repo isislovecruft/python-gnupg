@@ -1,4 +1,4 @@
-# -*- coding: utf-8; mode: rst; -*-
+.. -*- coding: utf-8; mode: rst; -*-
 
 **************************************
 python-gnupg |On PyPI|
@@ -8,9 +8,8 @@ Rewrite of `Vinay Sajip's python-gnupg <https://code.google.com/p/python-gnupg/>
 including patches to fix a shell injection vulnerability due to unsanitised
 inputs being passed to ``subprocess.Popen([...], shell=True)``.
 
-.. |On PyPI| image:: https://pypip.in/d/gnupg/badge.png
+.. |On PyPI| image:: https://badge.fury.io/py/gnupg.png
    :target: https://pypi.python.org/pypi/gnupg
-
 
 ==============
 Installation
