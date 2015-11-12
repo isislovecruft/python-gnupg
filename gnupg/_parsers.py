@@ -91,6 +91,7 @@ def _check_preferences(prefs, pref_type=None):
     digest   = frozenset(['SHA512', 'SHA384', 'SHA256', 'SHA224', 'RMD160',
                           'SHA1'])
     compress = frozenset(['BZIP2', 'ZLIB', 'ZIP', 'Uncompressed'])
+    trust    = frozenset(['gpg', 'classic', 'direct', 'always', 'auto'])
     all      = frozenset([cipher, digest, compress])
 
     if isinstance(prefs, str):
@@ -113,6 +114,8 @@ def _check_preferences(prefs, pref_type=None):
         allowed += ' '.join(prefs.intersection(digest))
     if pref_type == 'compress':
         allowed += ' '.join(prefs.intersection(compress))
+    if pref_type == 'trust':
+        allowed += ' '.join(prefs.intersection(trust))
     if pref_type == 'all':
         allowed += ' '.join(prefs.intersection(all))
 
@@ -363,6 +366,11 @@ def _sanitise(*args):
                         if legit_algos: checked += (legit_algos + " ")
                         else: log.debug("'%s' not compress algo" % val)
 
+                    elif flag == '--trust-model':
+                        legit_models = _check_preferences(val, 'trust')
+                        if legit_models: checked += (legit_models + " ")
+                        else: log.debug("%r is not a trust model", val)
+
                     else:
                         checked += (val + " ")
                         log.debug("_check_option(): No checks for %s" % val)
@@ -531,6 +539,7 @@ def _get_options_group(group=None):
                               '--personal-compress-prefs',
                               '--personal-compress-preferences',
                               '--print-md',
+                              '--trust-model',
                               ])
     #: These options expect no arguments
     none_options = frozenset(['--always-trust',
