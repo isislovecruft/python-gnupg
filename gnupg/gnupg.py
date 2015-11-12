@@ -159,7 +159,8 @@ class GPG(GPGBase):
 
         # Make sure that the trustdb exists, or else GnuPG will exit with a
         # fatal error (at least it does with GnuPG>=2.0.0):
-        self.create_trustdb()
+        if not (self.options is not None and '--no-auto-check-trustdb' in self.options):
+            self.create_trustdb()
 
         # The --no-use-agent and --use-agent options were deprecated in GnuPG
         # 2.x, so we should set use_agent to None here to avoid having

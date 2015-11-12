@@ -561,6 +561,7 @@ def _get_options_group(group=None):
                               '--lock-multiple',
                               '--lock-never',
                               '--lock-once',
+                              '--no-auto-check-trustdb',
                               '--no-default-keyring',
                               '--no-default-recipient',
                               '--no-emit-version',
