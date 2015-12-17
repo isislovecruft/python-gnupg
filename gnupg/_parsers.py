@@ -36,7 +36,7 @@ from ._util import log
 
 
 ESCAPE_PATTERN = re.compile(r'\\x([0-9a-f][0-9a-f])', re.I)
-HEXIDECIMAL    = re.compile('([0-9A-Fa-f]{2})+')
+HEXADECIMAL    = re.compile('^[0-9A-Fa-f]+$')
 
 
 class ProtectedOption(Exception):
@@ -215,13 +215,12 @@ def _is_allowed(input):
     return None
 
 def _is_hex(string):
-    """Check that a string is hexidecimal, with alphabetic characters
-    capitalized and without whitespace.
+    """Check that a string is hexadecimal, with alphabetic characters
+    in either upper or lower case and without whitespace.
 
     :param str string: The string to check.
     """
-    matched = HEXIDECIMAL.match(string)
-    if matched is not None and len(matched.group()) >= 2:
+    if HEXADECIMAL.match(string):
         return True
     return False
 
