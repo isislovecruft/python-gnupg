@@ -30,6 +30,7 @@ except ImportError:
     from ordereddict import OrderedDict
 
 import re
+import shlex
 
 from .      import _util
 from ._util import log
@@ -306,7 +307,7 @@ def _sanitise(*args):
             checked += (flag + ' ')
 
             if _is_string(value):
-                values = value.split(' ')
+                values = shlex.split(value)
                 for v in values:
                     ## these can be handled separately, without _fix_unsafe(),
                     ## because they are only allowed if they pass the regex
@@ -372,7 +373,7 @@ def _sanitise(*args):
     is_flag = lambda x: x.startswith('--')
 
     def _make_filo(args_string):
-        filo = arg.split(' ')
+        filo = re.findall(r'(?:[^\s,"]|"(?:\\.|[^"])*")+', args_string)
         filo.reverse()
         log.debug("_make_filo(): Converted to reverse list: %s" % filo)
         return filo
