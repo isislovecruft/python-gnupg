@@ -1541,7 +1541,7 @@ class ListPackets(object):
             if not self.key:
                 self.key = key
             self.encrypted_to.append(key)
-        elif key == ('NEED_PASSPHRASE', 'MISSING_PASSPHRASE'):
+        elif key in ('NEED_PASSPHRASE', 'MISSING_PASSPHRASE'):
             self.need_passphrase = True
         elif key == 'NEED_PASSPHRASE_SYM':
             self.need_passphrase_sym = True
