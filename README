@@ -2,7 +2,7 @@
 
 Fork of [python-gnupg-0.3.2](https://code.google.com/p/python-gnupg/), patched
 to fix a potential vulnerability which could result in remote code execution,
-do to unsanitised inputs being passed to ```subprocess.Popen([...], shell=True)```.
+due to unsanitised inputs being passed to ```subprocess.Popen([...], shell=True)```.
 
 ### Installation ###
 
