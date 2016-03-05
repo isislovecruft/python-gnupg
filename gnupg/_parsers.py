@@ -820,7 +820,7 @@ class GenKey(object):
         #: 'P':= primary, 'S':= subkey, 'B':= both
         self.type = None
         self.fingerprint = None
-        self.status = None
+        self.status = ""
         self.subkey_created = False
         self.primary_created = False
         #: This will store the key's public keyring filename, if
@@ -862,6 +862,10 @@ class GenKey(object):
             self.status = nodata(value)
         elif key == "PROGRESS":
             self.status = progress(value.split(' ', 1)[0])
+        elif (key.startswith("TRUST_") or
+              key.startswith("PKA_TRUST_") or
+              key == "NEWSIG"):
+            pass
         else:
             raise ValueError("Unknown status message: %r" % key)
 
