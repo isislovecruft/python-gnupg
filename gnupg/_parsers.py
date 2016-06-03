@@ -979,6 +979,7 @@ class ListKeys(list):
         self.fingerprints = []
         self.uids = []
         self.sigs = {}
+        self.certs = {}
 
     def key(self, args):
         vars = ("""
@@ -993,6 +994,7 @@ class ListKeys(list):
             self.curuid = self.curkey['uid']
             self.curkey['uids'].append(self.curuid)
             self.sigs[self.curuid] = set()
+            self.certs[self.curuid] = set()
             self.curkey['sigs'][self.curuid] = []
         del self.curkey['uid']
         self.curkey['subkeys'] = []
@@ -1011,6 +1013,7 @@ class ListKeys(list):
         self.curuid = uid
         self.curkey['sigs'][uid] = []
         self.sigs[uid] = set()
+        self.certs[uid] = set()
         self.uids.append(uid)
 
     def sig(self, args):
@@ -1022,6 +1025,9 @@ class ListKeys(list):
             sig[vars[i]] = args[i]
         self.curkey['sigs'][self.curuid].append(sig)
         self.sigs[self.curuid].add(sig['keyid'])
+        if sig["trust"] == u"!":
+            self.certs[self.curuid].add(sig['keyid'])
+
 
     def sub(self, args):
         subkey = [args[4], args[11]]
