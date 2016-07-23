@@ -528,7 +528,7 @@ class GPG(GPGBase):
     def _parse_keys(self, result):
         lines = result.data.decode(self._encoding,
                                    self._decode_errors).splitlines()
-        valid_keywords = 'pub uid sec fpr sub sig'.split()
+        valid_keywords = 'pub uid sec fpr sub sig rev'.split()
         for line in lines:
             if self.verbose:
                 print(line)
