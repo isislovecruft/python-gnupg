@@ -174,7 +174,7 @@ class GPGBase(object):
         """
         self.ignore_homedir_permissions = ignore_homedir_permissions
         self.binary  = _util._find_binary(binary)
-        self.homedir = os.path.expanduser(home) if home else _util._conf
+        self.homedir = os.path.expanduser(home) if home else _util._ugpg
         pub = _parsers._fix_unsafe(keyring) if keyring else 'pubring.gpg'
         sec = _parsers._fix_unsafe(secring) if secring else 'secring.gpg'
         self.keyring = os.path.join(self._homedir, pub)
