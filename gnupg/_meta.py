@@ -744,20 +744,30 @@ class GPGBase(object):
         self._collect_output(p, result, writer, stdin)
         return result
 
-    def _recv_keys(self, keyids, keyserver=None):
+    def _recv_keys(self, keyids, keyserver=None, keyserver_certs=None):
         """Import keys from a keyserver.
 
         :param str keyids: A space-delimited string containing the keyids to
                            request.
         :param str keyserver: The keyserver to request the ``keyids`` from;
                               defaults to `gnupg.GPG.keyserver`.
+        :param str keyserver_certs: A file passed as the CA cert file for the
+                                    keyserver.
         """
         if not keyserver:
             keyserver = self.keyserver
 
         args = ['--keyserver {0}'.format(keyserver),
                 '--recv-keys {0}'.format(keyids)]
-        log.info('Requesting keys from %s: %s' % (keyserver, keyids))
+        if keyserver_certs:
+            args.insert(0, '--keyserver-options ca-cert-file={0}'.format(
+                keyserver_certs)
+            )
+        log.info('Requesting keys from %s (using CA file %s): %s' % (
+            keyserver,keyserver_certs, keyids)
+        )
+        print('%s args: %s' % (self.binary, ' '.join(args)))
+        print('make_args: %s' % (self._make_args(args, False)))
 
         result = self._result_map['import'](self)
         proc = self._open_subprocess(args)
@@ -1029,7 +1039,7 @@ class GPGBase(object):
                 log.info("Encrypted output written successfully.")
 
         return result
-    
+
     def _add_recipient_string(self, args, hidden_recipients, recipient):
         if isinstance(hidden_recipients, (list, tuple)):
             if [s for s in hidden_recipients if recipient in str(s)]:

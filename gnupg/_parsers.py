@@ -328,6 +328,10 @@ def _sanitise(*args):
                             checked += (v + " ")
                         else: log.debug("Dropping keyserver: %s" % v)
                         continue
+                    elif flag in ['--keyserver-options']:
+                        print('found keyserver options: %s' % v)
+                        checked += (v + " ")
+                        continue
 
                     ## the rest are strings, filenames, etc, and should be
                     ## shell escaped:
@@ -496,6 +500,7 @@ def _get_options_group(group=None):
     #: These have their own parsers and don't really fit into a group
     other_options = frozenset(['--debug-level',
                                '--keyserver',
+                               '--keyserver-options',
 
                            ])
     #: These should have a directory for an argument
