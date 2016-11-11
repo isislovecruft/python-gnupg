@@ -40,7 +40,7 @@ import textwrap
 from .         import _util
 from .         import _trust
 from ._meta    import GPGBase
-from ._parsers import _fix_unsafe
+from ._parsers import _fix_unsafe, KeyExtensionInterface
 from ._util    import _is_list_or_tuple
 from ._util    import _is_stream
 from ._util    import _make_binary_stream
@@ -541,6 +541,39 @@ class GPG(GPGBase):
             keyword = L[0]
             if keyword in valid_keywords:
                 getattr(result, keyword)(L)
+
+    def extend_key(self, keyid, validity='1y', passphrase=None, extend_subkey=True):
+        """Extends a GnuPG key by passing in new validity period (from now) through
+            subprocess's stdin
+
+        >>> import gnupg
+        >>> gpg = gnupg.GPG(homedir="doctests")
+        >>> key_input = gpg.gen_key_input()
+        >>> key = gpg.gen_key(key_input)
+        >>> gpg.extend_key(key.fingerprint, '2w', 'good passphrase')
+
+        :param str keyid: key shortID, longID, email_address or fingerprint
+        :param str validity: 0 or number of days (d), or weeks (*w) , or months (*m) or years (*y)
+                               to extend the key, from its creation date.
+        :param str passphrase: passphrase used when creating the key, leave None otherwise
+        :param bool extend_subkey: to indicate whether the first subkey will also extended
+                by the same period --default is True
+
+        :returns: The result giving status of the extension...
+                    the new expiration date can be obtained by .list_keys()
+        """
+
+        args = ["--batch"]
+        if passphrase:
+            args.append("--passphrase %s" % passphrase)
+        args.extend(["--command-fd 0", "--edit-key %s" % keyid])
+
+        p = self._open_subprocess(args)
+        result = self._result_map['extension'](self)
+        extension_input = KeyExtensionInterface(validity).gpg_interactive_input(extend_subkey)
+        p.stdin.write(extension_input)
+        self._collect_output(p, result, stdin=p.stdin)
+        return result
 
     def gen_key(self, input):
         """Generate a GnuPG key through batch file key generation. See

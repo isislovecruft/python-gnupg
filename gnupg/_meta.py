@@ -145,6 +145,7 @@ class GPGBase(object):
                        'list':     _parsers.ListKeys,
                        'sign':     _parsers.Sign,
                        'verify':   _parsers.Verify,
+                       'extension': _parsers.KeyExtensionResult,
                        'packets':  _parsers.ListPackets }
 
     def __init__(self, binary=None, home=None, keyring=None, secring=None,
