@@ -500,7 +500,8 @@ def _get_options_group(group=None):
                              '--recipient',
                              '--recv-keys',
                              '--send-keys',
-                             '--edit-key'
+                             '--edit-key',
+                             '--sign-key',
                              ])
     #: These options expect value which are left unchecked, though still run
     #: through :func:`_fix_unsafe`.
@@ -892,6 +893,26 @@ class KeyExtensionResult(object):
             self.status = 'failed'
             raise ValueError("Unknown status message: %r" % key)
 
+
+class KeySigningResult(object):
+    """Handle status messages for key singing
+    """
+    def __init__(self, gpg):
+        self._gpg = gpg
+        self.status = 'ok'
+
+    def _handle_status(self, key, value):
+        """Parse a status code from the attached GnuPG process.
+
+        :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
+        """
+        if key in ("USERID_HINT", "NEED_PASSPHRASE", "ALREADY_SIGNED",
+                   "GOOD_PASSPHRASE", "GOT_IT", "GET_BOOL"):
+            pass
+        elif key in ("BAD_PASSPHRASE", "MISSING_PASSPHRASE", "KEY_NOT_FOUND"):
+            self.status = "%s: %s" % (key.replace("_", " ").lower(), value)
+        else:
+            raise ValueError("Key signing, unknown status message: %r ::%s" % (key, value))
 
 class GenKey(object):
     """Handle status messages for key generation.

@@ -1547,6 +1547,60 @@ know, maybe you shouldn't be doing it in the first place.
         with self.assertRaises(_parsers.UsageError):
             self.gpg.extend_key(key.fingerprint, validity=invalid_extension_option, passphrase="haha.hehe")
 
+    def test_key_signing(self):
+        """Test that signing a key with default key succeeds."""
+        default_key_pair = self.generate_key("haha", "ha.ha", passphrase="haha.haha")
+        hehe_key = self.generate_key("hehe", "he.he")
+
+        result = self.gpg.sign_key(hehe_key.fingerprint, passphrase="haha.haha")
+
+        hehe_sigs_keyids = self._get_sigs(hehe_key.fingerprint[-16:])
+
+        self.assertEqual('ok', result.status)
+        self.assertIn(default_key_pair.fingerprint[-16:], hehe_sigs_keyids)
+
+    def _get_sigs(self, target_keyid):
+        sigs = self.gpg.list_sigs()
+        hehe_sigs = filter(lambda sig: sig['keyid'] == target_keyid, sigs)[0]
+        hehe_address = hehe_sigs['uids'][0]     # yields "hehe<hehe@he.he>"
+        return map(lambda key: key['keyid'], hehe_sigs['sigs'][hehe_address] )
+
+    def test_signing_an_already_signed_key_does_nothing_and_is_okay(self):
+        """Test that re-signing a key does not blow up."""
+        default_key_pair = self.generate_key("haha", "ha.ha", passphrase="haha.haha")
+        hehe_key = self.generate_key("hehe", "he.he")
+        self.gpg.sign_key(hehe_key.fingerprint, passphrase="haha.haha")
+
+        re_sign_result = self.gpg.sign_key(hehe_key.fingerprint, passphrase="haha.haha")
+
+        hehe_sigs_keyids = self._get_sigs(hehe_key.fingerprint[-16:])
+
+        self.assertEqual('ok', re_sign_result.status)
+        self.assertIn(default_key_pair.fingerprint[-16:], hehe_sigs_keyids)
+
+    def test_signing_key_with_wrong_password(self):
+        """Test signing a key using a wrong password"""
+        default_key_pair = self.generate_key("haha", "ha.ha", passphrase="haha.haha")
+        hehe_key = self.generate_key("hehe", "he.he")
+
+        wrong_password = "really wrong"
+        result = self.gpg.sign_key(hehe_key.fingerprint, passphrase=wrong_password)
+
+        hehe_sigs_keyids = self._get_sigs(hehe_key.fingerprint[-16:])
+
+        self.assertEqual('bad passphrase: %s' % default_key_pair.fingerprint[-16:], result.status)
+        self.assertNotIn(default_key_pair.fingerprint[-16:], hehe_sigs_keyids)
+
+    def test_signing_a_non_existing_or_non_imported_key_fails(self):
+        """Test that signing a non existing or not imported key is logged."""
+        default_key_pair = self.generate_key("haha", "ha.ha", passphrase="haha.haha")
+        not_default_fpr_ending = 'B' if default_key_pair.fingerprint[-1] == 'A' else 'A'
+        non_existing_key_fpr = '%s%s' % (default_key_pair.fingerprint[:-1], not_default_fpr_ending)
+
+        result = self.gpg.sign_key(non_existing_key_fpr, passphrase="haha.haha")
+
+        self.assertEqual('key not found: "%s" not found: public key not found' % non_existing_key_fpr,
+                         result.status)
 
 suites = { 'parsers': set(['test_parsers_fix_unsafe',
                            'test_parsers_fix_unsafe_semicolon',
@@ -1622,7 +1676,12 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                           'test_passphrase_with_space_on_key_extension',
                           'test_wrong_passphrase_on_key_extension',
                           'test_invalid_extension_period_throws_exception_on_key_extension']),
+           'signing': set(['test_key_signing',
+                           'test_signing_an_already_signed_key_does_nothing_and_is_okay',
+                           'test_signing_a_non_existing_or_non_imported_key_fails',
+                           'test_signing_key_with_wrong_password']),
 }
+
 
 def main(args):
     if not args.quiet:

@@ -496,6 +496,38 @@ class GPG(GPGBase):
                         result)
         return result
 
+    def sign_key(self, keyid, passphrase=None):
+        """ sign (an imported) public key - keyid, with default secret key
+
+        >>> import gnupg
+        >>> gpg = gnupg.GPG(homedir="doctests")
+        >>> key_input = gpg.gen_key_input()
+        >>> key = gpg.gen_key(key_input)
+        >>> gpg.sign_key(key['fingerprint'])
+        >>> gpg.list_sigs(key['fingerprint'])
+
+        :param str keyid: key shortID, longID, fingerprint or email_address
+        :param str passphrase: passphrase used when creating the key, leave None otherwise
+
+        :returns: The result giving status of the key signing...
+                    success can be verified by gpg.list_sigs(keyid)
+        """
+
+        args = []
+        input_command = ""
+        if passphrase:
+            passphrase_arg = "--passphrase-fd 0"
+            input_command = "%s\n" % passphrase
+            args.append(passphrase_arg)
+        args.extend(["--command-fd 0", "--sign-key %s" % keyid])
+
+        p = self._open_subprocess(args)
+        result = self._result_map['signing'](self)
+        confirm_command = "%sy\n" % input_command
+        p.stdin.write(confirm_command)
+        self._collect_output(p, result, stdin=p.stdin)
+        return result
+
     def list_sigs(self, *keyids):
         """Get the signatures for each of the ``keyids``.
 
