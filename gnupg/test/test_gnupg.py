@@ -27,6 +27,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import with_statement
 
+import datetime
 from argparse   import ArgumentParser
 from codecs     import open as open
 from functools  import wraps
@@ -357,6 +358,7 @@ class GPGTestCase(unittest.TestCase):
         os.remove(outfile)
 
     def generate_key_input(self, real_name, email_domain, key_length=None,
+                           expire_date=1,
                            key_type=None, subkey_type=None, passphrase=None):
         """Generate a GnuPG batch file for key unattended key creation."""
         name = real_name.lower().replace(' ', '')
@@ -366,7 +368,7 @@ class GPGTestCase(unittest.TestCase):
 
         batch = {'Key-Type': key_type,
                  'Key-Length': key_length,
-                 'Expire-Date': 1,
+                 'Expire-Date': expire_date,
                  'Name-Real': '%s' % real_name,
                  'Name-Email': ("%s@%s" % (name, email_domain))}
 
@@ -1364,6 +1366,60 @@ know, maybe you shouldn't be doing it in the first place.
             encrypted_message = fh.read()
             self.assertTrue(b"-----BEGIN PGP MESSAGE-----" in encrypted_message)
 
+    def test_key_signing(self):
+        """Test that signing a key with default key succeeds."""
+        default_key_pair = self.generate_key("haha", "ha.ha", passphrase="haha.haha")
+        hehe_key = self.generate_key("hehe", "he.he")
+
+        result = self.gpg.sign_key(hehe_key.fingerprint, passphrase="haha.haha")
+
+        hehe_sigs_keyids = self._get_sigs(hehe_key.fingerprint[-16:])
+
+        self.assertEqual('ok', result.status)
+        self.assertIn(default_key_pair.fingerprint[-16:], hehe_sigs_keyids)
+
+    def _get_sigs(self, target_keyid):
+        sigs = self.gpg.list_sigs()
+        hehe_sigs = filter(lambda sig: sig['keyid'] == target_keyid, sigs)[0]
+        hehe_address = hehe_sigs['uids'][0]     # yields "hehe<hehe@he.he>"
+        return map(lambda key: key['keyid'], hehe_sigs['sigs'][hehe_address] )
+
+    def test_signing_an_already_signed_key_does_nothing_and_is_okay(self):
+        """Test that re-signing a key does not blow up."""
+        default_key_pair = self.generate_key("haha", "ha.ha", passphrase="haha.haha")
+        hehe_key = self.generate_key("hehe", "he.he")
+        self.gpg.sign_key(hehe_key.fingerprint, passphrase="haha.haha")
+
+        re_sign_result = self.gpg.sign_key(hehe_key.fingerprint, passphrase="haha.haha")
+
+        hehe_sigs_keyids = self._get_sigs(hehe_key.fingerprint[-16:])
+
+        self.assertEqual('ok', re_sign_result.status)
+        self.assertIn(default_key_pair.fingerprint[-16:], hehe_sigs_keyids)
+
+    def test_signing_key_with_wrong_password(self):
+        """Test signing a key using a wrong password"""
+        default_key_pair = self.generate_key("haha", "ha.ha", passphrase="haha.haha")
+        hehe_key = self.generate_key("hehe", "he.he")
+
+        wrong_password = "really wrong"
+        result = self.gpg.sign_key(hehe_key.fingerprint, passphrase=wrong_password)
+
+        hehe_sigs_keyids = self._get_sigs(hehe_key.fingerprint[-16:])
+
+        self.assertEqual('bad passphrase: %s' % default_key_pair.fingerprint[-16:], result.status)
+        self.assertNotIn(default_key_pair.fingerprint[-16:], hehe_sigs_keyids)
+
+    def test_signing_a_non_existing_or_non_imported_key_fails(self):
+        """Test that signing a non existing or not imported key is logged."""
+        default_key_pair = self.generate_key("haha", "ha.ha", passphrase="haha.haha")
+        not_default_fpr_ending = 'B' if default_key_pair.fingerprint[-1] == 'A' else 'A'
+        non_existing_key_fpr = '%s%s' % (default_key_pair.fingerprint[:-1], not_default_fpr_ending)
+
+        result = self.gpg.sign_key(non_existing_key_fpr, passphrase="haha.haha")
+
+        self.assertEqual('key not found: "%s" not found: public key not found' % non_existing_key_fpr,
+                         result.status)
 
 suites = { 'parsers': set(['test_parsers_fix_unsafe',
                            'test_parsers_fix_unsafe_semicolon',
@@ -1433,7 +1489,12 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                             'test_deletion_subkeys',
                             'test_import_only']),
            'recvkeys': set(['test_recv_keys_default']),
+           'signing': set(['test_key_signing',
+                           'test_signing_an_already_signed_key_does_nothing_and_is_okay',
+                           'test_signing_a_non_existing_or_non_imported_key_fails',
+                           'test_signing_key_with_wrong_password']),
 }
+
 
 def main(args):
     if not args.quiet:

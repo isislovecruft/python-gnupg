@@ -145,6 +145,7 @@ class GPGBase(object):
                        'list':     _parsers.ListKeys,
                        'sign':     _parsers.Sign,
                        'verify':   _parsers.Verify,
+                       'signing': _parsers.KeySigningResult,
                        'packets':  _parsers.ListPackets }
 
     def __init__(self, binary=None, home=None, keyring=None, secring=None,
@@ -637,6 +638,9 @@ class GPGBase(object):
                     # for some stupid reason, considered fatal:
                     if value.find("trustdb.gpg") and value.find("No such file"):
                         result._handle_status('NEED_TRUSTDB', '')
+                elif 'key not found' in value:
+                    log.error("%s" % value)
+                    result._handle_status('KEY_NOT_FOUND', value)
             else:
                 if self.verbose:
                     log.info("%s" % line)
