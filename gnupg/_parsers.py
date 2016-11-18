@@ -912,7 +912,9 @@ class KeySigningResult(object):
         elif key in ("BAD_PASSPHRASE", "MISSING_PASSPHRASE", "KEY_NOT_FOUND"):
             self.status = "%s: %s" % (key.replace("_", " ").lower(), value)
         else:
+            self.status = 'failed'
             raise ValueError("Key signing, unknown status message: %r ::%s" % (key, value))
+
 
 class GenKey(object):
     """Handle status messages for key generation.
