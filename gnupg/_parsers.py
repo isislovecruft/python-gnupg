@@ -869,12 +869,13 @@ class KeyExtensionResult(object):
 
         :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
-        if key in ("USERID_HINT", "NEED_PASSPHRASE",
-                   "GOOD_PASSPHRASE", "GOT_IT", "GET_LINE"):
+        if key in ("USERID_HINT", "NEED_PASSPHRASE", "KEYEXPIRED",
+                   "SIGEXPIRED", "GOOD_PASSPHRASE", "GOT_IT", "GET_LINE"):
             pass
         elif key in ("BAD_PASSPHRASE", "MISSING_PASSPHRASE"):
             self.status = key.replace("_", " ").lower()
         else:
+            self.status = 'failed'
             raise ValueError("Unknown status message: %r" % key)
 
 
