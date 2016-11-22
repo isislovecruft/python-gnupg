@@ -1505,6 +1505,23 @@ know, maybe you shouldn't be doing it in the first place.
             self.assertEqual(next_week, datetime.date.fromtimestamp(int(fecthed_key['expires'])))
             self.assertEqual(key.fingerprint, fecthed_key['fingerprint'])
 
+    def test_passphrase_with_space_on_key_extension(self):
+        """Test that wrong passphrase does not allow extension."""
+        today = datetime.date.today()
+        date_format = '%Y-%m-%d'
+        tomorrow = today + datetime.timedelta(days=1)
+        password_with_space = "passphrase with space"
+        key = self.generate_key("Haha", "ho.ho", passphrase=password_with_space,
+                                expire_date=tomorrow.strftime(date_format))
+
+        self.gpg.extend_key(key.fingerprint, validity='1w', passphrase=password_with_space)
+        next_week = today + datetime.timedelta(weeks=1)
+
+        current_keys = self.gpg.list_keys()
+        for fecthed_key in current_keys:
+            self.assertEqual(next_week, datetime.date.fromtimestamp(int(fecthed_key['expires'])))
+            self.assertEqual(key.fingerprint, fecthed_key['fingerprint'])
+
     def test_wrong_passphrase_on_key_extension(self):
         """Test that wrong passphrase does not allow extension."""
         today = datetime.date.today()
@@ -1602,6 +1619,7 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
            'revokekey': set(['test_list_revoked_key',
                              'test_revoke_and_not_revoked_key']),
            'extend': set(['test_key_extension',
+                          'test_passphrase_with_space_on_key_extension',
                           'test_wrong_passphrase_on_key_extension',
                           'test_invalid_extension_period_throws_exception_on_key_extension']),
 }

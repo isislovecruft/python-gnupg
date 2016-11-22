@@ -579,14 +579,12 @@ class GPG(GPGBase):
                     the new expiration date can be obtained by .list_keys()
         """
 
-        args = ["--batch"]
-        if passphrase:
-            args.append("--passphrase %s" % passphrase)
-        args.extend(["--command-fd 0", "--edit-key %s" % keyid])
+        args = ["--command-fd 0", "--edit-key %s" % keyid]
 
         p = self._open_subprocess(args)
         result = self._result_map['extension'](self)
-        extension_input = KeyExtensionInterface(validity).gpg_interactive_input(extend_subkey)
+        passphrase = passphrase.encode(self._encoding) if passphrase else passphrase
+        extension_input = KeyExtensionInterface(validity, passphrase).gpg_interactive_input(extend_subkey)
         p.stdin.write(extension_input)
         self._collect_output(p, result, stdin=p.stdin)
         return result
