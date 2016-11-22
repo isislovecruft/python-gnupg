@@ -494,7 +494,6 @@ def _get_options_group(group=None):
                                    '--status-fd',
                                    '--verify-options',
                                    '--command-fd',
-                                   '--passphrase',
                                ])
     #: These have their own parsers and don't really fit into a group
     other_options = frozenset(['--debug-level',
@@ -814,7 +813,8 @@ def progress(status_code):
 class KeyExtensionInterface(object):
     """ Interface that guards against misuse of --edit-key combined with --command-fd"""
 
-    def __init__(self, validity):
+    def __init__(self, validity, passphrase=None):
+        self._passphrase = passphrase
         self._validity_option = validity
         self._clean_key_extension_option()
 
@@ -824,13 +824,26 @@ class KeyExtensionInterface(object):
         if not allowed_entry:
             raise UsageError("Key extension option: %s is not valid" % self._validity_option)
 
+    def _input_passphrase(self, _input):
+        if self._passphrase:
+            return  "%s%s\n" % (_input, self._passphrase)
+        return _input
+
+    def _main_key_command(self):
+        main_key_input = "expire\n%s\n" % self._validity_option
+        return self._input_passphrase(main_key_input)
+
+    def _sub_key_command(self, sub_key_number=1):
+        sub_key_input = "key %d\nexpire\n%s\n" % (sub_key_number, self._validity_option)
+        return self._input_passphrase(sub_key_input)
+
     def gpg_interactive_input(self, extend_subkey=True):
         """ processes series of inputs normally supplied on --edit-key but passed through stdin
             this ensures that no other --edit-key command is actually passing through.
         """
-        _input = "expire\n%s\n" % self._validity_option
+        _input = self._main_key_command()
         if extend_subkey:
-            _input = "%skey 1\nexpire\n%s\n" % (_input, self._validity_option)
+            _input += self._sub_key_command()
         return "%ssave\n" % _input
 
 
@@ -847,8 +860,9 @@ class KeyExtensionResult(object):
 
         :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
-        if key in ("USERID_HINT", "NEED_PASSPHRASE", "KEYEXPIRED",
-                   "SIGEXPIRED", "GOOD_PASSPHRASE", "GOT_IT", "GET_LINE"):
+        if key in ("USERID_HINT", "NEED_PASSPHRASE",
+                    "GET_HIDDEN", "SIGEXPIRED", "KEYEXPIRED",
+                   "GOOD_PASSPHRASE", "GOT_IT", "GET_LINE"):
             pass
         elif key in ("BAD_PASSPHRASE", "MISSING_PASSPHRASE"):
             self.status = key.replace("_", " ").lower()
