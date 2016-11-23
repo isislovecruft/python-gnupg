@@ -909,7 +909,7 @@ class KeySigningResult(object):
         if key in ("USERID_HINT", "NEED_PASSPHRASE", "ALREADY_SIGNED",
                    "GOOD_PASSPHRASE", "GOT_IT", "GET_BOOL"):
             pass
-        elif key in ("BAD_PASSPHRASE", "MISSING_PASSPHRASE", "KEY_NOT_FOUND"):
+        elif key in ("BAD_PASSPHRASE", "MISSING_PASSPHRASE"):
             self.status = "%s: %s" % (key.replace("_", " ").lower(), value)
         else:
             self.status = 'failed'

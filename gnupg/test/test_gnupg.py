@@ -1591,17 +1591,6 @@ know, maybe you shouldn't be doing it in the first place.
         self.assertEqual('bad passphrase: %s' % default_key_pair.fingerprint[-16:], result.status)
         self.assertNotIn(default_key_pair.fingerprint[-16:], hehe_sigs_keyids)
 
-    def test_signing_a_non_existing_or_non_imported_key_fails(self):
-        """Test that signing a non existing or not imported key is logged."""
-        default_key_pair = self.generate_key("haha", "ha.ha", passphrase="haha.haha")
-        not_default_fpr_ending = 'B' if default_key_pair.fingerprint[-1] == 'A' else 'A'
-        non_existing_key_fpr = '%s%s' % (default_key_pair.fingerprint[:-1], not_default_fpr_ending)
-
-        result = self.gpg.sign_key(non_existing_key_fpr, passphrase="haha.haha")
-
-        self.assertEqual('key not found: "%s" not found: public key not found' % non_existing_key_fpr,
-                         result.status)
-
 suites = { 'parsers': set(['test_parsers_fix_unsafe',
                            'test_parsers_fix_unsafe_semicolon',
                            'test_parsers_is_hex_valid',
@@ -1678,7 +1667,6 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                           'test_invalid_extension_period_throws_exception_on_key_extension']),
            'signing': set(['test_key_signing',
                            'test_signing_an_already_signed_key_does_nothing_and_is_okay',
-                           'test_signing_a_non_existing_or_non_imported_key_fails',
                            'test_signing_key_with_wrong_password']),
 }
 
