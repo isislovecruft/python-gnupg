@@ -485,6 +485,7 @@ def _get_options_group(group=None):
                              '--recipient',
                              '--recv-keys',
                              '--send-keys',
+                             '--edit-key'
                              ])
     #: These options expect value which are left unchecked, though still run
     #: through :func:`_fix_unsafe`.
@@ -492,6 +493,7 @@ def _get_options_group(group=None):
                                    '--passphrase-fd',
                                    '--status-fd',
                                    '--verify-options',
+                                   '--command-fd',
                                ])
     #: These have their own parsers and don't really fit into a group
     other_options = frozenset(['--debug-level',
@@ -806,6 +808,67 @@ def progress(status_code):
     for key, value in lookup.items():
         if str(status_code) == key:
             return value
+
+
+class KeyExtensionInterface(object):
+    """ Interface that guards against misuse of --edit-key combined with --command-fd"""
+
+    def __init__(self, validity, passphrase=None):
+        self._passphrase = passphrase
+        self._validity_option = validity
+        self._clean_key_extension_option()
+
+    def _clean_key_extension_option(self):
+        """validates the extension option supplied"""
+        allowed_entry = re.findall('^(\d+)(|w|m|y)$', self._validity_option)
+        if not allowed_entry:
+            raise UsageError("Key extension option: %s is not valid" % self._validity_option)
+
+    def _input_passphrase(self, _input):
+        if self._passphrase:
+            return  "%s%s\n" % (_input, self._passphrase)
+        return _input
+
+    def _main_key_command(self):
+        main_key_input = "expire\n%s\n" % self._validity_option
+        return self._input_passphrase(main_key_input)
+
+    def _sub_key_command(self, sub_key_number=1):
+        sub_key_input = "key %d\nexpire\n%s\n" % (sub_key_number, self._validity_option)
+        return self._input_passphrase(sub_key_input)
+
+    def gpg_interactive_input(self, extend_subkey=True):
+        """ processes series of inputs normally supplied on --edit-key but passed through stdin
+            this ensures that no other --edit-key command is actually passing through.
+        """
+        _input = self._main_key_command()
+        if extend_subkey:
+            _input += self._sub_key_command()
+        return "%ssave\n" % _input
+
+
+class KeyExtensionResult(object):
+    """Handle status messages for key expiry extension
+        It does not really have a job, but just to conform to the API
+    """
+    def __init__(self, gpg):
+        self._gpg = gpg
+        self.status = 'ok'
+
+    def _handle_status(self, key, value):
+        """Parse a status code from the attached GnuPG process.
+
+        :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
+        """
+        if key in ("USERID_HINT", "NEED_PASSPHRASE",
+                    "GET_HIDDEN", "SIGEXPIRED", "KEYEXPIRED",
+                   "GOOD_PASSPHRASE", "GOT_IT", "GET_LINE"):
+            pass
+        elif key in ("BAD_PASSPHRASE", "MISSING_PASSPHRASE"):
+            self.status = key.replace("_", " ").lower()
+        else:
+            self.status = 'failed'
+            raise ValueError("Unknown status message: %r" % key)
 
 
 class GenKey(object):

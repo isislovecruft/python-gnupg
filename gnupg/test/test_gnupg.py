@@ -27,6 +27,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import with_statement
 
+import datetime
 from argparse   import ArgumentParser
 from codecs     import open as open
 from functools  import wraps
@@ -357,6 +358,7 @@ class GPGTestCase(unittest.TestCase):
         os.remove(outfile)
 
     def generate_key_input(self, real_name, email_domain, key_length=None,
+                           expire_date=1,
                            key_type=None, subkey_type=None, passphrase=None):
         """Generate a GnuPG batch file for key unattended key creation."""
         name = real_name.lower().replace(' ', '')
@@ -366,7 +368,7 @@ class GPGTestCase(unittest.TestCase):
 
         batch = {'Key-Type': key_type,
                  'Key-Length': key_length,
-                 'Expire-Date': 1,
+                 'Expire-Date': expire_date,
                  'Name-Real': '%s' % real_name,
                  'Name-Email': ("%s@%s" % (name, email_domain))}
 
@@ -1364,6 +1366,63 @@ know, maybe you shouldn't be doing it in the first place.
             encrypted_message = fh.read()
             self.assertTrue(b"-----BEGIN PGP MESSAGE-----" in encrypted_message)
 
+    def test_key_extension(self):
+        """Test that extending key expiry date succeeds."""
+        today = datetime.date.today()
+        date_format = '%Y-%m-%d'
+        tomorrow = today + datetime.timedelta(days=1)
+        key = self.generate_key("Haha", "ho.ho", passphrase="haha.hehe", expire_date=tomorrow.strftime(date_format))
+
+        self.gpg.extend_key(key.fingerprint, validity='1w', passphrase="haha.hehe")
+        next_week = today + datetime.timedelta(weeks=1)
+
+        current_keys = self.gpg.list_keys()
+        for fecthed_key in current_keys:
+            self.assertEqual(next_week, datetime.date.fromtimestamp(int(fecthed_key['expires'])))
+            self.assertEqual(key.fingerprint, fecthed_key['fingerprint'])
+
+    def test_passphrase_with_space_on_key_extension(self):
+        """Test that wrong passphrase does not allow extension."""
+        today = datetime.date.today()
+        date_format = '%Y-%m-%d'
+        tomorrow = today + datetime.timedelta(days=1)
+        password_with_space = "passphrase with space"
+        key = self.generate_key("Haha", "ho.ho", passphrase=password_with_space,
+                                expire_date=tomorrow.strftime(date_format))
+
+        self.gpg.extend_key(key.fingerprint, validity='1w', passphrase=password_with_space)
+        next_week = today + datetime.timedelta(weeks=1)
+
+        current_keys = self.gpg.list_keys()
+        for fecthed_key in current_keys:
+            self.assertEqual(next_week, datetime.date.fromtimestamp(int(fecthed_key['expires'])))
+            self.assertEqual(key.fingerprint, fecthed_key['fingerprint'])
+
+    def test_wrong_passphrase_on_key_extension(self):
+        """Test that wrong passphrase does not allow extension."""
+        today = datetime.date.today()
+        date_format = '%Y-%m-%d'
+        tomorrow = today + datetime.timedelta(days=1)
+        key = self.generate_key("Haha", "ho.ho", passphrase="haha.hehe", expire_date=tomorrow.strftime(date_format))
+
+        self.gpg.extend_key(key.fingerprint, validity='1w', passphrase="wrong passphrase")
+
+        current_keys = self.gpg.list_keys()
+        for fecthed_key in current_keys:
+            self.assertEqual(tomorrow, datetime.date.fromtimestamp(int(fecthed_key['expires'])))
+            self.assertEqual(key.fingerprint, fecthed_key['fingerprint'])
+
+    def test_invalid_extension_period_throws_exception_on_key_extension(self):
+        """Test that key extension has to be positive value"""
+        today = datetime.date.today()
+        date_format = '%Y-%m-%d'
+        tomorrow = today + datetime.timedelta(days=1)
+        key = self.generate_key("Haha", "ho.ho", passphrase="haha.hehe", expire_date=tomorrow.strftime(date_format))
+
+        invalid_extension_option = "-1w"
+        with self.assertRaises(_parsers.UsageError):
+            self.gpg.extend_key(key.fingerprint, validity=invalid_extension_option, passphrase="haha.hehe")
+
 
 suites = { 'parsers': set(['test_parsers_fix_unsafe',
                            'test_parsers_fix_unsafe_semicolon',
@@ -1433,6 +1492,10 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                             'test_deletion_subkeys',
                             'test_import_only']),
            'recvkeys': set(['test_recv_keys_default']),
+           'extend': set(['test_key_extension',
+                          'test_passphrase_with_space_on_key_extension',
+                          'test_wrong_passphrase_on_key_extension',
+                          'test_invalid_extension_period_throws_exception_on_key_extension']),
 }
 
 def main(args):
