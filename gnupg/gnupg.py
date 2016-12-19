@@ -935,7 +935,7 @@ generate keys. Please see
         ...     passphrase='foo')
         >>> key = gpg.gen_key(key_settings)
         >>> message = "The crow flies at midnight."
-        >>> encrypted = str(gpg.encrypt(message, key.printprint))
+        >>> encrypted = str(gpg.encrypt(message, key.fingerprint))
         >>> assert encrypted != message
         >>> assert not encrypted.isspace()
         >>> decrypted = str(gpg.decrypt(encrypted))
