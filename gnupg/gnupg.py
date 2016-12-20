@@ -573,7 +573,7 @@ class GPG(GPGBase):
         :returns: The result mapping with details of the new key, which is a
                   :class:`GenKey <gnupg._parsers.GenKey>` object.
         """
-        args = ["--gen-key --batch"]
+        args = ["--gen-key --cert-digest-algo SHA512 --batch"]
         key = self._result_map['generate'](self)
         f = _make_binary_stream(input, self._encoding)
         self._handle_io(args, f, key, binary=True)
