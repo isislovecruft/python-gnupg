@@ -96,9 +96,7 @@ try:
 except NameError:
     _py3k = True
 
-_running_windows = False
-if "win" in sys.platform:
-    _running_windows = True
+_running_windows = sys.platform.startswith("win")
 
 ## Directory shortcuts:
 ## we don't want to use this one because it writes to the install dir:
@@ -129,6 +127,10 @@ log = _logger.create_logger(0)
 
 #: Compiled regex for determining a GnuPG binary's version:
 _VERSION_STRING_REGEX = re.compile('(\d)*(\.)*(\d)*(\.)*(\d)*')
+
+
+class GnuPGVersionError(ValueError):
+    """Raised when we couldn't parse GnuPG's version info."""
 
 
 def find_encodings(enc=None, system=False):
@@ -601,10 +603,29 @@ def _match_version_string(version):
     """Sort a binary version string into major, minor, and micro integers.
 
     :param str version: A version string in the form x.x.x
+    :raises GnuPGVersionError: if the **version** string couldn't be parsed.
+    :rtype: tuple
+
+    :returns: A 3-tuple of integers, representing the (MAJOR, MINOR, MICRO)
+        version numbers. For example::
+
+            _match_version_string("2.1.3")
+
+        would return ``(2, 1, 3)``.
     """
     matched = _VERSION_STRING_REGEX.match(version)
     g = matched.groups()
-    major, minor, micro = int(g[0]), int(g[2]), int(g[4])
+    major, minor, micro = g[0], g[2], g[4]
+
+    # If, for whatever reason, the binary didn't tell us its version, then
+    # these might be (None, None, None), and so we should avoid typecasting
+    # them when that is the case.
+    if major and minor and micro:
+        major, minor, micro = int(major), int(minor), int(micro)
+    else:
+        raise GnuPGVersionError("Could not parse GnuPG version from: %r" %
+                                version)
+
     return (major, minor, micro)
 
 def _next_year():

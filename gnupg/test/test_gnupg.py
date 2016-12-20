@@ -141,6 +141,78 @@ WdPQjKEfKnr+bW4yubwMUYKyAJ4uiE8Rv/oEED1oM3xeJqa+MJ9V1w==
 -----END PGP PUBLIC KEY BLOCK-----"""
 
 
+PUBKEY_ID_FRED_FOO = "E950D5D4BC6CA86E"
+PUBKEY_FRED_FOO = """
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mQENBFdVYo8BCAC6NygwXJhmlwa87uAEfypH5dz0ANuMhHn7Cjf7Xgc/d8dwOnCe
+ai0cpEsdnraankzG9kxqxqWZgx/oIO1iH3Qcd+BfkZG8VFew7mJqFgnFaKWUCUXb
+p6JLiwOIVUXhJScUr7OT7yg45of53ECoXFSrmLoWbhSd1+eetCzwIBTRgoRAGsv1
+ifA9+RtfeR8N2/VaIMOz9cmkvBjvbSSubPQVjbRQbxHaFhC+v1MJMcra9eXcdQ0h
+gopOENagfW4zDOJGAsLZ7KVCEGPSncALLj8/fF79HwzuMf6zUfsfkxkmQv7bpW6g
+Nab2ES39GVQFMKSPww3jv6bHZpjw7ibQrT9/ABEBAAG0F0ZyZWQgRm9vIDxmcmVk
+QGZvby5jb20+iQE5BBMBCAAjBQJXVWKPAhsDBwsJCAcDAgEGFQgCCQoLBBYCAwEC
+HgECF4AACgkQ6VDV1LxsqG6xsAf6AjMvCU/+PFsqMppeF706Ax3TSOcwx+611uCA
+tAa+nT0xZm1m66txe6YgRPcmF8uHM6IXDyb3GQAtrsjFt0WRb+xTpM+sOEmRoh6S
+jUnIotwhSlAkicGe+yqXqDTRGk+06AiCNV5ujB5V3rDZj2zraNkwG0dc3hox+rNn
+pw7Cy0GlnXki3Ka9dpFiUOePg/aZXXSYbW/qP9CBH89dzS3xga8iv8pvjhhE76zc
+/kCGI6W6OpWQhG/HkdolDuXDiRV5n7FKOe8Kck8O7mdRWEBam1pG2e3M+J0L6e46
+b/g5ksvKjeUcLl+1H6x3U3Pv7+ZTYun/rn//+fyHzzFu8VfCuokBHAQTAQgABgUC
+V1Vi4wAKCRDtgpuHsUs7IWskCADTk7LwSRAr98BtUUwqOzsAw630sO/P08JuAwPQ
+C2q170i60BeXHAACgmpE+ZAZ7y7UdZSMVLq5pom2zf4bb+pcBZGFkgFV9q5iCXKC
+Nx/vr6TdDquH6U7kjyG4qHWRgWN+zRHdDTeRe6W7IzlH5HPNCBIKBOv+Gh9BOf4h
+HzMJflSTbYemXxHtULf4rer2XeOq+VbJX8544gkbtBL5VWLTQKdbFGIyEuziBXjg
+kP06OKmH6oJ9eFfB5Hbcu3GZWeoLVO0CkhhQ65KJWzKFyy8gIUG3+vKIcLfBhAaJ
+pIfoizFn8D2NQ3l+sWkxxgtVbk/6CL/nXheUp8Ph4XrBx9COuQENBFdVYo8BCAC0
+vv5CxxhLZIsDVWfO379rgtZStq/2ul6QlfEwdT8hZmGaQXCN2g19nhVJ7kuq5yO2
+cAfB7y8YgQAlgCCgFHNPkwvJRh7Z2rcD80TmbdXit8+Am0a4Wrml2cA49tynrXx/
+4JzDib92t+2BG+bBqJnIZOYhEHaXYgVaNI0CvTpolA9CDIr7bc1dToIU2J9go3dQ
+Bci9as9K6x3DKybBzoY/PMaUXlru9RNdcz9eA1/082tWZOyLxPZePBuQOe4F8GkW
+tnxaelfptRPwWhThUTQ4kbcxL5tOG7BYemeulIccO1MU6pqS2RpNs7WdfMx7RoEN
+E6AQzuGwiYo5O/L7vTo9ABEBAAGJAR8EGAEIAAkFAldVYo8CGwwACgkQ6VDV1Lxs
+qG6XlggAidejM3WT6wP3+mkb4Ki6dmrRRgETZAQH76pT3epYVfPrUxeRurdCuPv4
+6DSl3VAPu/ekAWkV5Fzvxu936jxhYWiB1F4fQno7Rxsfh00qBqSYZKO9+BEWx1lj
+IC5f+ch1UDqAfjwlOGAP2a/YtT3wSwxUTKkZSjFsp4r/4cRxMY6k9xi6lPDSnrux
+k6qvsgfFVYhc0Hot3nuDBkth2tp0zodRuhmBG0jaIkbsWQDTxqQiHcbcAqdqgsGK
+4pUqsH73PlyfpbS0d8syQf9Uzl4VvX2zTdgIvEGkZi3BwtM2tPXbl+/H9yBs5Jo0
+oDzauPrPFwyRVgWpEuKp9pZbtF045Q==
+=9e5u
+-----END PGP PUBLIC KEY BLOCK-----
+"""
+
+PUBKEY_ID_BOB_BAR = "ED829B87B14B3B21"
+PUBKEY_BOB_BAR = """
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mQENBFdVYskBCAD3CgbmVDqd9rINYBHO9C3WVSOIZ0k0OM4hMAHGMD2R+WDTNKKm
+09yzwpaL00tzrX2PVZMu8/zpyoyRTluNPfdVLDFF4nrq4AgDze/d8Pc2fwFZVZMQ
+L2ZPQ4O++cC1oLuiYRLILL66tBFAuIMPGdTAG6Izj5PQaytAE/1C40dvEESi31sk
+mgyAUcw2U8Zf9Jjd8yJLBsFNbIiiw4J0qH/zcCKiL63J+Q18Dd2M6HBFaX45aJPQ
+cIehCIuergLWJBXRDIIKiktyAONdSWCm5ujfDQT9M9hSV2BHki9+0e+zff8yCGgT
+pIEPf7Sb8JgnR16puEBj0YS0w8Gpa0mo1oP/ABEBAAG0FEJvYiBCYXIgPGJvYkBi
+YXIuaW8+iQE5BBMBCAAjBQJXVWLJAhsDBwsJCAcDAgEGFQgCCQoLBBYCAwECHgEC
+F4AACgkQ7YKbh7FLOyGVBAgAjTX8cNcp+VpJFzDUL6uIYrDhaRwcjdTnWatbG10Q
+2pPRhDd7Yf1ZubkqEALUNsQnSyVuXsab4F1FuvE9O9Cfe0t4v0eNkEHDx2/IYwiZ
+1fgHfXhIqOoMdiCn6a51t7hRmkBSebi6uUEKkRscBTg/fue2s8q+JqiXWvlNuUPY
+LeCNmebnMryjjJylq5+/QY4A6sJGh9JxDPCkT2aS9AC9vrPXAlrgoVoQh6SX2xwP
+uC/Aksl5fv/dD8LMLBukkiwhYZr6sTIXFhmtw24D/WLz8tQQIySnokzFILcr3V/8
+J7GLFa4YXAH8rGq0K+ero3rHTEeQh9jOp5gAvQHarjjJUbkBDQRXVWLJAQgAzd8t
+5uns5xYjYSVjERlH//L4lPNOhmy9grhhQXd8A6/GQeNncB7Or28R4/cXVLgnL2mD
+xBbhiV5HQz6nERY0GxSkgWwZ7LJhtgqilv+MEQGbEogsicS2D4CC7A3lUuBcRXF/
+AdawIFkmORu7B2ICJDzw1rUEtcPdAY3uU8G/ja7zY8mEgwIdEP48eqkUi15aASCu
+UowoMN5aYaCILHRXOOgPkYYd4LcQBV2Y6xSLTgkL7Sl878J5a+y6QNSOkm85IhEL
+QC5PqMxZcrSjTnVlFWRnIHUJ0IDgsUPRyp6+1VZ72yXTi8BhlOSKE74SOLvUeQMJ
+C4mISmcm+QXCpKy7dwARAQABiQEfBBgBCAAJBQJXVWLJAhsMAAoJEO2Cm4exSzsh
+kawH/3RywwJ1oIjg5y9U/2V1SaNVdh+Kk/x2xs9HzbpUuo1MA5S04MZ+MOl05JOu
+gF98ye6z3qkjazkTC+0CdteH1+pi1WEwxkxQUiswGaVPPscr+6f9L/rS/IuGbxf8
+qe26J6pD+EjMaS7uCrOgQCIUH1V8TzlWMyoscH1y5rR/gp1IskIHaYfJ5AIL3eVS
+0s7szPFsrUqIt0KI/D0kc9aNapk4qMA0az8gKC+HAGcJfeb6Py2rJfFEpt1rKrbO
+NzyH16tLO3htUqPGdfkVx03gsQcSbWDoCQyuiIyzoZ3kX29skSyKO8bFu221WbgN
+IW8P249QHz6qLnRMErL80zLU9Go=
+=hb7Y
+-----END PGP PUBLIC KEY BLOCK-----
+"""
+
 def is_list_with_len(o, n):
     return isinstance(o, list) and len(o) == n
 
@@ -290,7 +362,7 @@ class GPGTestCase(unittest.TestCase):
 
     def test_make_args_drop_protected_options(self):
         """Test that unsupported gpg options are dropped, and supported ones remain."""
-        self.gpg.options = ['--tyrannosaurus-rex', '--stegosaurus', '--lock-never']
+        self.gpg.options = ['--tyrannosaurus-rex', '--stegosaurus', '--lock-never', '--trust-model always']
         gpg_binary_path = _util._find_binary('gpg')
         cmd = self.gpg._make_args(None, False)
         expected = [gpg_binary_path,
@@ -299,7 +371,8 @@ class GPGTestCase(unittest.TestCase):
                     '--no-default-keyring --keyring %s' % self.keyring,
                     '--secret-keyring %s' % self.secring,
                     '--no-use-agent',
-                    '--lock-never']
+                    '--lock-never',
+                    '--trust-model always']
         self.assertListEqual(cmd, expected)
 
     def test_make_args(self):
@@ -511,6 +584,29 @@ class GPGTestCase(unittest.TestCase):
         private_keys = self.gpg.list_keys(secret=True)
         self.assertTrue(is_list_with_len(private_keys, 1),
                         "1-element list expected")
+
+    def test_list_revoked_key(self):
+        """Test that a revoke key is set."""
+        self.assertEqual(len(self.gpg.list_keys()), 0)
+        with open(os.path.join(_files, 'revoked_key.pub')) as revoked_key:
+            self.gpg.import_keys(revoked_key.read())
+        result = self.gpg.list_sigs("1763FE94FC05F492285C2B7BA658D626E2A17629")
+        self.assertEqual(len(self.gpg.list_keys()), 1)
+        self.assertEqual(result[0]['rev']['keyid'], 'A658D626E2A17629')
+
+    def test_revoke_and_not_revoked_key(self):
+        """Test that a revoke key is set, but a nun revoked key still valid"""
+        with open(os.path.join(_files, 'revoked_key.pub')) as revoked_key:
+            self.gpg.import_keys(revoked_key.read())
+
+        self.gpg.list_sigs("1763FE94FC05F492285C2B7BA658D626E2A17629")
+
+        with open(os.path.join(_files, 'test_key_1.sec')) as fh1:
+            res = self.gpg.import_keys(fh1.read())
+
+        result = self.gpg.list_sigs(res.fingerprints[0])
+        self.assertEqual(len(self.gpg.list_keys()), 2)
+        self.assertEqual(result[1]['rev'], {})
 
     def test_public_keyring(self):
         """Test that the public keyring is found in the gpg home directory."""
@@ -807,6 +903,34 @@ class GPGTestCase(unittest.TestCase):
 
         if os.path.isfile(sigfn):
             os.unlink(sigfn)
+
+    def test_list_key_sigs(self):
+        self.test_list_keys_initial_public()
+        gpg = self.gpg
+        gpg.import_keys(PUBKEY_FRED_FOO)
+        gpg.import_keys(PUBKEY_BOB_BAR)
+
+        result = gpg.list_sigs(PUBKEY_ID_FRED_FOO)
+
+        self.assertEqual(len(result.sigs[u"Fred Foo <fred@foo.com>"]), 2)
+        self.assertEqual(list(result.sigs[u"Fred Foo <fred@foo.com>"])[1], PUBKEY_ID_FRED_FOO)
+        self.assertEqual(list(result.sigs[u"Fred Foo <fred@foo.com>"])[0], PUBKEY_ID_BOB_BAR)
+
+    def test_check_key_sigs(self):
+        self.test_list_keys_initial_public()
+        gpg = self.gpg
+        gpg.import_keys(PUBKEY_FRED_FOO)
+
+        result = gpg.check_sigs(PUBKEY_ID_FRED_FOO)
+
+        self.assertIn(PUBKEY_ID_FRED_FOO, result.certs[u"Fred Foo <fred@foo.com>"])
+        self.assertNotIn(PUBKEY_ID_BOB_BAR, result.certs[u"Fred Foo <fred@foo.com>"])
+
+        gpg.import_keys(PUBKEY_BOB_BAR)
+        result = gpg.check_sigs(PUBKEY_ID_FRED_FOO)
+
+        self.assertIn(PUBKEY_ID_FRED_FOO, result.certs[u"Fred Foo <fred@foo.com>"])
+        self.assertIn(PUBKEY_ID_BOB_BAR, result.certs[u"Fred Foo <fred@foo.com>"])
 
     def test_deletion_public_key(self):
         """Test that key deletion for public keys works, and that it leaves the
@@ -1433,6 +1557,8 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                             'test_deletion_subkeys',
                             'test_import_only']),
            'recvkeys': set(['test_recv_keys_default']),
+           'revokekey': set(['test_list_revoked_key',
+                             'test_revoke_and_not_revoked_key']),
 }
 
 def main(args):

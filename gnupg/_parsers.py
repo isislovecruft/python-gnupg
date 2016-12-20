@@ -36,7 +36,7 @@ from ._util import log
 
 
 ESCAPE_PATTERN = re.compile(r'\\x([0-9a-f][0-9a-f])', re.I)
-HEXIDECIMAL    = re.compile('([0-9A-Fa-f]{2})+')
+HEXADECIMAL    = re.compile('^[0-9A-Fa-f]+$')
 
 
 class ProtectedOption(Exception):
@@ -91,6 +91,7 @@ def _check_preferences(prefs, pref_type=None):
     digest   = frozenset(['SHA512', 'SHA384', 'SHA256', 'SHA224', 'RMD160',
                           'SHA1'])
     compress = frozenset(['BZIP2', 'ZLIB', 'ZIP', 'Uncompressed'])
+    trust    = frozenset(['gpg', 'classic', 'direct', 'always', 'auto'])
     all      = frozenset([cipher, digest, compress])
 
     if isinstance(prefs, str):
@@ -113,6 +114,8 @@ def _check_preferences(prefs, pref_type=None):
         allowed += ' '.join(prefs.intersection(digest))
     if pref_type == 'compress':
         allowed += ' '.join(prefs.intersection(compress))
+    if pref_type == 'trust':
+        allowed += ' '.join(prefs.intersection(trust))
     if pref_type == 'all':
         allowed += ' '.join(prefs.intersection(all))
 
@@ -215,13 +218,12 @@ def _is_allowed(input):
     return None
 
 def _is_hex(string):
-    """Check that a string is hexidecimal, with alphabetic characters
-    capitalized and without whitespace.
+    """Check that a string is hexadecimal, with alphabetic characters
+    in either upper or lower case and without whitespace.
 
     :param str string: The string to check.
     """
-    matched = HEXIDECIMAL.match(string)
-    if matched is not None and len(matched.group()) >= 2:
+    if HEXADECIMAL.match(string):
         return True
     return False
 
@@ -362,6 +364,11 @@ def _sanitise(*args):
                         legit_algos = _check_preferences(val, 'compress')
                         if legit_algos: checked += (legit_algos + " ")
                         else: log.debug("'%s' not compress algo" % val)
+
+                    elif flag == '--trust-model':
+                        legit_models = _check_preferences(val, 'trust')
+                        if legit_models: checked += (legit_models + " ")
+                        else: log.debug("%r is not a trust model", val)
 
                     else:
                         checked += (val + " ")
@@ -531,6 +538,7 @@ def _get_options_group(group=None):
                               '--personal-compress-prefs',
                               '--personal-compress-preferences',
                               '--print-md',
+                              '--trust-model',
                               ])
     #: These options expect no arguments
     none_options = frozenset(['--always-trust',
@@ -965,7 +973,6 @@ class ListKeys(list):
     |  crs = X.509 certificate and private key available
     |  ssb = secret subkey (secondary key)
     |  uat = user attribute (same as user id except for field 10).
-    |  rev = revocation signature
     |  pkd = public key data (special field format, see below)
     |  grp = reserved for gpgsm
     |  rvk = revocation key
@@ -979,6 +986,8 @@ class ListKeys(list):
         self.fingerprints = []
         self.uids = []
         self.sigs = {}
+        self.certs = {}
+        self.revs = {}
 
     def key(self, args):
         vars = ("""
@@ -989,10 +998,13 @@ class ListKeys(list):
             self.curkey[vars[i]] = args[i]
         self.curkey['uids'] = []
         self.curkey['sigs'] = {}
+        self.curkey['rev'] = {}
         if self.curkey['uid']:
             self.curuid = self.curkey['uid']
             self.curkey['uids'].append(self.curuid)
             self.sigs[self.curuid] = set()
+            self.certs[self.curuid] = set()
+            self.revs[self.curuid] = set()
             self.curkey['sigs'][self.curuid] = []
         del self.curkey['uid']
         self.curkey['subkeys'] = []
@@ -1011,6 +1023,7 @@ class ListKeys(list):
         self.curuid = uid
         self.curkey['sigs'][uid] = []
         self.sigs[uid] = set()
+        self.certs[uid] = set()
         self.uids.append(uid)
 
     def sig(self, args):
@@ -1022,10 +1035,19 @@ class ListKeys(list):
             sig[vars[i]] = args[i]
         self.curkey['sigs'][self.curuid].append(sig)
         self.sigs[self.curuid].add(sig['keyid'])
+        if sig["trust"] == u"!":
+            self.certs[self.curuid].add(sig['keyid'])
+
 
     def sub(self, args):
         subkey = [args[4], args[11]]
         self.curkey['subkeys'].append(subkey)
+
+    def rev(self, args):
+        self.curkey['rev'] = {'keyid': args[4],
+                              'revtime': args[5],
+                              'uid': self.curuid
+                              }
 
     def _handle_status(self, key, value):
         pass
@@ -1280,6 +1302,11 @@ class Verify(object):
                      "DECRYPTION_OKAY", "INV_SGNR", "PROGRESS",
                      "PINENTRY_LAUNCHED"):
             pass
+        elif key == "NEWSIG":
+            # Reset
+            self.status = None
+            self.valid = False
+            self.key_id, self.username = None, None
         elif key == "BADSIG":
             self.valid = False
             self.status = 'signature bad'
@@ -1541,7 +1568,7 @@ class ListPackets(object):
             if not self.key:
                 self.key = key
             self.encrypted_to.append(key)
-        elif key == ('NEED_PASSPHRASE', 'MISSING_PASSPHRASE'):
+        elif key in ('NEED_PASSPHRASE', 'MISSING_PASSPHRASE'):
             self.need_passphrase = True
         elif key == 'NEED_PASSPHRASE_SYM':
             self.need_passphrase_sym = True

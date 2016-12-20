@@ -111,19 +111,22 @@ class GPGMeta(type):
             identity = this_process.uids
 
         for proc in psutil.process_iter():
-            if (proc.name == "gpg-agent") and proc.is_running:
+            # In my system proc.name & proc.is_running are methods
+            if (proc.name() == "gpg-agent") and proc.is_running():
                 log.debug("Found gpg-agent process with pid %d" % proc.pid)
                 if _util._running_windows:
                     if proc.username() == identity:
                         ownership_match = True
                 else:
-                    if proc.uids == identity:
+                    # proc.uids & identity are methods to
+                    if proc.uids() == identity():
                         ownership_match = True
-
-        if ownership_match:
-            log.debug("Effective UIDs of this process and gpg-agent match")
-            setattr(cls, '_agent_proc', proc)
-            return True
+            # Next code must be inside for operator.
+            # Otherwise to _agent_proc will be saved not "gpg-agent" process buth an other.
+            if ownership_match:
+                log.debug("Effective UIDs of this process and gpg-agent match")
+                setattr(cls, '_agent_proc', proc)
+                return True
 
         return False
 
@@ -593,9 +596,18 @@ class GPGBase(object):
         else:
             expand_shell = False
 
+        environment = {
+            'LANGUAGE': os.environ.get('LANGUAGE') or 'en',
+            'GPG_TTY': os.environ.get('GPG_TTY') or '',
+            'DISPLAY': os.environ.get('DISPLAY') or '',
+            'GPG_AGENT_INFO': os.environ.get('GPG_AGENT_INFO') or '',
+            'GPG_TTY': os.environ.get('GPG_TTY') or '',
+            'GPG_PINENTRY_PATH': os.environ.get('GPG_PINENTRY_PATH') or '',
+        }
+
         return subprocess.Popen(cmd, shell=expand_shell, stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                env={'LANGUAGE': 'en'})
+                                env=environment)
 
     def _read_response(self, stream, result):
         """Reads all the stderr output from GPG, taking notice only of lines
@@ -904,7 +916,7 @@ class GPGBase(object):
         ...                                  passphrase='foo')
         >>> key = gpg.gen_key(key_settings)
         >>> message = "The crow flies at midnight."
-        >>> encrypted = str(gpg.encrypt(message, key.printprint))
+        >>> encrypted = str(gpg.encrypt(message, key.fingerprint))
         >>> assert encrypted != message
         >>> assert not encrypted.isspace()
         >>> decrypted = str(gpg.decrypt(encrypted))
