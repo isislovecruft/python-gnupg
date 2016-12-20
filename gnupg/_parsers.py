@@ -1338,14 +1338,16 @@ class Verify(object):
             self.valid = False
             self.key_id = value
             self.status = 'decryption failed'
-        elif key in ("FAILURE"):
-            self.valid = False
+        elif key in ("WARNING", "ERROR", "FAILURE"):
+            if key in ("ERROR", "FAILURE"):
+                self.valid = False
             # The status will hold a (rather indecipherable and bad
-            # design, imho) location (in the GnuPG C code) and GnuPG
-            # error_code, e.g. "151011327_EOF".  Have fun figuring out
-            # what it means.
+            # design, imho) location (in the GnuPG C code), GnuPG
+            # error_code, e.g. "151011327_EOF", and (possibly, in the
+            # case of WARNING or ERROR) additional text.
+            # Have fun figuring out what it means.
             self.status = value
-            log.warn("FAILURE status emitted from gpg process: %s" % value)
+            log.warn("%s status emitted from gpg process: %s" % (key, value))
         elif key == "NO_PUBKEY":
             self.valid = False
             self.key_id = value
