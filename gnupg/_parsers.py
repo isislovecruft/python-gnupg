@@ -1011,6 +1011,9 @@ class ListKeys(list):
     pub = sec = key
 
     def fpr(self, args):
+        if self.curuid == None:
+            return
+
         self.curkey['fingerprint'] = args[9]
         self.fingerprints.append(args[9])
 
@@ -1025,6 +1028,9 @@ class ListKeys(list):
         self.uids.append(uid)
 
     def sig(self, args):
+        if self.curuid == None:
+            return
+
         vars = ("""
             type trust length algo keyid date expires dummy ownertrust uid
         """).split()
@@ -1040,6 +1046,9 @@ class ListKeys(list):
     def sub(self, args):
         subkey = [args[4], args[11]]
         self.curkey['subkeys'].append(subkey)
+
+    def rvk(self, args):
+        self.curuid == None
 
     def _handle_status(self, key, value):
         pass
