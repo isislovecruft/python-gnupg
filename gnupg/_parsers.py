@@ -1300,7 +1300,7 @@ class Verify(object):
         elif key in ("RSA_OR_IDEA", "NODATA", "IMPORT_RES", "PLAINTEXT",
                      "PLAINTEXT_LENGTH", "POLICY_URL", "DECRYPTION_INFO",
                      "DECRYPTION_OKAY", "INV_SGNR", "PROGRESS",
-                     "PINENTRY_LAUNCHED"):
+                     "PINENTRY_LAUNCHED", "SUCCESS"):
             pass
         elif key == "NEWSIG":
             # Reset
@@ -1338,6 +1338,14 @@ class Verify(object):
             self.valid = False
             self.key_id = value
             self.status = 'decryption failed'
+        elif key in ("FAILURE"):
+            self.valid = False
+            # The status will hold a (rather indecipherable and bad
+            # design, imho) location (in the GnuPG C code) and GnuPG
+            # error_code, e.g. "151011327_EOF".  Have fun figuring out
+            # what it means.
+            self.status = value
+            log.warn("FAILURE status emitted from gpg process: %s" % value)
         elif key == "NO_PUBKEY":
             self.valid = False
             self.key_id = value
