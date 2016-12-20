@@ -509,15 +509,31 @@ class GPG(GPGBase):
         :returns: res.sigs is a dictionary whose keys are the uids and whose
                 values are a set of signature keyids.
         """
+        return self._process_keys(keyids)
+
+    def check_sigs(self, *keyids):
+        """Validate the signatures for each of the ``keyids``.
+
+        :rtype: dict
+        :returns: res.certs is a dictionary whose keys are the uids and whose
+                values are a set of signature keyids.
+        """
+        return self._process_keys(keyids, check_sig=True)
+
+    def _process_keys(self, keyids, check_sig=False):
+
         if len(keyids) > self._batch_limit:
             raise ValueError(
                 "List signatures is limited to %d keyids simultaneously"
                 % self._batch_limit)
 
-        args = ["--with-colons", "--fixed-list-mode", "--list-sigs"]
+        args = ["--with-colons", "--fixed-list-mode"]
+        arg = "--check-sigs" if check_sig else "--list-sigs"
 
-        for key in keyids:
-            args.append(key)
+        if len(keyids):
+            arg += " " + " ".join(keyids)
+
+        args.append(arg)
 
         proc = self._open_subprocess(args)
         result = self._result_map['list'](self)
