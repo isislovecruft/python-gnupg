@@ -585,6 +585,29 @@ class GPGTestCase(unittest.TestCase):
         self.assertTrue(is_list_with_len(private_keys, 1),
                         "1-element list expected")
 
+    def test_list_revoked_key(self):
+        """Test that a revoke key is set."""
+        self.assertEqual(len(self.gpg.list_keys()), 0)
+        with open(os.path.join(_files, 'revoked_key.pub')) as revoked_key:
+            self.gpg.import_keys(revoked_key.read())
+        result = self.gpg.list_sigs("1763FE94FC05F492285C2B7BA658D626E2A17629")
+        self.assertEqual(len(self.gpg.list_keys()), 1)
+        self.assertEqual(result[0]['rev']['keyid'], 'A658D626E2A17629')
+
+    def test_revoke_and_not_revoked_key(self):
+        """Test that a revoke key is set, but a nun revoked key still valid"""
+        with open(os.path.join(_files, 'revoked_key.pub')) as revoked_key:
+            self.gpg.import_keys(revoked_key.read())
+
+        self.gpg.list_sigs("1763FE94FC05F492285C2B7BA658D626E2A17629")
+
+        with open(os.path.join(_files, 'test_key_1.sec')) as fh1:
+            res = self.gpg.import_keys(fh1.read())
+
+        result = self.gpg.list_sigs(res.fingerprints[0])
+        self.assertEqual(len(self.gpg.list_keys()), 2)
+        self.assertEqual(result[1]['rev'], {})
+
     def test_public_keyring(self):
         """Test that the public keyring is found in the gpg home directory."""
         ## we have to use the keyring for GnuPG to create it:
@@ -1534,6 +1557,8 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                             'test_deletion_subkeys',
                             'test_import_only']),
            'recvkeys': set(['test_recv_keys_default']),
+           'revokekey': set(['test_list_revoked_key',
+                             'test_revoke_and_not_revoked_key']),
 }
 
 def main(args):
