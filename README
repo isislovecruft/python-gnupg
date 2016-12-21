@@ -65,8 +65,12 @@ The primary interface class you'll likely want to interact with is ``gnupg.GPG``
     >>> print key.fingerprint
     245D8FA30F543B742053949F553C0E154F2E7A98
 
+    >>> message = "The crow flies at midnight."
+    >>> encrypted = str(gpg.encrypt(message, key.fingerprint))
+    >>> decrypted = str(gpg.decrypt(encrypted))
+    >>> assert(decrypted == message)
 
-.. _documentation: https://python-gnupg.readthedocs.org/en/latest/
+.. _documentation: https://pythonhosted.org/gnupg/
 
 ==============================
 Bug Reports & Feature Requests
