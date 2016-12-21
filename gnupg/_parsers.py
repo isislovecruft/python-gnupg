@@ -1300,7 +1300,7 @@ class Verify(object):
         elif key in ("RSA_OR_IDEA", "NODATA", "IMPORT_RES", "PLAINTEXT",
                      "PLAINTEXT_LENGTH", "POLICY_URL", "DECRYPTION_INFO",
                      "DECRYPTION_OKAY", "INV_SGNR", "PROGRESS",
-                     "PINENTRY_LAUNCHED"):
+                     "PINENTRY_LAUNCHED", "NEWSIG"):
             pass
         elif key == "NEWSIG":
             # Reset
