@@ -828,6 +828,10 @@ class GenKey(object):
         #: 'P':= primary, 'S':= subkey, 'B':= both
         self.type = None
         self.fingerprint = None
+        #: This will store a string describing the result of this operation.
+        #: Current statuses are:
+        #:     * 'key not created'
+        #:     * 'key created'
         self.status = None
         self.subkey_created = False
         self.primary_created = False
@@ -870,6 +874,15 @@ class GenKey(object):
             self.status = nodata(value)
         elif key == "PROGRESS":
             self.status = progress(value.split(' ', 1)[0])
+        elif key == ("PINENTRY_LAUNCHED"):
+            log.warn(("GnuPG has just attempted to launch whichever pinentry "
+                      "program you have configured, in order to obtain the "
+                      "passphrase for this key.  If you did not use the "
+                      "`passphrase=` parameter, please try doing so.  Otherwise, "
+                      "see Issues #122 and #137:"
+                      "\nhttps://github.com/isislovecruft/python-gnupg/issues/122"
+                      "\nhttps://github.com/isislovecruft/python-gnupg/issues/137"))
+            self.status = 'key not created'
         else:
             raise ValueError("Unknown status message: %r" % key)
 
