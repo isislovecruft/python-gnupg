@@ -66,7 +66,7 @@ The primary interface class you'll likely want to interact with is ``gnupg.GPG``
     245D8FA30F543B742053949F553C0E154F2E7A98
 
 
-.. _documentation: https://python-gnupg.readthedocs.org/en/latest/
+.. _documentation: https://pythonhosted.org/gnupg/
 
 ==============================
 Bug Reports & Feature Requests
