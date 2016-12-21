@@ -1105,7 +1105,7 @@ class ImportResult(object):
         """Override the determination for truthfulness evaluation.
 
         :rtype: bool
-        :returns: True if we have immport some keys, False otherwise.
+        :returns: True if we have imported some keys, False otherwise.
         """
         if self.counts['not_imported'] > 0: return False
         if len(self.fingerprints) == 0: return False
