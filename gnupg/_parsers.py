@@ -92,7 +92,7 @@ def _check_preferences(prefs, pref_type=None):
                           'SHA1'])
     compress = frozenset(['BZIP2', 'ZLIB', 'ZIP', 'Uncompressed'])
     trust    = frozenset(['gpg', 'classic', 'direct', 'always', 'auto'])
-    all      = frozenset([cipher, digest, compress])
+    all      = frozenset([cipher, digest, compress, trust])
 
     if isinstance(prefs, str):
         prefs = set(prefs.split())
