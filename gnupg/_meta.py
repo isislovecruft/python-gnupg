@@ -215,8 +215,12 @@ class GPGBase(object):
 
         try:
             assert self.binary, "Could not find binary %s" % binary
-            assert isinstance(verbose, (bool, str, int)), \
-                "'verbose' must be boolean, string, or 0 <= n <= 9"
+            if _util._py3k:
+                assert isinstance(verbose, (bool, str, int)), \
+                    "'verbose' must be boolean, string, or 0 <= n <= 9"
+            else:
+                assert isinstance(verbose, (bool, str, int, unicode)), \
+                    "'verbose' must be boolean, string, unicode, or 0 <= n <= 9"
             assert isinstance(use_agent, bool), "'use_agent' must be boolean"
             if self.options is not None:
                 assert isinstance(self.options, list), "options not list"
