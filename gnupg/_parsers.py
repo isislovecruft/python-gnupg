@@ -828,6 +828,10 @@ class GenKey(object):
         #: 'P':= primary, 'S':= subkey, 'B':= both
         self.type = None
         self.fingerprint = None
+        #: This will store a string describing the result of this operation.
+        #: Current statuses are:
+        #:     * 'key not created'
+        #:     * 'key created'
         self.status = None
         self.subkey_created = False
         self.primary_created = False
