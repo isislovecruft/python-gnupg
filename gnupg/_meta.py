@@ -145,6 +145,7 @@ class GPGBase(object):
                        'delete':   _parsers.DeleteResult,
                        'generate': _parsers.GenKey,
                        'import':   _parsers.ImportResult,
+                       'export':   _parsers.ExportResult,
                        'list':     _parsers.ListKeys,
                        'sign':     _parsers.Sign,
                        'verify':   _parsers.Verify,

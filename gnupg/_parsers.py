@@ -1166,6 +1166,59 @@ class ImportResult(object):
         return ', '.join(l)
 
 
+class ExportResult(object):
+    """Parse GnuPG status messages for key export operations."""
+
+    def __init__(self, gpg):
+        """Start parsing the results of a key export operation.
+
+        :type gpg: :class:`gnupg.GPG`
+        :param gpg: An instance of :class:`gnupg.GPG`.
+        """
+        self._gpg = gpg
+
+        #: All the possible status messages pertaining to actions taken while
+        #: exporting a key.
+        self._fields = 'count secret_count exported'.split()
+
+        #: Counts of all the status message results, :data:`_fields` which
+        #: have appeared.
+        self.counts = OrderedDict(
+            zip(self._fields, [int(0) for x in range(len(self._fields))]))
+
+        #: A list of strings containing the fingerprints of the GnuPG keyIDs
+        #: exported.
+        self.fingerprints = list()
+
+    def __nonzero__(self):
+        """Override the determination for truthfulness evaluation.
+
+        :rtype: bool
+        :returns: True if we have exported some keys, False otherwise.
+        """
+        if self.counts['not_imported'] > 0: return False
+        if len(self.fingerprints) == 0: return False
+        return True
+    __bool__ = __nonzero__
+
+    def _handle_status(self, key, value):
+        """Parse a status code from the attached GnuPG process.
+
+        :raises ValueError: if the status message is unknown.
+        """
+        if key in ("EXPORTED"):
+            self.fingerprints.append(value)
+        elif key == "EXPORT_RES":
+            export_res = value.split()
+            for x in self.counts.keys():
+                self.counts[x] += int(export_res.pop(0))
+        else:
+            raise ValueError("Unknown status message: %r" % key)
+
+    def summary(self):
+        return '%d exported' % self.counts['exported']
+
+
 class Verify(object):
     """Parser for status messages from GnuPG for certifications and signature
     verifications.
