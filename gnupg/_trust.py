@@ -61,7 +61,7 @@ def export_ownertrust(cls, trustdb=None):
     tdb = open(trustdb, 'wb')
     _util._threaded_copy_data(export_proc.stdout, tdb)
 
-def import_ownertrust(self, trustdb=None):
+def import_ownertrust(cls, trustdb=None):
     """Import ownertrust from a trustdb file.
 
     :param str trustdb: The path to the trustdb.gpg file. If not given,
