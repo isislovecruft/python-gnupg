@@ -503,7 +503,12 @@ class GPGBase(object):
         if proc.returncode:
             raise RuntimeError("Error invoking gpg: %s" % result.data)
         else:
-            proc.terminate()
+            try:
+                proc.terminate()
+            except OSError:
+                log.error(("Could neither invoke nor terminate a gpg process... "
+                           "Are you sure you specified the corrent (and full) "
+                           "path to the gpg binary?"))
 
         version_line = str(result.data).partition(':version:')[2]
         self.binary_version = version_line.split('\n')[0]
