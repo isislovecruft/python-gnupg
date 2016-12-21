@@ -906,7 +906,8 @@ generate keys. Please see
         :param str recipients: The recipients to encrypt to. Recipients must
             be specified keyID/fingerprint. Care should be taken in Python2.x
             to make sure that the given fingerprint is in fact a string and
-            not a unicode object.
+            not a unicode object.  Multiple recipients may be specified by
+            doing ``GPG.encrypt(data, fpr1, fpr2, fpr3)`` etc.
 
         :param str default_key: The keyID/fingerprint of the key to use for
             signing. If given, ``data`` will be encrypted and signed.
