@@ -443,9 +443,9 @@ class GPG(GPGBase):
         ## gpg --export produces no status-fd output; stdout will be empty in
         ## case of failure
         #stdout, stderr = p.communicate()
-        result = self._result_map['delete'](self)  # any result will do
+        result = self._result_map['export'](self)
         self._collect_output(p, result, stdin=p.stdin)
-        log.debug('Exported:%s%r' % (os.linesep, result.data))
+        log.debug('Exported:%s%r' % (os.linesep, result.fingerprints))
         return result.data.decode(self._encoding, self._decode_errors)
 
     def list_keys(self, secret=False):
