@@ -846,7 +846,7 @@ class GenKey(object):
         #: Current statuses are:
         #:     * 'key not created'
         #:     * 'key created'
-        self.status = None
+        self.status = ""
         self.subkey_created = False
         self.primary_created = False
         #: This will store the key's public keyring filename, if
@@ -897,6 +897,10 @@ class GenKey(object):
                       "\nhttps://github.com/isislovecruft/python-gnupg/issues/122"
                       "\nhttps://github.com/isislovecruft/python-gnupg/issues/137"))
             self.status = 'key not created'
+        elif (key.startswith("TRUST_") or
+              key.startswith("PKA_TRUST_") or
+              key == "NEWSIG"):
+            pass
         else:
             raise ValueError("Unknown status message: %r" % key)
 
