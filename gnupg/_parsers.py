@@ -92,7 +92,8 @@ def _check_preferences(prefs, pref_type=None):
                           'SHA1'])
     compress = frozenset(['BZIP2', 'ZLIB', 'ZIP', 'Uncompressed'])
     trust    = frozenset(['gpg', 'classic', 'direct', 'always', 'auto'])
-    all      = frozenset([cipher, digest, compress, trust])
+    pinentry = frozenset(['loopback'])
+    all      = frozenset([cipher, digest, compress, trust, pinentry])
 
     if isinstance(prefs, str):
         prefs = set(prefs.split())
@@ -116,6 +117,8 @@ def _check_preferences(prefs, pref_type=None):
         allowed += ' '.join(prefs.intersection(compress))
     if pref_type == 'trust':
         allowed += ' '.join(prefs.intersection(trust))
+    if pref_type == 'pinentry':
+        allowed += ' '.join(prefs.intersection(pinentry))
     if pref_type == 'all':
         allowed += ' '.join(prefs.intersection(all))
 
@@ -370,6 +373,11 @@ def _sanitise(*args):
                         if legit_models: checked += (legit_models + " ")
                         else: log.debug("%r is not a trust model", val)
 
+                    elif flag == '--pinentry-mode':
+                        legit_modes = _check_preferences(val, 'pinentry')
+                        if legit_modes: checked += (legit_modes + " ")
+                        else: log.debug("%r is not a pinentry mode", val)
+
                     else:
                         checked += (val + " ")
                         log.debug("_check_option(): No checks for %s" % val)
@@ -537,11 +545,13 @@ def _get_options_group(group=None):
                               '--personal-cipher-preferences',
                               '--personal-compress-prefs',
                               '--personal-compress-preferences',
+                              '--pinentry-mode',
                               '--print-md',
                               '--trust-model',
                               ])
     #: These options expect no arguments
-    none_options = frozenset(['--always-trust',
+    none_options = frozenset(['--allow-loopback-pinentry',
+                              '--always-trust',
                               '--armor',
                               '--armour',
                               '--batch',
@@ -785,6 +795,10 @@ def _get_all_gnupg_options():
     # These are extra options which only exist for GnuPG>=2.0.0
     three_hundred_eighteen.append('--export-ownertrust')
     three_hundred_eighteen.append('--import-ownertrust')
+
+    # These are extra options which only exist for GnuPG>=2.1.0
+    three_hundred_eighteen.append('--pinentry-mode')
+    three_hundred_eighteen.append('--allow-loopback-pinentry')
 
     gnupg_options = frozenset(three_hundred_eighteen)
     return gnupg_options
