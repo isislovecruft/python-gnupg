@@ -92,7 +92,8 @@ def _check_preferences(prefs, pref_type=None):
                           'SHA1'])
     compress = frozenset(['BZIP2', 'ZLIB', 'ZIP', 'Uncompressed'])
     trust    = frozenset(['gpg', 'classic', 'direct', 'always', 'auto'])
-    all      = frozenset([cipher, digest, compress])
+    pinentry = frozenset(['loopback'])
+    all      = frozenset([cipher, digest, compress, trust, pinentry])
 
     if isinstance(prefs, str):
         prefs = set(prefs.split())
@@ -116,6 +117,8 @@ def _check_preferences(prefs, pref_type=None):
         allowed += ' '.join(prefs.intersection(compress))
     if pref_type == 'trust':
         allowed += ' '.join(prefs.intersection(trust))
+    if pref_type == 'pinentry':
+        allowed += ' '.join(prefs.intersection(pinentry))
     if pref_type == 'all':
         allowed += ' '.join(prefs.intersection(all))
 
@@ -370,6 +373,11 @@ def _sanitise(*args):
                         if legit_models: checked += (legit_models + " ")
                         else: log.debug("%r is not a trust model", val)
 
+                    elif flag == '--pinentry-mode':
+                        legit_modes = _check_preferences(val, 'pinentry')
+                        if legit_modes: checked += (legit_modes + " ")
+                        else: log.debug("%r is not a pinentry mode", val)
+
                     else:
                         checked += (val + " ")
                         log.debug("_check_option(): No checks for %s" % val)
@@ -537,11 +545,13 @@ def _get_options_group(group=None):
                               '--personal-cipher-preferences',
                               '--personal-compress-prefs',
                               '--personal-compress-preferences',
+                              '--pinentry-mode',
                               '--print-md',
                               '--trust-model',
                               ])
     #: These options expect no arguments
-    none_options = frozenset(['--always-trust',
+    none_options = frozenset(['--allow-loopback-pinentry',
+                              '--always-trust',
                               '--armor',
                               '--armour',
                               '--batch',
@@ -786,6 +796,10 @@ def _get_all_gnupg_options():
     three_hundred_eighteen.append('--export-ownertrust')
     three_hundred_eighteen.append('--import-ownertrust')
 
+    # These are extra options which only exist for GnuPG>=2.1.0
+    three_hundred_eighteen.append('--pinentry-mode')
+    three_hundred_eighteen.append('--allow-loopback-pinentry')
+
     gnupg_options = frozenset(three_hundred_eighteen)
     return gnupg_options
 
@@ -828,7 +842,11 @@ class GenKey(object):
         #: 'P':= primary, 'S':= subkey, 'B':= both
         self.type = None
         self.fingerprint = None
-        self.status = None
+        #: This will store a string describing the result of this operation.
+        #: Current statuses are:
+        #:     * 'key not created'
+        #:     * 'key created'
+        self.status = ""
         self.subkey_created = False
         self.primary_created = False
         #: This will store the key's public keyring filename, if
@@ -870,6 +888,19 @@ class GenKey(object):
             self.status = nodata(value)
         elif key == "PROGRESS":
             self.status = progress(value.split(' ', 1)[0])
+        elif key == ("PINENTRY_LAUNCHED"):
+            log.warn(("GnuPG has just attempted to launch whichever pinentry "
+                      "program you have configured, in order to obtain the "
+                      "passphrase for this key.  If you did not use the "
+                      "`passphrase=` parameter, please try doing so.  Otherwise, "
+                      "see Issues #122 and #137:"
+                      "\nhttps://github.com/isislovecruft/python-gnupg/issues/122"
+                      "\nhttps://github.com/isislovecruft/python-gnupg/issues/137"))
+            self.status = 'key not created'
+        elif (key.startswith("TRUST_") or
+              key.startswith("PKA_TRUST_") or
+              key == "NEWSIG"):
+            pass
         else:
             raise ValueError("Unknown status message: %r" % key)
 
@@ -1105,7 +1136,7 @@ class ImportResult(object):
         """Override the determination for truthfulness evaluation.
 
         :rtype: bool
-        :returns: True if we have immport some keys, False otherwise.
+        :returns: True if we have imported some keys, False otherwise.
         """
         if self.counts['not_imported'] > 0: return False
         if len(self.fingerprints) == 0: return False
@@ -1164,6 +1195,59 @@ class ImportResult(object):
         if self.counts['not_imported']:
             l.append('%d not imported' % self.counts['not_imported'])
         return ', '.join(l)
+
+
+class ExportResult(object):
+    """Parse GnuPG status messages for key export operations."""
+
+    def __init__(self, gpg):
+        """Start parsing the results of a key export operation.
+
+        :type gpg: :class:`gnupg.GPG`
+        :param gpg: An instance of :class:`gnupg.GPG`.
+        """
+        self._gpg = gpg
+
+        #: All the possible status messages pertaining to actions taken while
+        #: exporting a key.
+        self._fields = 'count secret_count exported'.split()
+
+        #: Counts of all the status message results, :data:`_fields` which
+        #: have appeared.
+        self.counts = OrderedDict(
+            zip(self._fields, [int(0) for x in range(len(self._fields))]))
+
+        #: A list of strings containing the fingerprints of the GnuPG keyIDs
+        #: exported.
+        self.fingerprints = list()
+
+    def __nonzero__(self):
+        """Override the determination for truthfulness evaluation.
+
+        :rtype: bool
+        :returns: True if we have exported some keys, False otherwise.
+        """
+        if self.counts['not_imported'] > 0: return False
+        if len(self.fingerprints) == 0: return False
+        return True
+    __bool__ = __nonzero__
+
+    def _handle_status(self, key, value):
+        """Parse a status code from the attached GnuPG process.
+
+        :raises ValueError: if the status message is unknown.
+        """
+        if key in ("EXPORTED"):
+            self.fingerprints.append(value)
+        elif key == "EXPORT_RES":
+            export_res = value.split()
+            for x in self.counts.keys():
+                self.counts[x] += int(export_res.pop(0))
+        else:
+            raise ValueError("Unknown status message: %r" % key)
+
+    def summary(self):
+        return '%d exported' % self.counts['exported']
 
 
 class Verify(object):
@@ -1300,7 +1384,7 @@ class Verify(object):
         elif key in ("RSA_OR_IDEA", "NODATA", "IMPORT_RES", "PLAINTEXT",
                      "PLAINTEXT_LENGTH", "POLICY_URL", "DECRYPTION_INFO",
                      "DECRYPTION_OKAY", "INV_SGNR", "PROGRESS",
-                     "PINENTRY_LAUNCHED"):
+                     "PINENTRY_LAUNCHED", "SUCCESS"):
             pass
         elif key == "NEWSIG":
             # Reset
@@ -1338,6 +1422,16 @@ class Verify(object):
             self.valid = False
             self.key_id = value
             self.status = 'decryption failed'
+        elif key in ("WARNING", "ERROR", "FAILURE"):
+            if key in ("ERROR", "FAILURE"):
+                self.valid = False
+            # The status will hold a (rather indecipherable and bad
+            # design, imho) location (in the GnuPG C code), GnuPG
+            # error_code, e.g. "151011327_EOF", and (possibly, in the
+            # case of WARNING or ERROR) additional text.
+            # Have fun figuring out what it means.
+            self.status = value
+            log.warn("%s status emitted from gpg process: %s" % (key, value))
         elif key == "NO_PUBKEY":
             self.valid = False
             self.key_id = value

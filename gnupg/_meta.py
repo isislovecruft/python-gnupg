@@ -145,6 +145,7 @@ class GPGBase(object):
                        'delete':   _parsers.DeleteResult,
                        'generate': _parsers.GenKey,
                        'import':   _parsers.ImportResult,
+                       'export':   _parsers.ExportResult,
                        'list':     _parsers.ListKeys,
                        'sign':     _parsers.Sign,
                        'verify':   _parsers.Verify,
@@ -214,8 +215,12 @@ class GPGBase(object):
 
         try:
             assert self.binary, "Could not find binary %s" % binary
-            assert isinstance(verbose, (bool, str, int)), \
-                "'verbose' must be boolean, string, or 0 <= n <= 9"
+            if _util._py3k:
+                assert isinstance(verbose, (bool, str, int)), \
+                    "'verbose' must be boolean, string, or 0 <= n <= 9"
+            else:
+                assert isinstance(verbose, (bool, str, int, unicode)), \
+                    "'verbose' must be boolean, string, unicode, or 0 <= n <= 9"
             assert isinstance(use_agent, bool), "'use_agent' must be boolean"
             if self.options is not None:
                 assert isinstance(self.options, list), "options not list"
@@ -502,7 +507,12 @@ class GPGBase(object):
         if proc.returncode:
             raise RuntimeError("Error invoking gpg: %s" % result.data)
         else:
-            proc.terminate()
+            try:
+                proc.terminate()
+            except OSError:
+                log.error(("Could neither invoke nor terminate a gpg process... "
+                           "Are you sure you specified the corrent (and full) "
+                           "path to the gpg binary?"))
 
         version_line = str(result.data).partition(':version:')[2]
         self.binary_version = version_line.split('\n')[0]
