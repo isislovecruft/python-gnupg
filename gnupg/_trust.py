@@ -72,7 +72,12 @@ def import_ownertrust(cls, trustdb=None):
         trustdb = os.path.join(cls.homedir, 'trustdb.gpg')
 
     import_proc = cls._open_subprocess(['--import-ownertrust'])
-    tdb = open(trustdb, 'rb')
+
+    try:
+        tdb = open(trustdb, 'rb')
+    except (OSError, IOError):
+        log.error("trustdb file %s does not exist!" % trustdb)
+
     _util._threaded_copy_data(tdb, import_proc.stdin)
 
 def fix_trustdb(cls, trustdb=None):
