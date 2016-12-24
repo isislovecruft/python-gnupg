@@ -32,6 +32,7 @@ import encodings
 import locale
 import os
 import platform
+import re
 import shlex
 import subprocess
 import sys
@@ -52,6 +53,8 @@ from ._util import s
 from ._parsers import _check_preferences
 from ._parsers import _sanitise_list
 from ._util    import log
+
+_VERSION_RE = re.compile('^\d+\.\d+\.\d+$')
 
 
 class GPGMeta(type):
@@ -514,8 +517,12 @@ class GPGBase(object):
                            "Are you sure you specified the corrent (and full) "
                            "path to the gpg binary?"))
 
-        version_line = str(result.data).partition(':version:')[2]
+        version_line = result.data.partition(b':version:')[2].decode()
+        if not version_line:
+            raise RuntimeError("Got invalid version line from gpg: %s\n" % result.data)
         self.binary_version = version_line.split('\n')[0]
+        if not _VERSION_RE.match(self.binary_version):
+            raise RuntimeError("Got invalid version line from gpg: %s\n" % self.binary_version)
         log.debug("Using GnuPG version %s" % self.binary_version)
 
     def _make_args(self, args, passphrase=False):
