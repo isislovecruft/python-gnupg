@@ -240,7 +240,11 @@ def _copy_data(instream, outstream):
             break
 
         sent += len(data)
-        encoded = binary(data)
+        if ((_py3k and isinstance(data, str)) or
+            (not _py3k and isinstance(data, basestring))):
+            encoded = binary(data)
+        else:
+            encoded = data
         log.debug("Sending %d bytes of data..." % sent)
         log.debug("Encoded data (type %s):\n%s" % (type(encoded), encoded))
 
