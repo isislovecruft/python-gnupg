@@ -1559,6 +1559,18 @@ know, maybe you shouldn't be doing it in the first place.
         self.assertEqual('ok', result.status)
         self.assertIn(default_key_pair.fingerprint[-16:], hehe_sigs_keyids)
 
+    def test_key_signing_with_different_key(self):
+        """Test that signing a key with default key succeeds."""
+        key1 = self.generate_key("haha", "ha.ha")
+        key2 = self.generate_key("hehe", "he.he", passphrase="hehe.hehe")
+
+        result = self.gpg.sign_key(key1.fingerprint, default_key=key2, passphrase="hehe.hehe")
+
+        key1_sigs_keyids = self._get_sigs(key1.fingerprint[-16:])
+
+        self.assertEqual('ok', result.status)
+        self.assertIn(key2.fingerprint[-16:], key1_sigs_keyids)
+
     def _get_sigs(self, target_keyid):
         sigs = self.gpg.list_sigs()
         hehe_sigs = filter(lambda sig: sig['keyid'] == target_keyid, sigs)[0]
@@ -1666,6 +1678,7 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                           'test_wrong_passphrase_on_key_extension',
                           'test_invalid_extension_period_throws_exception_on_key_extension']),
            'signing': set(['test_key_signing',
+                           'test_key_signing_with_different_key',
                            'test_signing_an_already_signed_key_does_nothing_and_is_okay',
                            'test_signing_key_with_wrong_password']),
 }

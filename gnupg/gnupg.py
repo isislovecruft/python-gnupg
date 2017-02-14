@@ -496,7 +496,7 @@ class GPG(GPGBase):
                         result)
         return result
 
-    def sign_key(self, keyid, passphrase=None):
+    def sign_key(self, keyid, default_key=None, passphrase=None):
         """ sign (an imported) public key - keyid, with default secret key
 
         >>> import gnupg
@@ -519,6 +519,10 @@ class GPG(GPGBase):
             passphrase_arg = "--passphrase-fd 0"
             input_command = "%s\n" % passphrase
             args.append(passphrase_arg)
+
+        if default_key:
+            args.append(str("--default-key %s" % default_key))
+
         args.extend(["--command-fd 0", "--sign-key %s" % keyid])
 
         p = self._open_subprocess(args)
