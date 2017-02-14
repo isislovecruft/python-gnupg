@@ -836,16 +836,16 @@ def progress(status_code):
 class KeyExpirationInterface(object):
     """ Interface that guards against misuse of --edit-key combined with --command-fd"""
 
-    def __init__(self, validity, passphrase=None):
+    def __init__(self, expiration_time, passphrase=None):
         self._passphrase = passphrase
-        self._validity_option = validity
+        self._expiration_time = expiration_time
         self._clean_key_expiration_option()
 
     def _clean_key_expiration_option(self):
         """validates the expiration option supplied"""
-        allowed_entry = re.findall('^(\d+)(|w|m|y)$', self._validity_option)
+        allowed_entry = re.findall('^(\d+)(|w|m|y)$', self._expiration_time)
         if not allowed_entry:
-            raise UsageError("Key expiration option: %s is not valid" % self._validity_option)
+            raise UsageError("Key expiration option: %s is not valid" % self._expiration_time)
 
     def _input_passphrase(self, _input):
         if self._passphrase:
@@ -853,11 +853,11 @@ class KeyExpirationInterface(object):
         return _input
 
     def _main_key_command(self):
-        main_key_input = "expire\n%s\n" % self._validity_option
+        main_key_input = "expire\n%s\n" % self._expiration_time
         return self._input_passphrase(main_key_input)
 
     def _sub_key_command(self, sub_key_number=1):
-        sub_key_input = "key %d\nexpire\n%s\n" % (sub_key_number, self._validity_option)
+        sub_key_input = "key %d\nexpire\n%s\n" % (sub_key_number, self._expiration_time)
         return self._input_passphrase(sub_key_input)
 
     def gpg_interactive_input(self, expire_subkey=True):
@@ -884,7 +884,7 @@ class KeyExpirationResult(object):
         :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
         if key in ("USERID_HINT", "NEED_PASSPHRASE",
-                    "GET_HIDDEN", "SIGEXPIRED", "KEYEXPIRED",
+                   "GET_HIDDEN", "SIGEXPIRED", "KEYEXPIRED",
                    "GOOD_PASSPHRASE", "GOT_IT", "GET_LINE"):
             pass
         elif key in ("BAD_PASSPHRASE", "MISSING_PASSPHRASE"):

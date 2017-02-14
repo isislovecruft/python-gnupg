@@ -615,12 +615,12 @@ class GPG(GPGBase):
                 the new expiration date can be obtained by .list_keys()
         """
 
-        args = ["--command-fd 0", "--edit-key %s" % keyid]
-
-        p = self._open_subprocess(args)
         result = self._result_map['expire'](self)
         passphrase = passphrase.encode(self._encoding) if passphrase else passphrase
         expiration_input = KeyExpirationInterface(expiration_time, passphrase).gpg_interactive_input(expire_subkey)
+
+        args = ["--command-fd 0", "--edit-key %s" % keyid]
+        p = self._open_subprocess(args)
         p.stdin.write(expiration_input)
         self._collect_output(p, result, stdin=p.stdin)
         return result
