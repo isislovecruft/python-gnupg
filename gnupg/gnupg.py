@@ -40,7 +40,7 @@ import textwrap
 from .         import _util
 from .         import _trust
 from ._meta    import GPGBase
-from ._parsers import _fix_unsafe, KeyExtensionInterface
+from ._parsers import _fix_unsafe, KeyExpirationInterface
 from ._util    import _is_list_or_tuple
 from ._util    import _is_stream
 from ._util    import _make_binary_stream
@@ -594,34 +594,34 @@ class GPG(GPGBase):
             if keyword in valid_keywords:
                 getattr(result, keyword)(L)
 
-    def extend_key(self, keyid, validity='1y', passphrase=None, extend_subkey=True):
-        """Extends a GnuPG key by passing in new validity period (from now) through
+    def expire(self, keyid, expiration_time='1y', passphrase=None, expire_subkey=True):
+        """Changes GnuPG key expiration by passing in new time period (from now) through
             subprocess's stdin
 
         >>> import gnupg
         >>> gpg = gnupg.GPG(homedir="doctests")
         >>> key_input = gpg.gen_key_input()
         >>> key = gpg.gen_key(key_input)
-        >>> gpg.extend_key(key.fingerprint, '2w', 'good passphrase')
+        >>> gpg.expire(key.fingerprint, '2w', 'good passphrase')
 
         :param str keyid: key shortID, longID, email_address or fingerprint
-        :param str validity: 0 or number of days (d), or weeks (*w) , or months (*m) or years (*y)
-                               to extend the key, from its creation date.
+        :param str expiration_time: 0 or number of days (d), or weeks (*w) , or months (*m)
+                or years (*y) for when to expire the key, from today.
         :param str passphrase: passphrase used when creating the key, leave None otherwise
-        :param bool extend_subkey: to indicate whether the first subkey will also extended
-                by the same period --default is True
+        :param bool expire_subkey: to indicate whether the first subkey will also change the
+                expiration time by the same period -- default is True
 
-        :returns: The result giving status of the extension...
-                    the new expiration date can be obtained by .list_keys()
+        :returns: The result giving status of the change in expiration...
+                the new expiration date can be obtained by .list_keys()
         """
 
         args = ["--command-fd 0", "--edit-key %s" % keyid]
 
         p = self._open_subprocess(args)
-        result = self._result_map['extension'](self)
+        result = self._result_map['expire'](self)
         passphrase = passphrase.encode(self._encoding) if passphrase else passphrase
-        extension_input = KeyExtensionInterface(validity, passphrase).gpg_interactive_input(extend_subkey)
-        p.stdin.write(extension_input)
+        expiration_input = KeyExpirationInterface(expiration_time, passphrase).gpg_interactive_input(expire_subkey)
+        p.stdin.write(expiration_input)
         self._collect_output(p, result, stdin=p.stdin)
         return result
 

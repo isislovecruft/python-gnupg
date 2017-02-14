@@ -1240,7 +1240,7 @@ authentication."""
         res = alice_public.results[-1:][0]
         alice_pfpr = str(res['fingerprint'])
         alice.close()
-        
+
         bob = open(os.path.join(_files, 'test_key_2.pub'))
         bob_pub = bob.read()
         bob_public = self.gpg.import_keys(bob_pub)
@@ -1261,7 +1261,7 @@ authentication."""
                   % alice_pfpr)
 
         self.assertNotEquals(message, encrypted)
-        ## We expect Alice's key to be hidden (returned as zero's) and Bob's 
+        ## We expect Alice's key to be hidden (returned as zero's) and Bob's
         ## key to be there.
         expected_values = ["0000000000000000", "E0ED97345F2973D6"]
         self.assertEquals(expected_values, self.gpg.list_packets(encrypted).encrypted_to)
@@ -1490,14 +1490,14 @@ know, maybe you shouldn't be doing it in the first place.
             encrypted_message = fh.read()
             self.assertTrue(b"-----BEGIN PGP MESSAGE-----" in encrypted_message)
 
-    def test_key_extension(self):
-        """Test that extending key expiry date succeeds."""
+    def test_key_expiration(self):
+        """Test that changing key expiration date succeeds."""
         today = datetime.date.today()
         date_format = '%Y-%m-%d'
         tomorrow = today + datetime.timedelta(days=1)
         key = self.generate_key("Haha", "ho.ho", passphrase="haha.hehe", expire_date=tomorrow.strftime(date_format))
 
-        self.gpg.extend_key(key.fingerprint, validity='1w', passphrase="haha.hehe")
+        self.gpg.expire(key.fingerprint, expiration_time='1w', passphrase="haha.hehe")
         next_week = today + datetime.timedelta(weeks=1)
 
         current_keys = self.gpg.list_keys()
@@ -1505,8 +1505,8 @@ know, maybe you shouldn't be doing it in the first place.
             self.assertEqual(next_week, datetime.date.fromtimestamp(int(fecthed_key['expires'])))
             self.assertEqual(key.fingerprint, fecthed_key['fingerprint'])
 
-    def test_passphrase_with_space_on_key_extension(self):
-        """Test that wrong passphrase does not allow extension."""
+    def test_passphrase_with_space_on_key_expiration(self):
+        """Test that passphrase with space does allow changing expiration."""
         today = datetime.date.today()
         date_format = '%Y-%m-%d'
         tomorrow = today + datetime.timedelta(days=1)
@@ -1514,7 +1514,7 @@ know, maybe you shouldn't be doing it in the first place.
         key = self.generate_key("Haha", "ho.ho", passphrase=password_with_space,
                                 expire_date=tomorrow.strftime(date_format))
 
-        self.gpg.extend_key(key.fingerprint, validity='1w', passphrase=password_with_space)
+        self.gpg.expire(key.fingerprint, expiration_time='1w', passphrase=password_with_space)
         next_week = today + datetime.timedelta(weeks=1)
 
         current_keys = self.gpg.list_keys()
@@ -1522,30 +1522,30 @@ know, maybe you shouldn't be doing it in the first place.
             self.assertEqual(next_week, datetime.date.fromtimestamp(int(fecthed_key['expires'])))
             self.assertEqual(key.fingerprint, fecthed_key['fingerprint'])
 
-    def test_wrong_passphrase_on_key_extension(self):
-        """Test that wrong passphrase does not allow extension."""
+    def test_wrong_passphrase_on_key_expiration(self):
+        """Test that wrong passphrase does not allow changing expiration."""
         today = datetime.date.today()
         date_format = '%Y-%m-%d'
         tomorrow = today + datetime.timedelta(days=1)
         key = self.generate_key("Haha", "ho.ho", passphrase="haha.hehe", expire_date=tomorrow.strftime(date_format))
 
-        self.gpg.extend_key(key.fingerprint, validity='1w', passphrase="wrong passphrase")
+        self.gpg.expire(key.fingerprint, expiration_time='1w', passphrase="wrong passphrase")
 
         current_keys = self.gpg.list_keys()
         for fecthed_key in current_keys:
             self.assertEqual(tomorrow, datetime.date.fromtimestamp(int(fecthed_key['expires'])))
             self.assertEqual(key.fingerprint, fecthed_key['fingerprint'])
 
-    def test_invalid_extension_period_throws_exception_on_key_extension(self):
-        """Test that key extension has to be positive value"""
+    def test_invalid_expiration_time_throws_exception_on_key_expiration(self):
+        """Test that changing key expiration has to be positive value"""
         today = datetime.date.today()
         date_format = '%Y-%m-%d'
         tomorrow = today + datetime.timedelta(days=1)
         key = self.generate_key("Haha", "ho.ho", passphrase="haha.hehe", expire_date=tomorrow.strftime(date_format))
 
-        invalid_extension_option = "-1w"
+        invalid_expiration_option = "-1w"
         with self.assertRaises(_parsers.UsageError):
-            self.gpg.extend_key(key.fingerprint, validity=invalid_extension_option, passphrase="haha.hehe")
+            self.gpg.expire(key.fingerprint, expiration_time=invalid_expiration_option, passphrase="haha.hehe")
 
     def test_key_signing(self):
         """Test that signing a key with default key succeeds."""
@@ -1673,10 +1673,10 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
            'recvkeys': set(['test_recv_keys_default']),
            'revokekey': set(['test_list_revoked_key',
                              'test_revoke_and_not_revoked_key']),
-           'extend': set(['test_key_extension',
-                          'test_passphrase_with_space_on_key_extension',
-                          'test_wrong_passphrase_on_key_extension',
-                          'test_invalid_extension_period_throws_exception_on_key_extension']),
+           'expiration': set(['test_key_expiration',
+                          'test_passphrase_with_space_on_key_expiration',
+                          'test_wrong_passphrase_on_key_expiration',
+                          'test_invalid_expiration_time_throws_exception_on_key_expiration']),
            'signing': set(['test_key_signing',
                            'test_key_signing_with_different_key',
                            'test_signing_an_already_signed_key_does_nothing_and_is_okay',

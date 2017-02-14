@@ -833,19 +833,19 @@ def progress(status_code):
             return value
 
 
-class KeyExtensionInterface(object):
+class KeyExpirationInterface(object):
     """ Interface that guards against misuse of --edit-key combined with --command-fd"""
 
     def __init__(self, validity, passphrase=None):
         self._passphrase = passphrase
         self._validity_option = validity
-        self._clean_key_extension_option()
+        self._clean_key_expiration_option()
 
-    def _clean_key_extension_option(self):
-        """validates the extension option supplied"""
+    def _clean_key_expiration_option(self):
+        """validates the expiration option supplied"""
         allowed_entry = re.findall('^(\d+)(|w|m|y)$', self._validity_option)
         if not allowed_entry:
-            raise UsageError("Key extension option: %s is not valid" % self._validity_option)
+            raise UsageError("Key expiration option: %s is not valid" % self._validity_option)
 
     def _input_passphrase(self, _input):
         if self._passphrase:
@@ -860,18 +860,18 @@ class KeyExtensionInterface(object):
         sub_key_input = "key %d\nexpire\n%s\n" % (sub_key_number, self._validity_option)
         return self._input_passphrase(sub_key_input)
 
-    def gpg_interactive_input(self, extend_subkey=True):
+    def gpg_interactive_input(self, expire_subkey=True):
         """ processes series of inputs normally supplied on --edit-key but passed through stdin
             this ensures that no other --edit-key command is actually passing through.
         """
         _input = self._main_key_command()
-        if extend_subkey:
+        if expire_subkey:
             _input += self._sub_key_command()
         return "%ssave\n" % _input
 
 
-class KeyExtensionResult(object):
-    """Handle status messages for key expiry extension
+class KeyExpirationResult(object):
+    """Handle status messages for key expiry
         It does not really have a job, but just to conform to the API
     """
     def __init__(self, gpg):

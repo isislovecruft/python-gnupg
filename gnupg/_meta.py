@@ -149,8 +149,8 @@ class GPGBase(object):
                        'list':     _parsers.ListKeys,
                        'sign':     _parsers.Sign,
                        'verify':   _parsers.Verify,
-                       'extension': _parsers.KeyExtensionResult,
-                       'signing': _parsers.KeySigningResult,
+                       'expire':   _parsers.KeyExpirationResult,
+                       'signing':  _parsers.KeySigningResult,
                        'packets':  _parsers.ListPackets }
 
     def __init__(self, binary=None, home=None, keyring=None, secring=None,
@@ -943,7 +943,7 @@ class GPGBase(object):
 
         :param list hidden_recipients: A list of recipients that should have
             their keyids zero'd out in packet information.
-                                
+
         :param str cipher_algo: The cipher algorithm to use. To see available
                                 algorithms with your version of GnuPG, do:
                                 :command:`$ gpg --with-colons --list-config
@@ -1053,7 +1053,7 @@ class GPGBase(object):
                 log.info("Encrypted output written successfully.")
 
         return result
-    
+
     def _add_recipient_string(self, args, hidden_recipients, recipient):
         if isinstance(hidden_recipients, (list, tuple)):
             if [s for s in hidden_recipients if recipient in str(s)]:
