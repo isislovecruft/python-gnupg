@@ -652,7 +652,11 @@ class GPGBase(object):
 
                 # Log gpg's userland messages at our own levels:
                 if keyword.upper().startswith("WARNING"):
-                    log.warn("%s" % value)
+                    # Silence warnings from gpg we're supposed to ignore
+                    ignore = (self.ignore_homedir_permissions
+                        and 'unsafe ownership on homedir' in value)
+                    if not ignore:
+                        log.warn("%s" % value)
                 elif keyword.upper().startswith("FATAL"):
                     log.critical("%s" % value)
                     # Handle the gpg2 error where a missing trustdb.gpg is,
