@@ -849,24 +849,26 @@ class KeyExpirationInterface(object):
 
     def _input_passphrase(self, _input):
         if self._passphrase:
-            return  "%s%s\n" % (_input, self._passphrase)
+            return "%s%s\n" % (_input, self._passphrase)
         return _input
 
     def _main_key_command(self):
         main_key_input = "expire\n%s\n" % self._expiration_time
         return self._input_passphrase(main_key_input)
 
-    def _sub_key_command(self, sub_key_number=1):
+    def _sub_key_command(self, sub_key_number):
         sub_key_input = "key %d\nexpire\n%s\n" % (sub_key_number, self._expiration_time)
         return self._input_passphrase(sub_key_input)
 
-    def gpg_interactive_input(self, expire_subkey=True):
+    def gpg_interactive_input(self, sub_keys_number):
         """ processes series of inputs normally supplied on --edit-key but passed through stdin
             this ensures that no other --edit-key command is actually passing through.
         """
+        deselect_sub_key = "key 0\n"
+
         _input = self._main_key_command()
-        if expire_subkey:
-            _input += self._sub_key_command()
+        for sub_key_number in range(1, sub_keys_number + 1):
+            _input += self._sub_key_command(sub_key_number) + deselect_sub_key
         return "%ssave\n" % _input
 
 

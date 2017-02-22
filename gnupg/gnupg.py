@@ -594,7 +594,7 @@ class GPG(GPGBase):
             if keyword in valid_keywords:
                 getattr(result, keyword)(L)
 
-    def expire(self, keyid, expiration_time='1y', passphrase=None, expire_subkey=True):
+    def expire(self, keyid, expiration_time='1y', passphrase=None, expire_subkeys=True):
         """Changes GnuPG key expiration by passing in new time period (from now) through
             subprocess's stdin
 
@@ -608,20 +608,22 @@ class GPG(GPGBase):
         :param str expiration_time: 0 or number of days (d), or weeks (*w) , or months (*m)
                 or years (*y) for when to expire the key, from today.
         :param str passphrase: passphrase used when creating the key, leave None otherwise
-        :param bool expire_subkey: to indicate whether the first subkey will also change the
+        :param bool expire_subkeys: to indicate whether the subkeys will also change the
                 expiration time by the same period -- default is True
 
         :returns: The result giving status of the change in expiration...
                 the new expiration date can be obtained by .list_keys()
         """
 
-        result = self._result_map['expire'](self)
         passphrase = passphrase.encode(self._encoding) if passphrase else passphrase
-        expiration_input = KeyExpirationInterface(expiration_time, passphrase).gpg_interactive_input(expire_subkey)
+        sub_keys_number = len(self.list_sigs(keyid)[0]['subkeys']) if expire_subkeys else 0
+        expiration_input = KeyExpirationInterface(expiration_time, passphrase).gpg_interactive_input(sub_keys_number)
 
         args = ["--command-fd 0", "--edit-key %s" % keyid]
         p = self._open_subprocess(args)
         p.stdin.write(expiration_input)
+
+        result = self._result_map['expire'](self)
         self._collect_output(p, result, stdin=p.stdin)
         return result
 
