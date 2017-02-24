@@ -61,7 +61,9 @@ test-run: test-before
 		listkeys \
 		genkey \
 		sign \
-		crypt
+		crypt \
+		expiration \
+		signing
 
 py3k-test-run: test-before
 	python3 $(TESTHANDLE) \
@@ -72,7 +74,9 @@ py3k-test-run: test-before
 		listkeys \
 		genkey \
 		sign \
-		crypt
+		crypt \
+		expiration \
+		signing
 
 coverage-run: test-before
 	coverage run --rcfile=".coveragerc" $(PYTHON) $(TESTHANDLE) \
@@ -83,7 +87,9 @@ coverage-run: test-before
 		listkeys \
 		genkeys \
 		sign \
-		crypt
+		crypt \
+		expiration \
+		signing
 
 py3k-coverage-run: test-before
 	coverage run --rcfile=".coveragerc" $(PYTHON3) $(TESTHANDLE) \
@@ -94,7 +100,9 @@ py3k-coverage-run: test-before
 		listkeys \
 		genkeys \
 		sign \
-		crypt
+		crypt \
+		expiration \
+		signing
 
 coverage-report:
 	coverage report --rcfile=".coveragerc"

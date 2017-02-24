@@ -27,6 +27,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import with_statement
 
+import datetime
 from argparse   import ArgumentParser
 from codecs     import open as open
 from functools  import wraps
@@ -430,6 +431,7 @@ class GPGTestCase(unittest.TestCase):
         os.remove(outfile)
 
     def generate_key_input(self, real_name, email_domain, key_length=None,
+                           expire_date=1,
                            key_type=None, subkey_type=None, passphrase=None):
         """Generate a GnuPG batch file for key unattended key creation."""
         name = real_name.lower().replace(' ', '')
@@ -439,7 +441,7 @@ class GPGTestCase(unittest.TestCase):
 
         batch = {'Key-Type': key_type,
                  'Key-Length': key_length,
-                 'Expire-Date': 1,
+                 'Expire-Date': expire_date,
                  'Name-Real': '%s' % real_name,
                  'Name-Email': ("%s@%s" % (name, email_domain))}
 
@@ -1238,7 +1240,7 @@ authentication."""
         res = alice_public.results[-1:][0]
         alice_pfpr = str(res['fingerprint'])
         alice.close()
-        
+
         bob = open(os.path.join(_files, 'test_key_2.pub'))
         bob_pub = bob.read()
         bob_public = self.gpg.import_keys(bob_pub)
@@ -1259,7 +1261,7 @@ authentication."""
                   % alice_pfpr)
 
         self.assertNotEquals(message, encrypted)
-        ## We expect Alice's key to be hidden (returned as zero's) and Bob's 
+        ## We expect Alice's key to be hidden (returned as zero's) and Bob's
         ## key to be there.
         expected_values = ["0000000000000000", "E0ED97345F2973D6"]
         self.assertEquals(expected_values, self.gpg.list_packets(encrypted).encrypted_to)
@@ -1488,6 +1490,118 @@ know, maybe you shouldn't be doing it in the first place.
             encrypted_message = fh.read()
             self.assertTrue(b"-----BEGIN PGP MESSAGE-----" in encrypted_message)
 
+    def test_key_expiration(self):
+        """Test that changing key expiration date succeeds."""
+        today = datetime.date.today()
+        date_format = '%Y-%m-%d'
+        tomorrow = today + datetime.timedelta(days=1)
+        key = self.generate_key("Haha", "ho.ho", passphrase="haha.hehe", expire_date=tomorrow.strftime(date_format))
+
+        self.gpg.expire(key.fingerprint, expiration_time='1w', passphrase="haha.hehe")
+        next_week = today + datetime.timedelta(weeks=1)
+
+        current_keys = self.gpg.list_keys()
+        for fecthed_key in current_keys:
+            self.assertEqual(next_week, datetime.date.fromtimestamp(int(fecthed_key['expires'])))
+            self.assertEqual(key.fingerprint, fecthed_key['fingerprint'])
+
+    def test_passphrase_with_space_on_key_expiration(self):
+        """Test that passphrase with space does allow changing expiration."""
+        today = datetime.date.today()
+        date_format = '%Y-%m-%d'
+        tomorrow = today + datetime.timedelta(days=1)
+        password_with_space = "passphrase with space"
+        key = self.generate_key("Haha", "ho.ho", passphrase=password_with_space,
+                                expire_date=tomorrow.strftime(date_format))
+
+        self.gpg.expire(key.fingerprint, expiration_time='1w', passphrase=password_with_space)
+        next_week = today + datetime.timedelta(weeks=1)
+
+        current_keys = self.gpg.list_keys()
+        for fecthed_key in current_keys:
+            self.assertEqual(next_week, datetime.date.fromtimestamp(int(fecthed_key['expires'])))
+            self.assertEqual(key.fingerprint, fecthed_key['fingerprint'])
+
+    def test_wrong_passphrase_on_key_expiration(self):
+        """Test that wrong passphrase does not allow changing expiration."""
+        today = datetime.date.today()
+        date_format = '%Y-%m-%d'
+        tomorrow = today + datetime.timedelta(days=1)
+        key = self.generate_key("Haha", "ho.ho", passphrase="haha.hehe", expire_date=tomorrow.strftime(date_format))
+
+        self.gpg.expire(key.fingerprint, expiration_time='1w', passphrase="wrong passphrase")
+
+        current_keys = self.gpg.list_keys()
+        for fecthed_key in current_keys:
+            self.assertEqual(tomorrow, datetime.date.fromtimestamp(int(fecthed_key['expires'])))
+            self.assertEqual(key.fingerprint, fecthed_key['fingerprint'])
+
+    def test_invalid_expiration_time_throws_exception_on_key_expiration(self):
+        """Test that changing key expiration has to be positive value"""
+        today = datetime.date.today()
+        date_format = '%Y-%m-%d'
+        tomorrow = today + datetime.timedelta(days=1)
+        key = self.generate_key("Haha", "ho.ho", passphrase="haha.hehe", expire_date=tomorrow.strftime(date_format))
+
+        invalid_expiration_option = "-1w"
+        with self.assertRaises(_parsers.UsageError):
+            self.gpg.expire(key.fingerprint, expiration_time=invalid_expiration_option, passphrase="haha.hehe")
+
+    def test_key_signing(self):
+        """Test that signing a key with default key succeeds."""
+        default_key_pair = self.generate_key("haha", "ha.ha", passphrase="haha.haha")
+        hehe_key = self.generate_key("hehe", "he.he")
+
+        result = self.gpg.sign_key(hehe_key.fingerprint, passphrase="haha.haha")
+
+        hehe_sigs_keyids = self._get_sigs(hehe_key.fingerprint[-16:])
+
+        self.assertEqual('ok', result.status)
+        self.assertIn(default_key_pair.fingerprint[-16:], hehe_sigs_keyids)
+
+    def test_key_signing_with_different_key(self):
+        """Test that signing a key with default key succeeds."""
+        key1 = self.generate_key("haha", "ha.ha")
+        key2 = self.generate_key("hehe", "he.he", passphrase="hehe.hehe")
+
+        result = self.gpg.sign_key(key1.fingerprint, default_key=key2, passphrase="hehe.hehe")
+
+        key1_sigs_keyids = self._get_sigs(key1.fingerprint[-16:])
+
+        self.assertEqual('ok', result.status)
+        self.assertIn(key2.fingerprint[-16:], key1_sigs_keyids)
+
+    def _get_sigs(self, target_keyid):
+        sigs = self.gpg.list_sigs()
+        hehe_sigs = filter(lambda sig: sig['keyid'] == target_keyid, sigs)[0]
+        hehe_address = hehe_sigs['uids'][0]     # yields "hehe<hehe@he.he>"
+        return map(lambda key: key['keyid'], hehe_sigs['sigs'][hehe_address] )
+
+    def test_signing_an_already_signed_key_does_nothing_and_is_okay(self):
+        """Test that re-signing a key does not blow up."""
+        default_key_pair = self.generate_key("haha", "ha.ha", passphrase="haha.haha")
+        hehe_key = self.generate_key("hehe", "he.he")
+        self.gpg.sign_key(hehe_key.fingerprint, passphrase="haha.haha")
+
+        re_sign_result = self.gpg.sign_key(hehe_key.fingerprint, passphrase="haha.haha")
+
+        hehe_sigs_keyids = self._get_sigs(hehe_key.fingerprint[-16:])
+
+        self.assertEqual('ok', re_sign_result.status)
+        self.assertIn(default_key_pair.fingerprint[-16:], hehe_sigs_keyids)
+
+    def test_signing_key_with_wrong_password(self):
+        """Test signing a key using a wrong password"""
+        default_key_pair = self.generate_key("haha", "ha.ha", passphrase="haha.haha")
+        hehe_key = self.generate_key("hehe", "he.he")
+
+        wrong_password = "really wrong"
+        result = self.gpg.sign_key(hehe_key.fingerprint, passphrase=wrong_password)
+
+        hehe_sigs_keyids = self._get_sigs(hehe_key.fingerprint[-16:])
+
+        self.assertEqual('bad passphrase: %s' % default_key_pair.fingerprint[-16:], result.status)
+        self.assertNotIn(default_key_pair.fingerprint[-16:], hehe_sigs_keyids)
 
 suites = { 'parsers': set(['test_parsers_fix_unsafe',
                            'test_parsers_fix_unsafe_semicolon',
@@ -1559,7 +1673,16 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
            'recvkeys': set(['test_recv_keys_default']),
            'revokekey': set(['test_list_revoked_key',
                              'test_revoke_and_not_revoked_key']),
+           'expiration': set(['test_key_expiration',
+                          'test_passphrase_with_space_on_key_expiration',
+                          'test_wrong_passphrase_on_key_expiration',
+                          'test_invalid_expiration_time_throws_exception_on_key_expiration']),
+           'signing': set(['test_key_signing',
+                           'test_key_signing_with_different_key',
+                           'test_signing_an_already_signed_key_does_nothing_and_is_okay',
+                           'test_signing_key_with_wrong_password']),
 }
+
 
 def main(args):
     if not args.quiet:
