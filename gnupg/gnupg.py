@@ -616,7 +616,12 @@ class GPG(GPGBase):
         """
 
         passphrase = passphrase.encode(self._encoding) if passphrase else passphrase
-        sub_keys_number = len(self.list_sigs(keyid)[0]['subkeys']) if expire_subkeys else 0
+
+        try:
+            sub_keys_number = len(self.list_sigs(keyid)[0]['subkeys']) if expire_subkeys else 0
+        except IndexError:
+            sub_keys_number = 0
+
         expiration_input = KeyExpirationInterface(expiration_time, passphrase).gpg_interactive_input(sub_keys_number)
 
         args = ["--command-fd 0", "--edit-key %s" % keyid]
