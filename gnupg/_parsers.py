@@ -990,6 +990,8 @@ class Sign(object):
                  self.status += " on {}".format(str(value))
         elif key == "NODATA":
             self.status = nodata(value)
+        elif key == "PROGRESS":
+            self.status = progress(value.split(' ', 1)[0])
         else:
             raise ValueError("Unknown status message: %r" % key)
 
