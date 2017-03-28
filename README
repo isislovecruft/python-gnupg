@@ -4,7 +4,7 @@
 python-gnupg |On PyPI|
 **************************************
 
-Rewrite of `Vinay Sajip's python-gnupg <https://code.google.com/p/python-gnupg/>`__,
+Rewrite of `Vinay Sajip's python-gnupg <https://bitbucket.org/vinay.sajip/python-gnupg>`__,
 including patches to fix a shell injection vulnerability due to unsanitised
 inputs being passed to ``subprocess.Popen([...], shell=True)``.
 
