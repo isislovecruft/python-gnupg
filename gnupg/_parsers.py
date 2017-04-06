@@ -500,6 +500,8 @@ def _get_options_group(group=None):
                              '--recipient',
                              '--recv-keys',
                              '--send-keys',
+                             '--edit-key',
+                             '--sign-key',
                              ])
     #: These options expect value which are left unchecked, though still run
     #: through :func:`_fix_unsafe`.
@@ -507,6 +509,7 @@ def _get_options_group(group=None):
                                    '--passphrase-fd',
                                    '--status-fd',
                                    '--verify-options',
+                                   '--command-fd',
                                ])
     #: These have their own parsers and don't really fit into a group
     other_options = frozenset(['--debug-level',
@@ -828,6 +831,91 @@ def progress(status_code):
     for key, value in lookup.items():
         if str(status_code) == key:
             return value
+
+
+class KeyExpirationInterface(object):
+    """ Interface that guards against misuse of --edit-key combined with --command-fd"""
+
+    def __init__(self, expiration_time, passphrase=None):
+        self._passphrase = passphrase
+        self._expiration_time = expiration_time
+        self._clean_key_expiration_option()
+
+    def _clean_key_expiration_option(self):
+        """validates the expiration option supplied"""
+        allowed_entry = re.findall('^(\d+)(|w|m|y)$', self._expiration_time)
+        if not allowed_entry:
+            raise UsageError("Key expiration option: %s is not valid" % self._expiration_time)
+
+    def _input_passphrase(self, _input):
+        if self._passphrase:
+            return "%s%s\n" % (_input, self._passphrase)
+        return _input
+
+    def _main_key_command(self):
+        main_key_input = "expire\n%s\n" % self._expiration_time
+        return self._input_passphrase(main_key_input)
+
+    def _sub_key_command(self, sub_key_number):
+        sub_key_input = "key %d\nexpire\n%s\n" % (sub_key_number, self._expiration_time)
+        return self._input_passphrase(sub_key_input)
+
+    def gpg_interactive_input(self, sub_keys_number):
+        """ processes series of inputs normally supplied on --edit-key but passed through stdin
+            this ensures that no other --edit-key command is actually passing through.
+        """
+        deselect_sub_key = "key 0\n"
+
+        _input = self._main_key_command()
+        for sub_key_number in range(1, sub_keys_number + 1):
+            _input += self._sub_key_command(sub_key_number) + deselect_sub_key
+        return "%ssave\n" % _input
+
+
+class KeyExpirationResult(object):
+    """Handle status messages for key expiry
+        It does not really have a job, but just to conform to the API
+    """
+    def __init__(self, gpg):
+        self._gpg = gpg
+        self.status = 'ok'
+
+    def _handle_status(self, key, value):
+        """Parse a status code from the attached GnuPG process.
+
+        :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
+        """
+        if key in ("USERID_HINT", "NEED_PASSPHRASE",
+                   "GET_HIDDEN", "SIGEXPIRED", "KEYEXPIRED",
+                   "GOOD_PASSPHRASE", "GOT_IT", "GET_LINE"):
+            pass
+        elif key in ("BAD_PASSPHRASE", "MISSING_PASSPHRASE"):
+            self.status = key.replace("_", " ").lower()
+        else:
+            self.status = 'failed'
+            raise ValueError("Unknown status message: %r" % key)
+
+
+class KeySigningResult(object):
+    """Handle status messages for key singing
+    """
+    def __init__(self, gpg):
+        self._gpg = gpg
+        self.status = 'ok'
+
+    def _handle_status(self, key, value):
+        """Parse a status code from the attached GnuPG process.
+
+        :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
+        """
+        if key in ("USERID_HINT", "NEED_PASSPHRASE", "ALREADY_SIGNED",
+                   "GOOD_PASSPHRASE", "GOT_IT", "GET_BOOL"):
+            pass
+        elif key in ("BAD_PASSPHRASE", "MISSING_PASSPHRASE"):
+            self.status = "%s: %s" % (key.replace("_", " ").lower(), value)
+        else:
+            self.status = 'failed'
+            raise ValueError("Key signing, unknown status message: %r ::%s" % (key, value))
 
 
 class GenKey(object):
