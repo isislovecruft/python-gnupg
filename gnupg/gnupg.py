@@ -40,7 +40,7 @@ import textwrap
 from .         import _util
 from .         import _trust
 from ._meta    import GPGBase
-from ._parsers import _fix_unsafe
+from ._parsers import _fix_unsafe, KeyExpirationInterface
 from ._util    import _is_list_or_tuple
 from ._util    import _is_stream
 from ._util    import _make_binary_stream
@@ -496,6 +496,42 @@ class GPG(GPGBase):
                         result)
         return result
 
+    def sign_key(self, keyid, default_key=None, passphrase=None):
+        """ sign (an imported) public key - keyid, with default secret key
+
+        >>> import gnupg
+        >>> gpg = gnupg.GPG(homedir="doctests")
+        >>> key_input = gpg.gen_key_input()
+        >>> key = gpg.gen_key(key_input)
+        >>> gpg.sign_key(key['fingerprint'])
+        >>> gpg.list_sigs(key['fingerprint'])
+
+        :param str keyid: key shortID, longID, fingerprint or email_address
+        :param str passphrase: passphrase used when creating the key, leave None otherwise
+
+        :returns: The result giving status of the key signing...
+                    success can be verified by gpg.list_sigs(keyid)
+        """
+
+        args = []
+        input_command = ""
+        if passphrase:
+            passphrase_arg = "--passphrase-fd 0"
+            input_command = "%s\n" % passphrase
+            args.append(passphrase_arg)
+
+        if default_key:
+            args.append(str("--default-key %s" % default_key))
+
+        args.extend(["--command-fd 0", "--sign-key %s" % keyid])
+
+        p = self._open_subprocess(args)
+        result = self._result_map['signing'](self)
+        confirm_command = "%sy\n" % input_command
+        p.stdin.write(confirm_command)
+        self._collect_output(p, result, stdin=p.stdin)
+        return result
+
     def list_sigs(self, *keyids):
         """Get the signatures for each of the ``keyids``.
 
@@ -557,6 +593,44 @@ class GPG(GPGBase):
             keyword = L[0]
             if keyword in valid_keywords:
                 getattr(result, keyword)(L)
+
+    def expire(self, keyid, expiration_time='1y', passphrase=None, expire_subkeys=True):
+        """Changes GnuPG key expiration by passing in new time period (from now) through
+            subprocess's stdin
+
+        >>> import gnupg
+        >>> gpg = gnupg.GPG(homedir="doctests")
+        >>> key_input = gpg.gen_key_input()
+        >>> key = gpg.gen_key(key_input)
+        >>> gpg.expire(key.fingerprint, '2w', 'good passphrase')
+
+        :param str keyid: key shortID, longID, email_address or fingerprint
+        :param str expiration_time: 0 or number of days (d), or weeks (*w) , or months (*m)
+                or years (*y) for when to expire the key, from today.
+        :param str passphrase: passphrase used when creating the key, leave None otherwise
+        :param bool expire_subkeys: to indicate whether the subkeys will also change the
+                expiration time by the same period -- default is True
+
+        :returns: The result giving status of the change in expiration...
+                the new expiration date can be obtained by .list_keys()
+        """
+
+        passphrase = passphrase.encode(self._encoding) if passphrase else passphrase
+
+        try:
+            sub_keys_number = len(self.list_sigs(keyid)[0]['subkeys']) if expire_subkeys else 0
+        except IndexError:
+            sub_keys_number = 0
+
+        expiration_input = KeyExpirationInterface(expiration_time, passphrase).gpg_interactive_input(sub_keys_number)
+
+        args = ["--command-fd 0", "--edit-key %s" % keyid]
+        p = self._open_subprocess(args)
+        p.stdin.write(expiration_input)
+
+        result = self._result_map['expire'](self)
+        self._collect_output(p, result, stdin=p.stdin)
+        return result
 
     def gen_key(self, input):
         """Generate a GnuPG key through batch file key generation. See
