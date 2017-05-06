@@ -42,10 +42,14 @@ Optionally, to build the Sphinx documentation_, do::
 To get started using python-gnupg's API, see the documentation_,
 and import the module like so::
 
+.. code-block:: python
+
     >>> import gnupg
 
 
-The primary interface class you'll likely want to interact with is ``gnupg.GPG``::
+The primary interface class you'll likely want to interact with is ``gnupg.GPG``:
+
+.. code-block:: python
 
     >>> gpg = gnupg.GPG(binary='/usr/bin/gpg',
     ...     homedir='./keys',
@@ -68,7 +72,7 @@ The primary interface class you'll likely want to interact with is ``gnupg.GPG``
     >>> message = "The crow flies at midnight."
     >>> encrypted = str(gpg.encrypt(message, key.fingerprint))
     >>> decrypted = str(gpg.decrypt(encrypted))
-    >>> assert(decrypted == message)
+    >>> assert decrypted == message
 
 .. _documentation: https://pythonhosted.org/gnupg/
 
