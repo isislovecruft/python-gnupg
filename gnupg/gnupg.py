@@ -70,8 +70,8 @@ class GPG(GPGBase):
                            sufficient permissions.
 
         :param str homedir: Full pathname to directory containing the public
-                            and private keyrings. Default is whatever GnuPG
-                            defaults to.
+                            and private keyrings. Default is
+                            `~/.config/python-gnupg/`
 
         :type ignore_homedir_permissions: :obj:`bool`
         :param ignore_homedir_permissions: If true, bypass check that homedir
