@@ -1488,6 +1488,7 @@ class Verify(object):
                 "PINENTRY_LAUNCHED",
                 "SUCCESS",
             ):
+            pass
         elif key == "KEY_CONSIDERED":
             self.status = '\n'.join([self.status, "key considered"])
         elif key == "NEWSIG":
