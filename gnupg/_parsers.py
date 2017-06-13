@@ -1249,7 +1249,7 @@ class ImportResult(object):
         :raises ValueError: if the status message is unknown.
         """
         if key == "IMPORTED":
-            # IMPORTED : duplicates info we already see in import_ok & import_problem
+            # this duplicates info we already see in import_ok & import_problem
             pass
         elif key == "KEY_CONSIDERED":
             self.results.append({
