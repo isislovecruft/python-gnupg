@@ -965,8 +965,10 @@ class GenKey(object):
 
         :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
-        if key in ("GOOD_PASSPHRASE", "KEY_CONSIDERED"):
+        if key == "GOOD_PASSPHRASE":
             pass
+        elif key == "KEY_CONSIDERED":
+            self.status = key.replace("_", " ").lower()
         elif key == "KEY_NOT_CREATED":
             self.status = 'key not created'
         elif key == "KEY_CREATED":
@@ -1015,9 +1017,7 @@ class DeleteResult(object):
 
         :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
-        if key == "KEY_CONSIDERED":
-            pass
-        elif key == "DELETE_PROBLEM":
+        if key in ("DELETE_PROBLEM", "KEY_CONSIDERED"):
             self.status = self.problem_reason.get(value, "Unknown error: %r"
                                                   % value)
         else:
@@ -1063,11 +1063,19 @@ class Sign(object):
 
         :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
-        if key == "KEY_CONSIDERED":
-            pass
-        elif key in ("USERID_HINT", "NEED_PASSPHRASE", "BAD_PASSPHRASE",
-                   "GOOD_PASSPHRASE", "MISSING_PASSPHRASE", "PINENTRY_LAUNCHED",
-                   "BEGIN_SIGNING", "CARDCTRL", "INV_SGNR", "SIGEXPIRED"):
+        if key in (
+                "USERID_HINT",
+                "NEED_PASSPHRASE",
+                "BAD_PASSPHRASE",
+                "GOOD_PASSPHRASE",
+                "MISSING_PASSPHRASE",
+                "PINENTRY_LAUNCHED",
+                "BEGIN_SIGNING",
+                "CARDCTRL",
+                "INV_SGNR",
+                "SIGEXPIRED",
+                "KEY_CONSIDERED",
+            ):
             self.status = key.replace("_", " ").lower()
         elif key == "SIG_CREATED":
             (self.sig_type, self.sig_algo, self.sig_hash_algo,
@@ -1240,10 +1248,13 @@ class ImportResult(object):
 
         :raises ValueError: if the status message is unknown.
         """
-        if key in ("IMPORTED", "KEY_CONSIDERED"):
+        if key == "IMPORTED":
             # IMPORTED : duplicates info we already see in import_ok & import_problem
-            # KEY_CONSIDERED : not useful info
             pass
+        elif key == "KEY_CONSIDERED":
+            self.results.append({
+                'status': key.replace("_", " ").lower(),
+            })
         elif key == "NODATA":
             self.results.append({'fingerprint': None,
                                  'status': 'No valid data found'})
@@ -1684,15 +1695,29 @@ class Crypt(Verify):
 
         :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
-        if key in ("ENC_TO", "USERID_HINT", "GOODMDC", "END_DECRYPTION",
-                   "BEGIN_SIGNING", "NO_SECKEY", "ERROR", "NODATA",
-                   "CARDCTRL", "KEY_CONSIDERED"):
+        if key in (
+                "ENC_TO",
+                "USERID_HINT",
+                "GOODMDC",
+                "END_DECRYPTION",
+                "BEGIN_SIGNING",
+                "NO_SECKEY",
+                "ERROR",
+                "NODATA",
+                "CARDCTRL",
+            ):
             # in the case of ERROR, this is because a more specific error
             # message will have come first
             pass
-        elif key in ("NEED_PASSPHRASE", "BAD_PASSPHRASE", "GOOD_PASSPHRASE",
-                     "MISSING_PASSPHRASE", "DECRYPTION_FAILED",
-                     "KEY_NOT_CREATED"):
+        elif key in (
+                "NEED_PASSPHRASE",
+                "BAD_PASSPHRASE",
+                "GOOD_PASSPHRASE",
+                "MISSING_PASSPHRASE",
+                "DECRYPTION_FAILED",
+                "KEY_NOT_CREATED",
+                "KEY_CONSIDERED",
+            ):
             self.status = key.replace("_", " ").lower()
         elif key == "NEED_TRUSTDB":
             self._gpg._create_trustdb()
