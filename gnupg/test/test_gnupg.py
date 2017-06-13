@@ -27,6 +27,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import with_statement
 
+import datetime
 from argparse   import ArgumentParser
 from codecs     import open as open
 from functools  import wraps
@@ -140,6 +141,78 @@ WdPQjKEfKnr+bW4yubwMUYKyAJ4uiE8Rv/oEED1oM3xeJqa+MJ9V1w==
 =sqld
 -----END PGP PUBLIC KEY BLOCK-----"""
 
+
+PUBKEY_ID_FRED_FOO = "E950D5D4BC6CA86E"
+PUBKEY_FRED_FOO = """
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mQENBFdVYo8BCAC6NygwXJhmlwa87uAEfypH5dz0ANuMhHn7Cjf7Xgc/d8dwOnCe
+ai0cpEsdnraankzG9kxqxqWZgx/oIO1iH3Qcd+BfkZG8VFew7mJqFgnFaKWUCUXb
+p6JLiwOIVUXhJScUr7OT7yg45of53ECoXFSrmLoWbhSd1+eetCzwIBTRgoRAGsv1
+ifA9+RtfeR8N2/VaIMOz9cmkvBjvbSSubPQVjbRQbxHaFhC+v1MJMcra9eXcdQ0h
+gopOENagfW4zDOJGAsLZ7KVCEGPSncALLj8/fF79HwzuMf6zUfsfkxkmQv7bpW6g
+Nab2ES39GVQFMKSPww3jv6bHZpjw7ibQrT9/ABEBAAG0F0ZyZWQgRm9vIDxmcmVk
+QGZvby5jb20+iQE5BBMBCAAjBQJXVWKPAhsDBwsJCAcDAgEGFQgCCQoLBBYCAwEC
+HgECF4AACgkQ6VDV1LxsqG6xsAf6AjMvCU/+PFsqMppeF706Ax3TSOcwx+611uCA
+tAa+nT0xZm1m66txe6YgRPcmF8uHM6IXDyb3GQAtrsjFt0WRb+xTpM+sOEmRoh6S
+jUnIotwhSlAkicGe+yqXqDTRGk+06AiCNV5ujB5V3rDZj2zraNkwG0dc3hox+rNn
+pw7Cy0GlnXki3Ka9dpFiUOePg/aZXXSYbW/qP9CBH89dzS3xga8iv8pvjhhE76zc
+/kCGI6W6OpWQhG/HkdolDuXDiRV5n7FKOe8Kck8O7mdRWEBam1pG2e3M+J0L6e46
+b/g5ksvKjeUcLl+1H6x3U3Pv7+ZTYun/rn//+fyHzzFu8VfCuokBHAQTAQgABgUC
+V1Vi4wAKCRDtgpuHsUs7IWskCADTk7LwSRAr98BtUUwqOzsAw630sO/P08JuAwPQ
+C2q170i60BeXHAACgmpE+ZAZ7y7UdZSMVLq5pom2zf4bb+pcBZGFkgFV9q5iCXKC
+Nx/vr6TdDquH6U7kjyG4qHWRgWN+zRHdDTeRe6W7IzlH5HPNCBIKBOv+Gh9BOf4h
+HzMJflSTbYemXxHtULf4rer2XeOq+VbJX8544gkbtBL5VWLTQKdbFGIyEuziBXjg
+kP06OKmH6oJ9eFfB5Hbcu3GZWeoLVO0CkhhQ65KJWzKFyy8gIUG3+vKIcLfBhAaJ
+pIfoizFn8D2NQ3l+sWkxxgtVbk/6CL/nXheUp8Ph4XrBx9COuQENBFdVYo8BCAC0
+vv5CxxhLZIsDVWfO379rgtZStq/2ul6QlfEwdT8hZmGaQXCN2g19nhVJ7kuq5yO2
+cAfB7y8YgQAlgCCgFHNPkwvJRh7Z2rcD80TmbdXit8+Am0a4Wrml2cA49tynrXx/
+4JzDib92t+2BG+bBqJnIZOYhEHaXYgVaNI0CvTpolA9CDIr7bc1dToIU2J9go3dQ
+Bci9as9K6x3DKybBzoY/PMaUXlru9RNdcz9eA1/082tWZOyLxPZePBuQOe4F8GkW
+tnxaelfptRPwWhThUTQ4kbcxL5tOG7BYemeulIccO1MU6pqS2RpNs7WdfMx7RoEN
+E6AQzuGwiYo5O/L7vTo9ABEBAAGJAR8EGAEIAAkFAldVYo8CGwwACgkQ6VDV1Lxs
+qG6XlggAidejM3WT6wP3+mkb4Ki6dmrRRgETZAQH76pT3epYVfPrUxeRurdCuPv4
+6DSl3VAPu/ekAWkV5Fzvxu936jxhYWiB1F4fQno7Rxsfh00qBqSYZKO9+BEWx1lj
+IC5f+ch1UDqAfjwlOGAP2a/YtT3wSwxUTKkZSjFsp4r/4cRxMY6k9xi6lPDSnrux
+k6qvsgfFVYhc0Hot3nuDBkth2tp0zodRuhmBG0jaIkbsWQDTxqQiHcbcAqdqgsGK
+4pUqsH73PlyfpbS0d8syQf9Uzl4VvX2zTdgIvEGkZi3BwtM2tPXbl+/H9yBs5Jo0
+oDzauPrPFwyRVgWpEuKp9pZbtF045Q==
+=9e5u
+-----END PGP PUBLIC KEY BLOCK-----
+"""
+
+PUBKEY_ID_BOB_BAR = "ED829B87B14B3B21"
+PUBKEY_BOB_BAR = """
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mQENBFdVYskBCAD3CgbmVDqd9rINYBHO9C3WVSOIZ0k0OM4hMAHGMD2R+WDTNKKm
+09yzwpaL00tzrX2PVZMu8/zpyoyRTluNPfdVLDFF4nrq4AgDze/d8Pc2fwFZVZMQ
+L2ZPQ4O++cC1oLuiYRLILL66tBFAuIMPGdTAG6Izj5PQaytAE/1C40dvEESi31sk
+mgyAUcw2U8Zf9Jjd8yJLBsFNbIiiw4J0qH/zcCKiL63J+Q18Dd2M6HBFaX45aJPQ
+cIehCIuergLWJBXRDIIKiktyAONdSWCm5ujfDQT9M9hSV2BHki9+0e+zff8yCGgT
+pIEPf7Sb8JgnR16puEBj0YS0w8Gpa0mo1oP/ABEBAAG0FEJvYiBCYXIgPGJvYkBi
+YXIuaW8+iQE5BBMBCAAjBQJXVWLJAhsDBwsJCAcDAgEGFQgCCQoLBBYCAwECHgEC
+F4AACgkQ7YKbh7FLOyGVBAgAjTX8cNcp+VpJFzDUL6uIYrDhaRwcjdTnWatbG10Q
+2pPRhDd7Yf1ZubkqEALUNsQnSyVuXsab4F1FuvE9O9Cfe0t4v0eNkEHDx2/IYwiZ
+1fgHfXhIqOoMdiCn6a51t7hRmkBSebi6uUEKkRscBTg/fue2s8q+JqiXWvlNuUPY
+LeCNmebnMryjjJylq5+/QY4A6sJGh9JxDPCkT2aS9AC9vrPXAlrgoVoQh6SX2xwP
+uC/Aksl5fv/dD8LMLBukkiwhYZr6sTIXFhmtw24D/WLz8tQQIySnokzFILcr3V/8
+J7GLFa4YXAH8rGq0K+ero3rHTEeQh9jOp5gAvQHarjjJUbkBDQRXVWLJAQgAzd8t
+5uns5xYjYSVjERlH//L4lPNOhmy9grhhQXd8A6/GQeNncB7Or28R4/cXVLgnL2mD
+xBbhiV5HQz6nERY0GxSkgWwZ7LJhtgqilv+MEQGbEogsicS2D4CC7A3lUuBcRXF/
+AdawIFkmORu7B2ICJDzw1rUEtcPdAY3uU8G/ja7zY8mEgwIdEP48eqkUi15aASCu
+UowoMN5aYaCILHRXOOgPkYYd4LcQBV2Y6xSLTgkL7Sl878J5a+y6QNSOkm85IhEL
+QC5PqMxZcrSjTnVlFWRnIHUJ0IDgsUPRyp6+1VZ72yXTi8BhlOSKE74SOLvUeQMJ
+C4mISmcm+QXCpKy7dwARAQABiQEfBBgBCAAJBQJXVWLJAhsMAAoJEO2Cm4exSzsh
+kawH/3RywwJ1oIjg5y9U/2V1SaNVdh+Kk/x2xs9HzbpUuo1MA5S04MZ+MOl05JOu
+gF98ye6z3qkjazkTC+0CdteH1+pi1WEwxkxQUiswGaVPPscr+6f9L/rS/IuGbxf8
+qe26J6pD+EjMaS7uCrOgQCIUH1V8TzlWMyoscH1y5rR/gp1IskIHaYfJ5AIL3eVS
+0s7szPFsrUqIt0KI/D0kc9aNapk4qMA0az8gKC+HAGcJfeb6Py2rJfFEpt1rKrbO
+NzyH16tLO3htUqPGdfkVx03gsQcSbWDoCQyuiIyzoZ3kX29skSyKO8bFu221WbgN
+IW8P249QHz6qLnRMErL80zLU9Go=
+=hb7Y
+-----END PGP PUBLIC KEY BLOCK-----
+"""
 
 def is_list_with_len(o, n):
     return isinstance(o, list) and len(o) == n
@@ -290,7 +363,7 @@ class GPGTestCase(unittest.TestCase):
 
     def test_make_args_drop_protected_options(self):
         """Test that unsupported gpg options are dropped, and supported ones remain."""
-        self.gpg.options = ['--tyrannosaurus-rex', '--stegosaurus', '--lock-never']
+        self.gpg.options = ['--tyrannosaurus-rex', '--stegosaurus', '--lock-never', '--trust-model always']
         gpg_binary_path = _util._find_binary('gpg')
         cmd = self.gpg._make_args(None, False)
         expected = [gpg_binary_path,
@@ -299,7 +372,8 @@ class GPGTestCase(unittest.TestCase):
                     '--no-default-keyring --keyring %s' % self.keyring,
                     '--secret-keyring %s' % self.secring,
                     '--no-use-agent',
-                    '--lock-never']
+                    '--lock-never',
+                    '--trust-model always']
         self.assertListEqual(cmd, expected)
 
     def test_make_args(self):
@@ -357,6 +431,7 @@ class GPGTestCase(unittest.TestCase):
         os.remove(outfile)
 
     def generate_key_input(self, real_name, email_domain, key_length=None,
+                           expire_date=1,
                            key_type=None, subkey_type=None, passphrase=None):
         """Generate a GnuPG batch file for key unattended key creation."""
         name = real_name.lower().replace(' ', '')
@@ -366,7 +441,7 @@ class GPGTestCase(unittest.TestCase):
 
         batch = {'Key-Type': key_type,
                  'Key-Length': key_length,
-                 'Expire-Date': 1,
+                 'Expire-Date': expire_date,
                  'Name-Real': '%s' % real_name,
                  'Name-Email': ("%s@%s" % (name, email_domain))}
 
@@ -511,6 +586,29 @@ class GPGTestCase(unittest.TestCase):
         private_keys = self.gpg.list_keys(secret=True)
         self.assertTrue(is_list_with_len(private_keys, 1),
                         "1-element list expected")
+
+    def test_list_revoked_key(self):
+        """Test that a revoke key is set."""
+        self.assertEqual(len(self.gpg.list_keys()), 0)
+        with open(os.path.join(_files, 'revoked_key.pub')) as revoked_key:
+            self.gpg.import_keys(revoked_key.read())
+        result = self.gpg.list_sigs("1763FE94FC05F492285C2B7BA658D626E2A17629")
+        self.assertEqual(len(self.gpg.list_keys()), 1)
+        self.assertEqual(result[0]['rev']['keyid'], 'A658D626E2A17629')
+
+    def test_revoke_and_not_revoked_key(self):
+        """Test that a revoke key is set, but a nun revoked key still valid"""
+        with open(os.path.join(_files, 'revoked_key.pub')) as revoked_key:
+            self.gpg.import_keys(revoked_key.read())
+
+        self.gpg.list_sigs("1763FE94FC05F492285C2B7BA658D626E2A17629")
+
+        with open(os.path.join(_files, 'test_key_1.sec')) as fh1:
+            res = self.gpg.import_keys(fh1.read())
+
+        result = self.gpg.list_sigs(res.fingerprints[0])
+        self.assertEqual(len(self.gpg.list_keys()), 2)
+        self.assertEqual(result[1]['rev'], {})
 
     def test_public_keyring(self):
         """Test that the public keyring is found in the gpg home directory."""
@@ -807,6 +905,34 @@ class GPGTestCase(unittest.TestCase):
 
         if os.path.isfile(sigfn):
             os.unlink(sigfn)
+
+    def test_list_key_sigs(self):
+        self.test_list_keys_initial_public()
+        gpg = self.gpg
+        gpg.import_keys(PUBKEY_FRED_FOO)
+        gpg.import_keys(PUBKEY_BOB_BAR)
+
+        result = gpg.list_sigs(PUBKEY_ID_FRED_FOO)
+
+        self.assertEqual(len(result.sigs[u"Fred Foo <fred@foo.com>"]), 2)
+        self.assertEqual(list(result.sigs[u"Fred Foo <fred@foo.com>"])[1], PUBKEY_ID_FRED_FOO)
+        self.assertEqual(list(result.sigs[u"Fred Foo <fred@foo.com>"])[0], PUBKEY_ID_BOB_BAR)
+
+    def test_check_key_sigs(self):
+        self.test_list_keys_initial_public()
+        gpg = self.gpg
+        gpg.import_keys(PUBKEY_FRED_FOO)
+
+        result = gpg.check_sigs(PUBKEY_ID_FRED_FOO)
+
+        self.assertIn(PUBKEY_ID_FRED_FOO, result.certs[u"Fred Foo <fred@foo.com>"])
+        self.assertNotIn(PUBKEY_ID_BOB_BAR, result.certs[u"Fred Foo <fred@foo.com>"])
+
+        gpg.import_keys(PUBKEY_BOB_BAR)
+        result = gpg.check_sigs(PUBKEY_ID_FRED_FOO)
+
+        self.assertIn(PUBKEY_ID_FRED_FOO, result.certs[u"Fred Foo <fred@foo.com>"])
+        self.assertIn(PUBKEY_ID_BOB_BAR, result.certs[u"Fred Foo <fred@foo.com>"])
 
     def test_deletion_public_key(self):
         """Test that key deletion for public keys works, and that it leaves the
@@ -1114,7 +1240,7 @@ authentication."""
         res = alice_public.results[-1:][0]
         alice_pfpr = str(res['fingerprint'])
         alice.close()
-        
+
         bob = open(os.path.join(_files, 'test_key_2.pub'))
         bob_pub = bob.read()
         bob_public = self.gpg.import_keys(bob_pub)
@@ -1135,7 +1261,7 @@ authentication."""
                   % alice_pfpr)
 
         self.assertNotEquals(message, encrypted)
-        ## We expect Alice's key to be hidden (returned as zero's) and Bob's 
+        ## We expect Alice's key to be hidden (returned as zero's) and Bob's
         ## key to be there.
         expected_values = ["0000000000000000", "E0ED97345F2973D6"]
         self.assertEquals(expected_values, self.gpg.list_packets(encrypted).encrypted_to)
@@ -1364,6 +1490,118 @@ know, maybe you shouldn't be doing it in the first place.
             encrypted_message = fh.read()
             self.assertTrue(b"-----BEGIN PGP MESSAGE-----" in encrypted_message)
 
+    def test_key_expiration(self):
+        """Test that changing key expiration date succeeds."""
+        today = datetime.date.today()
+        date_format = '%Y-%m-%d'
+        tomorrow = today + datetime.timedelta(days=1)
+        key = self.generate_key("Haha", "ho.ho", passphrase="haha.hehe", expire_date=tomorrow.strftime(date_format))
+
+        self.gpg.expire(key.fingerprint, expiration_time='1w', passphrase="haha.hehe")
+        next_week = today + datetime.timedelta(weeks=1)
+
+        current_keys = self.gpg.list_keys()
+        for fecthed_key in current_keys:
+            self.assertEqual(next_week, datetime.date.fromtimestamp(int(fecthed_key['expires'])))
+            self.assertEqual(key.fingerprint, fecthed_key['fingerprint'])
+
+    def test_passphrase_with_space_on_key_expiration(self):
+        """Test that passphrase with space does allow changing expiration."""
+        today = datetime.date.today()
+        date_format = '%Y-%m-%d'
+        tomorrow = today + datetime.timedelta(days=1)
+        password_with_space = "passphrase with space"
+        key = self.generate_key("Haha", "ho.ho", passphrase=password_with_space,
+                                expire_date=tomorrow.strftime(date_format))
+
+        self.gpg.expire(key.fingerprint, expiration_time='1w', passphrase=password_with_space)
+        next_week = today + datetime.timedelta(weeks=1)
+
+        current_keys = self.gpg.list_keys()
+        for fecthed_key in current_keys:
+            self.assertEqual(next_week, datetime.date.fromtimestamp(int(fecthed_key['expires'])))
+            self.assertEqual(key.fingerprint, fecthed_key['fingerprint'])
+
+    def test_wrong_passphrase_on_key_expiration(self):
+        """Test that wrong passphrase does not allow changing expiration."""
+        today = datetime.date.today()
+        date_format = '%Y-%m-%d'
+        tomorrow = today + datetime.timedelta(days=1)
+        key = self.generate_key("Haha", "ho.ho", passphrase="haha.hehe", expire_date=tomorrow.strftime(date_format))
+
+        self.gpg.expire(key.fingerprint, expiration_time='1w', passphrase="wrong passphrase")
+
+        current_keys = self.gpg.list_keys()
+        for fecthed_key in current_keys:
+            self.assertEqual(tomorrow, datetime.date.fromtimestamp(int(fecthed_key['expires'])))
+            self.assertEqual(key.fingerprint, fecthed_key['fingerprint'])
+
+    def test_invalid_expiration_time_throws_exception_on_key_expiration(self):
+        """Test that changing key expiration has to be positive value"""
+        today = datetime.date.today()
+        date_format = '%Y-%m-%d'
+        tomorrow = today + datetime.timedelta(days=1)
+        key = self.generate_key("Haha", "ho.ho", passphrase="haha.hehe", expire_date=tomorrow.strftime(date_format))
+
+        invalid_expiration_option = "-1w"
+        with self.assertRaises(_parsers.UsageError):
+            self.gpg.expire(key.fingerprint, expiration_time=invalid_expiration_option, passphrase="haha.hehe")
+
+    def test_key_signing(self):
+        """Test that signing a key with default key succeeds."""
+        default_key_pair = self.generate_key("haha", "ha.ha", passphrase="haha.haha")
+        hehe_key = self.generate_key("hehe", "he.he")
+
+        result = self.gpg.sign_key(hehe_key.fingerprint, passphrase="haha.haha")
+
+        hehe_sigs_keyids = self._get_sigs(hehe_key.fingerprint[-16:])
+
+        self.assertEqual('ok', result.status)
+        self.assertIn(default_key_pair.fingerprint[-16:], hehe_sigs_keyids)
+
+    def test_key_signing_with_different_key(self):
+        """Test that signing a key with default key succeeds."""
+        key1 = self.generate_key("haha", "ha.ha")
+        key2 = self.generate_key("hehe", "he.he", passphrase="hehe.hehe")
+
+        result = self.gpg.sign_key(key1.fingerprint, default_key=key2, passphrase="hehe.hehe")
+
+        key1_sigs_keyids = self._get_sigs(key1.fingerprint[-16:])
+
+        self.assertEqual('ok', result.status)
+        self.assertIn(key2.fingerprint[-16:], key1_sigs_keyids)
+
+    def _get_sigs(self, target_keyid):
+        sigs = self.gpg.list_sigs()
+        hehe_sigs = filter(lambda sig: sig['keyid'] == target_keyid, sigs)[0]
+        hehe_address = hehe_sigs['uids'][0]     # yields "hehe<hehe@he.he>"
+        return map(lambda key: key['keyid'], hehe_sigs['sigs'][hehe_address] )
+
+    def test_signing_an_already_signed_key_does_nothing_and_is_okay(self):
+        """Test that re-signing a key does not blow up."""
+        default_key_pair = self.generate_key("haha", "ha.ha", passphrase="haha.haha")
+        hehe_key = self.generate_key("hehe", "he.he")
+        self.gpg.sign_key(hehe_key.fingerprint, passphrase="haha.haha")
+
+        re_sign_result = self.gpg.sign_key(hehe_key.fingerprint, passphrase="haha.haha")
+
+        hehe_sigs_keyids = self._get_sigs(hehe_key.fingerprint[-16:])
+
+        self.assertEqual('ok', re_sign_result.status)
+        self.assertIn(default_key_pair.fingerprint[-16:], hehe_sigs_keyids)
+
+    def test_signing_key_with_wrong_password(self):
+        """Test signing a key using a wrong password"""
+        default_key_pair = self.generate_key("haha", "ha.ha", passphrase="haha.haha")
+        hehe_key = self.generate_key("hehe", "he.he")
+
+        wrong_password = "really wrong"
+        result = self.gpg.sign_key(hehe_key.fingerprint, passphrase=wrong_password)
+
+        hehe_sigs_keyids = self._get_sigs(hehe_key.fingerprint[-16:])
+
+        self.assertEqual('bad passphrase: %s' % default_key_pair.fingerprint[-16:], result.status)
+        self.assertNotIn(default_key_pair.fingerprint[-16:], hehe_sigs_keyids)
 
 suites = { 'parsers': set(['test_parsers_fix_unsafe',
                            'test_parsers_fix_unsafe_semicolon',
@@ -1433,7 +1671,18 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                             'test_deletion_subkeys',
                             'test_import_only']),
            'recvkeys': set(['test_recv_keys_default']),
+           'revokekey': set(['test_list_revoked_key',
+                             'test_revoke_and_not_revoked_key']),
+           'expiration': set(['test_key_expiration',
+                          'test_passphrase_with_space_on_key_expiration',
+                          'test_wrong_passphrase_on_key_expiration',
+                          'test_invalid_expiration_time_throws_exception_on_key_expiration']),
+           'signing': set(['test_key_signing',
+                           'test_key_signing_with_different_key',
+                           'test_signing_an_already_signed_key_does_nothing_and_is_okay',
+                           'test_signing_key_with_wrong_password']),
 }
+
 
 def main(args):
     if not args.quiet:

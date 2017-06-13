@@ -111,19 +111,22 @@ class GPGMeta(type):
             identity = this_process.uids
 
         for proc in psutil.process_iter():
-            if (proc.name == "gpg-agent") and proc.is_running:
+            # In my system proc.name & proc.is_running are methods
+            if (proc.name() == "gpg-agent") and proc.is_running():
                 log.debug("Found gpg-agent process with pid %d" % proc.pid)
                 if _util._running_windows:
                     if proc.username() == identity:
                         ownership_match = True
                 else:
-                    if proc.uids == identity:
+                    # proc.uids & identity are methods to
+                    if proc.uids() == identity():
                         ownership_match = True
-
-        if ownership_match:
-            log.debug("Effective UIDs of this process and gpg-agent match")
-            setattr(cls, '_agent_proc', proc)
-            return True
+            # Next code must be inside for operator.
+            # Otherwise to _agent_proc will be saved not "gpg-agent" process buth an other.
+            if ownership_match:
+                log.debug("Effective UIDs of this process and gpg-agent match")
+                setattr(cls, '_agent_proc', proc)
+                return True
 
         return False
 
@@ -142,9 +145,12 @@ class GPGBase(object):
                        'delete':   _parsers.DeleteResult,
                        'generate': _parsers.GenKey,
                        'import':   _parsers.ImportResult,
+                       'export':   _parsers.ExportResult,
                        'list':     _parsers.ListKeys,
                        'sign':     _parsers.Sign,
                        'verify':   _parsers.Verify,
+                       'expire':   _parsers.KeyExpirationResult,
+                       'signing':  _parsers.KeySigningResult,
                        'packets':  _parsers.ListPackets }
 
     def __init__(self, binary=None, home=None, keyring=None, secring=None,
@@ -211,8 +217,12 @@ class GPGBase(object):
 
         try:
             assert self.binary, "Could not find binary %s" % binary
-            assert isinstance(verbose, (bool, str, int)), \
-                "'verbose' must be boolean, string, or 0 <= n <= 9"
+            if _util._py3k:
+                assert isinstance(verbose, (bool, str, int)), \
+                    "'verbose' must be boolean, string, or 0 <= n <= 9"
+            else:
+                assert isinstance(verbose, (bool, str, int, unicode)), \
+                    "'verbose' must be boolean, string, unicode, or 0 <= n <= 9"
             assert isinstance(use_agent, bool), "'use_agent' must be boolean"
             if self.options is not None:
                 assert isinstance(self.options, list), "options not list"
@@ -499,7 +509,12 @@ class GPGBase(object):
         if proc.returncode:
             raise RuntimeError("Error invoking gpg: %s" % result.data)
         else:
-            proc.terminate()
+            try:
+                proc.terminate()
+            except OSError:
+                log.error(("Could neither invoke nor terminate a gpg process... "
+                           "Are you sure you specified the corrent (and full) "
+                           "path to the gpg binary?"))
 
         version_line = str(result.data).partition(':version:')[2]
         self.binary_version = version_line.split('\n')[0]
@@ -593,9 +608,18 @@ class GPGBase(object):
         else:
             expand_shell = False
 
+        environment = {
+            'LANGUAGE': os.environ.get('LANGUAGE') or 'en',
+            'GPG_TTY': os.environ.get('GPG_TTY') or '',
+            'DISPLAY': os.environ.get('DISPLAY') or '',
+            'GPG_AGENT_INFO': os.environ.get('GPG_AGENT_INFO') or '',
+            'GPG_TTY': os.environ.get('GPG_TTY') or '',
+            'GPG_PINENTRY_PATH': os.environ.get('GPG_PINENTRY_PATH') or '',
+        }
+
         return subprocess.Popen(cmd, shell=expand_shell, stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                env={'LANGUAGE': 'en'})
+                                env=environment)
 
     def _read_response(self, stream, result):
         """Reads all the stderr output from GPG, taking notice only of lines
@@ -904,7 +928,7 @@ class GPGBase(object):
         ...                                  passphrase='foo')
         >>> key = gpg.gen_key(key_settings)
         >>> message = "The crow flies at midnight."
-        >>> encrypted = str(gpg.encrypt(message, key.printprint))
+        >>> encrypted = str(gpg.encrypt(message, key.fingerprint))
         >>> assert encrypted != message
         >>> assert not encrypted.isspace()
         >>> decrypted = str(gpg.decrypt(encrypted))
@@ -919,7 +943,7 @@ class GPGBase(object):
 
         :param list hidden_recipients: A list of recipients that should have
             their keyids zero'd out in packet information.
-                                
+
         :param str cipher_algo: The cipher algorithm to use. To see available
                                 algorithms with your version of GnuPG, do:
                                 :command:`$ gpg --with-colons --list-config
@@ -1029,7 +1053,7 @@ class GPGBase(object):
                 log.info("Encrypted output written successfully.")
 
         return result
-    
+
     def _add_recipient_string(self, args, hidden_recipients, recipient):
         if isinstance(hidden_recipients, (list, tuple)):
             if [s for s in hidden_recipients if recipient in str(s)]:
