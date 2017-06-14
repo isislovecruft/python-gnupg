@@ -965,7 +965,7 @@ class GenKey(object):
 
         :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
-        if key == "GOOD_PASSPHRASE":
+        if key in ("GOOD_PASSPHRASE"):
             pass
         elif key == "KEY_CONSIDERED":
             self.status = key.replace("_", " ").lower()
