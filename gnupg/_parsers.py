@@ -1782,8 +1782,15 @@ class ListPackets(object):
 
         :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
-        if key in ('NO_SECKEY', 'BEGIN_DECRYPTION', 'DECRYPTION_FAILED',
-                   'END_DECRYPTION', 'GOOD_PASSPHRASE', 'BAD_PASSPHRASE', 'KEY_CONSIDERED'):
+        if key in (
+                'NO_SECKEY',
+                'BEGIN_DECRYPTION',
+                'DECRYPTION_FAILED',
+                'END_DECRYPTION',
+                'GOOD_PASSPHRASE',
+                'BAD_PASSPHRASE',
+                'KEY_CONSIDERED'
+            ):
             pass
         elif key == 'NODATA':
             self.status = nodata(value)
