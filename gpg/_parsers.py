@@ -616,7 +616,7 @@ def _get_all_gnupg_options():
     GnuPG binary reporting falsified option sets, i.e. because certain options
     (namedly the ``--no-options`` option, which prevents the usage of gpg.conf
     files) are necessary and statically specified in
-    :meth:`gnupg._meta.GPGBase._make_args`, if the inputs into Python are
+    :meth:`gpg._meta.GPGBase._make_args`, if the inputs into Python are
     already controlled, and we were to summon the GnuPG binary to ask it for
     its options, it would be possible to receive a falsified options set
     missing the ``--no-options`` option in response. This seems unlikely, and
@@ -938,11 +938,11 @@ class GenKey(object):
         self.subkey_created = False
         self.primary_created = False
         #: This will store the key's public keyring filename, if
-        #: :meth:`~gnupg.GPG.gen_key_input` was called with
+        #: :meth:`~gpg.GPG.gen_key_input` was called with
         #: ``separate_keyring=True``.
         self.keyring = None
         #: This will store the key's secret keyring filename, if :
-        #: :meth:`~gnupg.GPG.gen_key_input` was called with
+        #: :meth:`~gpg.GPG.gen_key_input` was called with
         #: ``separate_keyring=True``.
         self.secring = None
 
@@ -1024,7 +1024,7 @@ class DeleteResult(object):
 class Sign(object):
     """Parse GnuPG status messages for signing operations.
 
-    :param gpg: An instance of :class:`gnupg.GPG`.
+    :param gpg: An instance of :class:`gpg.GPG`.
     """
 
     #: The type of signature created.
@@ -1178,8 +1178,8 @@ class ImportResult(object):
     def __init__(self, gpg):
         """Start parsing the results of a key import operation.
 
-        :type gpg: :class:`gnupg.GPG`
-        :param gpg: An instance of :class:`gnupg.GPG`.
+        :type gpg: :class:`gpg.GPG`
+        :param gpg: An instance of :class:`gpg.GPG`.
         """
         self._gpg = gpg
 
@@ -1291,8 +1291,8 @@ class ExportResult(object):
     def __init__(self, gpg):
         """Start parsing the results of a key export operation.
 
-        :type gpg: :class:`gnupg.GPG`
-        :param gpg: An instance of :class:`gnupg.GPG`.
+        :type gpg: :class:`gpg.GPG`
+        :param gpg: An instance of :class:`gpg.GPG`.
         """
         self._gpg = gpg
 
@@ -1385,7 +1385,7 @@ class Verify(object):
     def __init__(self, gpg):
         """Create a parser for verification and certification commands.
 
-        :param gpg: An instance of :class:`gnupg.GPG`.
+        :param gpg: An instance of :class:`gpg.GPG`.
         """
         self._gpg = gpg
         #: True if the signature is valid, False otherwise.

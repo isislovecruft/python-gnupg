@@ -20,14 +20,14 @@
 
 from __future__ import absolute_import
 
-from . import gnupg
+from . import gpg
 from . import copyleft
 from . import _ansistrm
 from . import _logger
 from . import _meta
 from . import _parsers
 from . import _util
-from .gnupg import GPG
+from .gpg import GPG
 from ._version import get_versions
 
 __version__ = get_versions()['version']
@@ -35,12 +35,12 @@ __authors__ = copyleft.authors
 __license__ = copyleft.full_text
 __copyleft__ = copyleft.copyright
 
-## do not set __package__ = "gnupg", else we will end up with
-## gnupg.<*allofthethings*>
+## do not set __package__ = "gpg", else we will end up with
+## gpg.<*allofthethings*>
 __all__ = ["GPG", "_util", "_parsers", "_meta", "_logger"]
 
-## avoid the "from gnupg import gnupg" idiom
-del gnupg
+## avoid the "from gpg import gpg" idiom
+del gpg
 del absolute_import
 del copyleft
 del get_versions

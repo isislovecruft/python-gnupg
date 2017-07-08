@@ -21,7 +21,7 @@ From `PyPI <https://pypi.python.org>`__
 
 It's simple. Just do::
 
-    [sudo] pip install gnupg
+    [sudo] pip install gpg
 
 --------
 From git
@@ -42,10 +42,10 @@ Optionally, to build the Sphinx documentation_, do::
 To get started using python-gnupg's API, see the documentation_,
 and import the module like so::
 
-    >>> import gnupg
+    >>> import gpg as gnupg
 
 
-The primary interface class you'll likely want to interact with is ``gnupg.GPG``::
+The primary interface class you'll likely want to interact with is ``gpg.GPG``::
 
     >>> gpg = gnupg.GPG(binary='/usr/bin/gpg',
     ...     homedir='./keys',

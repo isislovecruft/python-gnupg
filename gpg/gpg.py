@@ -17,13 +17,13 @@
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
 
-"""gnupg.py
+"""gpg.py
 ===========
 A Python interface to GnuPG.
 
 .. moduleauthor:: Isis Lovecruft <isis@patternsinthevoid.net>
-                  see also :attr:`gnupg.__authors__`
-.. license:: see :attr:`gnupg.__license__`
+                  see also :attr:`gpg.__authors__`
+.. license:: see :attr:`gpg.__license__`
 .. info:: https://github.com/isislovecruft/python-gnupg
 """
 
@@ -101,7 +101,7 @@ class GPG(GPGBase):
 
         Example:
 
-        >>> import gnupg
+        >>> import gpg as gnupg
         GnuPG logging disabled...
         >>> gpg = gnupg.GPG(homedir='doctests')
         >>> gpg.keyring
@@ -499,7 +499,7 @@ class GPG(GPGBase):
     def sign_key(self, keyid, default_key=None, passphrase=None):
         """ sign (an imported) public key - keyid, with default secret key
 
-        >>> import gnupg
+        >>> import gpg as gnupg
         >>> gpg = gnupg.GPG(homedir="doctests")
         >>> key_input = gpg.gen_key_input()
         >>> key = gpg.gen_key(key_input)
@@ -535,7 +535,7 @@ class GPG(GPGBase):
     def list_sigs(self, *keyids):
         """Get the signatures for each of the ``keyids``.
 
-        >>> import gnupg
+        >>> import gpg as gnupg
         >>> gpg = gnupg.GPG(homedir="doctests")
         >>> key_input = gpg.gen_key_input()
         >>> key = gpg.gen_key(key_input)
@@ -598,7 +598,7 @@ class GPG(GPGBase):
         """Changes GnuPG key expiration by passing in new time period (from now) through
             subprocess's stdin
 
-        >>> import gnupg
+        >>> import gpg as gnupg
         >>> gpg = gnupg.GPG(homedir="doctests")
         >>> key_input = gpg.gen_key_input()
         >>> key = gpg.gen_key(key_input)
@@ -636,7 +636,7 @@ class GPG(GPGBase):
         """Generate a GnuPG key through batch file key generation. See
         :meth:`GPG.gen_key_input()` for creating the control input.
 
-        >>> import gnupg
+        >>> import gpg as gnupg
         >>> gpg = gnupg.GPG(homedir="doctests")
         >>> key_input = gpg.gen_key_input()
         >>> key = gpg.gen_key(key_input)
@@ -707,7 +707,7 @@ class GPG(GPGBase):
         ones which begin with a '%'). For example, to generate the batch file
         example above, use like this:
 
-        >>> import gnupg
+        >>> import gpg as gnupg
         GnuPG logging disabled...
         >>> from __future__ import print_function
         >>> gpg = gnupg.GPG(homedir='doctests')
@@ -1016,7 +1016,7 @@ generate keys. Please see
             object in Python. For example:
 
         >>> import shutil
-        >>> import gnupg
+        >>> import gpg as gnupg
         >>> if os.path.exists("doctests"):
         ...     shutil.rmtree("doctests")
         >>> gpg = gnupg.GPG(homedir="doctests")
@@ -1165,7 +1165,3 @@ class GPGUtilities(object):
 
     def is_encrypted(self, raw_data):
         return self.is_encrypted_asym(raw_data) or self.is_encrypted_sym(raw_data)
-
-if __name__ == "__main__":
-    from .test import test_gnupg
-    test_gnupg.main()

@@ -36,10 +36,10 @@ else:
     _isPyPy = True
 
 
-versioneer.versionfile_source = 'gnupg/_version.py'
-versioneer.versionfile_build  = 'gnupg/_version.py'
+versioneer.versionfile_source = 'gpg/_version.py'
+versioneer.versionfile_build  = 'gpg/_version.py'
 versioneer.tag_prefix = ''
-versioneer.parentdir_prefix = 'gnupg-'
+versioneer.parentdir_prefix = 'gpg-'
 
 __author__ = "Isis Agora Lovecruft"
 __contact__ = 'isis@patternsinthevoid.net'
@@ -97,7 +97,7 @@ requires, deplinks = get_requirements()
 
 
 setuptools.setup(
-    name = "gnupg",
+    name = "gpg",
     description="A Python wrapper for GnuPG",
     long_description = """\
 This module allows easy access to GnuPG's key management, encryption and \
@@ -118,11 +118,11 @@ or Linux, with Python 2.6, Python 2.7, Python 3.3, Python 3.4, or PyPy.
     maintainer_email=__contact__,
     url=__url__,
 
-    package_dir={'gnupg': 'gnupg'},
-    packages=['gnupg'],
+    package_dir={'gpg': 'gpg'},
+    packages=['gpg'],
     package_data={'': ['README', 'LICENSE', 'TODO', 'requirements.txt']},
     scripts=['versioneer.py'],
-    test_suite='gnupg.test.test_gnupg',
+    test_suite='gpg.test.test_gpg',
 
     install_requires=requires,
     dependency_links=deplinks,

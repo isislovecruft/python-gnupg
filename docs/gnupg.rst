@@ -1,17 +1,17 @@
-gnupg package
+gpg package
 =============
 
-gnupg module
+gpg module
 ------------
 
 This module contains public classes for working with GnuPG_. To get started,
 do:
 
->>> import gnupg
+>>> import gpg as gnupg
 >>> gpg = gnupg.GPG()
 
 
-.. automodule:: gnupg
+.. automodule:: gpg
     :members:
     :undoc-members:
     :private-members:
@@ -22,12 +22,12 @@ do:
 meta module
 -----------
 
-Contains the meta and base classes which :class:`gnupg.GPG` inherits
+Contains the meta and base classes which :class:`gpg.GPG` inherits
 from. Mostly, you shouldn't ever need to touch anything in here, unless you're
 doing some serious hacking.
 
 
-.. automodule:: gnupg._meta
+.. automodule:: gpg._meta
     :members:
     :private-members:
     :special-members:
@@ -44,13 +44,13 @@ These are classes for parsing both user inputs and status file descriptor
 flags from GnuPG's output. The latter are used in order to determine what our
 GnuPG process is doing and retrieve information about its operations, which
 are stored in corresponding classes in
-:attr:`~gnupg._meta.GPGBase._result_map`. Some status flags aren't handled yet
+:attr:`~gpg._meta.GPGBase._result_map`. Some status flags aren't handled yet
 -- information on *all* of the flags (well, at least the documented ones…) can
 be found in the :file:`docs/DETAILS` file in GnuPG's source_, which has been
 included here_ as well.
 
 
-.. automodule:: gnupg._parsers
+.. automodule:: gpg._parsers
     :members:
     :undoc-members:
     :private-members:
@@ -66,7 +66,7 @@ You shouldn't really need to mess with this module either, it mostly deals
 with low-level IO and file handling operations, de-/en- coding issues, and
 setting up basic package facilities such as logging.
 
-.. automodule:: gnupg._util
+.. automodule:: gpg._util
     :members:
     :undoc-members:
     :private-members:

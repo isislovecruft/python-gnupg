@@ -28,14 +28,14 @@ from __future__ import print_function
 from __future__ import with_statement
 
 import unittest
-from gnupg._parsers import UsageError
+from gpg._parsers import UsageError
 
 ## see PEP-366 http://www.python.org/dev/peps/pep-0366/
 
 print("NAME: %r" % __name__)
 print("PACKAGE: %r" % __package__)
 try:
-    import gnupg._parsers as parsers
+    import gpg._parsers as parsers
 except (ImportError, ValueError) as ierr:
     raise SystemExit(str(ierr))
 
