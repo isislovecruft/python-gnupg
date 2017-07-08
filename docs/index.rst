@@ -15,7 +15,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   gnupg
+   gpg
 
 
 Source, license, & bug reports

@@ -18,9 +18,9 @@
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE. See the included LICENSE file for details.
 
-"""test_gnupg.py
+"""test_gpg.py
 ----------------
-A test harness and unittests for gnupg.py.
+A test harness and unittests for gpg.
 """
 
 from __future__ import absolute_import
@@ -52,15 +52,15 @@ if sys.version_info[0] == 2 and sys.version_info[1] <= 6:
 else:
     import unittest
 
-import gnupg
+import gpg
 
 ## see PEP-366 http://www.python.org/dev/peps/pep-0366/
 print("NAME: %r" % __name__)
 print("PACKAGE: %r" % __package__)
 try:
-    import gnupg._util    as _util
-    import gnupg._parsers as _parsers
-    import gnupg._logger  as _logger
+    import gpg._util    as _util
+    import gpg._parsers as _parsers
+    import gpg._logger  as _logger
 except (ImportError, ValueError) as ierr:
     raise SystemExit(str(ierr))
 
@@ -240,7 +240,7 @@ class GPGTestCase(unittest.TestCase):
             os.makedirs(hd)
         self.assertTrue(os.path.isdir(hd), "Not a directory: %s" % hd)
 
-        self.gpg = gnupg.GPG(binary='gpg', homedir=hd)
+        self.gpg = gpg.GPG(binary='gpg', homedir=hd)
         self.homedir = hd
         self.keyring = self.gpg.keyring
         self.secring = self.gpg.secring
@@ -314,7 +314,7 @@ class GPGTestCase(unittest.TestCase):
 
     def test_homedir_creation(self):
         """Test that a homedir is created if left unspecified"""
-        gpg = gnupg.GPG(binary='gpg')
+        gpg = gpg.GPG(binary='gpg')
         self.assertTrue(os.path.exists(gpg.homedir),
                         "Not an existing directory: %s" % gpg.homedir)
         self.assertTrue(os.path.isdir(gpg.homedir),
@@ -322,7 +322,7 @@ class GPGTestCase(unittest.TestCase):
 
     def test_binary_discovery(self):
         """Test that the path to gpg is discovered if unspecified"""
-        gpg = gnupg.GPG()
+        gpg = gpg.GPG()
         self.assertIsNotNone(gpg.binary)
         self.assertTrue(os.path.exists(gpg.binary),
                         "Path does not exist: %s" % gpg.binary)
@@ -352,7 +352,7 @@ class GPGTestCase(unittest.TestCase):
         env_copy = os.environ
         path_copy = os.environ.pop('PATH')
         with self.assertRaises(RuntimeError):
-            gnupg.GPG(homedir=self.homedir)
+            gpg.GPG(homedir=self.homedir)
         os.environ = env_copy
         os.environ.update({'PATH': path_copy})
 
@@ -898,7 +898,7 @@ class GPGTestCase(unittest.TestCase):
         datafd.seek(0)
         verification = self.gpg.verify_file(datafd, sig_file=sigfn)
 
-        self.assertTrue(isinstance(verification, gnupg._parsers.Verify))
+        self.assertTrue(isinstance(verification, gpg._parsers.Verify))
         self.assertTrue(verification.valid)
 
         datafd.close()
@@ -1708,7 +1708,7 @@ def main(args):
             tests = prog.testLoader.loadTestsFromTestCase(GPGTestCase)
             args.run_doctest = True
         if args.run_doctest:
-            tests.addTest(doctest.DocTestSuite(gnupg))
+            tests.addTest(doctest.DocTestSuite(gpg))
         log.debug("Loaded %d tests..." % tests.countTestCases())
         prog.test = tests
 

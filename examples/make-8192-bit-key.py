@@ -15,9 +15,9 @@ from __future__ import unicode_literals
 import os
 import logging
 
-import gnupg
+import gpg as gnupg
 
-from gnupg import _logger
+from gpg import _logger
 
 # Set up logging:
 log = _logger.create_logger(9)
@@ -101,7 +101,7 @@ KEYSERVER = None
 # Set the cipher, hash, and compression preference values for this key. This
 # expects the same type of string as the sub-command ‘setpref’ in the
 # --edit-key menu. The default preferences are given in
-# ``gnupg.GPG.default_preference_list``.
+# ``gpg.GPG.default_preference_list``.
 PREFERENCES = None
 #―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
 
@@ -156,7 +156,7 @@ def createKey(batchfile):
     return key, fingerprint
 
 def displayNewKey(key):
-    """Use ``gnupg.GPG.list_keys()`` to display details of the new key."""
+    """Use ``gpg.GPG.list_keys()`` to display details of the new key."""
 
     if key.keyring:
         gpg.keyring = key.keyring
@@ -167,7 +167,7 @@ def displayNewKey(key):
     gpg.options = ['--fingerprint', '--fingerprint']
     keylist = gpg.list_keys(secret=True)
 
-    # `result` is a `gnupg._parsers.ListKeys`, which is list-like, so iterate
+    # `result` is a `gpg._parsers.ListKeys`, which is list-like, so iterate
     # over all the keys and display their info:
     for gpgkey in keylist:
         for k, v in gpgkey.items():

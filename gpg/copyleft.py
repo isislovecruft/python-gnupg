@@ -47,7 +47,7 @@ Copyright © 2013 Isis Lovecruft, <isis@leap.se> 0xA3ADB67A2CDB8B35
           © 2005 Steve Traugott
           © 2004 A.M. Kuchling
 All rights reserved.
-See included LICENSE or ``print(gnupg.__license__)`` for full license."""
+See included LICENSE or ``print(gpg.__license__)`` for full license."""
 
 disclaimer = """\
 This file is part of python-gnupg, a Python wrapper around GnuPG.

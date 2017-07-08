@@ -135,7 +135,7 @@ class GPGBase(object):
     """Base class for storing properties and controlling process initialisation.
 
     :const _result_map: A *dict* containing classes from
-                        :mod:`~gnupg._parsers`, used for parsing results
+                        :mod:`~gpg._parsers`, used for parsing results
                         obtained from GnuPG commands.
     :const _decode_errors: How to handle encoding errors.
     """
@@ -164,14 +164,14 @@ class GPGBase(object):
 
         :const binary: (:obj:`str`) The full path to the GnuPG binary.
 
-        :ivar homedir: (:class:`~gnupg._util.InheritableProperty`) The full
+        :ivar homedir: (:class:`~gpg._util.InheritableProperty`) The full
                        path to the current setting for the GnuPG
                        ``--homedir``.
 
-        :ivar _generated_keys: (:class:`~gnupg._util.InheritableProperty`)
+        :ivar _generated_keys: (:class:`~gpg._util.InheritableProperty`)
                                Controls setting the directory for storing any
                                keys which are generated with
-                               :meth:`~gnupg.GPG.gen_key`.
+                               :meth:`~gpg.GPG.gen_key`.
 
         :ivar str keyring: The filename in **homedir** to use as the keyring
                            file for public keys.
@@ -374,7 +374,7 @@ class GPGBase(object):
         """Set the default keyserver to use for sending and receiving keys.
 
         The ``location`` is sent to :func:`_parsers._check_keyserver` when
-        option are parsed in :meth:`gnupg.GPG._make_options`.
+        option are parsed in :meth:`gpg.GPG._make_options`.
 
         :param str location: A string containing the default keyserver. This
                              should contain the desired keyserver protocol
@@ -456,7 +456,7 @@ class GPGBase(object):
         """Set the directory for storing generated keys.
 
         If unspecified, use
-        :meth:`~gnupg._meta.GPGBase.homedir`/generated-keys. If specified,
+        :meth:`~gpg._meta.GPGBase.homedir`/generated-keys. If specified,
         ensure that the ``directory`` does not contain various shell escape
         characters. If ``directory`` isn't found, it will be automatically
         created. Lastly, the ``directory`` will be checked to ensure that the
@@ -524,7 +524,7 @@ class GPGBase(object):
         """Make a list of command line elements for GPG.
 
         The value of ``args`` will be appended only if it passes the checks in
-        :func:`gnupg._parsers._sanitise`. The ``passphrase`` argument needs to
+        :func:`gpg._parsers._sanitise`. The ``passphrase`` argument needs to
         be True if a passphrase will be sent to GnuPG, else False.
 
         :param list args: A list of strings of options and flags to pass to
@@ -632,7 +632,7 @@ class GPGBase(object):
                        :data:`subprocess.PIPE` for parsing the status codes
                        from the GnuPG process.
 
-        :param result: The result parser class from :mod:`~gnupg._parsers` ―
+        :param result: The result parser class from :mod:`~gpg._parsers` ―
                        the ``handle_status()`` method of that class will be
                        called in order to parse the output of ``stream``.
         """
@@ -676,7 +676,7 @@ class GPGBase(object):
 
         :param stream: An open file-like object to read() from.
         :param result: An instance of one of the :ref:`result parsing classes
-            <parsers>` from :const:`~gnupg._meta.GPGBase._result_map`.
+            <parsers>` from :const:`~gpg._meta.GPGBase._result_map`.
         """
         chunks = []
         log.debug("Reading data from stream %r..." % stream.__repr__())
@@ -774,7 +774,7 @@ class GPGBase(object):
         :param str keyids: A space-delimited string containing the keyids to
                            request.
         :param str keyserver: The keyserver to request the ``keyids`` from;
-                              defaults to `gnupg.GPG.keyserver`.
+                              defaults to `gpg.GPG.keyserver`.
         """
         if not keyserver:
             keyserver = self.keyserver
@@ -918,7 +918,7 @@ class GPGBase(object):
                        as an object in Python. For example:
 
         >>> import shutil
-        >>> import gnupg
+        >>> import gpg as gnupg
         >>> if os.path.exists("doctests"):
         ...     shutil.rmtree("doctests")
         >>> gpg = gnupg.GPG(homedir="doctests")

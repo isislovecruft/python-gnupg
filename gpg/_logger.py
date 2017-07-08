@@ -66,9 +66,9 @@ def create_logger(level=logging.NOTSET):
     50   CRITICAL Unhandled exceptions and tracebacks.
     ==== ======== ========================================
     """
-    _test = os.path.join(os.path.join(os.getcwd(), 'gnupg'), 'test')
+    _test = os.path.join(os.path.join(os.getcwd(), 'gpg'), 'test')
     _now  = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-    _fn   = os.path.join(_test, "%s_test_gnupg.log" % _now)
+    _fn   = os.path.join(_test, "%s_test_gpg.log" % _now)
     _fmt  = "%(relativeCreated)-4d L%(lineno)-4d:%(funcName)-18.18s %(levelname)-7.7s %(message)s"
 
     ## Add the GNUPG_STATUS_LEVEL LogRecord to all Loggers in the module:
@@ -92,7 +92,7 @@ def create_logger(level=logging.NOTSET):
     else:
         handler = NullHandler()
 
-    log = logging.getLogger('gnupg')
+    log = logging.getLogger('gpg')
     log.addHandler(handler)
     log.setLevel(level)
     log.info("Log opened: %s UTC" % datetime.ctime(datetime.utcnow()))
