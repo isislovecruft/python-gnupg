@@ -111,16 +111,21 @@ class GPGMeta(type):
             identity = this_process.uids
 
         for proc in psutil.process_iter():
-            # In my system proc.name & proc.is_running are methods
-            if (proc.name() == "gpg-agent") and proc.is_running():
-                log.debug("Found gpg-agent process with pid %d" % proc.pid)
-                if _util._running_windows:
-                    if proc.username() == identity:
-                        ownership_match = True
-                else:
-                    # proc.uids & identity are methods to
-                    if proc.uids() == identity():
-                        ownership_match = True
+            try:
+                # In my system proc.name & proc.is_running are methods
+                if (proc.name() == "gpg-agent") and proc.is_running():
+                    log.debug("Found gpg-agent process with pid %d" % proc.pid)
+                    if _util._running_windows:
+                        if proc.username() == identity:
+                            ownership_match = True
+                    else:
+                        # proc.uids & identity are methods to
+                        if proc.uids() == identity():
+                            ownership_match = True
+            except psutil.Error:
+                # Exception when getting proc info, possibly because the
+                # process is zombie / process no longer exist. Just ignore it.
+                pass
             # Next code must be inside for operator.
             # Otherwise to _agent_proc will be saved not "gpg-agent" process buth an other.
             if ownership_match:
