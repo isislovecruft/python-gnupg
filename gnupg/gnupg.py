@@ -1092,7 +1092,7 @@ generate keys. Please see
         if output:  # write the output to a file with the specified name
             if os.path.exists(output):
                 os.remove(output) # to avoid overwrite confirmation message
-            args.append('--output %s' % output)
+            args.append('--output %s' % _fix_unsafe(output))
         if always_trust:
             args.append("--always-trust")
         result = self._result_map['crypt'](self)
@@ -1136,7 +1136,7 @@ class GPGUtilities(object):
         result = self._result_map['list'](self)
         log.debug('send_keys: %r', keyids)
         data = _util._make_binary_stream("", self._encoding)
-        args = ['--keyserver', keyserver, '--send-keys']
+        args = ['--keyserver', _fix_unsafe(keyserver), '--send-keys']
         args.extend(keyids)
         self._handle_io(args, data, result, binary=True)
         log.debug('send_keys result: %r', result.__dict__)

@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of python-gnupg, a Python interface to GnuPG.
-# Copyright © 2013 Isis Lovecruft, <isis@leap.se> 0xA3ADB67A2CDB8B35
+# Copyright @ 2017 Nicolas Bruot <bruotn@gmail.com>
+#           © 2013 Isis Lovecruft, <isis@leap.se> 0xA3ADB67A2CDB8B35
 #           © 2013 Andrej B.
 #           © 2013 LEAP Encryption Access Project
 #           © 2008-2012 Vinay Sajip
@@ -366,11 +367,11 @@ class GPGTestCase(unittest.TestCase):
         self.gpg.options = ['--tyrannosaurus-rex', '--stegosaurus', '--lock-never', '--trust-model always']
         gpg_binary_path = _util._find_binary('gpg')
         cmd = self.gpg._make_args(None, False)
-        expected = [gpg_binary_path,
+        expected = [_parsers._fix_unsafe(gpg_binary_path),
                     '--no-options --no-emit-version --no-tty --status-fd 2',
-                    '--homedir "%s"' % self.homedir,
-                    '--no-default-keyring --keyring %s' % self.keyring,
-                    '--secret-keyring %s' % self.secring,
+                    '--homedir %s' % _parsers._fix_unsafe(self.homedir),
+                    '--no-default-keyring --keyring %s' % _parsers._fix_unsafe(self.keyring),
+                    '--secret-keyring %s' % _parsers._fix_unsafe(self.secring),
                     '--no-use-agent',
                     '--lock-never',
                     '--trust-model always']
