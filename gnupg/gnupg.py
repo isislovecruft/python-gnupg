@@ -889,10 +889,8 @@ class GPG(GPGBase):
 
         for key, val in list(kwargs.items()):
             key = key.replace('_','-').title()
-            ## to set 'cert', 'Key-Usage' must be blank string
-            if not key in ('Key-Usage', 'Subkey-Usage'):
-                if type('')(val).strip():
-                    parms[key] = val
+            if type('')(val).strip():
+                parms[key] = val
 
         ## if Key-Type is 'default', make Subkey-Type also be 'default'
         if parms['Key-Type'] == 'default':
