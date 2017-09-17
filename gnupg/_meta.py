@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of python-gnupg, a Python interface to GnuPG.
-# Copyright © 2013 Isis Lovecruft, <isis@leap.se> 0xA3ADB67A2CDB8B35
+# Copyright @ 2017 Nicolas Bruot <bruotn@gmail.com>
+#           © 2013 Isis Lovecruft, <isis@leap.se> 0xA3ADB67A2CDB8B35
 #           © 2013 Andrej B.
 #           © 2013 LEAP Encryption Access Project
 #           © 2008-2012 Vinay Sajip
@@ -181,10 +182,8 @@ class GPGBase(object):
         self.ignore_homedir_permissions = ignore_homedir_permissions
         self.binary  = _util._find_binary(binary)
         self.homedir = os.path.expanduser(home) if home else _util._conf
-        pub = _parsers._fix_unsafe(keyring) if keyring else 'pubring.gpg'
-        sec = _parsers._fix_unsafe(secring) if secring else 'secring.gpg'
-        self.keyring = os.path.join(self._homedir, pub)
-        self.secring = os.path.join(self._homedir, sec)
+        self.keyring = os.path.join(self._homedir, keyring or 'pubring.gpg')
+        self.secring = os.path.join(self._homedir, secring or 'secring.gpg')
         self.options = list(_parsers._sanitise_list(options)) if options else None
 
         #: The version string of our GnuPG binary
@@ -419,28 +418,27 @@ class GPGBase(object):
                       % _util._conf)
             directory = _util._conf
 
-        hd = _parsers._fix_unsafe(directory)
-        log.debug("GPGBase._homedir_setter(): got directory '%s'" % hd)
+        log.debug("GPGBase._homedir_setter(): got directory '%s'" % directory)
 
-        if hd:
-            log.debug("GPGBase._homedir_setter(): Check existence of '%s'" % hd)
-            _util._create_if_necessary(hd)
+        if directory:
+            log.debug("GPGBase._homedir_setter(): Check existence of '%s'" % directory)
+            _util._create_if_necessary(directory)
 
         if self.ignore_homedir_permissions:
-            self._homedir = hd
+            self._homedir = directory
         else:
             try:
                 log.debug("GPGBase._homedir_setter(): checking permissions")
-                assert _util._has_readwrite(hd), \
-                    "Homedir '%s' needs read/write permissions" % hd
+                assert _util._has_readwrite(directory), \
+                    "Homedir '%s' needs read/write permissions" % directory
             except AssertionError as ae:
                 msg = ("Unable to set '%s' as GnuPG homedir" % directory)
                 log.debug("GPGBase.homedir.setter(): %s" % msg)
                 log.debug(str(ae))
                 raise RuntimeError(str(ae))
             else:
-                log.info("Setting homedir to '%s'" % hd)
-                self._homedir = hd
+                log.info("Setting homedir to '%s'" % directory)
+                self._homedir = directory
 
     homedir = _util.InheritableProperty(_homedir_getter, _homedir_setter)
 
@@ -473,26 +471,25 @@ class GPGBase(object):
             log.debug("GPGBase._generated_keys_setter(): Using '%s'"
                       % directory)
 
-        hd = _parsers._fix_unsafe(directory)
-        log.debug("GPGBase._generated_keys_setter(): got directory '%s'" % hd)
+        log.debug("GPGBase._generated_keys_setter(): got directory '%s'" % directory)
 
-        if hd:
+        if directory:
             log.debug("GPGBase._generated_keys_setter(): Check exists '%s'"
-                      % hd)
-            _util._create_if_necessary(hd)
+                      % directory)
+            _util._create_if_necessary(directory)
 
         try:
             log.debug("GPGBase._generated_keys_setter(): check permissions")
-            assert _util._has_readwrite(hd), \
-                "Keys dir '%s' needs read/write permissions" % hd
+            assert _util._has_readwrite(directory), \
+                "Keys dir '%s' needs read/write permissions" % directory
         except AssertionError as ae:
             msg = ("Unable to set '%s' as generated keys dir" % directory)
             log.debug("GPGBase._generated_keys_setter(): %s" % msg)
             log.debug(str(ae))
             raise RuntimeError(str(ae))
         else:
-            log.info("Setting homedir to '%s'" % hd)
-            self.__generated_keys = hd
+            log.info("Setting homedir to '%s'" % directory)
+            self.__generated_keys = directory
 
     _generated_keys = _util.InheritableProperty(_generated_keys_getter,
                                                 _generated_keys_setter)
@@ -542,15 +539,18 @@ class GPGBase(object):
                                 process.
         """
         ## see TODO file, tag :io:makeargs:
-        cmd = [self.binary,
+        cmd = [_parsers._fix_unsafe(self.binary),
                '--no-options --no-emit-version --no-tty --status-fd 2']
 
-        if self.homedir: cmd.append('--homedir "%s"' % self.homedir)
+        if self.homedir:
+            cmd.append('--homedir %s' % _parsers._fix_unsafe(self.homedir))
 
         if self.keyring:
-            cmd.append('--no-default-keyring --keyring %s' % self.keyring)
+            cmd.append('--no-default-keyring --keyring %s' %
+                       _parsers._fix_unsafe(self.keyring))
         if self.secring:
-            cmd.append('--secret-keyring %s' % self.secring)
+            cmd.append('--secret-keyring %s' %
+                       _parsers._fix_unsafe(self.secring))
 
         if passphrase: cmd.append('--batch --passphrase-fd 0')
 
@@ -779,7 +779,7 @@ class GPGBase(object):
         if not keyserver:
             keyserver = self.keyserver
 
-        args = ['--keyserver {0}'.format(keyserver),
+        args = ['--keyserver {0}'.format(_parsers._fix_unsafe(keyserver)),
                 '--recv-keys {0}'.format(keyids)]
         log.info('Requesting keys from %s: %s' % (keyserver, keyids))
 
