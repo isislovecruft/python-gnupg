@@ -32,6 +32,7 @@ from argparse   import ArgumentParser
 from codecs     import open as open
 from functools  import wraps
 from glob       import glob
+from io import BytesIO
 from time       import localtime
 from time       import mktime
 
@@ -1179,6 +1180,33 @@ authentication."""
         self.assertIsNotNone(encrypted)
         self.assertGreater(len(encrypted), 0)
 
+    def test_decryption_with_bytes_writeable_output(self):
+        """Test decryption"""
+        key = self.generate_key("Rück", "rü.ck", passphrase="ruck")
+        ruck_fpr = key.fingerprint
+        ruck = self.gpg.export_keys(key.fingerprint)
+        self.gpg.import_keys(ruck)
+
+        message = """
+In 2010 Riggio and Sicari presented a practical application of homomorphic
+encryption to a hybrid wireless sensor/mesh network. The system enables
+transparent multi-hop wireless backhauls that are able to perform statistical
+analysis of different kinds of data (temperature, humidity, etc.)  coming from
+a WSN while ensuring both end-to-end encryption and hop-by-hop
+authentication."""
+
+        encrypted = str(self.gpg.encrypt(message, ruck_fpr))
+
+        output = BytesIO()
+        self.gpg.decrypt(encrypted, passphrase="ruck", output=output)
+        decrypted = output.getvalue().decode('utf-8')
+
+        if message != decrypted:
+            log.debug("was: %r" % message)
+            log.debug("new: %r" % decrypted)
+
+        self.assertEqual(message, decrypted)
+
     def test_decryption(self):
         """Test decryption"""
         key = self.generate_key("Frey", "fr.ey", passphrase="frey")
@@ -1489,6 +1517,23 @@ know, maybe you shouldn't be doing it in the first place.
         with open(output, 'rb') as fh:
             encrypted_message = fh.read()
             self.assertTrue(b"-----BEGIN PGP MESSAGE-----" in encrypted_message)
+
+    def test_encryption_with_bytes_writeable_output(self):
+        """Test that ``encrypt('foo', ..., output=writeable_object)`` is successful."""
+        data = "Test Message"
+        output = BytesIO()
+        kwargs = dict(passphrase='speedtest',
+                      symmetric=True,
+                      cipher_algo='AES256',
+                      encrypt=False,
+                      output=output)
+        encrypted = self.gpg.encrypt(data, None, **kwargs)
+        self.assertTrue(encrypted.ok)
+
+        encrypted_message = output.getvalue()
+        self.assertGreater(len(encrypted_message), 0)
+        print(encrypted_message)
+        self.assertIn(b"-----BEGIN PGP MESSAGE-----", encrypted_message)
 
     def test_key_expiration(self):
         """Test that changing key expiration date succeeds."""

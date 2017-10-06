@@ -685,7 +685,12 @@ class GPGBase(object):
             data = stream.read(1024)
             if len(data) == 0:
                 break
-            chunks.append(data)
+
+            if hasattr(result, 'writer'):
+                result.writer.write(data)
+            else:
+                chunks.append(data)
+
             log.debug("Read %4d bytes" % len(data))
 
         # Join using b'' or '', as appropriate
@@ -913,7 +918,7 @@ class GPGBase(object):
                                   warnings. (default: True)
 
         :type output: str or file-like object
-        :param output: The output file to write to. If not specified, the
+        :param output: The output file or file-like object to write to. If not specified, the
                        encrypted output is returned, and thus should be stored
                        as an object in Python. For example:
 
@@ -965,20 +970,14 @@ class GPGBase(object):
         ## FIXME: GnuPG appears to ignore the --output directive when being
         ## programmatically driven. We'll handle the IO ourselves to fix this
         ## for now.
-        output_filename = None
-        if output:
-            if getattr(output, 'fileno', None) is not None:
-                ## avoid overwrite confirmation message
-                if getattr(output, 'name', None) is not None:
-                    output_filename = output.name
-                    if os.path.exists(output.name):
-                        os.remove(output.name)
-                    #args.append('--output %s' % output.name)
-            else:
-                output_filename = output
-                if os.path.exists(output):
-                    os.remove(output)
-                #args.append('--output %s' % output)
+        close_output_when_done = False
+        if output and not hasattr(output, 'write'):
+            output = str(output)
+            if os.path.exists(output):
+                os.remove(output)
+            args.append('--output %s' % output)
+            output = open(output, 'wb')
+            close_output_when_done = True
 
         if armor: args.append('--armor')
         if always_trust: args.append('--always-trust')
@@ -1038,6 +1037,7 @@ class GPGBase(object):
                           % recipients)
 
         result = self._result_map['crypt'](self)
+        result.writer = output
         log.debug("Got data '%s' with type '%s'." % (data, type(data)))
         self._handle_io(args, data, result, passphrase=passphrase, binary=True)
         # Avoid writing raw encrypted bytes to terminal loggers and breaking
@@ -1045,12 +1045,8 @@ class GPGBase(object):
         if armor:
             log.debug("\n%s" % result.data)
 
-        if output_filename:
-            log.info("Writing encrypted output to file: %s" % output_filename)
-            with open(output_filename, 'wb') as fh:
-                fh.write(result.data)
-                fh.flush()
-                log.info("Encrypted output written successfully.")
+        if close_output_when_done:
+            output.close()
 
         return result
 

@@ -1072,7 +1072,7 @@ generate keys. Please see
         :param message: A string or file-like object to decrypt.
         :param bool always_trust: Instruct GnuPG to ignore trust checks.
         :param str passphrase: The passphrase for the secret key used for decryption.
-        :param str output: A filename to write the decrypted output to.
+        :param str output: A filename or file-like object to write the decrypted output to.
         """
         stream = _make_binary_stream(message, self._encoding)
         result = self.decrypt_file(stream, **kwargs)
@@ -1089,16 +1089,25 @@ generate keys. Please see
         :param str output: A filename to write the decrypted output to.
         """
         args = ["--decrypt"]
-        if output:  # write the output to a file with the specified name
+        output_writer = None
+        if output and isinstance(output, str):  # write the output to a file with the specified name
             if os.path.exists(output):
-                os.remove(output) # to avoid overwrite confirmation message
+                os.remove(output)  # to avoid overwrite confirmation message
             args.append('--output %s' % output)
+        elif output and hasattr(output, 'write'):
+            output_writer = output
+
         if always_trust:
             args.append("--always-trust")
+
         result = self._result_map['crypt'](self)
+        if output_writer:
+            result.writer = output_writer
+
         self._handle_io(args, filename, result, passphrase, binary=True)
         log.debug('decrypt result: %r', result.data)
         return result
+
 
 class GPGUtilities(object):
     """Extra tools for working with GnuPG."""
