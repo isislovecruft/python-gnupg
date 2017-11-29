@@ -124,7 +124,7 @@ def _check_keyserver_option(ks_option):
     options_with_validators = {
         'ca-cert-file': _is_valid_file,
         'http-proxy': _is_valid_http_proxy,
-        'max-cert-size': is_valid_integer,
+        'max-cert-size': _is_valid_integer,
         'timeout': _is_valid_integer,
     }
     valid_simple_options = (set(['debug', 'verbose']) |
