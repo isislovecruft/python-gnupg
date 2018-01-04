@@ -80,3 +80,5 @@ Our bugtracker can be found
 `on Github <https://github.com/isislovecruft/python-gnupg/issues>`__.  Public
 comments and discussions are also welcome on the bugtracker, or as
 `tweets <https://twitter.com/isislovecruft>`__.  Patches are always welcome.
+
+Current implementation breaks MIME encodings of attachement even if you're not directly applying PGP to them. To apply a workaround, see https://github.com/isislovecruft/python-gnupg/issues/49#issuecomment-355327468
