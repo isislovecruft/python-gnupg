@@ -1253,6 +1253,8 @@ class ImportResult(object):
         if key == "IMPORTED":
             # this duplicates info we already see in import_ok & import_problem
             pass
+        elif key == ("PINENTRY_LAUNCHED"):
+            pass
         elif key == "KEY_CONSIDERED":
             self.results.append({
                 'status': key.replace("_", " ").lower(),
