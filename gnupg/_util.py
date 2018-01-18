@@ -200,9 +200,7 @@ else:
 def binary(data):
     coder = find_encodings()
 
-    if _py3k and isinstance(data, bytes):
-        encoded = coder.encode(data.decode(coder.name))[0]
-    elif _py3k and isinstance(data, str):
+    if _py3k and isinstance(data, str):
         encoded = coder.encode(data)[0]
     elif not _py3k and type(data) is not str:
         encoded = coder.encode(data)[0]
