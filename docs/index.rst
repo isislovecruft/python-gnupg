@@ -26,7 +26,7 @@ be found in this github repository_. The **master** branch always reflects the
 latest release, all releases are tagged with signed, annotated git tags, and
 the **develop** branch represents the state of the next release.
 
-This package is released under GPLv3_ or greater.
+This package is released under BSD3_ or greater.
 
 If you find a bug, or would like to request a feature, please use our public
 bugtracker_ on github. Patches warmly welcome.
@@ -40,5 +40,5 @@ Indices and tables
 
 .. _source: https://github.com/isislovecruft/python-gnupg
 .. _repository: https://github.com/isislovecruft/python-gnupg
-.. _GPLv3: https://www.gnu.org/licenses/gpl.txt
+.. _BSD3: https://www.gnu.org/licenses/gpl.txt
 .. _bugtracker: https://github.com/isislovecruft/python-gnupg/issues

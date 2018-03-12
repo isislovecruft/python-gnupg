@@ -107,7 +107,7 @@ and therefore this module should be safe to use in networked applications \
 requiring direct user input. It is intended for use on Windows, MacOS X, BSD, \
 or Linux, with Python 2.6, Python 2.7, Python 3.3, Python 3.4, or PyPy.
 """,
-    license="GPLv3+",
+    license="BSD",
 
     version=versioneer.get_version(),
     cmdclass=versioneer.get_cmdclass(),
@@ -137,7 +137,7 @@ or Linux, with Python 2.6, Python 2.7, Python 3.3, Python 3.4, or PyPy.
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "Intended Audience :: System Administrators",
-        "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+        "License :: OSI Approved :: BSD License",
         "Operating System :: Android",
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
