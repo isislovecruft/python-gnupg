@@ -599,6 +599,10 @@ def _make_random_string(length):
     chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
     return ''.join(random.choice(chars) for x in range(length))
 
+def _version_from_list_config(data):
+    version_line = data.partition(':version:')[2]
+    return version_line.split('\n')[0]
+
 def _match_version_string(version):
     """Sort a binary version string into major, minor, and micro integers.
 
