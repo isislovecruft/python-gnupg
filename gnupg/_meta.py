@@ -516,9 +516,8 @@ class GPGBase(object):
                            "Are you sure you specified the corrent (and full) "
                            "path to the gpg binary?"))
 
-        version_line = str(result.data).partition(':version:')[2]
-        self.binary_version = version_line.split('\n')[0]
-        log.debug("Using GnuPG version %s" % self.binary_version)
+        self.binary_version = _util._version_from_list_config(str(result.data))
+        log.debug("Using GnuPGs version %s" % self.binary_version)
 
     def _make_args(self, args, passphrase=False):
         """Make a list of command line elements for GPG.
