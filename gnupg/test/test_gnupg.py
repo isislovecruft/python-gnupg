@@ -52,6 +52,7 @@ if sys.version_info[0] == 2 and sys.version_info[1] <= 6:
 else:
     import unittest
 
+from mock import patch, MagicMock
 import gnupg
 
 ## see PEP-366 http://www.python.org/dev/peps/pep-0366/
@@ -361,8 +362,10 @@ class GPGTestCase(unittest.TestCase):
         print(self.gpg.binary)
         self.assertTrue(os.path.isabs(self.gpg.binary))
 
-    def test_make_args_drop_protected_options(self):
+    @patch('gnupg._util._version_from_list_config', return_value='1.2.3')
+    def test_make_args_drop_protected_options_gpg_v1(self, td):
         """Test that unsupported gpg options are dropped, and supported ones remain."""
+        self.setUp()
         self.gpg.options = ['--tyrannosaurus-rex', '--stegosaurus', '--lock-never', '--trust-model always']
         gpg_binary_path = _util._find_binary('gpg')
         cmd = self.gpg._make_args(None, False)
@@ -372,6 +375,22 @@ class GPGTestCase(unittest.TestCase):
                     '--no-default-keyring --keyring %s' % self.keyring,
                     '--secret-keyring %s' % self.secring,
                     '--no-use-agent',
+                    '--lock-never',
+                    '--trust-model always']
+        self.assertListEqual(cmd, expected)
+
+    @patch('gnupg._util._version_from_list_config', return_value='2.3.4')
+    def test_make_args_drop_protected_options_gpg_v2(self, td):
+        """Test that unsupported gpg options are dropped, and supported ones remain."""
+        self.setUp()
+        self.gpg.options = ['--tyrannosaurus-rex', '--stegosaurus', '--lock-never', '--trust-model always']
+        gpg_binary_path = _util._find_binary('gpg')
+        cmd = self.gpg._make_args(None, False)
+        expected = [gpg_binary_path,
+                    '--no-options --no-emit-version --no-tty --status-fd 2',
+                    '--homedir "%s"' % self.homedir,
+                    '--no-default-keyring --keyring %s' % self.keyring,
+                    '--secret-keyring %s' % self.secring,
                     '--lock-never',
                     '--trust-model always']
         self.assertListEqual(cmd, expected)
@@ -1620,7 +1639,8 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                          'test_gpg_binary_not_installed',
                          'test_list_keys_initial_public',
                          'test_list_keys_initial_secret',
-                         'test_make_args_drop_protected_options',
+                         'test_make_args_drop_protected_options_gpg_v1',
+                         'test_make_args_drop_protected_options_gpg_v2',
                          'test_make_args']),
            'genkey': set(['test_gen_key_input',
                           'test_rsa_key_generation',
