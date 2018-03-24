@@ -7,8 +7,6 @@ python:
   # PyPy versions
   - "pypy2.7"
   - "pypy3.5"
-env:
-  - USERNAME=travis
 # command to install dependencies
 install:
   - python setup.py install
