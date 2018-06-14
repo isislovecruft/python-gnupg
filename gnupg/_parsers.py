@@ -1500,6 +1500,7 @@ class Verify(object):
                 "PROGRESS",
                 "PINENTRY_LAUNCHED",
                 "SUCCESS",
+                "UNEXPECTED",
             ):
             pass
         elif key == "KEY_CONSIDERED":
@@ -1655,7 +1656,7 @@ class Verify(object):
                 else:
                     pass
         else:
-            raise ValueError("Unknown status message: %r" % key)
+            raise ValueError("Unknown status message: %r %r" % (key, value))
 
 
 class Crypt(Verify):
