@@ -40,6 +40,7 @@ nosetests.xml
 *~
 *.swp
 *.swo
+*.orig
 
 # tags
 TAGS
@@ -56,10 +57,10 @@ tags
 *random_seed*
 *.log
 tests/doctests/*
-gnupg/test/doctests/*
-gnupg/test/logs/*
-gnupg/test/tmp/*
-gnupg/test/files/*
+pretty_bad_protocol/test/doctests/*
+pretty_bad_protocol/test/logs/*
+pretty_bad_protocol/test/tmp/*
+pretty_bad_protocol/test/files/*
 
 # Ignore distutils record of installed files:
 installed-files.txt
