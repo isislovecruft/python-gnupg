@@ -420,13 +420,14 @@ class GPG(GPGBase):
         self._collect_output(p, result, stdin=p.stdin)
         return result
 
-    def export_keys(self, keyids, secret=False, subkeys=False):
+    def export_keys(self, keyids, secret=False, subkeys=False, armor=True):
         """Export the indicated ``keyids``.
 
         :param str keyids: A keyid or fingerprint in any format that GnuPG will
             accept.
         :param bool secret: If True, export only the secret key.
         :param bool subkeys: If True, export the secret subkeys.
+        :param bool armor: If False, export the key in binary format.
         """
         which = ''
         if subkeys:
@@ -437,7 +438,9 @@ class GPG(GPGBase):
         if _is_list_or_tuple(keyids):
             keyids = ' '.join(['%s' % k for k in keyids])
 
-        args = ["--armor"]
+        args = []
+        if armor:
+            args = ["--armor"]
         args.append("--export{0} {1}".format(which, keyids))
 
         p = self._open_subprocess(args)
