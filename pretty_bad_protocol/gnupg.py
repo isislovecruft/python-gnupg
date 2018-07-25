@@ -629,6 +629,8 @@ class GPG(GPGBase):
         p.stdin.write(expiration_input)
 
         result = self._result_map['expire'](self)
+        p.stdin.write(expiration_input)
+
         self._collect_output(p, result, stdin=p.stdin)
         return result
 
