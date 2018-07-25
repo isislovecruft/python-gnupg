@@ -44,6 +44,7 @@ from ._parsers import _fix_unsafe, KeyExpirationInterface
 from ._util    import _is_list_or_tuple
 from ._util    import _is_stream
 from ._util    import _make_binary_stream
+from ._util    import b
 from ._util    import log
 
 
@@ -528,7 +529,7 @@ class GPG(GPGBase):
         p = self._open_subprocess(args)
         result = self._result_map['signing'](self)
         confirm_command = "%sy\n" % input_command
-        p.stdin.write(confirm_command)
+        p.stdin.write(b(confirm_command))
         self._collect_output(p, result, stdin=p.stdin)
         return result
 
@@ -626,10 +627,10 @@ class GPG(GPGBase):
 
         args = ["--command-fd 0", "--edit-key %s" % keyid]
         p = self._open_subprocess(args)
-        p.stdin.write(expiration_input)
+        p.stdin.write(b(expiration_input))
 
         result = self._result_map['expire'](self)
-        p.stdin.write(expiration_input)
+        p.stdin.write(b(expiration_input))
 
         self._collect_output(p, result, stdin=p.stdin)
         return result
