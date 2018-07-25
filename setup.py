@@ -52,10 +52,6 @@ def python26():
         return True
     return False
 
-def python2():
-    """Returns True if we're running on py2"""
-    return sys.version[:1] ==  "2"
-
 def get_requirements():
     """Extract the list of requirements from our requirements.txt.
 
@@ -86,10 +82,6 @@ def get_requirements():
     if python26():
         # Required to make `collections.OrderedDict` available on Python<=2.6
         requirements.append('ordereddict==1.1#a0ed854ee442051b249bfad0f638bbec')
-
-    if python2():
-        # mock isn't included in py2
-        requirements.append('mock==2.0.0')
 
     # Don't try to install psutil on PyPy:
     if _isPyPy:
