@@ -122,10 +122,10 @@ class GPGMeta(type):
                         # proc.uids & identity are methods to
                         if proc.uids() == identity():
                             ownership_match = True
-            except psutil.Error:
+            except psutil.Error as err:
                 # Exception when getting proc info, possibly because the
                 # process is zombie / process no longer exist. Just ignore it.
-                pass
+                log.warn("Error while attempting to find gpg-agent process: %s" % err)
             # Next code must be inside for operator.
             # Otherwise to _agent_proc will be saved not "gpg-agent" process buth an other.
             if ownership_match:
