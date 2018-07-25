@@ -1091,7 +1091,7 @@ class Sign(object):
         elif key == "NODATA":
             self.status = nodata(value)
         elif key == "PROGRESS":
-            self.status = progress(value.split(" ", 1)[0])
+            self.status = progress(value.split(' ', 1)[0])
         else:
             raise ValueError("Unknown status message: %r" % key)
 
@@ -1343,13 +1343,14 @@ class ExportResult(object):
 
         :raises ValueError: if the status message is unknown.
         """
+        informational_keys = ["KEY_CONSIDERED"]
         if key in ("EXPORTED"):
             self.fingerprints.append(value)
         elif key == "EXPORT_RES":
             export_res = value.split()
             for x in self.counts.keys():
                 self.counts[x] += int(export_res.pop(0))
-        else:
+        elif key not in informational_keys:
             raise ValueError("Unknown status message: %r" % key)
 
     def summary(self):

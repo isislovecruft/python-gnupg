@@ -70,8 +70,8 @@ class GPG(GPGBase):
                            sufficient permissions.
 
         :param str homedir: Full pathname to directory containing the public
-                            and private keyrings. Default is whatever GnuPG
-                            defaults to.
+                            and private keyrings. Default is
+                            `~/.config/python-gnupg`.
 
         :type ignore_homedir_permissions: :obj:`bool`
         :param ignore_homedir_permissions: If true, bypass check that homedir
@@ -369,7 +369,7 @@ class GPG(GPGBase):
         """Import keys from a keyserver.
 
         >>> gpg = gnupg.GPG(homedir="doctests")
-        >>> key = gpg.recv_keys('hkp://pgp.mit.edu', '3FF0DB166A7476EA')
+        >>> key = gpg.recv_keys('3FF0DB166A7476EA', keyserver='hkp://pgp.mit.edu')
         >>> assert key
 
         :param str keyids: Each ``keyids`` argument should be a string
@@ -629,6 +629,8 @@ class GPG(GPGBase):
         p.stdin.write(expiration_input)
 
         result = self._result_map['expire'](self)
+        p.stdin.write(expiration_input)
+
         self._collect_output(p, result, stdin=p.stdin)
         return result
 
@@ -1029,7 +1031,7 @@ generate keys. Please see
         >>> encrypted = str(gpg.encrypt(message, key.fingerprint))
         >>> assert encrypted != message
         >>> assert not encrypted.isspace()
-        >>> decrypted = str(gpg.decrypt(encrypted))
+        >>> decrypted = str(gpg.decrypt(encrypted, passphrase='foo'))
         >>> assert not decrypted.isspace()
         >>> decrypted
         'The crow flies at midnight.'

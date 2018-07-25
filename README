@@ -4,7 +4,7 @@
 pretty-bad-protocol (a.k.a. python-gnupg) |On PyPI|
 *******************************************************
 
-Complete rewrite of `Vinay Sajip's python-gnupg <https://code.google.com/p/python-gnupg/>`__,
+Complete rewrite of `Vinay Sajip's python-gnupg <https://bitbucket.org/vinay.sajip/python-gnupg>`__,
 including patches to fix a shell injection vulnerability due to unsanitised
 inputs being passed to ``subprocess.Popen([...], shell=True)``.
 
@@ -21,7 +21,7 @@ From `PyPI <https://pypi.python.org>`__
 
 It's simple. Just do::
 
-    [sudo] pip install pretty-bad-security
+    [sudo] pip install pretty-bad-protocol
 
 Additionally, the legacy way to install versions of this library <
 3.0.0 is::
@@ -47,9 +47,13 @@ Optionally, to build the Sphinx documentation_, do::
 To get started using python-gnupg's API, see the documentation_,
 and import the module like so::
 
+.. code-block:: python
+
     >>> from pretty_bad_protocol import gnupg
 
-The primary interface class you'll likely want to interact with is ``gnupg.GPG``::
+The primary interface class you'll likely want to interact with is ``gnupg.GPG``:
+
+.. code-block:: python
 
     >>> gpg = gnupg.GPG(binary='/usr/bin/gpg',
     ...     homedir='./keys',
@@ -72,7 +76,7 @@ The primary interface class you'll likely want to interact with is ``gnupg.GPG``
     >>> message = "The crow flies at midnight."
     >>> encrypted = str(gpg.encrypt(message, key.fingerprint))
     >>> decrypted = str(gpg.decrypt(encrypted))
-    >>> assert(decrypted == message)
+    >>> assert decrypted == message
 
 .. _documentation: https://pythonhosted.org/gnupg/
 

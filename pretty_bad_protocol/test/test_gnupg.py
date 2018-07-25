@@ -52,6 +52,11 @@ if sys.version_info[0] == 2 and sys.version_info[1] <= 6:
 else:
     import unittest
 
+if sys.version_info[0] == 2:
+    import mock
+else:
+    from unittest import mock
+
 from pretty_bad_protocol import gnupg
 
 ## see PEP-366 http://www.python.org/dev/peps/pep-0366/
@@ -385,6 +390,23 @@ class GPGTestCase(unittest.TestCase):
         for na in not_allowed:
             self.assertNotIn(na, args)
 
+    def test_gpg_version_malformed(self):
+        old_sub = gnupg._meta.subprocess.Popen
+        new_sub = mock.MagicMock()
+        new_sub.return_value.stdout = io.BytesIO(b"blah blah blah")
+        new_sub.return_value.returncode = 0
+        gnupg._meta.subprocess.Popen = new_sub
+
+        try:
+            with self.assertRaises(RuntimeError):
+                self.gpg._check_sane_and_get_gpg_version()
+
+            new_sub.return_value.stdout = io.BytesIO(b"foo:version:bar")
+            with self.assertRaises(RuntimeError):
+                self.gpg._check_sane_and_get_gpg_version()
+        finally:
+            gnupg._meta.subprocess.Popen = old_sub
+
     def test_list_keys_initial_public(self):
         """Test that initially there are no public keys."""
         public_keys = self.gpg.list_keys()
@@ -706,14 +728,6 @@ class GPGTestCase(unittest.TestCase):
         print("ALGORITHM:\n", sig.sig_algo)
         self.assertIsNotNone(sig.sig_algo)
 
-        fpr = str(key.fingerprint)
-        seckey = self.gpg.export_keys(fpr, secret=True, subkeys=True)
-        keyfile = os.path.join(_files, 'test_key_4.sec')
-        log.info("Writing generated key to %s" % keyfile)
-        with open(keyfile, 'w') as fh:
-            fh.write(seckey)
-        self.assertTrue(os.path.isfile(keyfile))
-
     def test_signature_string_bad_passphrase(self):
         """Test that a signing attempt with a bad passphrase fails."""
         key = self.generate_key("Bruce Schneier", "schneier.com",
@@ -733,26 +747,27 @@ class GPGTestCase(unittest.TestCase):
         with open(os.path.join(_files, 'test_key_1.sec')) as fh1:
             res1 = self.gpg.import_keys(fh1.read())
             key1 = res1.fingerprints[0]
+            self.assertTrue(key1)
 
         message = 'abc\ndef\n'
         sig = self.gpg.sign(message, default_key=key1, passphrase='')
-        self.assertTrue(sig)
+        self.assertTrue(sig, sig.stderr)
         self.assertTrue(message in str(sig))
 
     def test_signature_string_passphrase_empty_bytes_literal(self):
-        """Test that a signing attempt with passphrase=b'' creates a valid
-        signature.
+        """A signing attempt with passphrase=b'' should create a valid signature.
 
         See Issue #82: https://github.com/isislovecruft/python-gnupg/issues/82
         """
         with open(os.path.join(_files, 'test_key_1.sec')) as fh1:
             res1 = self.gpg.import_keys(fh1.read())
             key1 = res1.fingerprints[0]
+            self.assertTrue(key1)
 
         message = 'abc\ndef\n'
         sig = self.gpg.sign(message, default_key=key1, passphrase=b'')
-        self.assertTrue(sig)
         print("%r" % str(sig))
+        self.assertTrue(sig, sig.stderr)
         self.assertTrue(message in str(sig))
 
     def test_signature_string_passphrase_bytes_literal(self):
@@ -762,10 +777,11 @@ class GPGTestCase(unittest.TestCase):
         with open(os.path.join(_files, 'kat.sec')) as fh1:
             res1 = self.gpg.import_keys(fh1.read())
             key1 = res1.fingerprints[0]
+            self.assertTrue(key1)
 
         message = 'abc\ndef\n'
         sig = self.gpg.sign(message, default_key=key1, passphrase=b'overalls')
-        self.assertTrue(sig)
+        self.assertTrue(sig, sig.stderr)
         print("%r" % str(sig))
         self.assertTrue(message in str(sig))
 
@@ -1241,12 +1257,16 @@ authentication."""
         alice_pfpr = str(res['fingerprint'])
         alice.close()
 
+        self.assertEqual(alice_pfpr, 'F231347A2A5EE8A7A33D6C0A74C53A8EFC329CE3')
+
         bob = open(os.path.join(_files, 'test_key_2.pub'))
         bob_pub = bob.read()
         bob_public = self.gpg.import_keys(bob_pub)
         res = bob_public.results[-1:][0]
         bob_pfpr = str(res['fingerprint'])
         bob.close()
+
+        self.assertEqual(bob_pfpr, 'DB1308B4EEE6DD769EDB72222FF7FF88ABAC34A2')
 
         message = """
 In 2010 Riggio and Sicari presented a practical application of homomorphic
@@ -1621,7 +1641,8 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                          'test_list_keys_initial_public',
                          'test_list_keys_initial_secret',
                          'test_make_args_drop_protected_options',
-                         'test_make_args']),
+                         'test_make_args',
+                         'test_gpg_version_malformed']),
            'genkey': set(['test_gen_key_input',
                           'test_rsa_key_generation',
                           'test_rsa_key_generation_with_unicode',
