@@ -755,26 +755,27 @@ class GPGTestCase(unittest.TestCase):
         with open(os.path.join(_files, 'test_key_1.sec')) as fh1:
             res1 = self.gpg.import_keys(fh1.read())
             key1 = res1.fingerprints[0]
+            self.assertTrue(key1)
 
         message = 'abc\ndef\n'
         sig = self.gpg.sign(message, default_key=key1, passphrase='')
-        self.assertTrue(sig)
+        self.assertTrue(sig, sig.stderr)
         self.assertTrue(message in str(sig))
 
     def test_signature_string_passphrase_empty_bytes_literal(self):
-        """Test that a signing attempt with passphrase=b'' creates a valid
-        signature.
+        """A signing attempt with passphrase=b'' should create a valid signature.
 
         See Issue #82: https://github.com/isislovecruft/python-gnupg/issues/82
         """
         with open(os.path.join(_files, 'test_key_1.sec')) as fh1:
             res1 = self.gpg.import_keys(fh1.read())
             key1 = res1.fingerprints[0]
+            self.assertTrue(key1)
 
         message = 'abc\ndef\n'
         sig = self.gpg.sign(message, default_key=key1, passphrase=b'')
-        self.assertTrue(sig)
         print("%r" % str(sig))
+        self.assertTrue(sig, sig.stderr)
         self.assertTrue(message in str(sig))
 
     def test_signature_string_passphrase_bytes_literal(self):
@@ -784,10 +785,11 @@ class GPGTestCase(unittest.TestCase):
         with open(os.path.join(_files, 'kat.sec')) as fh1:
             res1 = self.gpg.import_keys(fh1.read())
             key1 = res1.fingerprints[0]
+            self.assertTrue(key1)
 
         message = 'abc\ndef\n'
         sig = self.gpg.sign(message, default_key=key1, passphrase=b'overalls')
-        self.assertTrue(sig)
+        self.assertTrue(sig, sig.stderr)
         print("%r" % str(sig))
         self.assertTrue(message in str(sig))
 
@@ -1263,12 +1265,16 @@ authentication."""
         alice_pfpr = str(res['fingerprint'])
         alice.close()
 
+        self.assertEqual(alice_pfpr, 'F231347A2A5EE8A7A33D6C0A74C53A8EFC329CE3')
+
         bob = open(os.path.join(_files, 'test_key_2.pub'))
         bob_pub = bob.read()
         bob_public = self.gpg.import_keys(bob_pub)
         res = bob_public.results[-1:][0]
         bob_pfpr = str(res['fingerprint'])
         bob.close()
+
+        self.assertEqual(bob_pfpr, 'DB1308B4EEE6DD769EDB72222FF7FF88ABAC34A2')
 
         message = """
 In 2010 Riggio and Sicari presented a practical application of homomorphic
