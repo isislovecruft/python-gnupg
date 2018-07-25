@@ -978,7 +978,7 @@ class GenKey(object):
             self.status = nodata(value)
         elif key == "PROGRESS":
             self.status = progress(value.split(' ', 1)[0])
-        elif key == ("PINENTRY_LAUNCHED"):
+        elif key == "PINENTRY_LAUNCHED":
             log.warn(("GnuPG has just attempted to launch whichever pinentry "
                       "program you have configured, in order to obtain the "
                       "passphrase for this key.  If you did not use the "
@@ -1253,8 +1253,14 @@ class ImportResult(object):
         if key == "IMPORTED":
             # this duplicates info we already see in import_ok & import_problem
             pass
-        elif key == ("PINENTRY_LAUNCHED"):
-            pass
+        elif key == "PINENTRY_LAUNCHED":
+            log.warn(("GnuPG has just attempted to launch whichever pinentry "
+                      "program you have configured, in order to obtain the "
+                      "passphrase for this key.  If you did not use the "
+                      "`passphrase=` parameter, please try doing so.  Otherwise, "
+                      "see Issues #122 and #137:"
+                      "\nhttps://github.com/isislovecruft/python-gnupg/issues/122"
+                      "\nhttps://github.com/isislovecruft/python-gnupg/issues/137"))
         elif key == "KEY_CONSIDERED":
             self.results.append({
                 'status': key.replace("_", " ").lower(),
