@@ -369,7 +369,7 @@ class GPG(GPGBase):
         """Import keys from a keyserver.
 
         >>> gpg = gnupg.GPG(homedir="doctests")
-        >>> key = gpg.recv_keys('hkp://pgp.mit.edu', '3FF0DB166A7476EA')
+        >>> key = gpg.recv_keys('3FF0DB166A7476EA', keyserver='hkp://pgp.mit.edu')
         >>> assert key
 
         :param str keyids: Each ``keyids`` argument should be a string
