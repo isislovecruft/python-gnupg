@@ -728,14 +728,6 @@ class GPGTestCase(unittest.TestCase):
         print("ALGORITHM:\n", sig.sig_algo)
         self.assertIsNotNone(sig.sig_algo)
 
-        fpr = str(key.fingerprint)
-        seckey = self.gpg.export_keys(fpr, secret=True, subkeys=True)
-        keyfile = os.path.join(_files, 'test_key_4.sec')
-        log.info("Writing generated key to %s" % keyfile)
-        with open(keyfile, 'w') as fh:
-            fh.write(seckey)
-        self.assertTrue(os.path.isfile(keyfile))
-
     def test_signature_string_bad_passphrase(self):
         """Test that a signing attempt with a bad passphrase fails."""
         key = self.generate_key("Bruce Schneier", "schneier.com",
