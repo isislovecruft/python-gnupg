@@ -52,6 +52,11 @@ if sys.version_info[0] == 2 and sys.version_info[1] <= 6:
 else:
     import unittest
 
+if sys.version_info[0] == 2:
+    import mock
+else:
+    from unittest import mock
+
 from pretty_bad_protocol import gnupg
 
 ## see PEP-366 http://www.python.org/dev/peps/pep-0366/
@@ -384,6 +389,23 @@ class GPGTestCase(unittest.TestCase):
         self.assertTrue(len(args) == 6)
         for na in not_allowed:
             self.assertNotIn(na, args)
+
+    def test_gpg_version_malformed(self):
+        old_sub = gnupg._meta.subprocess.Popen
+        new_sub = mock.MagicMock()
+        new_sub.return_value.stdout = io.BytesIO(b"blah blah blah")
+        new_sub.return_value.returncode = 0
+        gnupg._meta.subprocess.Popen = new_sub
+
+        try:
+            with self.assertRaises(RuntimeError):
+                self.gpg._check_sane_and_get_gpg_version()
+
+            new_sub.return_value.stdout = io.BytesIO(b"foo:version:bar")
+            with self.assertRaises(RuntimeError):
+                self.gpg._check_sane_and_get_gpg_version()
+        finally:
+            gnupg._meta.subprocess.Popen = old_sub
 
     def test_list_keys_initial_public(self):
         """Test that initially there are no public keys."""
@@ -1621,7 +1643,8 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                          'test_list_keys_initial_public',
                          'test_list_keys_initial_secret',
                          'test_make_args_drop_protected_options',
-                         'test_make_args']),
+                         'test_make_args',
+                         'test_gpg_version_malformed']),
            'genkey': set(['test_gen_key_input',
                           'test_rsa_key_generation',
                           'test_rsa_key_generation_with_unicode',
