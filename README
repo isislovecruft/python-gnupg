@@ -21,7 +21,7 @@ From `PyPI <https://pypi.python.org>`__
 
 It's simple. Just do::
 
-    [sudo] pip install pretty-bad-security
+    [sudo] pip install pretty-bad-protocol
 
 Additionally, the legacy way to install versions of this library <
 3.0.0 is::
