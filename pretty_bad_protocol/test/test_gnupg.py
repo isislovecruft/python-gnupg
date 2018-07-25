@@ -52,15 +52,15 @@ if sys.version_info[0] == 2 and sys.version_info[1] <= 6:
 else:
     import unittest
 
-import gnupg
+from pretty_bad_protocol import gnupg
 
 ## see PEP-366 http://www.python.org/dev/peps/pep-0366/
 print("NAME: %r" % __name__)
 print("PACKAGE: %r" % __package__)
 try:
-    import gnupg._util    as _util
-    import gnupg._parsers as _parsers
-    import gnupg._logger  as _logger
+    from pretty_bad_protocol.gnupg import _util
+    from pretty_bad_protocol.gnupg import _parsers
+    from pretty_bad_protocol.gnupg import _logger
 except (ImportError, ValueError) as ierr:
     raise SystemExit(str(ierr))
 

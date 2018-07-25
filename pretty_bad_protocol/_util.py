@@ -101,7 +101,7 @@ _running_windows = sys.platform.startswith("win")
 ## Directory shortcuts:
 ## we don't want to use this one because it writes to the install dir:
 #_here = getabsfile(currentframe()).rsplit(os.path.sep, 1)[0]
-_here = os.path.join(os.getcwd(), 'gnupg')                   ## current dir
+_here = os.path.join(os.getcwd(), 'pretty_bad_protocol')     ## current dir
 _test = os.path.join(os.path.join(_here, 'test'), 'tmp')     ## ./tests/tmp
 _user = os.environ.get('HOME')                               ## $HOME
 
