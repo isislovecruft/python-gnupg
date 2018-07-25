@@ -955,7 +955,7 @@ class GPGBase(object):
         >>> encrypted = str(gpg.encrypt(message, key.fingerprint))
         >>> assert encrypted != message
         >>> assert not encrypted.isspace()
-        >>> decrypted = str(gpg.decrypt(encrypted))
+        >>> decrypted = str(gpg.decrypt(encrypted, passphrase='foo'))
         >>> assert not decrypted.isspace()
         >>> decrypted
         'The crow flies at midnight.'
