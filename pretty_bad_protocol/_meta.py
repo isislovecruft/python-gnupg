@@ -648,7 +648,15 @@ class GPGBase(object):
                        the ``handle_status()`` method of that class will be
                        called in order to parse the output of ``stream``.
         """
+        # All of the userland messages (i.e. not status-fd lines) we're not
+        # interested in passing to our logger
+        userland_messages_to_ignore = []
+
+        if self.ignore_homedir_permissions:
+            userland_messages_to_ignore.append('unsafe ownership on homedir')
+
         lines = []
+
         while True:
             line = stream.readline()
             if len(line) == 0:
@@ -664,19 +672,19 @@ class GPGBase(object):
                 line = _util._deprefix(line, 'gpg: ')
                 keyword, value = _util._separate_keyword(line)
 
-                # Log gpg's userland messages at our own levels:
-                if keyword.upper().startswith("WARNING"):
-                    # Silence warnings from gpg we're supposed to ignore
-                    ignore = (self.ignore_homedir_permissions
-                        and 'unsafe ownership on homedir' in value)
-                    if not ignore:
+                # Silence warnings from gpg we're supposed to ignore
+                ignore = any(msg in value for msg in userland_messages_to_ignore)
+
+                if not ignore:
+                    # Log gpg's userland messages at our own levels:
+                    if keyword.upper().startswith("WARNING"):
                         log.warn("%s" % value)
-                elif keyword.upper().startswith("FATAL"):
-                    log.critical("%s" % value)
-                    # Handle the gpg2 error where a missing trustdb.gpg is,
-                    # for some stupid reason, considered fatal:
-                    if value.find("trustdb.gpg") and value.find("No such file"):
-                        result._handle_status('NEED_TRUSTDB', '')
+                    elif keyword.upper().startswith("FATAL"):
+                        log.critical("%s" % value)
+                        # Handle the gpg2 error where a missing trustdb.gpg is,
+                        # for some stupid reason, considered fatal:
+                        if value.find("trustdb.gpg") and value.find("No such file"):
+                            result._handle_status('NEED_TRUSTDB', '')
             else:
                 if self.verbose:
                     log.info("%s" % line)
