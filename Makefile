@@ -25,7 +25,7 @@ pycremoval:
 	find . -name '*.py[co]' -exec rm -f {} ';'
 
 cleanup-src: pycremoval
-	cd gnupg && rm -f \#*\#
+	cd pretty_bad_protocol/ && rm -f \#*\#
 
 cleanup-tests: cleanup-src
 	cd $(TESTDIR) && rm -f \#*\#
@@ -144,7 +144,7 @@ docs-clean:
 	-rm -rf $(DOC_BUILD_DIR)
 
 docs-completely-new:
-	sphinx-apidoc -F -A "Isis Agora Lovecruft" -H "python-gnupg" -o $(DOC_DIR) gnupg/ tests/
+	sphinx-apidoc -F -A "isis agora lovecruft" -H "pretty-bad-protocol" -o $(DOC_DIR) pretty_bad_protocol/ tests/
 
 docs-html:
 	cd $(DOC_DIR) && make clean && make html
