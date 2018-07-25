@@ -1496,12 +1496,15 @@ class Verify(object):
                 "PLAINTEXT_LENGTH",
                 "POLICY_URL",
                 "DECRYPTION_INFO",
+                "DECRYPTION_KEY",
                 "DECRYPTION_OKAY",
                 "INV_SGNR",
                 "PROGRESS",
                 "PINENTRY_LAUNCHED",
                 "SUCCESS",
                 "UNEXPECTED",
+                "ENCRYPTION_COMPLIANCE_MODE",
+                "VERIFICATION_COMPLIANCE_MODE",
             ):
             pass
         elif key == "KEY_CONSIDERED":
