@@ -421,6 +421,19 @@ class GPGTestCase(unittest.TestCase):
                         "Empty list expected...got instead: %s"
                         % str(private_keys))
 
+    def test_list_keys_after_import(self):
+        """Test that list_keys() lists an imported key with a search string."""
+        with open(os.path.join(_files, 'kat.pub')) as katpub:
+            self.gpg.import_keys(katpub.read())
+        keys = self.gpg.list_keys()
+        fpr = None
+
+        for k in keys:
+            if k['fingerprint'] == '81DFF0A45068DEFFE7F9170318E910A9E55C16F7':
+                fpr = k['fingerprint']
+
+        self.assertTrue(fpr)
+
     def test_copy_data_bytesio(self):
         """Test that _copy_data() is able to duplicate byte streams."""
         message = b"This is a BytesIO string."

@@ -469,13 +469,17 @@ class GPG(GPGBase):
         >>> assert print1 in pubkeys.fingerprints
         >>> assert print2 in pubkeys.fingerprints
         """
-
         which = 'public-keys'
         if secret:
             which = 'secret-keys'
-        args = "--list-%s --fixed-list-mode --fingerprint " % (which,)
-        args += "--with-colons --list-options no-show-photos"
-        args = [args]
+
+        args = []
+        args.append("--fixed-list-mode")
+        args.append("--fingerprint")
+        args.append("--with-colons")
+        args.append("--list-options no-show-photos")
+        args.append("--list-%s" % (which))
+
         p = self._open_subprocess(args)
 
         # there might be some status thingumy here I should handle... (amk)
