@@ -119,9 +119,9 @@ clean-test:
 	-rm $(TESTDIR)/logs/placeholder.log
 	-rm $(TESTDIR)/random_seed*
 
-test: test-run clean-test
+test: test-run
 
-py3k-test: py3k-test-run clean-test
+py3k-test: py3k-test-run
 
 coverage: coverage-run coverage-report coverage-html clean-test
 
