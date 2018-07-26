@@ -58,53 +58,61 @@ test-before: cleanup-src cleanup-tests
 
 test-run: test-before
 	python $(TESTHANDLE) \
-		basic \
-		encodings \
 		parsers \
-		keyrings \
-		listkeys \
+		encodings \
+		basic \
 		genkey \
 		sign \
 		crypt \
+		listkeys \
+		keyrings \
+		recvkeys \
+		revokekey \
 		expiration \
 		signing
 
 py3k-test-run: test-before
 	python3 $(TESTHANDLE) \
-		basic \
-		encodings \
 		parsers \
-		keyrings \
-		listkeys \
+		encodings \
+		basic \
 		genkey \
 		sign \
 		crypt \
+		listkeys \
+		keyrings \
+		recvkeys \
+		revokekey \
 		expiration \
 		signing
 
 coverage-run: test-before
 	coverage run --rcfile=".coveragerc" $(PYTHON) $(TESTHANDLE) \
-		basic \
-		encodings \
 		parsers \
-		keyrings \
-		listkeys \
-		genkeys \
+		encodings \
+		basic \
+		genkey \
 		sign \
 		crypt \
+		listkeys \
+		keyrings \
+		recvkeys \
+		revokekey \
 		expiration \
 		signing
 
 py3k-coverage-run: test-before
 	coverage run --rcfile=".coveragerc" $(PYTHON3) $(TESTHANDLE) \
-		basic \
-		encodings \
 		parsers \
-		keyrings \
-		listkeys \
-		genkeys \
+		encodings \
+		basic \
+		genkey \
 		sign \
 		crypt \
+		listkeys \
+		keyrings \
+		recvkeys \
+		revokekey \
 		expiration \
 		signing
 

@@ -658,6 +658,15 @@ class GPGTestCase(unittest.TestCase):
         self.assertTrue(os.path.isfile(keyfile))
         self.assertGreater(os.stat(keyfile).st_size, 0)
 
+    def test_recv_keys_https(self):
+        """Try to receive a key from a keyserver using TLS."""
+        fpr = '0A6A58A14B5946ABDE18E207A3ADB67A2CDB8B35'
+        tls_keyserver = 'hkps://hkps.pool.sks-keyservers.net'
+        ca_cert = '/home/user/hkps.pool.sks-keyservers.netCA.pem'
+        key = self.gpg.recv_keys(fpr, keyserver=tls_keyserver,
+                                 keyserver_certs=ca_cert)
+        self.assertTrue(key)
+
     def test_import_and_export(self):
         """Test that key import and export works."""
         self.test_list_keys_initial_public()
@@ -1691,7 +1700,8 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                             'test_deletion_secret_key',
                             'test_deletion_subkeys',
                             'test_import_only']),
-           'recvkeys': set(['test_recv_keys_default']),
+           'recvkeys': set(['test_recv_keys_default',
+                            'test_recv_keys_https']),
            'revokekey': set(['test_list_revoked_key',
                              'test_revoke_and_not_revoked_key']),
            'expiration': set(['test_key_expiration',
