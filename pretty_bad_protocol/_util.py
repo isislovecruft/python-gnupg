@@ -442,7 +442,7 @@ def _has_readwrite(path):
     :rtype: bool
     :returns: True if real uid/gid has read+write permissions, False otherwise.
     """
-    return os.access(path, os.R_OK ^ os.W_OK)
+    return os.access(path, os.R_OK | os.W_OK)
 
 def _is_file(filename):
     """Check that the size of the thing which is supposed to be a filename has
