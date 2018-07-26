@@ -465,7 +465,7 @@ def _is_file(filename):
             log.debug("Got '-' for filename, assuming sys.stdin...")
             return True
     except (ValueError, TypeError, IOError) as err:
-        log.error(err)
+        log.error("Error in _is_file with argument '%s': %s" % (filename, err))
     else:
         return True
     return False

@@ -867,6 +867,58 @@ class GPGTestCase(unittest.TestCase):
             log.warn("verified fingerprint: %r", verified.fingerprint)
         self.assertEqual(key.fingerprint, verified.fingerprint)
 
+    def test_signature_verification_binary_file(self):
+        """Signature verification should work for a binary file."""
+        pubkey = """
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v2
+
+mQENBFpMdu8BCADiFlCUUBLhiS2Jv6ekJG6Ag3gbn/jq2Asj7ysTk3ulRuIRUN1h
+gILytaJDUeRaI0500fYJMDoCIHmCJTx+z9cPXCj+Rx5sdfM4ZCeZzZ5bZPdaSg5y
+JyomfKoaGkZGRunMXf/YX7Qhc+JC1Q+haBnFOXXKhKks4xP3ejI+9alvJjSjidDi
+rJC9S3EPXwyumn9aXBri7wsBLKQFvgqAMqNUG+Bb6nqb+3vQ23zU4SLj6wwaSYZc
+9AG06Ezb7jgXFfP1cxs/xDL6CIttLCMGxmM42ghVnGZNFgsQFbcp3PDG4LtwL8n1
+620XEmZwWTTsb4rXjZw+4mDIJcC5fyjkvb3nABEBAAG0HHRlc3Rfa2V5IDx0ZXN0
+X2tleUB0ZXN0LmNvbT6JAT8EEwECACkFAlpMdu8CGwMFCQBcSQAHCwkIBwMCAQYV
+CAIJCgsEFgIDAQIeAQIXgAAKCRCwfSEJC42pDzRECAC/+ZbbZPLC0OSSFNMRQO9H
+zZGufDCTCjdjNNMESYGieL2XgyP+zMHvBB+L3Xbxruk9k6SQPSK9iIejXIjrjyDG
+lmJvlbjUsINTd9z5HhzCTT8NRz0FLN8rJaIStWL+JFz6pn2/nH8N7OEXkxLpuwr0
+MNjeOkZJLbPR58tTu0z6dDUhAUhveGGeI/UgCfRhvf5xjHnv36Ode2vKq712lQlJ
+91VeQG77TOHloeRM7IEnDI5b/7izgldKJtUOle/7nf6ucrc1ontQlgoco2uVXwSq
+E51mMEX89B+6Oo17oT2USIAqN0hsKfeiEjOVym9uJ29peKtBdjKY6f4Msygl3+fy
+uQENBFpMdu8BCADQv/X4rpsfBIbl3Mj9J5l6rUFHWYIdWQpJlbQhtXBQ0ADjwtEz
+ZOEX2Gsu6UCBaGyxvzawpI+NYEGnM/7i+rea/Tni0fM67QmBXDxEQkKNh8vcvLOW
+YLT6rM7dLj9puv0rP37lWXqBjUhgCrqh2HWY7/0L2G21h+sMI3VH831Iw7gpnnGy
+O48z6nqmAKiZ75Ds12RpSGlYGSvuO6SSCnQiTELV73j7O17eoZvRjdHFqF8ThCtN
+vxevzsLjEm/gs9nq6UvyOzny5OLq0AVrQDUeGa9QAfnXkl/byr/WNCaKARxo9qEL
+bsem0gwztI4VIdl20NE0OqM7IPDr3fv69OGLABEBAAGJASUEGAECAA8FAlpMdu8C
+GwwFCQBcSQAACgkQsH0hCQuNqQ/NGQf+P9TjkNbPVDYri9weiaBg0x42AIZZ3QBs
+vwi50CBWS7n5X+sWGUfVhM0LMYMBUwza05agPrBIrBsVqH347pu7kymUVQB3ZtBq
+tY8SN2zM2LYuOfmKew6oEGJpoPH8xMJJYH5yI/97ZSX/cJVYjpH2Erj30bR1SM6P
+Cj9vTgPZ8Fbo23W5NaLyukp3FpNfmkNCg/3gm9CxAllyYRtRds3MONPbj8JQkrU0
+5i80ysr7vXeY9yU3tzQsr23zYavdH4MIIq3hM/8IObKF1vYZjQNvxFY9Aie1n8ma
+jiSPp661zvB/Mby8fcZym/d0+ddjy+3+Mz6vd5r8uyFdtcSxcIa/Lw==
+=uGSX
+-----END PGP PUBLIC KEY BLOCK-----
+"""
+
+        import_key_result = self.gpg.import_keys(pubkey)
+        key = import_key_result.results[2]["fingerprint"]
+        assert(key)
+
+        data_file = os.path.join(_files, 'test-message.tar.gz')
+
+        with open(data_file) as fh:
+            data = fh.read()
+
+        sig = self.gpg.sign(data, default_key=key)
+
+        with open(data_file, "rb") as f:
+            print(type(f))
+            verify_result = self.gpg.verify_file(f, sig)
+
+        self.assertTrue(verify_result)
+
     def test_signature_verification_detached(self):
         """Test that verification of a detached signature of a file works."""
 
@@ -1667,6 +1719,7 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
            'sign': set(['test_signature_verification_clearsign',
                         'test_signature_verification_detached',
                         'test_signature_verification_detached_binary',
+                        'test_signature_verification_binary_file',
                         'test_signature_file',
                         'test_signature_string_passphrase_empty_string',
                         'test_signature_string_passphrase_empty_bytes_literal',
