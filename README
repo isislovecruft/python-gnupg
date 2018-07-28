@@ -45,7 +45,7 @@ Optionally, to build the Sphinx documentation_, do::
 
 
 To get started using python-gnupg's API, see the documentation_,
-and import the module like so::
+and import the module like so:
 
 .. code-block:: python
 
