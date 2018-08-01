@@ -78,9 +78,9 @@ py3k-test-run: test-before
 		listkeys \
 		genkey \
 		sign \
-		crypt \
-		expiration \
-		signing
+		crypt
+#		expiration \
+#		signing
 
 coverage-run: test-before
 	coverage run --rcfile=".coveragerc" $(PYTHON) $(TESTHANDLE) \

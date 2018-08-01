@@ -66,7 +66,7 @@ def create_logger(level=logging.NOTSET):
     50   CRITICAL Unhandled exceptions and tracebacks.
     ==== ======== ========================================
     """
-    _test = os.path.join(os.path.join(os.getcwd(), 'gnupg'), 'test')
+    _test = os.path.join(os.path.join(os.getcwd(), 'pretty_bad_protocol'), 'test')
     _now  = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     _fn   = os.path.join(_test, "%s_test_gnupg.log" % _now)
     _fmt  = "%(relativeCreated)-4d L%(lineno)-4d:%(funcName)-18.18s %(levelname)-7.7s %(message)s"
