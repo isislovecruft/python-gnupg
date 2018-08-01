@@ -200,9 +200,7 @@ else:
 def binary(data):
     coder = find_encodings()
 
-    if _py3k and isinstance(data, bytes):
-        encoded = coder.encode(data.decode(coder.name))[0]
-    elif _py3k and isinstance(data, str):
+    if _py3k and isinstance(data, str):
         encoded = coder.encode(data)[0]
     elif not _py3k and type(data) is not str:
         encoded = coder.encode(data)[0]
@@ -242,7 +240,11 @@ def _copy_data(instream, outstream):
             break
 
         sent += len(data)
-        encoded = binary(data)
+        if ((_py3k and isinstance(data, str)) or
+            (not _py3k and isinstance(data, basestring))):
+            encoded = binary(data)
+        else:
+            encoded = data
         log.debug("Sending %d bytes of data..." % sent)
         log.debug("Encoded data (type %s):\n%s" % (type(encoded), encoded))
 
@@ -440,7 +442,7 @@ def _has_readwrite(path):
     :rtype: bool
     :returns: True if real uid/gid has read+write permissions, False otherwise.
     """
-    return os.access(path, os.R_OK ^ os.W_OK)
+    return os.access(path, os.R_OK | os.W_OK)
 
 def _is_file(filename):
     """Check that the size of the thing which is supposed to be a filename has

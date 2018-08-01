@@ -421,6 +421,19 @@ class GPGTestCase(unittest.TestCase):
                         "Empty list expected...got instead: %s"
                         % str(private_keys))
 
+    def test_list_keys_after_import(self):
+        """Test that list_keys() lists an imported key with a search string."""
+        with open(os.path.join(_files, 'kat.pub')) as katpub:
+            self.gpg.import_keys(katpub.read())
+        keys = self.gpg.list_keys()
+        fpr = None
+
+        for k in keys:
+            if k['fingerprint'] == '81DFF0A45068DEFFE7F9170318E910A9E55C16F7':
+                fpr = k['fingerprint']
+
+        self.assertTrue(fpr)
+
     def test_copy_data_bytesio(self):
         """Test that _copy_data() is able to duplicate byte streams."""
         message = b"This is a BytesIO string."
@@ -1228,7 +1241,7 @@ authentication."""
         """Test that ``decrypt(encrypt(b'foo'), ...)`` is successful."""
         with open(os.path.join(_files, 'kat.sec')) as katsec:
             self.gpg.import_keys(katsec.read())
-        kat = self.gpg.list_keys('kat')[0]['fingerprint']
+        kat = '81DFF0A45068DEFFE7F9170318E910A9E55C16F7'
 
         message_filename = os.path.join(_files, 'cypherpunk_manifesto')
         with open(message_filename, 'rb') as f:
@@ -1405,8 +1418,7 @@ know, maybe you shouldn't be doing it in the first place.
         """Test that encryption/decryption to/from file works."""
         with open(os.path.join(_files, 'kat.sec')) as katsec:
             self.gpg.import_keys(katsec.read())
-
-        kat = self.gpg.list_keys('kat')[0]['fingerprint']
+        kat = '81DFF0A45068DEFFE7F9170318E910A9E55C16F7'
 
         enc_outf = os.path.join(self.gpg.homedir, 'to-b.gpg')
 
@@ -1433,9 +1445,9 @@ know, maybe you shouldn't be doing it in the first place.
 
     def test_encryption_to_filename(self):
         """Test that ``encrypt(..., output='somefile.gpg')`` is successful."""
-        with open(os.path.join(_files, 'kat.sec')) as katsec:
-            self.gpg.import_keys(katsec.read())
-        fpr = self.gpg.list_keys('kat')[0]['fingerprint']
+        with open(os.path.join(_files, 'kat.pub')) as katpub:
+            self.gpg.import_keys(katpub.read())
+        fpr = '81DFF0A45068DEFFE7F9170318E910A9E55C16F7'
         output = os.path.join(self.gpg.homedir, 'test-encryption-to-filename.gpg')
 
         message_filename = os.path.join(_files, 'cypherpunk_manifesto')
@@ -1456,7 +1468,7 @@ know, maybe you shouldn't be doing it in the first place.
         """Test that ``encrypt(..., output=filelikething)`` is successful."""
         with open(os.path.join(_files, 'kat.sec')) as katsec:
             self.gpg.import_keys(katsec.read())
-        fpr = self.gpg.list_keys('kat')[0]['fingerprint']
+        fpr = '81DFF0A45068DEFFE7F9170318E910A9E55C16F7'
         output = os.path.join(self.gpg.homedir, 'test-encryption-to-filehandle.gpg')
         output_file = open(output, 'w+')
 
@@ -1638,8 +1650,6 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                          'test_gpg_binary_not_abs',
                          'test_gpg_binary_version_str',
                          'test_gpg_binary_not_installed',
-                         'test_list_keys_initial_public',
-                         'test_list_keys_initial_secret',
                          'test_make_args_drop_protected_options',
                          'test_make_args',
                          'test_gpg_version_malformed']),
@@ -1683,7 +1693,10 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                          'test_encryption_to_filehandle',
                          'test_encryption_from_filehandle',
                          'test_encryption_with_output',]),
-           'listkeys': set(['test_list_keys_after_generation']),
+           'listkeys': set(['test_list_keys_after_generation',
+                            'test_list_keys_after_import',
+                            'test_list_keys_initial_public',
+                            'test_list_keys_initial_secret']),
            'keyrings': set(['test_public_keyring',
                             'test_secret_keyring',
                             'test_import_and_export',
