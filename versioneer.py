@@ -225,7 +225,8 @@ def versions_from_vcs(tag_prefix, versionfile_source, verbose=False):
     GIT = "git"
     if sys.platform == "win32":
         GIT = "git.cmd"
-    stdout = run_command([GIT, "describe", "--tags", "--dirty", "--always"],
+    stdout = run_command([GIT, "describe", "--tags", "--always"]
+                         + [] if 'IGNORE_DIRTY' in os.environ else ['--dirty'],
                          cwd=root)
     if stdout is None:
         return {}
@@ -409,7 +410,8 @@ def versions_from_vcs(tag_prefix, versionfile_source, verbose=False):
     GIT = "git"
     if sys.platform == "win32":
         GIT = "git.cmd"
-    stdout = run_command([GIT, "describe", "--tags", "--dirty", "--always"],
+    stdout = run_command([GIT, "describe", "--tags", "--always"]
+                         + [] if 'IGNORE_DIRTY' in os.environ else ['--dirty'],
                          cwd=root)
     if stdout is None:
         return {}
