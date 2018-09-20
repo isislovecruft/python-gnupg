@@ -1513,6 +1513,7 @@ class Verify(object):
                 "UNEXPECTED",
                 "ENCRYPTION_COMPLIANCE_MODE",
                 "VERIFICATION_COMPLIANCE_MODE",
+                "DECRYPTION_COMPLIANCE_MODE",
             ):
             pass
         elif key == "KEY_CONSIDERED":
