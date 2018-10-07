@@ -212,14 +212,6 @@ class GPGBase(object):
         self._filesystemencoding = encodings.normalize_encoding(
             sys.getfilesystemencoding().lower())
 
-        # Issue #49: https://github.com/isislovecruft/python-gnupg/issues/49
-        #
-        # During `line = stream.readline()` in `_read_response()`, the Python
-        # codecs module will choke on Unicode data, so we globally monkeypatch
-        # the "strict" error handler to use the builtin `replace_errors`
-        # handler:
-        codecs.register_error('strict', codecs.replace_errors)
-
         self._keyserver = 'hkp://wwwkeys.pgp.net'
         self.__generated_keys = os.path.join(self.homedir, 'generated-keys')
 
@@ -753,7 +745,8 @@ class GPGBase(object):
         make sure it's joined before returning. If a stdin stream is given,
         close it before returning.
         """
-        stderr = codecs.getreader(self._encoding)(process.stderr)
+        # Issue #49: https://github.com/isislovecruft/python-gnupg/issues/49
+        stderr = codecs.getreader(self._encoding)(process.stderr, 'replace')
         rr = threading.Thread(target=self._read_response,
                               args=(stderr, result))
         rr.setDaemon(True)
