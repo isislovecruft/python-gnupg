@@ -1146,8 +1146,9 @@ class ListKeys(list):
     pub = sec = key
 
     def fpr(self, args):
-        self.curkey['fingerprint'] = args[9]
-        self.fingerprints.append(args[9])
+        if 'fingerprint' not in self.curkey:
+            self.curkey['fingerprint'] = args[9]
+            self.fingerprints.append(args[9])
 
     def uid(self, args):
         uid = args[9]
