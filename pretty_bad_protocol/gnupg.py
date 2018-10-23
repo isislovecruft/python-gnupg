@@ -373,10 +373,18 @@ class GPG(GPGBase):
         >>> key = gpg.recv_keys('3FF0DB166A7476EA', keyserver='hkp://pgp.mit.edu')
         >>> assert key
 
+        >>> ssl_keyserver = 'hkps://hkps.pool.sks-keyservers.net'
+        >>> ca_cert = '/home/user/hkps.pool.sks-keyservers.netCA.pem'
+        >>> gpg.recv_keys('6F682D87',
+        >>>               keyserver=ssl_keyserver,
+        >>>               keyserver_certs=ca_cert)
+
         :param str keyids: Each ``keyids`` argument should be a string
              containing a keyid to request.
         :param str keyserver: The keyserver to request the ``keyids`` from;
              defaults to `gnupg.GPG.keyserver`.
+        :param str keyserver_certs: A file passed as the CA cert file for the
+                                    keyserver.
         """
         if keyids:
             keys = ' '.join([key for key in keyids])

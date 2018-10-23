@@ -29,6 +29,12 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
+try:
+    import urlparse
+except ImportError:
+    from urllib import parse as urlparse
+
+import os
 import re
 
 from .      import _util
@@ -73,6 +79,67 @@ def _check_keyserver(location):
                 keyserver = proto + host
                 return keyserver
             return None
+
+
+def _check_keyserver_option(ks_option):
+    """Check that the provided keyserver option is valid and safe.
+
+    :param str ks_option: A valid argument to --keyserver-option.
+    :rtype: :obj:`str` or :obj:`None`
+    :returns: A string of the keyserver option or None.
+    """
+    def _is_valid_file(option_value):
+        """Verify option value is a file."""
+        return _util._is_file(option_value)
+
+    def _is_valid_integer(option_value):
+        """Verify option value is an integer."""
+        return str.isdigit(option_value)
+
+    def _is_valid_http_proxy(option_value):
+        """Verify option value looks like a proxy URL."""
+        if not (option_value.startswith('http://') or
+                option_value.startswith('https://')):
+            proxy = 'http://{0}'.format(option_value)
+        else:
+            proxy = option_value
+        parsed_url = urlparse.urlparse(proxy)
+        if parsed_url.scheme and parsed_url.hostname:
+            return True
+        else:
+            return False
+
+    boolean_options = {
+        'auto-key-retrieve',
+        'check-cert',
+        'honor-keyserver-url',
+        'honor-pka-record',
+        'keep-temp-files',
+        'include-disabled',
+        'include-revoked',
+        'include-subkeys',
+        'use-temp-files',
+    }
+    no_prefixed_options = set(['no{}'.format(opt) for opt in boolean_options])
+    options_with_validators = {
+        'ca-cert-file': _is_valid_file,
+        'http-proxy': _is_valid_http_proxy,
+        'max-cert-size': _is_valid_integer,
+        'timeout': _is_valid_integer,
+    }
+    valid_simple_options = (set(['debug', 'verbose']) |
+                            boolean_options |
+                            no_prefixed_options)
+    if ks_option in valid_simple_options:
+        return ks_option
+    opt, opt_arg = ks_option.split('=', 1)
+    if opt in options_with_validators:
+        arg_ok = options_with_validators[opt](opt_arg)
+        if arg_ok:
+            return ks_option
+    log.debug('Dropping invalid keyserver option: {}'.format(ks_option))
+    return None
+
 
 def _check_preferences(prefs, pref_type=None):
     """Check cipher, digest, and compression preference settings.
@@ -333,6 +400,16 @@ def _sanitise(*args):
                             checked += (v + " ")
                         else: log.debug("Dropping keyserver: %s" % v)
                         continue
+                    elif flag in ['--keyserver-options']:
+                        print('found keyserver options: %s' % v)
+                        keyserver_option = _check_keyserver_option(v)
+                        if keyserver_option:
+                            log.debug('Setting keyserver option: %s' %
+                                keyserver_option)
+                            checked += (keyserver_option + " ")
+                        else:
+                            log.debug('Dropping keyserver option: %s' % v)
+                        continue
 
                     ## the rest are strings, filenames, etc, and should be
                     ## shell escaped:
@@ -514,6 +591,7 @@ def _get_options_group(group=None):
     #: These have their own parsers and don't really fit into a group
     other_options = frozenset(['--debug-level',
                                '--keyserver',
+                               '--keyserver-options',
 
                            ])
     #: These should have a directory for an argument
