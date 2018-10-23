@@ -90,7 +90,7 @@ def _check_keyserver_option(ks_option):
     """
     def _is_valid_file(option_value):
         """Verify option value is a file."""
-        return os.path.isfile(option_value)
+        return _util._is_file(option_value)
 
     def _is_valid_integer(option_value):
         """Verify option value is an integer."""

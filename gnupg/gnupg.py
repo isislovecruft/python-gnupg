@@ -376,8 +376,8 @@ class GPG(GPGBase):
         >>> ssl_keyserver = 'hkps://hkps.pool.sks-keyservers.net'
         >>> ca_cert = '/home/user/hkps.pool.sks-keyservers.netCA.pem'
         >>> gpg.recv_keys('6F682D87',
-                          keyserver=ssl_keyserver,
-                          keyserver_certs=ca_cert)
+        >>>               keyserver=ssl_keyserver,
+        >>>               keyserver_certs=ca_cert)
 
         :param str keyids: Each ``keyids`` argument should be a string
              containing a keyid to request.
