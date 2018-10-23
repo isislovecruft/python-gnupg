@@ -1,0 +1,22 @@
+language: python
+
+python:
+  - "2.7"
+  - "3.3"
+  - "3.4"
+  - "3.5"
+  - "3.5-dev"
+  - "3.6"
+  - "3.6-dev"  # 3.6 development branch
+  - "3.7-dev"  # 3.7 development branch
+
+install:
+  - pip install -r requirements.txt
+  - pip install -r requirements.test.txt
+  - python setup.py install --record installed-files.txt
+
+before_script:
+  - make test-before
+
+script:
+  - python pretty_bad_protocol/test/test_gnupg.py basic encodings parsers keyrings listkeys genkey sign crypt expiration signing

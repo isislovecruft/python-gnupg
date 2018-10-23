@@ -1,10 +1,10 @@
 SHELL=/bin/sh
-TESTDIR=./gnupg/test
+TESTDIR=./pretty_bad_protocol/test
 TESTHANDLE=$(TESTDIR)/test_gnupg.py
-FILES=$(SHELL find ./gnupg/ -name "*.py" -printf "%p,")
+FILES=$(SHELL find ./pretty_bad_protocol/ -name "*.py" -printf "%p,")
 PYTHON=$(SHELL which python)
 PYTHON3=$(SHELL which python3)
-PKG_NAME=python-gnupg
+PKG_NAME=pretty_bad_protocol
 DOC_DIR=docs
 DOC_BUILD_DIR:=$(DOC_DIR)/_build
 DOC_HTML_DIR:=$(DOC_BUILD_DIR)/html
@@ -25,12 +25,12 @@ pycremoval:
 	find . -name '*.py[co]' -exec rm -f {} ';'
 
 cleanup-src: pycremoval
-	cd gnupg && rm -f \#*\#
+	cd pretty_bad_protocol/ && rm -f \#*\#
 
 cleanup-tests: cleanup-src
 	cd $(TESTDIR) && rm -f \#*\#
-	mkdir -p gnupg/test/tmp
-	mkdir -p gnupg/test/logs
+	mkdir -p $(TESTDIR)/tmp
+	mkdir -p $(TESTDIR)/logs
 
 cleanup-tests-all: cleanup-tests
 	rm -rf tests/tmp
@@ -41,6 +41,10 @@ cleanup-build:
 
 cleanup-dist:
 	-rm -rf dist
+
+clean: cleanup-build cleanup-tests-all cleanup-src
+
+dist-clean: clean cleanup-dist
 
 # it's not strictly necessary that gnupg2, gpg-agent, pinentry, or pip be
 # installed, so ignore error exit statuses for those commands
@@ -61,7 +65,9 @@ test-run: test-before
 		listkeys \
 		genkey \
 		sign \
-		crypt
+		crypt \
+		expiration \
+		signing
 
 py3k-test-run: test-before
 	python3 $(TESTHANDLE) \
@@ -73,6 +79,8 @@ py3k-test-run: test-before
 		genkey \
 		sign \
 		crypt
+#		expiration \
+#		signing
 
 coverage-run: test-before
 	coverage run --rcfile=".coveragerc" $(PYTHON) $(TESTHANDLE) \
@@ -83,7 +91,9 @@ coverage-run: test-before
 		listkeys \
 		genkeys \
 		sign \
-		crypt
+		crypt \
+		expiration \
+		signing
 
 py3k-coverage-run: test-before
 	coverage run --rcfile=".coveragerc" $(PYTHON3) $(TESTHANDLE) \
@@ -94,7 +104,9 @@ py3k-coverage-run: test-before
 		listkeys \
 		genkeys \
 		sign \
-		crypt
+		crypt \
+		expiration \
+		signing
 
 coverage-report:
 	coverage report --rcfile=".coveragerc"
@@ -103,15 +115,13 @@ coverage-html:
 	coverage html --rcfile=".coveragerc"
 
 clean-test:
-	touch gnupg/test/placeholder.log
-	mv gnupg/test/*.log gnupg/test/logs/
-	rm gnupg/test/logs/placeholder.log
-	touch gnupg/test/random_seed_is_sekritly_pi
-	rm gnupg/test/random_seed*
+	-mv $(TESTDIR)/*.log $(TESTDIR)/logs/
+	-rm $(TESTDIR)/logs/placeholder.log
+	-rm $(TESTDIR)/random_seed*
 
-test: test-run clean-test
+test: test-run
 
-py3k-test: py3k-test-run clean-test
+py3k-test: py3k-test-run
 
 coverage: coverage-run coverage-report coverage-html clean-test
 
@@ -134,7 +144,7 @@ docs-clean:
 	-rm -rf $(DOC_BUILD_DIR)
 
 docs-completely-new:
-	sphinx-apidoc -F -A "Isis Agora Lovecruft" -H "python-gnupg" -o $(DOC_DIR) gnupg/ tests/
+	sphinx-apidoc -F -A "isis agora lovecruft" -H "pretty-bad-protocol" -o $(DOC_DIR) pretty_bad_protocol/ tests/
 
 docs-html:
 	cd $(DOC_DIR) && make clean && make html

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # This file is part of python-gnupg, a Python interface to GnuPG.
@@ -35,12 +34,20 @@ __authors__ = copyleft.authors
 __license__ = copyleft.full_text
 __copyleft__ = copyleft.copyright
 
+gnupg.__version__ = __version__
+gnupg.__authors__ = __authors__
+gnupg.__licence__ = __license__
+gnupg.__copyleft__ = __copyleft__
+
+gnupg._logger = _logger
+gnupg._meta = _meta
+gnupg._parsers = _parsers
+gnupg._util = _util
+
 ## do not set __package__ = "gnupg", else we will end up with
 ## gnupg.<*allofthethings*>
 __all__ = ["GPG", "_util", "_parsers", "_meta", "_logger"]
 
-## avoid the "from gnupg import gnupg" idiom
-del gnupg
 del absolute_import
 del copyleft
 del get_versions

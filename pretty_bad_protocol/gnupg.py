@@ -40,10 +40,11 @@ import textwrap
 from .         import _util
 from .         import _trust
 from ._meta    import GPGBase
-from ._parsers import _fix_unsafe
+from ._parsers import _fix_unsafe, KeyExpirationInterface
 from ._util    import _is_list_or_tuple
 from ._util    import _is_stream
 from ._util    import _make_binary_stream
+from ._util    import b
 from ._util    import log
 
 
@@ -70,8 +71,8 @@ class GPG(GPGBase):
                            sufficient permissions.
 
         :param str homedir: Full pathname to directory containing the public
-                            and private keyrings. Default is whatever GnuPG
-                            defaults to.
+                            and private keyrings. Default is
+                            `~/.config/python-gnupg`.
 
         :type ignore_homedir_permissions: :obj:`bool`
         :param ignore_homedir_permissions: If true, bypass check that homedir
@@ -369,8 +370,7 @@ class GPG(GPGBase):
         """Import keys from a keyserver.
 
         >>> gpg = gnupg.GPG(homedir="doctests")
-        >>> key = gpg.recv_keys('3FF0DB166A7476EA',
-                                keyserver='hkp://pgp.mit.edu')
+        >>> key = gpg.recv_keys('3FF0DB166A7476EA', keyserver='hkp://pgp.mit.edu')
         >>> assert key
 
         >>> ssl_keyserver = 'hkps://hkps.pool.sks-keyservers.net'
@@ -452,9 +452,9 @@ class GPG(GPGBase):
         ## gpg --export produces no status-fd output; stdout will be empty in
         ## case of failure
         #stdout, stderr = p.communicate()
-        result = self._result_map['delete'](self)  # any result will do
+        result = self._result_map['export'](self)
         self._collect_output(p, result, stdin=p.stdin)
-        log.debug('Exported:%s%r' % (os.linesep, result.data))
+        log.debug('Exported:%s%r' % (os.linesep, result.fingerprints))
         return result.data.decode(self._encoding, self._decode_errors)
 
     def list_keys(self, secret=False):
@@ -477,13 +477,17 @@ class GPG(GPGBase):
         >>> assert print1 in pubkeys.fingerprints
         >>> assert print2 in pubkeys.fingerprints
         """
-
         which = 'public-keys'
         if secret:
             which = 'secret-keys'
-        args = "--list-%s --fixed-list-mode --fingerprint " % (which,)
-        args += "--with-colons --list-options no-show-photos"
-        args = [args]
+
+        args = []
+        args.append("--fixed-list-mode")
+        args.append("--fingerprint")
+        args.append("--with-colons")
+        args.append("--list-options no-show-photos")
+        args.append("--list-%s" % (which))
+
         p = self._open_subprocess(args)
 
         # there might be some status thingumy here I should handle... (amk)
@@ -505,6 +509,42 @@ class GPG(GPGBase):
                         result)
         return result
 
+    def sign_key(self, keyid, default_key=None, passphrase=None):
+        """ sign (an imported) public key - keyid, with default secret key
+
+        >>> import gnupg
+        >>> gpg = gnupg.GPG(homedir="doctests")
+        >>> key_input = gpg.gen_key_input()
+        >>> key = gpg.gen_key(key_input)
+        >>> gpg.sign_key(key['fingerprint'])
+        >>> gpg.list_sigs(key['fingerprint'])
+
+        :param str keyid: key shortID, longID, fingerprint or email_address
+        :param str passphrase: passphrase used when creating the key, leave None otherwise
+
+        :returns: The result giving status of the key signing...
+                    success can be verified by gpg.list_sigs(keyid)
+        """
+
+        args = []
+        input_command = ""
+        if passphrase:
+            passphrase_arg = "--passphrase-fd 0"
+            input_command = "%s\n" % passphrase
+            args.append(passphrase_arg)
+
+        if default_key:
+            args.append(str("--default-key %s" % default_key))
+
+        args.extend(["--command-fd 0", "--sign-key %s" % keyid])
+
+        p = self._open_subprocess(args)
+        result = self._result_map['signing'](self)
+        confirm_command = "%sy\n" % input_command
+        p.stdin.write(b(confirm_command))
+        self._collect_output(p, result, stdin=p.stdin)
+        return result
+
     def list_sigs(self, *keyids):
         """Get the signatures for each of the ``keyids``.
 
@@ -518,15 +558,31 @@ class GPG(GPGBase):
         :returns: res.sigs is a dictionary whose keys are the uids and whose
                 values are a set of signature keyids.
         """
+        return self._process_keys(keyids)
+
+    def check_sigs(self, *keyids):
+        """Validate the signatures for each of the ``keyids``.
+
+        :rtype: dict
+        :returns: res.certs is a dictionary whose keys are the uids and whose
+                values are a set of signature keyids.
+        """
+        return self._process_keys(keyids, check_sig=True)
+
+    def _process_keys(self, keyids, check_sig=False):
+
         if len(keyids) > self._batch_limit:
             raise ValueError(
                 "List signatures is limited to %d keyids simultaneously"
                 % self._batch_limit)
 
-        args = ["--with-colons", "--fixed-list-mode", "--list-sigs"]
+        args = ["--with-colons", "--fixed-list-mode"]
+        arg = "--check-sigs" if check_sig else "--list-sigs"
 
-        for key in keyids:
-            args.append(key)
+        if len(keyids):
+            arg += " " + " ".join(keyids)
+
+        args.append(arg)
 
         proc = self._open_subprocess(args)
         result = self._result_map['list'](self)
@@ -537,7 +593,7 @@ class GPG(GPGBase):
     def _parse_keys(self, result):
         lines = result.data.decode(self._encoding,
                                    self._decode_errors).splitlines()
-        valid_keywords = 'pub uid sec fpr sub sig'.split()
+        valid_keywords = 'pub uid sec fpr sub sig rev'.split()
         for line in lines:
             if self.verbose:
                 print(line)
@@ -550,6 +606,46 @@ class GPG(GPGBase):
             keyword = L[0]
             if keyword in valid_keywords:
                 getattr(result, keyword)(L)
+
+    def expire(self, keyid, expiration_time='1y', passphrase=None, expire_subkeys=True):
+        """Changes GnuPG key expiration by passing in new time period (from now) through
+            subprocess's stdin
+
+        >>> import gnupg
+        >>> gpg = gnupg.GPG(homedir="doctests")
+        >>> key_input = gpg.gen_key_input()
+        >>> key = gpg.gen_key(key_input)
+        >>> gpg.expire(key.fingerprint, '2w', 'good passphrase')
+
+        :param str keyid: key shortID, longID, email_address or fingerprint
+        :param str expiration_time: 0 or number of days (d), or weeks (*w) , or months (*m)
+                or years (*y) for when to expire the key, from today.
+        :param str passphrase: passphrase used when creating the key, leave None otherwise
+        :param bool expire_subkeys: to indicate whether the subkeys will also change the
+                expiration time by the same period -- default is True
+
+        :returns: The result giving status of the change in expiration...
+                the new expiration date can be obtained by .list_keys()
+        """
+
+        passphrase = passphrase.encode(self._encoding) if passphrase else passphrase
+
+        try:
+            sub_keys_number = len(self.list_sigs(keyid)[0]['subkeys']) if expire_subkeys else 0
+        except IndexError:
+            sub_keys_number = 0
+
+        expiration_input = KeyExpirationInterface(expiration_time, passphrase).gpg_interactive_input(sub_keys_number)
+
+        args = ["--command-fd 0", "--edit-key %s" % keyid]
+        p = self._open_subprocess(args)
+        p.stdin.write(b(expiration_input))
+
+        result = self._result_map['expire'](self)
+        p.stdin.write(b(expiration_input))
+
+        self._collect_output(p, result, stdin=p.stdin)
+        return result
 
     def gen_key(self, input):
         """Generate a GnuPG key through batch file key generation. See
@@ -566,7 +662,7 @@ class GPG(GPGBase):
         :returns: The result mapping with details of the new key, which is a
                   :class:`GenKey <gnupg._parsers.GenKey>` object.
         """
-        args = ["--gen-key --batch"]
+        args = ["--gen-key --cert-digest-algo SHA512 --batch"]
         key = self._result_map['generate'](self)
         f = _make_binary_stream(input, self._encoding)
         self._handle_io(args, f, key, binary=True)
@@ -899,7 +995,8 @@ generate keys. Please see
         :param str recipients: The recipients to encrypt to. Recipients must
             be specified keyID/fingerprint. Care should be taken in Python2.x
             to make sure that the given fingerprint is in fact a string and
-            not a unicode object.
+            not a unicode object.  Multiple recipients may be specified by
+            doing ``GPG.encrypt(data, fpr1, fpr2, fpr3)`` etc.
 
         :param str default_key: The keyID/fingerprint of the key to use for
             signing. If given, ``data`` will be encrypted and signed.
@@ -944,10 +1041,10 @@ generate keys. Please see
         ...     passphrase='foo')
         >>> key = gpg.gen_key(key_settings)
         >>> message = "The crow flies at midnight."
-        >>> encrypted = str(gpg.encrypt(message, key.printprint))
+        >>> encrypted = str(gpg.encrypt(message, key.fingerprint))
         >>> assert encrypted != message
         >>> assert not encrypted.isspace()
-        >>> decrypted = str(gpg.decrypt(encrypted))
+        >>> decrypted = str(gpg.decrypt(encrypted, passphrase='foo'))
         >>> assert not decrypted.isspace()
         >>> decrypted
         'The crow flies at midnight.'

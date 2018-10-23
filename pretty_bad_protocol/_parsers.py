@@ -42,7 +42,7 @@ from ._util import log
 
 
 ESCAPE_PATTERN = re.compile(r'\\x([0-9a-f][0-9a-f])', re.I)
-HEXIDECIMAL    = re.compile('([0-9A-Fa-f]{2})+')
+HEXADECIMAL    = re.compile('^[0-9A-Fa-f]+$')
 
 
 class ProtectedOption(Exception):
@@ -158,7 +158,9 @@ def _check_preferences(prefs, pref_type=None):
     digest   = frozenset(['SHA512', 'SHA384', 'SHA256', 'SHA224', 'RMD160',
                           'SHA1'])
     compress = frozenset(['BZIP2', 'ZLIB', 'ZIP', 'Uncompressed'])
-    all      = frozenset([cipher, digest, compress])
+    trust    = frozenset(['gpg', 'classic', 'direct', 'always', 'auto'])
+    pinentry = frozenset(['loopback'])
+    all      = frozenset([cipher, digest, compress, trust, pinentry])
 
     if isinstance(prefs, str):
         prefs = set(prefs.split())
@@ -180,6 +182,10 @@ def _check_preferences(prefs, pref_type=None):
         allowed += ' '.join(prefs.intersection(digest))
     if pref_type == 'compress':
         allowed += ' '.join(prefs.intersection(compress))
+    if pref_type == 'trust':
+        allowed += ' '.join(prefs.intersection(trust))
+    if pref_type == 'pinentry':
+        allowed += ' '.join(prefs.intersection(pinentry))
     if pref_type == 'all':
         allowed += ' '.join(prefs.intersection(all))
 
@@ -282,13 +288,12 @@ def _is_allowed(input):
     return None
 
 def _is_hex(string):
-    """Check that a string is hexidecimal, with alphabetic characters
-    capitalized and without whitespace.
+    """Check that a string is hexadecimal, with alphabetic characters
+    in either upper or lower case and without whitespace.
 
     :param str string: The string to check.
     """
-    matched = HEXIDECIMAL.match(string)
-    if matched is not None and len(matched.group()) >= 2:
+    if HEXADECIMAL.match(string):
         return True
     return False
 
@@ -440,6 +445,16 @@ def _sanitise(*args):
                         if legit_algos: checked += (legit_algos + " ")
                         else: log.debug("'%s' not compress algo" % val)
 
+                    elif flag == '--trust-model':
+                        legit_models = _check_preferences(val, 'trust')
+                        if legit_models: checked += (legit_models + " ")
+                        else: log.debug("%r is not a trust model", val)
+
+                    elif flag == '--pinentry-mode':
+                        legit_modes = _check_preferences(val, 'pinentry')
+                        if legit_modes: checked += (legit_modes + " ")
+                        else: log.debug("%r is not a pinentry mode", val)
+
                     else:
                         checked += (val + " ")
                         log.debug("_check_option(): No checks for %s" % val)
@@ -562,6 +577,8 @@ def _get_options_group(group=None):
                              '--recipient',
                              '--recv-keys',
                              '--send-keys',
+                             '--edit-key',
+                             '--sign-key',
                              ])
     #: These options expect value which are left unchecked, though still run
     #: through :func:`_fix_unsafe`.
@@ -569,6 +586,7 @@ def _get_options_group(group=None):
                                    '--passphrase-fd',
                                    '--status-fd',
                                    '--verify-options',
+                                   '--command-fd',
                                ])
     #: These have their own parsers and don't really fit into a group
     other_options = frozenset(['--debug-level',
@@ -608,10 +626,13 @@ def _get_options_group(group=None):
                               '--personal-cipher-preferences',
                               '--personal-compress-prefs',
                               '--personal-compress-preferences',
+                              '--pinentry-mode',
                               '--print-md',
+                              '--trust-model',
                               ])
     #: These options expect no arguments
-    none_options = frozenset(['--always-trust',
+    none_options = frozenset(['--allow-loopback-pinentry',
+                              '--always-trust',
                               '--armor',
                               '--armour',
                               '--batch',
@@ -856,6 +877,10 @@ def _get_all_gnupg_options():
     three_hundred_eighteen.append('--export-ownertrust')
     three_hundred_eighteen.append('--import-ownertrust')
 
+    # These are extra options which only exist for GnuPG>=2.1.0
+    three_hundred_eighteen.append('--pinentry-mode')
+    three_hundred_eighteen.append('--allow-loopback-pinentry')
+
     gnupg_options = frozenset(three_hundred_eighteen)
     return gnupg_options
 
@@ -886,6 +911,91 @@ def progress(status_code):
             return value
 
 
+class KeyExpirationInterface(object):
+    """ Interface that guards against misuse of --edit-key combined with --command-fd"""
+
+    def __init__(self, expiration_time, passphrase=None):
+        self._passphrase = passphrase
+        self._expiration_time = expiration_time
+        self._clean_key_expiration_option()
+
+    def _clean_key_expiration_option(self):
+        """validates the expiration option supplied"""
+        allowed_entry = re.findall('^(\d+)(|w|m|y)$', self._expiration_time)
+        if not allowed_entry:
+            raise UsageError("Key expiration option: %s is not valid" % self._expiration_time)
+
+    def _input_passphrase(self, _input):
+        if self._passphrase:
+            return "%s%s\n" % (_input, self._passphrase)
+        return _input
+
+    def _main_key_command(self):
+        main_key_input = "expire\n%s\n" % self._expiration_time
+        return self._input_passphrase(main_key_input)
+
+    def _sub_key_command(self, sub_key_number):
+        sub_key_input = "key %d\nexpire\n%s\n" % (sub_key_number, self._expiration_time)
+        return self._input_passphrase(sub_key_input)
+
+    def gpg_interactive_input(self, sub_keys_number):
+        """ processes series of inputs normally supplied on --edit-key but passed through stdin
+            this ensures that no other --edit-key command is actually passing through.
+        """
+        deselect_sub_key = "key 0\n"
+
+        _input = self._main_key_command()
+        for sub_key_number in range(1, sub_keys_number + 1):
+            _input += self._sub_key_command(sub_key_number) + deselect_sub_key
+        return "%ssave\n" % _input
+
+
+class KeyExpirationResult(object):
+    """Handle status messages for key expiry
+        It does not really have a job, but just to conform to the API
+    """
+    def __init__(self, gpg):
+        self._gpg = gpg
+        self.status = 'ok'
+
+    def _handle_status(self, key, value):
+        """Parse a status code from the attached GnuPG process.
+
+        :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
+        """
+        if key in ("USERID_HINT", "NEED_PASSPHRASE",
+                   "GET_HIDDEN", "SIGEXPIRED", "KEYEXPIRED",
+                   "GOOD_PASSPHRASE", "GOT_IT", "GET_LINE"):
+            pass
+        elif key in ("BAD_PASSPHRASE", "MISSING_PASSPHRASE"):
+            self.status = key.replace("_", " ").lower()
+        else:
+            self.status = 'failed'
+            raise ValueError("Unknown status message: %r" % key)
+
+
+class KeySigningResult(object):
+    """Handle status messages for key singing
+    """
+    def __init__(self, gpg):
+        self._gpg = gpg
+        self.status = 'ok'
+
+    def _handle_status(self, key, value):
+        """Parse a status code from the attached GnuPG process.
+
+        :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
+        """
+        if key in ("USERID_HINT", "NEED_PASSPHRASE", "ALREADY_SIGNED",
+                   "GOOD_PASSPHRASE", "GOT_IT", "GET_BOOL"):
+            pass
+        elif key in ("BAD_PASSPHRASE", "MISSING_PASSPHRASE"):
+            self.status = "%s: %s" % (key.replace("_", " ").lower(), value)
+        else:
+            self.status = 'failed'
+            raise ValueError("Key signing, unknown status message: %r ::%s" % (key, value))
+
+
 class GenKey(object):
     """Handle status messages for key generation.
 
@@ -898,7 +1008,11 @@ class GenKey(object):
         #: 'P':= primary, 'S':= subkey, 'B':= both
         self.type = None
         self.fingerprint = None
-        self.status = None
+        #: This will store a string describing the result of this operation.
+        #: Current statuses are:
+        #:     * 'key not created'
+        #:     * 'key created'
+        self.status = ""
         self.subkey_created = False
         self.primary_created = False
         #: This will store the key's public keyring filename, if
@@ -931,6 +1045,8 @@ class GenKey(object):
         """
         if key in ("GOOD_PASSPHRASE"):
             pass
+        elif key == "KEY_CONSIDERED":
+            self.status = key.replace("_", " ").lower()
         elif key == "KEY_NOT_CREATED":
             self.status = 'key not created'
         elif key == "KEY_CREATED":
@@ -940,6 +1056,19 @@ class GenKey(object):
             self.status = nodata(value)
         elif key == "PROGRESS":
             self.status = progress(value.split(' ', 1)[0])
+        elif key == "PINENTRY_LAUNCHED":
+            log.warn(("GnuPG has just attempted to launch whichever pinentry "
+                      "program you have configured, in order to obtain the "
+                      "passphrase for this key.  If you did not use the "
+                      "`passphrase=` parameter, please try doing so.  Otherwise, "
+                      "see Issues #122 and #137:"
+                      "\nhttps://github.com/isislovecruft/python-gnupg/issues/122"
+                      "\nhttps://github.com/isislovecruft/python-gnupg/issues/137"))
+            self.status = 'key not created'
+        elif (key.startswith("TRUST_") or
+              key.startswith("PKA_TRUST_") or
+              key == "NEWSIG"):
+            pass
         else:
             raise ValueError("Unknown status message: %r" % key)
 
@@ -966,7 +1095,7 @@ class DeleteResult(object):
 
         :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
-        if key == "DELETE_PROBLEM":
+        if key in ("DELETE_PROBLEM", "KEY_CONSIDERED"):
             self.status = self.problem_reason.get(value, "Unknown error: %r"
                                                   % value)
         else:
@@ -1012,9 +1141,19 @@ class Sign(object):
 
         :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
-        if key in ("USERID_HINT", "NEED_PASSPHRASE", "BAD_PASSPHRASE",
-                   "GOOD_PASSPHRASE", "MISSING_PASSPHRASE", "PINENTRY_LAUNCHED",
-                   "BEGIN_SIGNING", "CARDCTRL", "INV_SGNR", "SIGEXPIRED"):
+        if key in (
+                "USERID_HINT",
+                "NEED_PASSPHRASE",
+                "BAD_PASSPHRASE",
+                "GOOD_PASSPHRASE",
+                "MISSING_PASSPHRASE",
+                "PINENTRY_LAUNCHED",
+                "BEGIN_SIGNING",
+                "CARDCTRL",
+                "INV_SGNR",
+                "SIGEXPIRED",
+                "KEY_CONSIDERED",
+            ):
             self.status = key.replace("_", " ").lower()
         elif key == "SIG_CREATED":
             (self.sig_type, self.sig_algo, self.sig_hash_algo,
@@ -1029,6 +1168,8 @@ class Sign(object):
                  self.status += " on {}".format(str(value))
         elif key == "NODATA":
             self.status = nodata(value)
+        elif key == "PROGRESS":
+            self.status = progress(value.split(' ', 1)[0])
         else:
             raise ValueError("Unknown status message: %r" % key)
 
@@ -1043,7 +1184,6 @@ class ListKeys(list):
     |  crs = X.509 certificate and private key available
     |  ssb = secret subkey (secondary key)
     |  uat = user attribute (same as user id except for field 10).
-    |  rev = revocation signature
     |  pkd = public key data (special field format, see below)
     |  grp = reserved for gpgsm
     |  rvk = revocation key
@@ -1057,6 +1197,8 @@ class ListKeys(list):
         self.fingerprints = []
         self.uids = []
         self.sigs = {}
+        self.certs = {}
+        self.revs = {}
 
     def key(self, args):
         vars = ("""
@@ -1067,10 +1209,13 @@ class ListKeys(list):
             self.curkey[vars[i]] = args[i]
         self.curkey['uids'] = []
         self.curkey['sigs'] = {}
+        self.curkey['rev'] = {}
         if self.curkey['uid']:
             self.curuid = self.curkey['uid']
             self.curkey['uids'].append(self.curuid)
             self.sigs[self.curuid] = set()
+            self.certs[self.curuid] = set()
+            self.revs[self.curuid] = set()
             self.curkey['sigs'][self.curuid] = []
         del self.curkey['uid']
         self.curkey['subkeys'] = []
@@ -1089,6 +1234,7 @@ class ListKeys(list):
         self.curuid = uid
         self.curkey['sigs'][uid] = []
         self.sigs[uid] = set()
+        self.certs[uid] = set()
         self.uids.append(uid)
 
     def sig(self, args):
@@ -1100,10 +1246,19 @@ class ListKeys(list):
             sig[vars[i]] = args[i]
         self.curkey['sigs'][self.curuid].append(sig)
         self.sigs[self.curuid].add(sig['keyid'])
+        if sig["trust"] == u"!":
+            self.certs[self.curuid].add(sig['keyid'])
+
 
     def sub(self, args):
         subkey = [args[4], args[11]]
         self.curkey['subkeys'].append(subkey)
+
+    def rev(self, args):
+        self.curkey['rev'] = {'keyid': args[4],
+                              'revtime': args[5],
+                              'uid': self.curuid
+                              }
 
     def _handle_status(self, key, value):
         pass
@@ -1161,7 +1316,7 @@ class ImportResult(object):
         """Override the determination for truthfulness evaluation.
 
         :rtype: bool
-        :returns: True if we have immport some keys, False otherwise.
+        :returns: True if we have imported some keys, False otherwise.
         """
         if self.counts['not_imported'] > 0: return False
         if len(self.fingerprints) == 0: return False
@@ -1176,6 +1331,18 @@ class ImportResult(object):
         if key == "IMPORTED":
             # this duplicates info we already see in import_ok & import_problem
             pass
+        elif key == "PINENTRY_LAUNCHED":
+            log.warn(("GnuPG has just attempted to launch whichever pinentry "
+                      "program you have configured, in order to obtain the "
+                      "passphrase for this key.  If you did not use the "
+                      "`passphrase=` parameter, please try doing so.  Otherwise, "
+                      "see Issues #122 and #137:"
+                      "\nhttps://github.com/isislovecruft/python-gnupg/issues/122"
+                      "\nhttps://github.com/isislovecruft/python-gnupg/issues/137"))
+        elif key == "KEY_CONSIDERED":
+            self.results.append({
+                'status': key.replace("_", " ").lower(),
+            })
         elif key == "NODATA":
             self.results.append({'fingerprint': None,
                                  'status': 'No valid data found'})
@@ -1220,6 +1387,60 @@ class ImportResult(object):
         if self.counts['not_imported']:
             l.append('%d not imported' % self.counts['not_imported'])
         return ', '.join(l)
+
+
+class ExportResult(object):
+    """Parse GnuPG status messages for key export operations."""
+
+    def __init__(self, gpg):
+        """Start parsing the results of a key export operation.
+
+        :type gpg: :class:`gnupg.GPG`
+        :param gpg: An instance of :class:`gnupg.GPG`.
+        """
+        self._gpg = gpg
+
+        #: All the possible status messages pertaining to actions taken while
+        #: exporting a key.
+        self._fields = 'count secret_count exported'.split()
+
+        #: Counts of all the status message results, :data:`_fields` which
+        #: have appeared.
+        self.counts = OrderedDict(
+            zip(self._fields, [int(0) for x in range(len(self._fields))]))
+
+        #: A list of strings containing the fingerprints of the GnuPG keyIDs
+        #: exported.
+        self.fingerprints = list()
+
+    def __nonzero__(self):
+        """Override the determination for truthfulness evaluation.
+
+        :rtype: bool
+        :returns: True if we have exported some keys, False otherwise.
+        """
+        if self.counts['not_imported'] > 0: return False
+        if len(self.fingerprints) == 0: return False
+        return True
+    __bool__ = __nonzero__
+
+    def _handle_status(self, key, value):
+        """Parse a status code from the attached GnuPG process.
+
+        :raises ValueError: if the status message is unknown.
+        """
+        informational_keys = ["KEY_CONSIDERED"]
+        if key in ("EXPORTED"):
+            self.fingerprints.append(value)
+        elif key == "EXPORT_RES":
+            export_res = value.split()
+            for x in self.counts.keys():
+                self.counts[x] += int(export_res.pop(0))
+        elif key not in informational_keys:
+            raise ValueError("Unknown status message: %r" % key)
+
+    def summary(self):
+        return '%d exported' % self.counts['exported']
 
 
 class Verify(object):
@@ -1353,11 +1574,32 @@ class Verify(object):
         if key in self.TRUST_LEVELS:
             self.trust_text = key
             self.trust_level = self.TRUST_LEVELS[key]
-        elif key in ("RSA_OR_IDEA", "NODATA", "IMPORT_RES", "PLAINTEXT",
-                     "PLAINTEXT_LENGTH", "POLICY_URL", "DECRYPTION_INFO",
-                     "DECRYPTION_OKAY", "INV_SGNR", "PROGRESS",
-                     "PINENTRY_LAUNCHED"):
+        elif key in (
+                "RSA_OR_IDEA",
+                "NODATA",
+                "IMPORT_RES",
+                "PLAINTEXT",
+                "PLAINTEXT_LENGTH",
+                "POLICY_URL",
+                "DECRYPTION_INFO",
+                "DECRYPTION_KEY",
+                "DECRYPTION_OKAY",
+                "INV_SGNR",
+                "PROGRESS",
+                "PINENTRY_LAUNCHED",
+                "SUCCESS",
+                "UNEXPECTED",
+                "ENCRYPTION_COMPLIANCE_MODE",
+                "VERIFICATION_COMPLIANCE_MODE",
+            ):
             pass
+        elif key == "KEY_CONSIDERED":
+            self.status = '\n'.join([self.status, "key considered"])
+        elif key == "NEWSIG":
+            # Reset
+            self.status = None
+            self.valid = False
+            self.key_id, self.username = None, None
         elif key == "BADSIG":
             self.valid = False
             self.status = 'signature bad'
@@ -1389,6 +1631,16 @@ class Verify(object):
             self.valid = False
             self.key_id = value
             self.status = 'decryption failed'
+        elif key in ("WARNING", "ERROR", "FAILURE"):
+            if key in ("ERROR", "FAILURE"):
+                self.valid = False
+            # The status will hold a (rather indecipherable and bad
+            # design, imho) location (in the GnuPG C code), GnuPG
+            # error_code, e.g. "151011327_EOF", and (possibly, in the
+            # case of WARNING or ERROR) additional text.
+            # Have fun figuring out what it means.
+            self.status = value
+            log.warn("%s status emitted from gpg process: %s" % (key, value))
         elif key == "NO_PUBKEY":
             self.valid = False
             self.key_id = value
@@ -1494,7 +1746,7 @@ class Verify(object):
                 else:
                     pass
         else:
-            raise ValueError("Unknown status message: %r" % key)
+            raise ValueError("Unknown status message: %r %r" % (key, value))
 
 
 class Crypt(Verify):
@@ -1536,15 +1788,29 @@ class Crypt(Verify):
 
         :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
-        if key in ("ENC_TO", "USERID_HINT", "GOODMDC", "END_DECRYPTION",
-                   "BEGIN_SIGNING", "NO_SECKEY", "ERROR", "NODATA",
-                   "CARDCTRL"):
+        if key in (
+                "ENC_TO",
+                "USERID_HINT",
+                "GOODMDC",
+                "END_DECRYPTION",
+                "BEGIN_SIGNING",
+                "NO_SECKEY",
+                "ERROR",
+                "NODATA",
+                "CARDCTRL",
+            ):
             # in the case of ERROR, this is because a more specific error
             # message will have come first
             pass
-        elif key in ("NEED_PASSPHRASE", "BAD_PASSPHRASE", "GOOD_PASSPHRASE",
-                     "MISSING_PASSPHRASE", "DECRYPTION_FAILED",
-                     "KEY_NOT_CREATED"):
+        elif key in (
+                "NEED_PASSPHRASE",
+                "BAD_PASSPHRASE",
+                "GOOD_PASSPHRASE",
+                "MISSING_PASSPHRASE",
+                "DECRYPTION_FAILED",
+                "KEY_NOT_CREATED",
+                "KEY_CONSIDERED",
+            ):
             self.status = key.replace("_", " ").lower()
         elif key == "NEED_TRUSTDB":
             self._gpg._create_trustdb()
@@ -1609,8 +1875,15 @@ class ListPackets(object):
 
         :raises: :exc:`~exceptions.ValueError` if the status message is unknown.
         """
-        if key in ('NO_SECKEY', 'BEGIN_DECRYPTION', 'DECRYPTION_FAILED',
-                   'END_DECRYPTION', 'GOOD_PASSPHRASE', 'BAD_PASSPHRASE'):
+        if key in (
+                'NO_SECKEY',
+                'BEGIN_DECRYPTION',
+                'DECRYPTION_FAILED',
+                'END_DECRYPTION',
+                'GOOD_PASSPHRASE',
+                'BAD_PASSPHRASE',
+                'KEY_CONSIDERED'
+            ):
             pass
         elif key == 'NODATA':
             self.status = nodata(value)
@@ -1619,7 +1892,7 @@ class ListPackets(object):
             if not self.key:
                 self.key = key
             self.encrypted_to.append(key)
-        elif key == ('NEED_PASSPHRASE', 'MISSING_PASSPHRASE'):
+        elif key in ('NEED_PASSPHRASE', 'MISSING_PASSPHRASE'):
             self.need_passphrase = True
         elif key == 'NEED_PASSPHRASE_SYM':
             self.need_passphrase_sym = True

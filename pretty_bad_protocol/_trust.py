@@ -60,8 +60,9 @@ def export_ownertrust(cls, trustdb=None):
     export_proc = cls._open_subprocess(['--export-ownertrust'])
     tdb = open(trustdb, 'wb')
     _util._threaded_copy_data(export_proc.stdout, tdb)
+    export_proc.wait()
 
-def import_ownertrust(self, trustdb=None):
+def import_ownertrust(cls, trustdb=None):
     """Import ownertrust from a trustdb file.
 
     :param str trustdb: The path to the trustdb.gpg file. If not given,
@@ -72,8 +73,14 @@ def import_ownertrust(self, trustdb=None):
         trustdb = os.path.join(cls.homedir, 'trustdb.gpg')
 
     import_proc = cls._open_subprocess(['--import-ownertrust'])
-    tdb = open(trustdb, 'rb')
+
+    try:
+        tdb = open(trustdb, 'rb')
+    except (OSError, IOError):
+        log.error("trustdb file %s does not exist!" % trustdb)
+
     _util._threaded_copy_data(tdb, import_proc.stdin)
+    import_proc.wait()
 
 def fix_trustdb(cls, trustdb=None):
     """Attempt to repair a broken trustdb.gpg file.
@@ -101,3 +108,5 @@ def fix_trustdb(cls, trustdb=None):
     export_proc = cls._open_subprocess(['--export-ownertrust'])
     import_proc = cls._open_subprocess(['--import-ownertrust'])
     _util._threaded_copy_data(export_proc.stdout, import_proc.stdin)
+    export_proc.wait()
+    import_proc.wait()
