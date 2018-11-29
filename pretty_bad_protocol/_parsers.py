@@ -1503,6 +1503,7 @@ class Verify(object):
                 "PLAINTEXT",
                 "PLAINTEXT_LENGTH",
                 "POLICY_URL",
+                "DECRYPTION_COMPLIANCE_MODE",
                 "DECRYPTION_INFO",
                 "DECRYPTION_KEY",
                 "DECRYPTION_OKAY",
