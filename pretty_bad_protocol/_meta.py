@@ -528,6 +528,7 @@ class GPGBase(object):
         if not version_line:
             raise RuntimeError("Got invalid version line from gpg: %s\n" % result.data)
         self.binary_version = version_line.split('\n')[0]
+        self.binary_version = self.binary_version.replace('\r', '')
         if not _VERSION_RE.match(self.binary_version):
             raise RuntimeError("Got invalid version line from gpg: %s\n" % self.binary_version)
         log.debug("Using GnuPG version %s" % self.binary_version)
