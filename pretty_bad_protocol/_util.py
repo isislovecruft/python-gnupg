@@ -710,7 +710,6 @@ def _which(executable, flags=os.X_OK, abspath_only=False, disallow_symlinks=Fals
         return True
 
     result = []
-    exts = filter(None, os.environ.get('PATHEXT', '').split(os.pathsep))
     path = os.environ.get('PATH', None)
     if path is None:
         return []
@@ -718,6 +717,7 @@ def _which(executable, flags=os.X_OK, abspath_only=False, disallow_symlinks=Fals
         p = os.path.join(p, executable)
         if _can_allow(p):
             result.append(p)
+        exts = filter(None, os.environ.get('PATHEXT', '').split(os.pathsep))
         for e in exts:
             pext = p + e
             if _can_allow(pext):
