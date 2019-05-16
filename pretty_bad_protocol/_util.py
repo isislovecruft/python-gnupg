@@ -395,8 +395,7 @@ def _deprefix(line, prefix, callback=None):
 def _find_binary(binary=None):
     """Find the absolute path to the GnuPG binary.
 
-    Also run checks that the binary is not a symlink, and check that
-    our process real uid has exec permissions.
+    Also check that our process real uid has exec permissions.
 
     :param str binary: The path to the GnuPG binary.
     :raises: :exc:`~exceptions.RuntimeError` if it appears that GnuPG is not
@@ -421,7 +420,7 @@ def _find_binary(binary=None):
         elif os.access(binary, os.X_OK):
             found = binary
     if found is None:
-        try: found = _which('gpg', abspath_only=True, disallow_symlinks=True)[0]
+        try: found = _which('gpg', abspath_only=True)[0]
         except IndexError as ie:
             log.error("Could not find binary for 'gpg'.")
             try: found = _which('gpg2')[0]
