@@ -1720,6 +1720,7 @@ class Crypt(Verify):
                 "ERROR",
                 "NODATA",
                 "CARDCTRL",
+                "DECRYPTION_COMPLIANCE_MODE",
             ):
             # in the case of ERROR, this is because a more specific error
             # message will have come first
