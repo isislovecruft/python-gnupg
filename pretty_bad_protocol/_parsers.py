@@ -991,6 +991,8 @@ class GenKey(object):
               key.startswith("PKA_TRUST_") or
               key == "NEWSIG"):
             pass
+        elif key == 'ERROR':
+           log.error("Received error %s", value)
         else:
             raise ValueError("Unknown status message: %r" % key)
 
@@ -1351,7 +1353,7 @@ class ExportResult(object):
 
         :raises ValueError: if the status message is unknown.
         """
-        informational_keys = ["KEY_CONSIDERED"]
+        informational_keys = ["KEY_CONSIDERED", 'PINENTRY_LAUNCHED']
         if key in ("EXPORTED"):
             self.fingerprints.append(value)
         elif key == "EXPORT_RES":
