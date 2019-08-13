@@ -1573,7 +1573,7 @@ class Verify(object):
         # pub/subkeys on the key, not just the one doing the signing.
         # if we want to check for signatures make with expired key,
         # the relevant flags are REVKEYSIG and KEYREVOKED.
-        elif key in ("KEYEXPIRED", "SIGEXPIRED"):
+        elif key in ("KEYEXPIRED", "SIGEXPIRED", "INQUIRE_MAXLEN", "DECRYPTION_COMPLIANCE_MODE"):
             pass
         # The signature has an expiration date which has already passed
         # (EXPKEYSIG), or the signature has been revoked (REVKEYSIG):
