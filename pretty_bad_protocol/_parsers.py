@@ -1302,6 +1302,9 @@ class ImportResult(object):
             res = {'fingerprint': None,
                    'status': 'Signature expired'}
             self.results.append(res)
+
+        elif key in  ('USERID_HINT', 'NEED_PASSPHRASE', 'INQUIRE_MAXLEN',):
+            log.warnings("%s -> %s", key, value)
         else:
             raise ValueError("Unknown status message: %r" % key)
 
@@ -1564,7 +1567,7 @@ class Verify(object):
             # case of WARNING or ERROR) additional text.
             # Have fun figuring out what it means.
             self.status = value
-            log.warn("%s status emitted from gpg process: %s" % (key, value))
+            log.warning("%s status emitted from gpg process: %s" % (key, value))
         elif key == "NO_PUBKEY":
             self.valid = False
             self.key_id = value
