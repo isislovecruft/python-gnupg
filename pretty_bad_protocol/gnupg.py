@@ -320,7 +320,7 @@ class GPG(GPGBase):
                     sig_fh.close()
         return result
 
-    def import_keys(self, key_data):
+    def import_keys(self, key_data, passphrase=False):
         """
         Import the key_data into our keyring.
 
@@ -359,10 +359,11 @@ class GPG(GPGBase):
         ## xxx need way to validate that key_data is actually a valid GPG key
         ##     it might be possible to use --list-packets and parse the output
 
+        # passphrase fix from https://github.com/isislovecruft/python-gnupg/issues/205
         result = self._result_map['import'](self)
         log.info('Importing: %r', key_data[:256])
         data = _make_binary_stream(key_data, self._encoding)
-        self._handle_io(['--import'], data, result, binary=True)
+        self._handle_io(['--import'], data, result, passphrase=passphrase, binary=True)
         data.close()
         return result
 
