@@ -1304,7 +1304,7 @@ class ImportResult(object):
             self.results.append(res)
 
         elif key in  ('USERID_HINT', 'NEED_PASSPHRASE', 'INQUIRE_MAXLEN',):
-            log.warnings("%s -> %s", key, value)
+            log.warning("%s -> %s", key, value)
         else:
             raise ValueError("Unknown status message: %r" % key)
 
