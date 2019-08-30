@@ -126,7 +126,7 @@ class GPG(GPGBase):
             ignore_homedir_permissions=ignore_homedir_permissions,
         )
 
-        log.info(textwrap.dedent("""
+        log.debug(textwrap.dedent("""
         Initialised settings:
         binary: %s
         binary version: %s
