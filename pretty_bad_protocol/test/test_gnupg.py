@@ -1635,6 +1635,29 @@ know, maybe you shouldn't be doing it in the first place.
         self.assertEqual('bad passphrase: %s' % default_key_pair.fingerprint[-16:], result.status)
         self.assertNotIn(default_key_pair.fingerprint[-16:], hehe_sigs_keyids)
 
+    def test_key_export(self):
+
+        input_data = self.gpg.gen_key_input(
+            key_type='RSA',
+            expire_date=0,
+            passphrase="testme"
+        )
+
+        key = self.gpg.gen_key(input_data)
+
+
+        key_file = os.path.join("/tmp","testkey.asc")
+        pubkey = self.gpg.export_keys(key.fingerprint)
+        privkey = self.gpg.export_keys(key.fingerprint, secret=True)
+
+        with open(key_file,"w") as key_fp:
+            key_fp.write(pubkey)
+            key_fp.write(privkey)
+
+        assert os.stat(key_file).st_size > 0
+
+
+
 suites = { 'parsers': set(['test_parsers_fix_unsafe',
                            'test_parsers_fix_unsafe_semicolon',
                            'test_parsers_is_hex_valid',
@@ -1715,6 +1738,10 @@ suites = { 'parsers': set(['test_parsers_fix_unsafe',
                            'test_key_signing_with_different_key',
                            'test_signing_an_already_signed_key_does_nothing_and_is_okay',
                            'test_signing_key_with_wrong_password']),
+
+        'key_export'              : set(['test_key_export',
+        ]),
+           
 }
 
 

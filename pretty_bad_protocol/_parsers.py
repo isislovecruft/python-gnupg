@@ -991,6 +991,8 @@ class GenKey(object):
               key.startswith("PKA_TRUST_") or
               key == "NEWSIG"):
             pass
+        elif key == 'ERROR':
+           log.error("Received error %s", value)
         else:
             raise ValueError("Unknown status message: %r" % key)
 
@@ -1300,6 +1302,9 @@ class ImportResult(object):
             res = {'fingerprint': None,
                    'status': 'Signature expired'}
             self.results.append(res)
+
+        elif key in  ('USERID_HINT', 'NEED_PASSPHRASE', 'INQUIRE_MAXLEN',):
+            log.warning("%s -> %s", key, value)
         else:
             raise ValueError("Unknown status message: %r" % key)
 
@@ -1351,7 +1356,7 @@ class ExportResult(object):
 
         :raises ValueError: if the status message is unknown.
         """
-        informational_keys = ["KEY_CONSIDERED"]
+        informational_keys = ["KEY_CONSIDERED", 'PINENTRY_LAUNCHED']
         if key in ("EXPORTED"):
             self.fingerprints.append(value)
         elif key == "EXPORT_RES":
@@ -1562,7 +1567,7 @@ class Verify(object):
             # case of WARNING or ERROR) additional text.
             # Have fun figuring out what it means.
             self.status = value
-            log.warn("%s status emitted from gpg process: %s" % (key, value))
+            log.warning("%s status emitted from gpg process: %s" % (key, value))
         elif key == "NO_PUBKEY":
             self.valid = False
             self.key_id = value
@@ -1571,7 +1576,7 @@ class Verify(object):
         # pub/subkeys on the key, not just the one doing the signing.
         # if we want to check for signatures make with expired key,
         # the relevant flags are REVKEYSIG and KEYREVOKED.
-        elif key in ("KEYEXPIRED", "SIGEXPIRED"):
+        elif key in ("KEYEXPIRED", "SIGEXPIRED", "INQUIRE_MAXLEN", "DECRYPTION_COMPLIANCE_MODE"):
             pass
         # The signature has an expiration date which has already passed
         # (EXPKEYSIG), or the signature has been revoked (REVKEYSIG):
