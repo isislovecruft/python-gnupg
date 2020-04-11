@@ -843,7 +843,7 @@ class KeyExpirationInterface(object):
 
     def _clean_key_expiration_option(self):
         """validates the expiration option supplied"""
-        allowed_entry = re.findall('^(\d+)(|w|m|y)$', self._expiration_time)
+        allowed_entry = re.findall(r'^(\d+)(|w|m|y)$', self._expiration_time)
         if not allowed_entry:
             raise UsageError("Key expiration option: %s is not valid" % self._expiration_time)
 

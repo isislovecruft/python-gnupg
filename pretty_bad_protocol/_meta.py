@@ -54,7 +54,7 @@ from ._parsers import _check_preferences
 from ._parsers import _sanitise_list
 from ._util    import log
 
-_VERSION_RE = re.compile('^\d+\.\d+\.\d+$')
+_VERSION_RE = re.compile(r'^\d+\.\d+\.\d+$')
 
 
 class GPGMeta(type):

@@ -126,7 +126,7 @@ _conf = os.path.join(os.path.join(_user, '.config'), 'python-gnupg')
 log = _logger.create_logger(0)
 
 #: Compiled regex for determining a GnuPG binary's version:
-_VERSION_STRING_REGEX = re.compile('(\d)(\.)(\d)(\.)(\d+)')
+_VERSION_STRING_REGEX = re.compile(r'(\d)(\.)(\d)(\.)(\d+)')
 
 
 class GnuPGVersionError(ValueError):
