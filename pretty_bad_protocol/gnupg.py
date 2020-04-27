@@ -1086,14 +1086,14 @@ generate keys. Please see
         stream.close()
         return result
 
-    def decrypt_file(self, filename, always_trust=False, passphrase=None,
+    def decrypt_file(self, fileobject, always_trust=False, passphrase=None,
                      output=None):
-        """Decrypt the contents of a file-like object ``filename`` .
+        """Decrypt the contents of a file-like object ``fileobject`` .
 
-        :param str filename: A file-like object to decrypt.
+        :param io.BytesIO fileobject: A file-like object to decrypt.
         :param bool always_trust: Instruct GnuPG to ignore trust checks.
         :param str passphrase: The passphrase for the secret key used for decryption.
-        :param str output: A filename to write the decrypted output to.
+        :param str output: A fileobject to write the decrypted output to.
         """
         args = ["--decrypt"]
         if output:  # write the output to a file with the specified name
@@ -1103,7 +1103,7 @@ generate keys. Please see
         if always_trust:
             args.append("--always-trust")
         result = self._result_map['crypt'](self)
-        self._handle_io(args, filename, result, passphrase, binary=True)
+        self._handle_io(args, fileobject, result, passphrase, binary=True)
         log.debug('decrypt result: %r', result.data)
         return result
 
