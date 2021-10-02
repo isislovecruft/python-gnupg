@@ -82,7 +82,7 @@ which I hope to outline below, both in general and for each method.
   re-publish it, especially if you gain new signatures.
 
 * Using some of these methods, you're going to be putting some pretty large,
-  pretty unwiedly lines in your DNS zones.  Not everyone will easily be able
+  pretty unwieldy lines in your DNS zones.  Not everyone will easily be able
   to retrieve them, but again, you can still publish other ways.
 
 * Using some of these methods, DNS is just a means to an end: you still need
@@ -514,7 +514,7 @@ Relevant RFCs: [RFC 2538](http://www.faqs.org/rfcs/rfc2538.html),
 [RFC 4398](http://www.faqs.org/rfcs/rfc4398.html), specifically sections 2.1
 and 3.3
 
-IPGP certs are interesting.  It's basically the same pieces of infomation that
+IPGP certs are interesting.  It's basically the same pieces of information that
 are in the PKA record, as above, except that it's supported by an RFC.
 Despite the RFC compliance, I am not sure if any non-gpg client knows to look
 for them.  However, because it's a DNS cert, make-dns-cert encodes the

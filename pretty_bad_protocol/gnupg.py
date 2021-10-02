@@ -789,7 +789,7 @@ class GPG(GPGBase):
         :param int key_length: The requested length of the generated key in
             bits. (Default: 4096)
 
-        :param str key_grip: hexstring This is an optional hexidecimal string
+        :param str key_grip: hexstring This is an optional hexadecimal string
             which is used to generate a CSR or certificate for an already
             existing key. ``key_length`` will be ignored if this parameter
             is given.
