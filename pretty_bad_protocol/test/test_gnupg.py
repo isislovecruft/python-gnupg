@@ -280,17 +280,17 @@ class GPGTestCase(unittest.TestCase):
         fixed = _parsers._fix_unsafe(shell_input)
 
     def test_parsers_is_hex_valid(self):
-        """Test that valid hexidecimal passes the parsers._is_hex() check"""
+        """Test that valid hexadecimal passes the parsers._is_hex() check"""
         valid_hex = '0A6A58A14B5946ABDE18E207A3ADB67A2CDB8B35'
         self.assertTrue(_parsers._is_hex(valid_hex))
 
     def test_parsers_is_hex_lowercase(self):
-        """Test parsers._is_hex() with lowercased hexidecimal"""
+        """Test parsers._is_hex() with lowercased hexadecimal"""
         valid_hex = 'deadbeef15abad1dea'
         self.assertTrue(_parsers._is_hex(valid_hex))
 
     def test_parsers_is_hex_invalid(self):
-        """Test that invalid hexidecimal fails the parsers._is_hex() check"""
+        """Test that invalid hexadecimal fails the parsers._is_hex() check"""
         invalid_hex = 'cipherpunks write code'
         self.assertFalse(_parsers._is_hex(invalid_hex))
 

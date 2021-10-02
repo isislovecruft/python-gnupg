@@ -476,7 +476,7 @@ def _sanitise_list(arg_list):
 def _get_options_group(group=None):
     """Get a specific group of options which are allowed."""
 
-    #: These expect a hexidecimal keyid as their argument, and can be parsed
+    #: These expect a hexadecimal keyid as their argument, and can be parsed
     #: with :func:`_is_hex`.
     hex_options = frozenset(['--check-sigs',
                              '--default-key',

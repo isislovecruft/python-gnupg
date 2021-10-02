@@ -38,7 +38,7 @@ NEWKEY_DIR = './8192-bit-key'
 # Hammond":
 NAME = 'Someone'
 
-# The comment which goes in parantheses after the name and before the email
+# The comment which goes in parentheses after the name and before the email
 # address on the key's primary uid. Leave as None to not have one.
 NAME_COMMENT = None
 
