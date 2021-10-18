@@ -128,7 +128,7 @@ class GPGMeta(type):
             except psutil.Error as err:
                 # Exception when getting proc info, possibly because the
                 # process is zombie / process no longer exist. Just ignore it.
-                log.warn("Error while attempting to find gpg-agent process: %s" % err)
+                log.warning("Error while attempting to find gpg-agent process: %s" % err)
             # Next code must be inside for operator.
             # Otherwise to _agent_proc will be saved not "gpg-agent" process buth an other.
             if ownership_match:
@@ -678,7 +678,7 @@ class GPGBase(object):
                 if not ignore:
                     # Log gpg's userland messages at our own levels:
                     if keyword.upper().startswith("WARNING"):
-                        log.warn("%s" % value)
+                        log.warning("%s" % value)
                     elif keyword.upper().startswith("FATAL"):
                         log.critical("%s" % value)
                         # Handle the gpg2 error where a missing trustdb.gpg is,
@@ -841,8 +841,8 @@ class GPGBase(object):
         if clearsign:
             args.append("--clearsign")
             if detach:
-                log.warn("Cannot use both --clearsign and --detach-sign.")
-                log.warn("Using default GPG behaviour: --clearsign only.")
+                log.warning("Cannot use both --clearsign and --detach-sign.")
+                log.warning("Using default GPG behaviour: --clearsign only.")
         elif detach and not clearsign:
             args.append("--detach-sign")
 

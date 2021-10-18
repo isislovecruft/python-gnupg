@@ -64,7 +64,7 @@ def _check_keyserver(location):
         if location.startswith(proto):
             url = location.replace(proto, str())
             host, slash, extra = url.partition('/')
-            if extra: log.warn("URI text for %s: '%s'" % (host, extra))
+            if extra: log.warning("URI text for %s: '%s'" % (host, extra))
             log.debug("Got host string for keyserver setting: '%s'" % host)
 
             host = _fix_unsafe(host)
@@ -214,7 +214,7 @@ def _is_allowed(input):
                 assert hyphenated in allowed
             except AssertionError as ae:
                 dropped = _fix_unsafe(hyphenated)
-                log.warn("_is_allowed(): Dropping option '%s'..." % dropped)
+                log.warning("_is_allowed(): Dropping option '%s'..." % dropped)
                 raise ProtectedOption("Option '%s' not supported." % dropped)
             else:
                 return input
@@ -306,7 +306,7 @@ def _sanitise(*args):
             flag = _is_allowed(arg)
             assert flag is not None, "_check_option(): got None for flag"
         except (AssertionError, ProtectedOption) as error:
-            log.warn("_check_option(): %s" % str(error))
+            log.warning("_check_option(): %s" % str(error))
         else:
             checked += (flag + ' ')
 
@@ -414,7 +414,7 @@ def _sanitise(*args):
                         log.debug("Got value: %s" % filo[0])
                         groups[last] += filo.pop()
             else:
-                log.warn("_make_groups(): Got solitary value: %s" % last)
+                log.warning("_make_groups(): Got solitary value: %s" % last)
                 groups["xxx"] = last
         return groups
 
@@ -428,7 +428,7 @@ def _sanitise(*args):
                 log.debug("Appending option: %s" % safe)
                 checked_groups.append(safe)
             else:
-                log.warn("Dropped option: '%s %s'" % (a,v))
+                log.warning("Dropped option: '%s %s'" % (a,v))
         return checked_groups
 
     if args is not None:
@@ -449,7 +449,7 @@ def _sanitise(*args):
                 arg.reverse()
                 option_groups.update(_make_groups(arg))
             else:
-                log.warn("Got non-str/list arg: '%s', type '%s'"
+                log.warning("Got non-str/list arg: '%s', type '%s'"
                          % (arg, type(arg)))
         checked = _check_groups(option_groups)
         sanitised = ' '.join(x for x in checked)
@@ -979,7 +979,7 @@ class GenKey(object):
         elif key == "PROGRESS":
             self.status = progress(value.split(' ', 1)[0])
         elif key == "PINENTRY_LAUNCHED":
-            log.warn(("GnuPG has just attempted to launch whichever pinentry "
+            log.warning(("GnuPG has just attempted to launch whichever pinentry "
                       "program you have configured, in order to obtain the "
                       "passphrase for this key.  If you did not use the "
                       "`passphrase=` parameter, please try doing so.  Otherwise, "
@@ -1254,7 +1254,7 @@ class ImportResult(object):
             # this duplicates info we already see in import_ok & import_problem
             pass
         elif key == "PINENTRY_LAUNCHED":
-            log.warn(("GnuPG has just attempted to launch whichever pinentry "
+            log.warning(("GnuPG has just attempted to launch whichever pinentry "
                       "program you have configured, in order to obtain the "
                       "passphrase for this key.  If you did not use the "
                       "`passphrase=` parameter, please try doing so.  Otherwise, "
@@ -1562,7 +1562,7 @@ class Verify(object):
             # case of WARNING or ERROR) additional text.
             # Have fun figuring out what it means.
             self.status = value
-            log.warn("%s status emitted from gpg process: %s" % (key, value))
+            log.warning("%s status emitted from gpg process: %s" % (key, value))
         elif key == "NO_PUBKEY":
             self.valid = False
             self.key_id = value
