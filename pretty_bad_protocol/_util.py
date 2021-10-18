@@ -590,7 +590,7 @@ def _make_passphrase(length=None, save=False, file=None):
             os.chmod(file, stat.S_IRUSR | stat.S_IWUSR)
             os.chown(file, ruid, gid)
 
-        log.warn("Generated passphrase saved to %s" % file)
+        log.warning("Generated passphrase saved to %s" % file)
     return passphrase
 
 def _make_random_string(length):
@@ -702,10 +702,10 @@ def _which(executable, flags=os.X_OK, abspath_only=False, disallow_symlinks=Fals
         if not os.access(p, flags):
             return False
         if abspath_only and not os.path.abspath(p):
-            log.warn('Ignoring %r (path is not absolute)', p)
+            log.warning('Ignoring %r (path is not absolute)', p)
             return False
         if disallow_symlinks and os.path.islink(p):
-            log.warn('Ignoring %r (path is a symlink)', p)
+            log.warning('Ignoring %r (path is a symlink)', p)
             return False
         return True
 

@@ -259,7 +259,7 @@ class GPGTestCase(unittest.TestCase):
             except OSError as ose:
                 log.error(ose)
         else:
-            log.warn("Can't delete homedir: '%s' not a directory"
+            log.warning("Can't delete homedir: '%s' not a directory"
                      % self.homedir)
 
     def test_parsers_fix_unsafe(self):
@@ -835,8 +835,8 @@ class GPGTestCase(unittest.TestCase):
         verified = self.gpg.verify(sig.data)
         self.assertIsNotNone(verified.fingerprint)
         if key.fingerprint != verified.fingerprint:
-            log.warn("key fingerprint:      %r", key.fingerprint)
-            log.warn("verified fingerprint: %r", verified.fingerprint)
+            log.warning("key fingerprint:      %r", key.fingerprint)
+            log.warning("verified fingerprint: %r", verified.fingerprint)
         self.assertEqual(key.fingerprint, verified.fingerprint,
                          "Fingerprints must match")
         self.assertEqual(verified.status, 'signature valid')
@@ -863,8 +863,8 @@ class GPGTestCase(unittest.TestCase):
         except UnicodeDecodeError: #happens in Python 2.6
             verified = self.gpg.verify_file(io.BytesIO(sig.data))
         if key.fingerprint != verified.fingerprint:
-            log.warn("key fingerprint:      %r", key.fingerprint)
-            log.warn("verified fingerprint: %r", verified.fingerprint)
+            log.warning("key fingerprint:      %r", key.fingerprint)
+            log.warning("verified fingerprint: %r", verified.fingerprint)
         self.assertEqual(key.fingerprint, verified.fingerprint)
 
     def test_signature_verification_detached(self):
@@ -892,8 +892,8 @@ class GPGTestCase(unittest.TestCase):
         verified = self.gpg.verify_file(datafd, sig_file=sigfn)
 
         if key.fingerprint != verified.fingerprint:
-            log.warn("key fingerprint:      %r", key.fingerprint)
-            log.warn("verified fingerprint: %r", verified.fingerprint)
+            log.warning("key fingerprint:      %r", key.fingerprint)
+            log.warning("verified fingerprint: %r", verified.fingerprint)
         self.assertEqual(key.fingerprint, verified.fingerprint)
 
         if os.path.isfile(sigfn):
@@ -1775,7 +1775,7 @@ def before_run():
                     os.rename(ring, os.path.join(genkeysdir, fn))
                 except OSError as err:
                     ## if we can't move the files it won't kill us:
-                    log.warn(err)
+                    log.warning(err)
 
 if __name__ == "__main__":
 

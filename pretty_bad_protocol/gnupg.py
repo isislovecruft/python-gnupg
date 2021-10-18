@@ -248,7 +248,7 @@ class GPG(GPGBase):
             log.info("Signing message '%r' with keyid: %s"
                      % (data, kwargs['default_key']))
         else:
-            log.warn("No 'default_key' given! Using first key on secring.")
+            log.warning("No 'default_key' given! Using first key on secring.")
 
         if hasattr(data, 'read'):
             result = self._sign_file(data, **kwargs)
@@ -257,7 +257,7 @@ class GPG(GPGBase):
             result = self._sign_file(stream, **kwargs)
             stream.close()
         else:
-            log.warn("Unable to sign message '%s' with type %s"
+            log.warning("Unable to sign message '%s' with type %s"
                      % (data, type(data)))
             result = None
         return result
