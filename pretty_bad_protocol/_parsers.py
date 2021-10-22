@@ -571,6 +571,7 @@ def _get_options_group(group=None):
                               '--fingerprint',
                               '--fixed-list-mode',
                               '--gen-key',
+                              '--ignore-mdc-error',
                               '--import-ownertrust',
                               '--list-config',
                               '--list-key',
